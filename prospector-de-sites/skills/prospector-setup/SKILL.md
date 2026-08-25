@@ -57,9 +57,18 @@ Salvar em `prospector-config.json` na pasta do projeto:
     "branch": "main",
     "basePath": "clientes",
     "domain": ""
+  },
+  "evolution": {
+    "enabled": false,
+    "baseUrl": "",
+    "instance": "",
+    "apiKeyEnv": "EVOLUTION_API_KEY",
+    "timeoutSeconds": 15
   }
 }
 ```
+
+> **Nota sobre Evolution API**: Configuração opcional de integração com WhatsApp na VPS. A chave de API nunca passa pelo chat nem é salva no JSON — configure via variável de ambiente `$env:EVOLUTION_API_KEY="sua_chave"` no terminal.
 
 ## 5. Painel Local
 

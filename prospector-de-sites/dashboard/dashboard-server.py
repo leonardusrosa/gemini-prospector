@@ -11,6 +11,14 @@ os.chdir(PASTA)
 DB = os.path.join(PASTA, 'prospector.db')
 CONFIG = os.path.join(PASTA, 'prospector-config.json')
 
+# Importação do cliente Evolution
+sys.path.insert(0, PASTA)
+sys.path.insert(0, os.path.join(PASTA, 'prospector-de-sites'))
+try:
+    from evolution_client import EvolutionClient
+except ImportError:
+    EvolutionClient = None
+
 def ler_config():
     try: return json.load(open(CONFIG, encoding='utf-8'))
     except Exception: return {}
@@ -60,7 +68,8 @@ class App(SimpleHTTPRequestHandler):
         n = int(self.headers.get('Content-Length', 0))
         return json.loads(self.rfile.read(n).decode('utf-8')) if n else {}
     def do_GET(self):
-        if self.path.split('?')[0] == '/api/config':
+        rota = self.path.split('?')[0]
+        if rota == '/api/config':
             cfg = ler_config()
             deploy = dict(cfg.get('deploy', {}))
             if not deploy and 'hostgator' in cfg:
@@ -73,8 +82,34 @@ class App(SimpleHTTPRequestHandler):
                     'basePath': hg.get('pastaBase', 'clientes'),
                     'domain': hg.get('dominio', '')
                 }
-            return self._json(200, {'contratante': cfg.get('contratante', {}), 'deploy': deploy})
-        if self.path.split('?')[0] == '/api/leads':
+            evo = cfg.get('evolution', {})
+            evo_public = {
+                'enabled': bool(evo.get('enabled', False)),
+                'baseUrl': os.environ.get('EVOLUTION_API_URL') or evo.get('baseUrl', ''),
+                'instance': os.environ.get('EVOLUTION_INSTANCE') or evo.get('instance', ''),
+                'apiKeyEnv': evo.get('apiKeyEnv', 'EVOLUTION_API_KEY'),
+                'timeoutSeconds': int(evo.get('timeoutSeconds', 15)),
+                'hasApiKey': bool(os.environ.get(evo.get('apiKeyEnv', 'EVOLUTION_API_KEY')) or os.environ.get('EVOLUTION_API_KEY')),
+            }
+            return self._json(200, {
+                'contratante': cfg.get('contratante', {}),
+                'deploy': deploy,
+                'evolution': evo_public
+            })
+        if rota == '/api/evolution/status':
+            cfg = ler_config()
+            if EvolutionClient:
+                c = EvolutionClient(cfg)
+                return self._json(200, {
+                    'enabled': c.enabled,
+                    'baseUrl': c.base_url,
+                    'instance': c.instance,
+                    'hasApiKey': c.has_api_key(),
+                    'isConfigured': c.is_configured(),
+                    'apiKeyEnv': c.api_key_env
+                })
+            return self._json(200, {'configured': False, 'hasApiKey': False, 'error': 'EvolutionClient indisponível'})
+        if rota == '/api/leads':
             c = conexao(); c.row_factory = sqlite3.Row
             rows = [dict(r) for r in c.execute('SELECT * FROM leads').fetchall()]; c.close()
             return self._json(200, rows)
@@ -82,16 +117,31 @@ class App(SimpleHTTPRequestHandler):
             self.path = '/dashboard.html'
         return SimpleHTTPRequestHandler.do_GET(self)
     def do_POST(self):
-        if self.path.split('?')[0] == '/api/leads':
+        rota = self.path.split('?')[0]
+        if rota == '/api/leads':
             l = self._corpo(); c = conexao()
             c.execute('INSERT OR REPLACE INTO leads (%s) VALUES (%s)' % (','.join(CAMPOS), ','.join('?'*len(CAMPOS))),
                       [l.get(k) for k in CAMPOS])
             c.commit(); c.close(); return self._json(200, {'ok': True})
+        if rota == '/api/evolution/test':
+            corpo = self._corpo()
+            cfg = ler_config()
+            evo_cfg = dict(cfg.get('evolution', {}))
+            if isinstance(corpo, dict):
+                for k in ['baseUrl', 'instance', 'timeoutSeconds', 'apiKeyEnv']:
+                    if k in corpo and corpo[k]:
+                        evo_cfg[k] = corpo[k]
+            if EvolutionClient:
+                c = EvolutionClient({'evolution': evo_cfg})
+                res = c.test_connection()
+                return self._json(200, res)
+            return self._json(500, {'error': 'Módulo EvolutionClient não encontrado.'})
         return self._json(404, {'erro': 'rota'})
     def do_PUT(self):
-        if self.path.split('?')[0] == '/api/config':
+        rota = self.path.split('?')[0]
+        if rota == '/api/config':
             cfg = ler_config(); corpo = self._corpo()
-            if 'contratante' in corpo or 'deploy' in corpo or 'hostgator' in corpo:
+            if 'contratante' in corpo or 'deploy' in corpo or 'evolution' in corpo or 'hostgator' in corpo:
                 if 'contratante' in corpo:
                     ct = cfg.get('contratante', {})
                     ct.update({k: v for k, v in corpo['contratante'].items() if isinstance(v, str)})
@@ -108,13 +158,23 @@ class App(SimpleHTTPRequestHandler):
                     dep['domain'] = corpo['hostgator'].get('dominio', dep.get('domain', ''))
                     dep['basePath'] = corpo['hostgator'].get('pastaBase', dep.get('basePath', 'clientes'))
                     cfg['deploy'] = dep
+                if 'evolution' in corpo and isinstance(corpo['evolution'], dict):
+                    evo = cfg.get('evolution', {})
+                    for k in ['enabled', 'baseUrl', 'instance', 'apiKeyEnv', 'timeoutSeconds']:
+                        if k in corpo['evolution']:
+                            evo[k] = corpo['evolution'][k]
+                    # Garante que NUNCA salva a chave de API no arquivo
+                    evo.pop('apiKey', None)
+                    evo.pop('key', None)
+                    evo.pop('senha', None)
+                    cfg['evolution'] = evo
             else:  # compatibilidade: corpo plano = contratante
                 ct = cfg.get('contratante', {})
                 ct.update({k: v for k, v in corpo.items() if isinstance(v, str)})
                 cfg['contratante'] = ct
             json.dump(cfg, open(CONFIG, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
             return self._json(200, {'ok': True})
-        partes = self.path.split('?')[0].split('/')
+        partes = rota.split('/')
         if len(partes) == 4 and partes[1] == 'api' and partes[2] == 'leads':
             slug, ch = partes[3], self._corpo()
             sets = [k for k in ch if k in CAMPOS and k != 'slug']
