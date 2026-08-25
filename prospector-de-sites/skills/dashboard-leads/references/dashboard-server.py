@@ -83,13 +83,14 @@ class App(SimpleHTTPRequestHandler):
                     'domain': hg.get('dominio', '')
                 }
             evo = cfg.get('evolution', {})
+            evo_client = EvolutionClient(cfg) if EvolutionClient else None
             evo_public = {
-                'enabled': bool(evo.get('enabled', False)),
-                'baseUrl': os.environ.get('EVOLUTION_API_URL') or evo.get('baseUrl', ''),
-                'instance': os.environ.get('EVOLUTION_INSTANCE') or evo.get('instance', ''),
-                'apiKeyEnv': evo.get('apiKeyEnv', 'EVOLUTION_API_KEY'),
-                'timeoutSeconds': int(evo.get('timeoutSeconds', 15)),
-                'hasApiKey': bool(os.environ.get(evo.get('apiKeyEnv', 'EVOLUTION_API_KEY')) or os.environ.get('EVOLUTION_API_KEY')),
+                'enabled': evo_client.enabled if evo_client else bool(evo.get('enabled', False)),
+                'baseUrl': evo_client.base_url if evo_client else (os.environ.get('EVOLUTION_API_URL') or evo.get('baseUrl', '')),
+                'instance': evo_client.instance if evo_client else (os.environ.get('EVOLUTION_INSTANCE') or evo.get('instance', '')),
+                'apiKeyEnv': evo_client.api_key_env if evo_client else evo.get('apiKeyEnv', 'EVOLUTION_API_KEY'),
+                'timeoutSeconds': evo_client.timeout if evo_client else int(evo.get('timeoutSeconds', 15)),
+                'hasApiKey': evo_client.has_api_key() if evo_client else bool(os.environ.get(evo.get('apiKeyEnv', 'EVOLUTION_API_KEY')) or os.environ.get('EVOLUTION_API_KEY')),
             }
             return self._json(200, {
                 'contratante': cfg.get('contratante', {}),

@@ -20,6 +20,23 @@ class EvolutionClient:
     """Cliente seguro para integração com Evolution API v1/v2."""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        # Sincroniza do registro do usuário no Windows se ainda não refletido no processo atual
+        if os.name == "nt":
+            try:
+                import winreg
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment")
+                for var in ["EVOLUTION_API_KEY", "EVOLUTION_API_URL", "EVOLUTION_INSTANCE"]:
+                    if var not in os.environ:
+                        try:
+                            val, _ = winreg.QueryValueEx(key, var)
+                            if val:
+                                os.environ[var] = str(val)
+                        except FileNotFoundError:
+                            pass
+                winreg.CloseKey(key)
+            except Exception:
+                pass
+
         cfg = config or {}
         evo_cfg = cfg.get("evolution", {}) if "evolution" in cfg else cfg
 
