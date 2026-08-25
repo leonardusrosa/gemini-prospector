@@ -29,7 +29,15 @@
   .bar span{font-size:12px;color:var(--muted);margin-left:8px}
   iframe{display:block;width:100%;height:80vh;min-height:520px;border:0;background:#fff}
   .hide{display:none}
-  .cta{text-align:center;padding:44px 0 64px}
+  .melhorias{margin:40px auto 20px;max-width:760px;padding:24px 28px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+  .melhorias h3{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--ink)}
+  .melhorias ul{padding-left:20px;color:var(--muted);font-size:14.5px;line-height:1.7}
+  .melhorias li{margin-bottom:6px}
+  .melhorias li b{color:var(--ink)}
+  .portfolio-box{margin:28px auto 0;max-width:760px;text-align:center;padding:18px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+  .portfolio-box a{color:var(--acc);text-decoration:none;font-weight:600}
+  .portfolio-box a:hover{text-decoration:underline}
+  .cta{text-align:center;padding:36px 0 54px}
   .cta p{color:var(--muted);max-width:520px;margin:0 auto 20px}
   .btn{display:inline-block;background:var(--acc);color:#fff;text-decoration:none;font-weight:700;padding:15px 34px;border-radius:12px;font-size:16px}
   .btn:hover{background:#a94f30}
@@ -58,6 +66,10 @@
   </div>
 </div>
 <div class="wrap">
+  __SECAO_MELHORIAS__
+
+  __SECAO_PORTFOLIO__
+
   <div class="cta">
     <p>Se gostou do que viu, me chama — te explico como funciona a publicação definitiva no seu domínio e tiro qualquer dúvida.</p>
     <a class="btn" href="https://wa.me/__WHATSAPP__?text=Oi%2C%20__AUTOR_URL__!%20Vi%20a%20nova%20vers%C3%A3o%20do%20meu%20site%20e%20quero%20conversar." target="_blank" rel="noopener">Conversar no WhatsApp</a>
@@ -75,19 +87,5 @@ function ver(q){
   document.getElementById('urlLabel').textContent=(q==='antes'?a.dataset.src:d.src);
 }
 </script>
-<!--
-PLACEHOLDERS (substituir todos antes de publicar):
-__NOME_CLIENTE__   nome do profissional/negócio (ex.: Gianluca Fernandes)
-__AUTOR__          nome do usuário (config assinatura.nome)
-__AUTOR_URL__      nome do usuário URL-encoded para o texto do wa.me
-__APRESENTACAO__   apresentação curta (config assinatura.apresentacao)
-__WHATSAPP__       WhatsApp do USUÁRIO no formato 55DDDNUMERO (config assinatura.whatsapp)
-__URL_NOVA__       URL pública https da página nova (https://dominio/clientes/[slug]/)
-__URL_ANTIGA__     URL do site atual do cliente (com http/https)
-Publicar como proposta.html na MESMA pasta do site novo: [pastaBase]/[slug]/proposta.html
-Nota: alguns sites antigos bloqueiam iframe (X-Frame-Options); o iframe "antes" carrega
-sob demanda — se ficar em branco, trocar __URL_ANTIGA__ por um screenshot do site antigo
-(sites/[slug]/antigo.png publicado junto) usando <img> no lugar do iframe.
--->
 </body>
 </html>

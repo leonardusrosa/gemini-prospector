@@ -11,11 +11,13 @@ prospector-de-sites/          ← esta é a pasta do plugin
 ├── plugin.json               marcador do plugin
 ├── mcp_config.json           define os MCP (CRM + navegador Playwright)
 ├── prospector-mcp.py         servidor MCP do CRM (SQLite)
+├── evolution_client.py       conector seguro Evolution API WhatsApp
+├── outreach_service.py       gerador e orquestrador de outreach multicanal
 ├── skills/                   as 7 skills (SKILL.md)
 │   ├── prospector-setup/
 │   ├── prospeccao-maps/
 │   ├── redesign-premium/
-│   ├── proposta-gmail/
+│   ├── outreach-proposta/    outreach multicanal (WhatsApp + Gmail)
 │   ├── deploy-site/          deploy via GitHub + Vercel
 │   ├── dashboard-leads/
 │   └── contrato-servico/
@@ -58,8 +60,8 @@ Abra a pasta do projeto e diga no chat: **"configurar o prospector"**. A skill `
 1. **"prospecta nutricionistas em São Paulo"** → busca no Google Maps Platform, qualifica (nota alta + site ruim + e-mail) e monta o dashboard.
 2. **"redesenha os 5 melhores"** → redesign premium + editor + comparador antes/depois.
 3. **"publica os redesigns"** → copia para o repositório Git local, faz commit/push para o GitHub, a Vercel publica na hora e o plugin valida o HTTPS público.
-4. **"manda a proposta"** → rascunho anti-spam no Gmail com link da página publicada.
-5. Depois: contrato, e o `dashboard.html` administra tudo (kanban + financeiro).
+4. **"manda a proposta"** → outreach multicanal (WhatsApp via Evolution API ou Gmail) com link da proposta personalizada.
+5. Depois: contrato, e o `dashboard.html` administra tudo (kanban + financeiro + histórico de outreach).
 
 ## Diferenças pra versão Claude
 
@@ -72,7 +74,7 @@ Abra a pasta do projeto e diga no chat: **"configurar o prospector"**. A skill `
 | Navegador | Claude in Chrome | MCP Playwright / plugin Chrome DevTools |
 | Publicação | HostGator / FTP | **GitHub + Vercel** (deploy estático automático) |
 | CRM | MCP stdio | mesmo MCP, no `mcp_config.json` do plugin |
-| E-mail | conector Gmail | plugin/MCP Gmail do Google, ou link de compose |
+| Outreach | E-mail manual | **WhatsApp (Evolution API)** + **Gmail** com revisão humana |
 
 Mesma lógica, mesmos entregáveis. O CRM (`prospector-mcp.py`), o painel e as templates são reaproveitados sem mudança.
 

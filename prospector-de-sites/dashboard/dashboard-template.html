@@ -186,6 +186,15 @@ select.mini{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-
 <label>Observações</label><textarea id="m-obs" rows="2"></textarea>
 <div class="mbot"><button class="cancelar" onclick="fecharEdit()">Cancelar</button><button class="salvar" onclick="salvarEdit()">Salvar</button></div>
 </div></div>
+<div id="outreach-bg" onclick="if(event.target===this)fecharOutreach()" style="position:fixed;inset:0;background:#00000066;display:none;align-items:center;justify-content:center;z-index:55">
+  <div style="background:var(--white);border-radius:16px;padding:22px;width:600px;max-width:94vw;max-height:88vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+      <h2 id="out-modal-title" style="font-family:var(--serif);font-size:18px;margin:0;color:var(--ink)">Proposta & Outreach</h2>
+      <button onclick="fecharOutreach()" style="border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
+    </div>
+    <div id="out-modal-body">Carregando...</div>
+  </div>
+</div>
 <script id="dados" type="application/json">__DADOS__</script>
 <script>
 var D=JSON.parse(document.getElementById('dados').textContent);
@@ -238,7 +247,11 @@ function nav(){
 function pillStatus(s){return '<span class="pill" style="background:color-mix(in srgb,'+CORES[s]+' 18%,white);color:'+CORES[s]+'">'+NOMES[s]+'</span>'}
 function acoes(l){var a=[];
  if(l.siteAntigo)a.push('<a href="'+l.siteAntigo+'" target="_blank">antigo</a>');
- if(l.slug&&['redesenhado','publicado','proposta','respondeu','fechado'].indexOf(l.status)>=0){a.push('<a href="sites/'+l.slug+'/'+l.slug+'.html" target="_blank">página</a>');a.push('<a href="sites/'+l.slug+'/'+l.slug+'-editor.html" target="_blank">editar site</a>')}
+ if(l.slug&&['redesenhado','publicado','proposta','respondeu','fechado'].indexOf(l.status)>=0){
+   a.push('<a href="sites/'+l.slug+'/'+l.slug+'.html" target="_blank">página</a>');
+   a.push('<a href="sites/'+l.slug+'/'+l.slug+'-editor.html" target="_blank">editar site</a>');
+   a.push('<a href="#" onclick="abrirOutreach(\''+l.slug+'\');return false" style="color:var(--accent);font-weight:700">💬 proposta</a>');
+ }
  if(l.urlNova)a.push('<a href="'+l.urlNova+'" target="_blank">no ar ↗</a>');
  if(l.whatsapp)a.push('<a href="https://wa.me/'+l.whatsapp+'" target="_blank">whatsapp</a>');
  if(l.email&&l.email.indexOf('@')>0)a.push('<a href="mailto:'+l.email+'">e-mail</a>');
@@ -277,6 +290,7 @@ function vSites(){var ls=fil().filter(function(l){return['redesenhado','publicad
   if(l.urlNova)ic.push('<a href="'+pg+'" target="_blank" title="versão local">local</a>');
   if(l.whatsapp)ic.push('<a href="https://wa.me/'+l.whatsapp+'" target="_blank">whatsapp</a>');
   if(l.email&&l.email.indexOf('@')>0)ic.push('<a href="mailto:'+l.email+'">e-mail</a>');
+  ic.push('<a href="#" onclick="abrirOutreach(\''+l.slug+'\');return false" style="color:var(--accent);font-weight:700">💬 proposta</a>');
   ic.push('<a href="#" onclick="abrirEdit(\''+l.slug+'\');return false">✎ dados</a>');
   ic.push('<a href="#" class="del" onclick="deletar(\''+l.slug+'\');return false">✕</a>');
   return '<div class="site-card"><div class="prev"><iframe src="'+pg+'" loading="lazy"></iframe></div><div class="info"><div class="s-head"><span class="s-nm">'+l.nome+'</span>'+pillStatus(l.status)+'</div><div class="s-sub">'+[l.nicho,l.cidade,(l.nota?'★ '+l.nota+' ('+l.avaliacoes+')':null)].filter(Boolean).join(' · ')+'</div><div class="s-main">'+prim+'<a class="sec" href="sites/'+l.slug+'/'+l.slug+'-editor.html" target="_blank">Editar site</a></div><div class="s-icons">'+ic.join('')+'</div></div></div>'
@@ -319,7 +333,6 @@ function vConfig(){
  var evoStatusHtml = '';
  if(evoTestRes){
    var canSend = evoTestRes.reachable && evoTestRes.authenticated && evoTestRes.instanceFound && (evoTestRes.connectionState === 'open' || !evoTestRes.connectionStateSupported);
-   
    var sendBoxHtml = '';
    if(canSend){
      sendBoxHtml = '<div style="margin-top:16px;padding:14px;border-radius:10px;border:1px solid var(--line);background:var(--surface)">' +
@@ -359,6 +372,12 @@ function vConfig(){
  }
 
  return '<div class="painel" style="max-width:640px"><h2>Meus dados — quem assina os contratos</h2><p style="font-size:13px;color:var(--muted);margin:0 0 6px">Preencha uma vez e todo contrato gerado pelo /contrato já sai com os seus dados de CONTRATADO(A) completos. Fica salvo no prospector-config.json, no seu computador.</p>'+campos+'<div style="margin-top:18px;display:flex;gap:10px;align-items:center"><button '+(db?'':'disabled')+' onclick="salvarCfg()" style="border:0;border-radius:10px;padding:11px 22px;font-size:13.5px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff">Salvar meus dados</button><span id="cfg-ok" style="color:var(--ok);font-weight:700;font-size:13px;display:none">salvo ✓</span>'+(db?'':'<span style="color:var(--warn);font-size:12.5px;font-weight:600">abra pelo iniciar-dashboard.bat para editar</span>')+'</div></div>'+
+ '<div class="painel" style="max-width:640px"><h2>Outreach — Propostas e Canais</h2><p style="font-size:13px;color:var(--muted);margin:0 0 12px">Configurações de canal prioritário, modo de operação seguro e portfólio público opcional.</p>'+
+ '<div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:10px 0 4px">Prioridade de Canais</label><select id="cfg-out-priority" '+(db?'':'disabled')+' style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;font-family:var(--sans);color:var(--ink);background:var(--surface)"><option value="whatsapp,email" '+(OUTREACH.channelPriority&&OUTREACH.channelPriority[0]==='whatsapp'?'selected':'')+'>1º WhatsApp → 2º Gmail</option><option value="email,whatsapp" '+(OUTREACH.channelPriority&&OUTREACH.channelPriority[0]==='email'?'selected':'')+'>1º Gmail → 2º WhatsApp</option></select></div>'+
+ '<div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:10px 0 4px">Modo de Operação</label><select id="cfg-out-mode" '+(db?'':'disabled')+' style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;font-family:var(--sans);color:var(--ink);background:var(--surface)"><option value="review" '+(OUTREACH.mode!=='send'?'selected':'')+'>Revisão (humano aprova cada envio — recomendado)</option><option value="send" '+(OUTREACH.mode==='send'?'selected':'')+'>Envio (disparo 1 a 1 com confirmação imediata)</option></select></div>'+
+ '<div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:10px 0 4px">URL do Portfólio Público (opcional)</label><input id="cfg-out-portfolio" placeholder="https://meuportfolio.com" value="'+((OUTREACH.portfolioUrl||'').replace(/"/g,'&quot;'))+'" '+(db?'':'disabled')+' style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;font-family:var(--sans);color:var(--ink);background:var(--surface)"></div>'+
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:10px 0 4px">Máx. de Follow-ups</label><input id="cfg-out-maxfu" type="number" min="1" max="3" value="'+(OUTREACH.maxFollowUps||1)+'" '+(db?'':'disabled')+' style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;font-family:var(--sans);color:var(--ink);background:var(--surface)"></div><div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:10px 0 4px">Dias úteis p/ Follow-up</label><input id="cfg-out-fudays" type="number" min="1" max="15" value="'+(OUTREACH.followUpAfterBusinessDays||3)+'" '+(db?'':'disabled')+' style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px;font-family:var(--sans);color:var(--ink);background:var(--surface)"></div></div>'+
+ '<div style="margin-top:18px;display:flex;gap:10px;align-items:center"><button '+(db?'':'disabled')+' onclick="salvarOutreach()" style="border:0;border-radius:10px;padding:11px 22px;font-size:13.5px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff">Salvar Outreach</button><span id="out-ok" style="color:var(--ok);font-weight:700;font-size:13px;display:none">salvo ✓</span></div></div>'+
  '<div class="painel" style="max-width:640px"><h2>Deploy — GitHub + Vercel</h2><p style="font-size:13px;color:var(--muted);margin:0 0 6px">Publicação automática via Git. O Claude comita e faz push no repositório; a Vercel publica na hora. Zero senhas no painel: a autenticação usa o Git do seu computador.</p>'+depCampos+'<div style="margin-top:18px;display:flex;gap:10px;align-items:center"><button '+(db?'':'disabled')+' onclick="salvarDeploy()" style="border:0;border-radius:10px;padding:11px 22px;font-size:13.5px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff">Salvar deploy</button><span id="dep-ok" style="color:var(--ok);font-weight:700;font-size:13px;display:none">salvo ✓</span>'+(db?(DEPLOY.repoPath&&DEPLOY.domain?'<span style="color:var(--ok);font-size:12.5px;font-weight:600">✓ deploy configurado</span>':'<span style="color:var(--warn);font-size:12.5px;font-weight:600">preencha repoPath e domain para publicar</span>'):'<span style="color:var(--warn);font-size:12.5px;font-weight:600">abra pelo iniciar-dashboard.bat para editar</span>')+'</div></div>'+
  '<div class="painel" style="max-width:640px"><h2>Evolution API — Conexão WhatsApp</h2><p style="font-size:13px;color:var(--muted);margin:0 0 10px">Conectividade direta do Python local com a sua instância Evolution API na VPS. A chave de API é protegida e lida da variável de ambiente <code>EVOLUTION_API_KEY</code>.</p>'+
  '<div style="margin-bottom:12px"><label style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer"><input id="evo-enabled" type="checkbox" '+(EVO.enabled?'checked':'')+' '+(db?'':'disabled')+'> Habilitar integração com Evolution API</label></div>'+
@@ -375,6 +394,14 @@ function salvarDeploy(){var body={provider:'vercel-github'};DEPLOY_CAMPOS.forEac
  fetch('/api/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({deploy:body})}).then(function(){DEPLOY=body;var ok=document.getElementById('dep-ok');ok.style.display='inline';setTimeout(function(){ok.style.display='none';render()},1200)})}
 function salvarEvolution(){var body={enabled:document.getElementById('evo-enabled').checked,baseUrl:document.getElementById('evo-baseUrl').value||'',instance:document.getElementById('evo-instance').value||'',apiKeyEnv:'EVOLUTION_API_KEY',timeoutSeconds:15};
  fetch('/api/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({evolution:body})}).then(function(){EVO=Object.assign(EVO,body);var ok=document.getElementById('evo-ok');ok.style.display='inline';setTimeout(function(){ok.style.display='none';render()},1200)})}
+function salvarOutreach(){
+ var prio = (document.getElementById('cfg-out-priority').value||'whatsapp,email').split(',');
+ var mode = document.getElementById('cfg-out-mode').value||'review';
+ var port = document.getElementById('cfg-out-portfolio').value||'';
+ var maxfu = parseInt(document.getElementById('cfg-out-maxfu').value)||1;
+ var fudays = parseInt(document.getElementById('cfg-out-fudays').value)||3;
+ var body = {channelPriority:prio,mode:mode,portfolioUrl:port,maxFollowUps:maxfu,followUpAfterBusinessDays:fudays};
+ fetch('/api/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({outreach:body})}).then(function(){OUTREACH=Object.assign(OUTREACH,body);var ok=document.getElementById('out-ok');ok.style.display='inline';setTimeout(function(){ok.style.display='none';render()},1200)})}
 function testarEvolution(){var b=document.getElementById('evo-baseUrl').value||'',i=document.getElementById('evo-instance').value||'';var ld=document.getElementById('evo-loading');if(ld)ld.style.display='inline';
  fetch('/api/evolution/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({baseUrl:b,instance:i})}).then(function(r){return r.json()}).then(function(res){evoTestRes=res;render()}).catch(function(){evoTestRes={reachable:false,authenticated:false,instanceFound:false,error:'Falha ao comunicar com o servidor local'};render()})}
 function enviarTesteEvolution(){
@@ -387,7 +414,100 @@ function enviarTesteEvolution(){
  var ld=document.getElementById('evo-send-loading');if(ld)ld.style.display='inline';
  fetch('/api/evolution/send-test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({number:num,text:txt,confirmed:conf})}).then(function(r){return r.json()}).then(function(res){evoSendRes=res;render()}).catch(function(){evoSendRes={success:false,error:'Falha na comunicação com o servidor local.'};render()})}
 function ordenar(c){if(c==='x')return;if(sortCol===c)sortAsc=!sortAsc;else{sortCol=c;sortAsc=true}pag=1;render()}
-var cmpSel=null;var DEPLOY={};var EVO={};var evoTestRes=null;var evoSendForm={number:'',text:'Teste de conexão do Prospector via Evolution API.',confirmed:false};var evoSendRes=null;
+var cmpSel=null;var DEPLOY={};var EVO={};var OUTREACH={channelPriority:['whatsapp','email'],mode:'review',portfolioUrl:'',maxFollowUps:1,followUpAfterBusinessDays:3};var evoTestRes=null;var evoSendForm={number:'',text:'Teste de conexão do Prospector via Evolution API.',confirmed:false};var evoSendRes=null;
+var outData=null;var outSlug=null;var outActiveChannel='whatsapp';var outSendRes=null;
+
+function abrirOutreach(slug){
+ outSlug=slug;outData=null;outSendRes=null;
+ document.getElementById('outreach-bg').style.display='flex';
+ document.getElementById('out-modal-body').innerHTML='<div style="padding:20px;text-align:center;color:var(--muted)">Carregando dados da proposta...</div>';
+ fetch('/api/leads/'+encodeURIComponent(slug)+'/outreach').then(function(r){return r.json()}).then(function(data){
+   outData=data;
+   outActiveChannel=data.channels.selectedChannel||'whatsapp';
+   renderOutreachModal();
+ }).catch(function(){
+   document.getElementById('out-modal-body').innerHTML='<div style="color:var(--warn);padding:14px">Falha ao carregar proposta do lead. Abra pelo iniciar-dashboard.bat.</div>';
+ });
+}
+function fecharOutreach(){document.getElementById('outreach-bg').style.display='none';outSlug=null;outData=null}
+function setOutChannel(ch){outActiveChannel=ch;renderOutreachModal()}
+
+function renderOutreachModal(){
+ if(!outData)return;
+ var l=outData.lead, ch=outData.channels, ms=outData.messages, hist=outData.history||[];
+ document.getElementById('out-modal-title').textContent='Proposta & Outreach — '+l.nome;
+ var isWpp=outActiveChannel==='whatsapp';
+ var wppBadge=ch.whatsappAvailable?'<span style="color:var(--ok);font-size:11px;font-weight:700">✓ Disponível</span>':'<span style="color:var(--warn);font-size:11px;font-weight:700">⚠ Indisponível</span>';
+ var mailBadge=ch.emailAvailable?'<span style="color:var(--ok);font-size:11px;font-weight:700">✓ Disponível</span>':'<span style="color:var(--warn);font-size:11px;font-weight:700">⚠ Indisponível</span>';
+ 
+ var destText=isWpp?(ch.whatsappMasked||ch.whatsappNumber||'Número não cadastrado'):(ch.email||'E-mail não cadastrado');
+ var msgText=isWpp?(ms.whatsapp?ms.whatsapp.text:''):(ms.email?ms.email.bodyPlain:'');
+ 
+ var histHtml=hist.length?'<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:12px"><h4 style="font-size:12px;text-transform:uppercase;color:var(--muted);margin:0 0 8px">Histórico de Contatos ('+hist.length+')</h4>'+
+   hist.map(function(h){return '<div style="font-size:12px;padding:6px 0;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between"><span><b>'+h.canal.toUpperCase()+'</b> ('+h.destino+')</span><span style="color:var(--muted)">'+h.criadoEm+' · <span style="color:var(--ok)">'+h.status+'</span></span></div>'}).join('')+'</div>':'';
+
+ document.getElementById('out-modal-body').innerHTML=
+   '<div style="display:flex;gap:8px;margin-bottom:14px">'+
+     '<button onclick="setOutChannel(\'whatsapp\')" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--line);background:'+(isWpp?'var(--ink)':'var(--surface)')+';color:'+(isWpp?'#fff':'var(--ink)')+';font-weight:700;font-size:13px;cursor:pointer">📱 WhatsApp ('+wppBadge+')</button>'+
+     '<button onclick="setOutChannel(\'email\')" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--line);background:'+(!isWpp?'var(--ink)':'var(--surface)')+';color:'+(!isWpp?'#fff':'var(--ink)')+';font-weight:700;font-size:13px;cursor:pointer">✉ E-mail / Gmail ('+mailBadge+')</button>'+
+   '</div>'+
+   '<div style="background:var(--bg);padding:10px 12px;border-radius:8px;font-size:12.5px;margin-bottom:12px;border:1px solid var(--line)">'+
+     '• <b>Destino:</b> '+destText+'<br>'+
+     '• <b>URL da Proposta:</b> <a href="'+ms.proposalUrl+'" target="_blank" style="color:var(--accent-2);font-weight:700">'+ms.proposalUrl+' ↗</a><br>'+
+     '• <b>Recomendação:</b> '+ch.channelReason+
+   '</div>'+
+   (!isWpp&&ms.email?'<div style="margin-bottom:8px"><label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Assunto</label><input id="out-subject" value="'+(ms.email.subject.replace(/"/g,'&quot;'))+'" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;background:var(--surface)"></div>':'')+
+   '<div><label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Mensagem Personalizada</label>'+
+   '<textarea id="out-message-text" rows="7" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:9px;font-size:13px;font-family:var(--sans);background:var(--surface)">'+msgText.replace(/</g,'&lt;')+'</textarea></div>'+
+   '<div style="margin-top:10px"><label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);cursor:pointer">'+
+     '<input id="out-confirm-check" type="checkbox"> Confirmo o envio / registro desta proposta para o lead</label></div>'+
+   '<div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
+     (isWpp?
+       '<button onclick="dispararOutreach(\'whatsapp\')" style="background:var(--accent);color:#fff;border:0;border-radius:9px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer">🚀 Enviar WhatsApp</button>':
+       '<a href="'+(ms.email?ms.email.composeUrl:'#')+'" target="_blank" onclick="dispararOutreach(\'email\')" style="background:var(--accent);color:#fff;text-decoration:none;border-radius:9px;padding:10px 20px;font-size:13px;font-weight:700;display:inline-block">✉ Abrir no Gmail & Registrar</a>')+
+     '<button onclick="fecharOutreach()" style="background:var(--paper);color:var(--ink);border:0;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">Fechar</button>'+
+     '<span id="out-send-loading" style="color:var(--muted);font-size:12.5px;display:none">enviando...</span>'+
+   '</div>'+
+   (outSendRes?('<div style="margin-top:12px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-size:12.5px;line-height:1.5">'+
+     (outSendRes.success?
+       '<span style="color:var(--ok);font-weight:700">✓ Proposta registrada com sucesso!</span><br>• Canal: '+outSendRes.channel+'<br>• Destino: '+outSendRes.destination+(outSendRes.messageId?'<br>• ID: <code>'+outSendRes.messageId+'</code>':'')+
+       '<br>• Status: '+outSendRes.status:
+       '<span style="color:var(--warn);font-weight:700">✗ Falha:</span> '+(outSendRes.error||'Erro'))+'</div>'):'')+
+   histHtml;
+}
+
+function dispararOutreach(canal){
+ var conf=document.getElementById('out-confirm-check')?document.getElementById('out-confirm-check').checked:false;
+ if(!conf){alert('Marque a caixa confirmando o envio da proposta.');return}
+ var msg=document.getElementById('out-message-text')?document.getElementById('out-message-text').value:'';
+ var dest=canal==='whatsapp'?(outData.channels.whatsappNumber||''):(outData.channels.email||'');
+ var ld=document.getElementById('out-send-loading');if(ld)ld.style.display='inline';
+ fetch('/api/leads/'+encodeURIComponent(outSlug)+'/outreach/send',{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({
+     channel:canal,
+     message:msg,
+     destination:dest,
+     proposalUrl:outData.messages.proposalUrl,
+     confirmed:conf
+   })
+ }).then(function(r){return r.json()}).then(function(res){
+   outSendRes=res;
+   if(res.success){
+     fetch('/api/leads/'+encodeURIComponent(outSlug)+'/history').then(function(r){return r.json()}).then(function(h){
+       if(outData)outData.history=h;
+       renderOutreachModal();
+       recarrega();
+     });
+   } else {
+     renderOutreachModal();
+   }
+ }).catch(function(){
+   outSendRes={success:false,error:'Falha na conexão com o servidor local.'};
+   renderOutreachModal();
+ });
+}
 function vComparador(){var ls=fil().filter(function(l){return l.slug&&['redesenhado','publicado','proposta','respondeu','fechado'].indexOf(l.status)>=0});
  if(!ls.length)return '<div class="painel"><div class="vazio">Sem sites redesenhados ainda — rode /redesenhar no Claude e o antes/depois aparece aqui.</div></div>';
  if(!cmpSel||!ls.some(function(l){return l.slug===cmpSel}))cmpSel=ls[0].slug;

@@ -84,4 +84,4 @@ Siga a skill `dashboard-leads` para copiar `dashboard-server.py` + o iniciador e
 ## 7. Encerrar
 
 Confirme os dados salvos e apresente o ciclo de trabalho:
-**prospectar** (skill prospeccao-maps) → **redesenhar** (skill redesign-premium) → **publicar** (skill deploy-site) → **proposta** (skill proposta-gmail), com o `dashboard.html` administrando todo o funil.
+**prospectar** (skill prospeccao-maps) → **redesenhar** (skill redesign-premium) → **publicar** (skill deploy-site) → **outreach / proposta** (skill outreach-proposta), com o `dashboard.html` administrando todo o funil.
