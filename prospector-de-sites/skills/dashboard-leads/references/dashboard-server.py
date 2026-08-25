@@ -137,6 +137,24 @@ class App(SimpleHTTPRequestHandler):
                 res = c.test_connection()
                 return self._json(200, res)
             return self._json(500, {'error': 'Módulo EvolutionClient não encontrado.'})
+        if rota == '/api/evolution/send-test':
+            corpo = self._corpo()
+            if not isinstance(corpo, dict):
+                return self._json(400, {'success': False, 'error': 'Corpo da requisição inválido.'})
+            number = corpo.get('number', '')
+            text = corpo.get('text', '')
+            confirmed = bool(corpo.get('confirmed', False))
+            if not confirmed:
+                return self._json(400, {'success': False, 'error': 'Envio não autorizado. Confirme o checkbox antes de prosseguir.'})
+            if not number:
+                return self._json(400, {'success': False, 'error': 'Número de telefone obrigatório.'})
+            cfg = ler_config()
+            if EvolutionClient:
+                c = EvolutionClient(cfg)
+                res = c.send_test_message(number=number, text=text, confirmed=confirmed)
+                code = 200 if res.get('success') else 400
+                return self._json(code, res)
+            return self._json(500, {'success': False, 'error': 'Módulo EvolutionClient não encontrado.'})
         return self._json(404, {'erro': 'rota'})
     def do_PUT(self):
         rota = self.path.split('?')[0]

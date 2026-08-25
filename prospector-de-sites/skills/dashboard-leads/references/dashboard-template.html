@@ -318,6 +318,34 @@ function vConfig(){
  
  var evoStatusHtml = '';
  if(evoTestRes){
+   var canSend = evoTestRes.reachable && evoTestRes.authenticated && evoTestRes.instanceFound && (evoTestRes.connectionState === 'open' || !evoTestRes.connectionStateSupported);
+   
+   var sendBoxHtml = '';
+   if(canSend){
+     sendBoxHtml = '<div style="margin-top:16px;padding:14px;border-radius:10px;border:1px solid var(--line);background:var(--surface)">' +
+       '<h3 style="margin:0 0 6px;font-size:13.5px;color:var(--ink);font-weight:700">Testar Envio (Manual)</h3>' +
+       '<p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">Dispare uma mensagem de teste para o seu próprio WhatsApp para validar a entrega real pela VPS.</p>' +
+       '<div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:8px 0 4px">Número de teste (com DDI e DDD, ex: 5511999999999)</label>' +
+       '<input id="evo-send-number" placeholder="5511999999999" value="' + ((evoSendForm.number||'').replace(/"/g,'&quot;')) + '" ' + (db?'':'disabled') + ' style="width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:13.5px;font-family:var(--sans);color:var(--ink);background:var(--bg)"></div>' +
+       '<div><label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:8px 0 4px">Mensagem de teste</label>' +
+       '<textarea id="evo-send-text" rows="2" ' + (db?'':'disabled') + ' style="width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:13.5px;font-family:var(--sans);color:var(--ink);background:var(--bg)">' + ((evoSendForm.text||'Teste de conexão do Prospector via Evolution API.').replace(/</g,'&lt;')) + '</textarea></div>' +
+       '<div style="margin-top:10px"><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);cursor:pointer">' +
+       '<input id="evo-send-confirmed" type="checkbox" ' + (evoSendForm.confirmed?'checked':'') + ' ' + (db?'':'disabled') + '> Confirmo que este número é meu e autorizo este envio de teste</label></div>' +
+       '<div style="margin-top:12px;display:flex;gap:10px;align-items:center">' +
+       '<button ' + (db?'':'disabled') + ' onclick="enviarTesteEvolution()" style="border:0;border-radius:9px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff">🚀 Enviar teste</button>' +
+       '<span id="evo-send-loading" style="color:var(--muted);font-size:12.5px;display:none">enviando...</span></div>' +
+       (evoSendRes ? ('<div style="margin-top:12px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-size:12.5px;line-height:1.6">' +
+         (evoSendRes.success ?
+           '<span style="color:var(--ok);font-weight:700">✓ Mensagem enviada com sucesso!</span><br>' +
+           '• Destino: <b>' + (evoSendRes.numberNormalized||'—') + '</b><br>' +
+           '• Instância: ' + (evoSendRes.instance||'—') + '<br>' +
+           '• ID da Mensagem: <code>' + (evoSendRes.messageId||'—') + '</code><br>' +
+           '• Status: ' + (evoSendRes.status||'sent') :
+           '<span style="color:var(--warn);font-weight:700">✗ Falha no envio:</span> ' + (evoSendRes.error || 'Erro desconhecido')) +
+       '</div>') : '') +
+     '</div>';
+   }
+
    evoStatusHtml = '<div style="margin-top:14px;padding:12px 14px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:13px;line-height:1.6">' +
      '<b>Resultado da checagem:</b><br>' +
      '• API Alcançável: ' + (evoTestRes.reachable ? '<span style="color:var(--ok);font-weight:700">✓ Sim</span>' : '<span style="color:var(--warn);font-weight:700">✗ Não</span>') + '<br>' +
@@ -326,6 +354,7 @@ function vConfig(){
      '• Conexão WhatsApp: ' + (evoTestRes.connectionState ? '<span style="color:var(--ok);font-weight:700">' + evoTestRes.connectionState + '</span>' : (evoTestRes.connectionStateSupported ? '—' : '<span style="color:var(--muted)">Rota connectionState não suportada (ignorado)</span>')) +
      (evoTestRes.warning ? '<div style="margin-top:6px;color:var(--warn);font-size:12.5px">⚠ ' + evoTestRes.warning + '</div>' : '') +
      (evoTestRes.error ? '<div style="margin-top:6px;color:var(--warn);font-weight:700;font-size:12.5px">Erro: ' + evoTestRes.error + '</div>' : '') +
+     sendBoxHtml +
    '</div>';
  }
 
@@ -348,8 +377,17 @@ function salvarEvolution(){var body={enabled:document.getElementById('evo-enable
  fetch('/api/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({evolution:body})}).then(function(){EVO=Object.assign(EVO,body);var ok=document.getElementById('evo-ok');ok.style.display='inline';setTimeout(function(){ok.style.display='none';render()},1200)})}
 function testarEvolution(){var b=document.getElementById('evo-baseUrl').value||'',i=document.getElementById('evo-instance').value||'';var ld=document.getElementById('evo-loading');if(ld)ld.style.display='inline';
  fetch('/api/evolution/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({baseUrl:b,instance:i})}).then(function(r){return r.json()}).then(function(res){evoTestRes=res;render()}).catch(function(){evoTestRes={reachable:false,authenticated:false,instanceFound:false,error:'Falha ao comunicar com o servidor local'};render()})}
+function enviarTesteEvolution(){
+ var num=document.getElementById('evo-send-number')?document.getElementById('evo-send-number').value:'';
+ var txt=document.getElementById('evo-send-text')?document.getElementById('evo-send-text').value:'';
+ var conf=document.getElementById('evo-send-confirmed')?document.getElementById('evo-send-confirmed').checked:false;
+ evoSendForm={number:num,text:txt,confirmed:conf};
+ if(!conf){evoSendRes={success:false,error:'Marque o checkbox autorizando o envio de teste para o seu número.'};render();return}
+ if(!num.trim()){evoSendRes={success:false,error:'Informe o número de telefone de destino com DDI e DDD (ex: 5511999999999).'};render();return}
+ var ld=document.getElementById('evo-send-loading');if(ld)ld.style.display='inline';
+ fetch('/api/evolution/send-test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({number:num,text:txt,confirmed:conf})}).then(function(r){return r.json()}).then(function(res){evoSendRes=res;render()}).catch(function(){evoSendRes={success:false,error:'Falha na comunicação com o servidor local.'};render()})}
 function ordenar(c){if(c==='x')return;if(sortCol===c)sortAsc=!sortAsc;else{sortCol=c;sortAsc=true}pag=1;render()}
-var cmpSel=null;var DEPLOY={};var EVO={};var evoTestRes=null;
+var cmpSel=null;var DEPLOY={};var EVO={};var evoTestRes=null;var evoSendForm={number:'',text:'Teste de conexão do Prospector via Evolution API.',confirmed:false};var evoSendRes=null;
 function vComparador(){var ls=fil().filter(function(l){return l.slug&&['redesenhado','publicado','proposta','respondeu','fechado'].indexOf(l.status)>=0});
  if(!ls.length)return '<div class="painel"><div class="vazio">Sem sites redesenhados ainda — rode /redesenhar no Claude e o antes/depois aparece aqui.</div></div>';
  if(!cmpSel||!ls.some(function(l){return l.slug===cmpSel}))cmpSel=ls[0].slug;
