@@ -11,6 +11,23 @@ os.chdir(PASTA)
 DB = os.path.join(PASTA, 'prospector.db')
 CONFIG = os.path.join(PASTA, 'prospector-config.json')
 
+# Carrega variáveis de ambiente persistidas no registro do Windows se ausentes no processo atual
+if sys.platform == 'win32':
+    try:
+        import winreg
+        _k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Environment')
+        for _v in ['EVOLUTION_API_KEY', 'EVOLUTION_API_URL', 'EVOLUTION_INSTANCE']:
+            if _v not in os.environ:
+                try:
+                    _val, _ = winreg.QueryValueEx(_k, _v)
+                    if _val:
+                        os.environ[_v] = str(_val)
+                except FileNotFoundError:
+                    pass
+        winreg.CloseKey(_k)
+    except Exception:
+        pass
+
 # Importação do cliente Evolution
 sys.path.insert(0, PASTA)
 sys.path.insert(0, os.path.join(PASTA, 'prospector-de-sites'))
@@ -102,11 +119,11 @@ class App(SimpleHTTPRequestHandler):
             if EvolutionClient:
                 c = EvolutionClient(cfg)
                 return self._json(200, {
-                    'enabled': c.enabled,
+                    'configured': c.is_configured(),
+                    'hasApiKey': c.has_api_key(),
                     'baseUrl': c.base_url,
                     'instance': c.instance,
-                    'hasApiKey': c.has_api_key(),
-                    'isConfigured': c.is_configured(),
+                    'enabled': c.enabled,
                     'apiKeyEnv': c.api_key_env
                 })
             return self._json(200, {'configured': False, 'hasApiKey': False, 'error': 'EvolutionClient indisponível'})
@@ -182,7 +199,6 @@ class App(SimpleHTTPRequestHandler):
                     for k in ['enabled', 'baseUrl', 'instance', 'apiKeyEnv', 'timeoutSeconds']:
                         if k in corpo['evolution']:
                             evo[k] = corpo['evolution'][k]
-                    # Garante que NUNCA salva a chave de API no arquivo
                     evo.pop('apiKey', None)
                     evo.pop('key', None)
                     evo.pop('senha', None)
