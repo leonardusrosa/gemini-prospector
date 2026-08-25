@@ -62,10 +62,18 @@ class App(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.split('?')[0] == '/api/config':
             cfg = ler_config()
-            hg = dict(cfg.get('hostgator', {}))
-            hg['senhaDefinida'] = bool(hg.get('senha'))
-            hg.pop('senha', None)  # a senha NUNCA sai do arquivo
-            return self._json(200, {'contratante': cfg.get('contratante', {}), 'hostgator': hg})
+            deploy = dict(cfg.get('deploy', {}))
+            if not deploy and 'hostgator' in cfg:
+                hg = cfg.get('hostgator', {})
+                deploy = {
+                    'provider': 'vercel-github',
+                    'repoPath': '',
+                    'githubRepo': '',
+                    'branch': 'main',
+                    'basePath': hg.get('pastaBase', 'clientes'),
+                    'domain': hg.get('dominio', '')
+                }
+            return self._json(200, {'contratante': cfg.get('contratante', {}), 'deploy': deploy})
         if self.path.split('?')[0] == '/api/leads':
             c = conexao(); c.row_factory = sqlite3.Row
             rows = [dict(r) for r in c.execute('SELECT * FROM leads').fetchall()]; c.close()
@@ -83,18 +91,23 @@ class App(SimpleHTTPRequestHandler):
     def do_PUT(self):
         if self.path.split('?')[0] == '/api/config':
             cfg = ler_config(); corpo = self._corpo()
-            if 'contratante' in corpo or 'hostgator' in corpo:
+            if 'contratante' in corpo or 'deploy' in corpo or 'hostgator' in corpo:
                 if 'contratante' in corpo:
                     ct = cfg.get('contratante', {})
                     ct.update({k: v for k, v in corpo['contratante'].items() if isinstance(v, str)})
                     cfg['contratante'] = ct
-                if 'hostgator' in corpo:
-                    hg = cfg.get('hostgator', {})
-                    for k, v in corpo['hostgator'].items():
-                        if not isinstance(v, str): continue
-                        if k == 'senha' and v == '': continue  # em branco = mantém a atual
-                        hg[k] = v
-                    cfg['hostgator'] = hg
+                if 'deploy' in corpo:
+                    dep = cfg.get('deploy', {})
+                    for k, v in corpo['deploy'].items():
+                        if isinstance(v, str):
+                            dep[k] = v
+                    cfg['deploy'] = dep
+                    cfg.pop('hostgator', None)
+                elif 'hostgator' in corpo:
+                    dep = cfg.get('deploy', {})
+                    dep['domain'] = corpo['hostgator'].get('dominio', dep.get('domain', ''))
+                    dep['basePath'] = corpo['hostgator'].get('pastaBase', dep.get('basePath', 'clientes'))
+                    cfg['deploy'] = dep
             else:  # compatibilidade: corpo plano = contratante
                 ct = cfg.get('contratante', {})
                 ct.update({k: v for k, v in corpo.items() if isinstance(v, str)})

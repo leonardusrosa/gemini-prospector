@@ -3,9 +3,9 @@
     "prospector-crm": {
       "command": "python",
       "args": [
-        "C:/Users/SEU_USUARIO/.gemini/config/plugins/prospector-de-sites/prospector-mcp.py",
+        "C:/Users/leo_b/.gemini/config/plugins/prospector-de-sites/prospector-mcp.py",
         "--pasta",
-        "C:/CAMINHO/DA/PASTA/DO/PROJETO"
+        "e:/Antigravity/prospector"
       ]
     },
     "playwright": {

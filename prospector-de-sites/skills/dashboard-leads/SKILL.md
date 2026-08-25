@@ -1,6 +1,6 @@
 ---
 name: dashboard-leads
-description: Esta skill deve ser usada para criar e ATUALIZAR o dashboard de leads — o painel de controle local (SQLite + página web) onde o usuário administra prospecções, sites, publicações e propostas. Acione sempre que qualquer comando do plugin mudar dados de leads (a skill prospeccao-maps, a skill redesign-premium, a skill deploy-hostgator, a skill proposta-gmail), ou quando o usuário disser "dashboard", "painel", "meus leads", "controle de clientes", "banco de dados de leads".
+description: Esta skill deve ser usada para criar e ATUALIZAR o dashboard de leads — o painel de controle local (SQLite + página web) onde o usuário administra prospecções, sites, publicações e propostas. Acione sempre que qualquer comando do plugin mudar dados de leads (a skill prospeccao-maps, a skill redesign-premium, a skill deploy-site, a skill proposta-gmail), ou quando o usuário disser "dashboard", "painel", "meus leads", "controle de clientes", "banco de dados de leads".
 ---
 
 # Dashboard de leads (SQLite + página local)
@@ -13,9 +13,9 @@ Arquitetura na RAIZ da pasta conectada:
 
 ## Setup (uma vez, no a configuração inicial (skill prospector-setup) ou no primeiro uso)
 
-1. Copie `references/dashboard-server.py` e `references/iniciar-dashboard.bat` desta skill para a raiz da pasta conectada.
+1. Copie `dashboard-server.py` e `iniciar-dashboard.bat` para a raiz da pasta conectada.
 2. Crie o `prospector.db` com o schema abaixo (via python3/sqlite3 no bash).
-3. Gere o `dashboard.html` a partir de `references/dashboard-template.html` substituindo `__DADOS__` pelo snapshot JSON.
+3. Gere o `dashboard.html` a partir de `dashboard-template.html` substituindo `__DADOS__` pelo snapshot JSON.
 4. Diga ao usuário: "duplo clique em `iniciar-dashboard.bat` abre o painel com o banco conectado" (requer Python instalado no Windows — se não tiver, o dashboard.html funciona no modo arquivo).
 
 ## Schema do banco
@@ -34,17 +34,15 @@ Status: `novo | redesenhado | publicado | proposta | respondeu | fechado | desca
 
 ## Como os comandos atualizam (SEMPRE os 2 passos)
 
-1. **Upsert no banco** via bash (exemplo):
-```bash
-python3 - <<'EOF'
+1. **Upsert no banco** via Python/SQLite (exemplo):
+```python
 import sqlite3
-c = sqlite3.connect('CAMINHO/prospector.db')
+c = sqlite3.connect('prospector.db')
 c.execute("INSERT INTO leads (slug,nome,status,...) VALUES (?,?,?,...) ON CONFLICT(slug) DO UPDATE SET status=excluded.status, atualizado=datetime('now','localtime')", (...))
 c.commit()
-EOF
 ```
    - `a skill prospeccao-maps` → insere leads (`novo`) e descartados (`descartado`, motivo em `obs`). NUNCA sobrescreva um lead cujo status já avançou.
-   - `a skill redesign-premium` → `status='redesenhado'` · `a skill deploy-hostgator` → `status='publicado'`, `urlNova` · `a skill proposta-gmail` → `status='proposta'`, `dataProposta`.
+   - `a skill redesign-premium` → `status='redesenhado'` · `a skill deploy-site` → `status='publicado'`, `urlNova` · `a skill proposta-gmail` → `status='proposta'`, `dataProposta`.
    - Usuário conta que respondeu/fechou → `status='respondeu'|'fechado'`, `valor` (+ `manutencao` se houver mensalidade).
    - `a skill contrato-servico` → `contratoStatus='enviado'` + `contratoEm`. Cliente assinou → `contratoStatus='assinado'`. Pagamento recebido → `pago=1`.
 2. **Regenerar o snapshot**: leia todos os leads do banco e regrave `dashboard.html` do template com o JSON embutido atualizado (`{"atualizado": "...", "leads": [...]}`) — é o fallback para quem abre sem servidor.

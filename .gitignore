@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local CRM database & personal configs
+prospector.db
+prospector-config.json
+prospector-config.backup.json
+
+# Local runtime snapshots & logs
+dashboard.html
+dashboard-server.py
+dashboard-template.html
+iniciar-dashboard.bat
+iniciar-dashboard.command
+sites/
+.agents/
