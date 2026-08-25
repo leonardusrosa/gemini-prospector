@@ -22,7 +22,8 @@ DB = os.path.join(PASTA, 'prospector.db')
 
 CAMPOS = ['slug','nome','nicho','cidade','nota','avaliacoes','email','telefone','whatsapp',
           'siteAntigo','motivo','status','urlNova','dataProposta','valor','obs',
-          'contratoStatus','contratoEm','manutencao','pago','docCliente','endCliente']
+          'contratoStatus','contratoEm','manutencao','pago','docCliente','endCliente',
+          'websiteStatus','siteMode']
 STATUS_VALIDOS = ['novo','redesenhado','publicado','proposta','respondeu','fechado','descartado']
 
 def conexao():
@@ -33,7 +34,11 @@ def conexao():
         motivo TEXT, status TEXT DEFAULT 'novo', urlNova TEXT, dataProposta TEXT,
         valor REAL, obs TEXT, contratoStatus TEXT DEFAULT 'pendente', contratoEm TEXT,
         manutencao REAL, pago INTEGER DEFAULT 0, docCliente TEXT, endCliente TEXT,
+        websiteStatus TEXT DEFAULT 'existing_weak', siteMode TEXT DEFAULT 'redesign',
         atualizado TEXT)''')
+    for col, tipo in [('contratoStatus',"TEXT DEFAULT 'pendente'"),('contratoEm','TEXT'),('manutencao','REAL'),('pago','INTEGER DEFAULT 0'),('docCliente','TEXT'),('endCliente','TEXT'),('websiteStatus',"TEXT DEFAULT 'existing_weak'"),('siteMode',"TEXT DEFAULT 'redesign'")]:
+        try: c.execute('ALTER TABLE leads ADD COLUMN %s %s' % (col, tipo))
+        except sqlite3.OperationalError: pass
     c.execute('''CREATE TABLE IF NOT EXISTS outreach_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL, canal TEXT NOT NULL,
         destino TEXT, tipo TEXT DEFAULT 'proposta', mensagem TEXT, urlProposta TEXT,

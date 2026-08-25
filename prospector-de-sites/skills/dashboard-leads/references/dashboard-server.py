@@ -48,7 +48,8 @@ def ler_config():
 PORTA = 8765
 CAMPOS = ['slug','nome','nicho','cidade','nota','avaliacoes','email','telefone','whatsapp',
           'siteAntigo','motivo','status','urlNova','dataProposta','valor','obs',
-          'contratoStatus','contratoEm','manutencao','pago','docCliente','endCliente']
+          'contratoStatus','contratoEm','manutencao','pago','docCliente','endCliente',
+          'websiteStatus','siteMode']
 
 def conexao():
     c = sqlite3.connect(DB)
@@ -57,8 +58,9 @@ def conexao():
         email TEXT, telefone TEXT, whatsapp TEXT, siteAntigo TEXT, motivo TEXT,
         status TEXT DEFAULT 'novo', urlNova TEXT, dataProposta TEXT, valor REAL, obs TEXT,
         contratoStatus TEXT DEFAULT 'pendente', contratoEm TEXT, manutencao REAL, pago INTEGER DEFAULT 0,
+        docCliente TEXT, endCliente TEXT, websiteStatus TEXT DEFAULT 'existing_weak', siteMode TEXT DEFAULT 'redesign',
         atualizado TEXT DEFAULT (datetime('now','localtime')))''')
-    for col, tipo in [('contratoStatus',"TEXT DEFAULT 'pendente'"),('contratoEm','TEXT'),('manutencao','REAL'),('pago','INTEGER DEFAULT 0'),('docCliente','TEXT'),('endCliente','TEXT')]:
+    for col, tipo in [('contratoStatus',"TEXT DEFAULT 'pendente'"),('contratoEm','TEXT'),('manutencao','REAL'),('pago','INTEGER DEFAULT 0'),('docCliente','TEXT'),('endCliente','TEXT'),('websiteStatus',"TEXT DEFAULT 'existing_weak'"),('siteMode',"TEXT DEFAULT 'redesign'")]:
         try: c.execute('ALTER TABLE leads ADD COLUMN %s %s' % (col, tipo))
         except sqlite3.OperationalError: pass
     c.execute('''CREATE TABLE IF NOT EXISTS outreach_history (

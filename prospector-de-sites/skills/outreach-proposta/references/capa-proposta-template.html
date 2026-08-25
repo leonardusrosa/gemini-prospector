@@ -49,20 +49,17 @@
 <div class="wrap">
   <header>
     <div class="kicker">Preparado especialmente para</div>
-    <h1>__NOME_CLIENTE__, esta é a <em>nova versão</em> do seu site</h1>
-    <p class="sub">Já está no ar, em caráter de demonstração. Compare com a versão atual usando os botões abaixo — abra também no celular.</p>
+    <h1>__TITULO_PROPOSTA__</h1>
+    <p class="sub">__SUBTITULO_PROPOSTA__</p>
     <div class="autor">Feito por <b>__AUTOR__</b> · __APRESENTACAO__</div>
   </header>
 </div>
 <div class="stage">
-  <div class="toggle">
-    <button id="bAntes" onclick="ver('antes')">Site atual</button>
-    <button id="bDepois" class="on" onclick="ver('depois')">Nova versão</button>
-  </div>
+  __TOGGLE_HTML__
   <div class="frame">
     <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span id="urlLabel">__URL_NOVA__</span></div>
     <iframe id="fDepois" src="__URL_NOVA__" title="Nova versão"></iframe>
-    <iframe id="fAntes" data-src="__URL_ANTIGA__" class="hide" title="Site atual"></iframe>
+    <iframe id="fAntes" data-src="__URL_ANTIGA__" class="hide" title="Presença atual"></iframe>
   </div>
 </div>
 <div class="wrap">

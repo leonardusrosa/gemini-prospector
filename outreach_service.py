@@ -98,6 +98,34 @@ def resolve_channels(lead: Dict[str, Any], config: Dict[str, Any], evo_status: O
     }
 
 
+SOCIAL_OR_DIRECTORY_DOMAINS = [
+    "instagram.com", "facebook.com", "fb.com", "linktr.ee", "linktree.com",
+    "wa.me", "api.whatsapp.com", "whatsapp.com", "google.com/maps", "maps.google.com",
+    "doctoralia.com.br", "localtreino.com.br", "ifood.com.br", "tripadvisor.com"
+]
+
+
+def classify_website(raw_url: Optional[str]) -> Tuple[str, str]:
+    """
+    Classifica o status do site e o modo de geração do lead.
+    Retorna (website_status, site_mode).
+    Valores possíveis:
+      website_status: 'existing_weak' | 'none' | 'healthy' | 'unknown'
+      site_mode: 'redesign' | 'new_site_concept' | 'none'
+    """
+    if not raw_url or not isinstance(raw_url, str) or not raw_url.strip():
+        return "none", "new_site_concept"
+
+    clean_url = raw_url.strip().lower()
+    if any(domain in clean_url for domain in SOCIAL_OR_DIRECTORY_DOMAINS):
+        return "none", "new_site_concept"
+
+    if clean_url.startswith("http://") or clean_url.startswith("https://") or "." in clean_url:
+        return "existing_weak", "redesign"
+
+    return "unknown", "none"
+
+
 def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
     """Gera mensagens hiperpersonalizadas estritamente baseadas em dados factuais do lead."""
     nome_lead = (lead.get("nome") or "Profissional").strip()
@@ -107,6 +135,15 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
     avaliacoes = lead.get("avaliacoes")
     site_antigo = (lead.get("siteAntigo") or "").strip()
     motivo = (lead.get("motivo") or "").strip()
+
+    site_mode = lead.get("siteMode")
+    website_status = lead.get("websiteStatus")
+    if not site_mode or not website_status:
+        st, md = classify_website(site_antigo)
+        website_status = website_status or st
+        site_mode = site_mode or md
+
+    is_new_site = (site_mode == "new_site_concept") or (website_status == "none") or not site_antigo
 
     assinatura = config.get("assinatura", {})
     autor = assinatura.get("nome", "").strip() or "Especialista em Web"
@@ -124,25 +161,54 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
     elif nicho:
         contexto_prova = f"Acompanho o trabalho de referência de vocês na área de {nicho}."
 
-    obs_site = "Notei que a página atual tem muito potencial de melhoria na leitura pelo celular e no agendamento direto."
-    if motivo:
-        obs_site = f"Notei que no site atual {motivo.lower()}."
+    if is_new_site:
+        wpp_text = (
+            f"{saudacao}\n\n"
+            f"{contexto_prova} Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, tomei a liberdade de preparar um conceito exclusivo para demonstração:\n"
+            f"{proposal_url}\n\n"
+            f"Dá uma olhada quando puder (abre muito bem no celular). Me conta o que achou!\n\n"
+            f"— {autor}"
+        ).strip()
+        
+        assunto = f"{nome_lead}, uma ideia de site próprio para o seu negócio"
+        if len(assunto) > 60:
+            assunto = f"Conceito de site para a {nome_lead[:35]}"
 
-    wpp_text = (
-        f"{saudacao}\n\n"
-        f"{contexto_prova} {obs_site}\n\n"
-        f"Por conta disso, tomei a liberdade de preparar um conceito novo e mais moderno para vocês, que já deixei publicado para demonstração:\n"
-        f"{proposal_url}\n\n"
-        f"Dá uma olhada quando puder (abre muito bem no celular). Me conta o que achou!\n\n"
-        f"— {autor}"
-    ).strip()
+        email_body_html = f"""<p>Olá, {nome_lead},</p>
 
-    # 2. Mensagem de E-mail (~120-180 palavras, assunto pessoal ≤ 60 caracteres)
-    assunto = f"{nome_lead}, posso te mostrar uma ideia para o site?"
-    if len(assunto) > 60:
-        assunto = f"Uma nova ideia para a {nome_lead[:35]}"
+<p>{contexto_prova or 'Encontrei o negócio de vocês enquanto pesquisava referências na sua área.'}</p>
 
-    email_body_html = f"""<p>Olá, {nome_lead},</p>
+<p>Notei que o negócio ainda não conta com uma página web oficial própria para centralizar informações, localização e facilitar o agendamento direto de novos clientes.</p>
+
+<p>Para ilustrar na prática como uma presença digital profissional pode valorizar o trabalho de vocês, montei uma proposta de site completa e deixei no ar para demonstração:</p>
+
+<p><a href="{proposal_url}">{proposal_url}</a></p>
+
+<p>A página fica disponível para você avaliar com calma no computador ou no celular. Se gostar da ideia, fico à disposição para conversarmos sem qualquer compromisso.</p>
+
+<p>Um abraço,<br>
+<b>{autor}</b><br>
+{apresentacao}<br>
+{wpp_autor and f'WhatsApp: {wpp_autor}' or ''}</p>"""
+    else:
+        obs_site = "Notei que a página atual tem muito potencial de melhoria na leitura pelo celular e no agendamento direto."
+        if motivo:
+            obs_site = f"Notei que no site atual {motivo.lower()}."
+
+        wpp_text = (
+            f"{saudacao}\n\n"
+            f"{contexto_prova} {obs_site}\n\n"
+            f"Por conta disso, tomei a liberdade de preparar um conceito novo e mais moderno para vocês, que já deixei publicado para demonstração:\n"
+            f"{proposal_url}\n\n"
+            f"Dá uma olhada quando puder (abre muito bem no celular). Me conta o que achou!\n\n"
+            f"— {autor}"
+        ).strip()
+
+        assunto = f"{nome_lead}, posso te mostrar uma ideia para o site?"
+        if len(assunto) > 60:
+            assunto = f"Uma nova ideia para a {nome_lead[:35]}"
+
+        email_body_html = f"""<p>Olá, {nome_lead},</p>
 
 <p>{contexto_prova or 'Encontrei o negócio de vocês enquanto pesquisava referências na sua área.'}</p>
 

@@ -49,20 +49,26 @@ E-mail confirmado cadastrado?
 
 ### A. WhatsApp (Curto, Conversacional e Direto)
 - **Tamanho**: ~60 a 110 palavras.
-- **Estrutura**:
+- **Estrutura para Redesign (`siteMode = 'redesign'`)**:
   1. Saudação natural pelo nome real do profissional/empresa.
   2. Observação específica e respeitosa sobre o site existente (ex.: leitura no celular).
   3. Informar que preparou e publicou um conceito novo demonstrativo.
   4. **1 único link**: a página da proposta (`https://[domain]/[basePath]/[slug]/proposta.html`).
   5. CTA leve: dar uma olhada e dizer o que achou.
-- **Restrições**: Sem emojis por padrão, sem formatação agressiva de marketing, sem anexos.
+- **Estrutura para Novo Site (`siteMode = 'new_site_concept'`)**:
+  1. Saudação natural pelo nome real.
+  2. Elogio factual ao destaque no Google Maps (nota/avaliações reais).
+  3. Observação de que não encontrou site oficial do negócio para agendamento direto.
+  4. Informar que preparou um conceito exclusivo de site próprio no ar para demonstração.
+  5. **1 único link**: a página da proposta.
+- **Restrições**: Sem emojis por padrão, sem formatação agressiva de marketing, sem anexos. **NUNCA dizer "redesenhei seu site" para leads sem site.**
 
 ### B. E-mail / Gmail (Rapport, Prova e Respeito)
 - **Tamanho**: ~120 a 180 palavras.
-- **Assunto**: Pergunta pessoal ≤ 60 caracteres sem cara de marketing (ex.: `Dr. [Nome], posso te mostrar uma ideia para o site da [Clínica]?`).
+- **Assunto**: Pergunta pessoal ≤ 60 caracteres sem cara de marketing (ex.: `[Nome], uma ideia de site próprio para a [Clínica]` para novo site, ou `[Nome], posso te mostrar uma ideia para o site?` para redesign).
 - **Estrutura**:
   1. Rapport inicial com elogio específico (nota/avaliações reais do Google).
-  2. Observação técnica objetiva do site atual.
+  2. Contextualização honesta (análise do site atual para Redesign OU ausência de site próprio para Novo Site).
   3. Trabalho já executado + 1 link HTML limpo da proposta.
   4. CTA leve e assinatura completa (nome, apresentação, WhatsApp).
 - **Envio**: Criação de rascunho no Gmail via link compose ou conector para revisão humana.
@@ -71,9 +77,9 @@ E-mail confirmado cadastrado?
 
 ## 4. Página-Capa da Proposta (`proposta.html`)
 
-Publicada em `[basePath]/[slug]/proposta.html` junto ao redesign:
-1. Comparador antes/depois interativo.
-2. **O que foi repensado**: 2 a 4 melhorias reais e factuais (ex.: hierarquia mobile, agendamento rápido, clareza dos serviços).
+Publicada em `[basePath]/[slug]/proposta.html` junto à página gerada:
+1. **Para Redesign**: Comparador antes/depois interativo (`Site atual` vs `Nova versão`) + seção **O que foi repensado** (2 a 4 melhorias reais).
+2. **Para Novo Site**: Apresentação contextual da presença atual vs conceito (`Presença atual` vs `Conceito de site`) + seção **O que este conceito organiza** (centralização de informações, contato ágil, agendamento, mobile).
 3. **Sobre quem preparou**: breve apresentação do autor e link para portfólio (`outreach.portfolioUrl`) apenas se configurado.
 
 ---

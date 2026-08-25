@@ -182,6 +182,7 @@ select.mini{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-
 <div class="mrow"><div><label>Manutenção mensal (R$)</label><input id="m-manutencao" type="number" step="10"></div><div><label>Pagamento recebido?</label><select id="m-pago"><option value="0">Não</option><option value="1">Sim</option></select></div></div>
 <div class="mrow"><div><label>Contrato</label><select id="m-contratoStatus"><option value="pendente">Pendente</option><option value="enviado">Enviado</option><option value="assinado">Assinado</option></select></div><div><label>Data do contrato</label><input id="m-contratoEm" type="date"></div></div>
 <div class="mrow"><div><label>CPF/CNPJ do cliente</label><input id="m-docCliente" placeholder="para o contrato"></div><div><label>Endereço do cliente</label><input id="m-endCliente" placeholder="rua, nº — para o contrato"></div></div>
+<div class="mrow"><div><label>Status do Site</label><select id="m-websiteStatus"><option value="existing_weak">🌐 Site fraco (Redesign)</option><option value="none">＋ Sem site (Novo conceito)</option><option value="healthy">✓ Saudável / Moderno</option><option value="unknown">? Desconhecido</option></select></div><div><label>Modo de Construção</label><select id="m-siteMode"><option value="redesign">Redesign de página</option><option value="new_site_concept">Novo conceito de site</option></select></div></div>
 <label>URL publicada</label><input id="m-urlNova">
 <label>Observações</label><textarea id="m-obs" rows="2"></textarea>
 <div class="mbot"><button class="cancelar" onclick="fecharEdit()">Cancelar</button><button class="salvar" onclick="salvarEdit()">Salvar</button></div>
@@ -207,12 +208,22 @@ fetch('/api/leads',{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return 
 var CORES={novo:'var(--novo)',redesenhado:'var(--rede)',publicado:'var(--pub)',proposta:'var(--prop)',respondeu:'var(--resp)',fechado:'var(--fech)',descartado:'var(--cinza)'};
 var NOMES={novo:'Novo',redesenhado:'Redesenhado',publicado:'Publicado',proposta:'Proposta enviada',respondeu:'Respondeu',fechado:'Fechado',descartado:'Descartado'};
 var ORDEM=['novo','redesenhado','publicado','proposta','respondeu','fechado'];
-var view='geral',busca='',sortCol='nome',sortAsc=true,pag=1,porPag='auto';
+var view='geral',busca='',sortCol='nome',sortAsc=true,pag=1,porPag='auto',filtroModo='todos';
 function pagSize(){if(porPag!=='auto')return porPag;var v=document.getElementById('view');var h=v?v.clientHeight:600;return Math.max(4,Math.floor((h-165)/59))}
 document.getElementById('upd').textContent='atualizado em '+(D.atualizado||'—');
 function dias(iso){if(!iso)return 0;return Math.floor((Date.now()-new Date(iso+'T12:00:00'))/864e5)}
 function ativos(){return fil().filter(function(l){return l.status!=='descartado'})}
-function fil(){var b=busca.toLowerCase();return leads.filter(function(l){return !b||((l.nome||'')+(l.nicho||'')+(l.cidade||'')+(l.status||'')).toLowerCase().indexOf(b)>=0})}
+function fil(){
+  var b=busca.toLowerCase();
+  return leads.filter(function(l){
+    var match=(!b||((l.nome||'')+(l.nicho||'')+(l.cidade||'')+(l.status||'')+(l.obs||'')+(l.motivo||'')).toLowerCase().indexOf(b)>=0);
+    if(!match)return false;
+    var isSem=(l.siteMode==='new_site_concept')||(l.websiteStatus==='none')||(!l.siteAntigo);
+    if(filtroModo==='redesign')return !isSem;
+    if(filtroModo==='new_site_concept')return isSem;
+    return true;
+  });
+}
 function recarrega(){return fetch('/api/leads',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){leads=j;render()})}
 function salvarOv(slug,ch){
  if(MODE==='db'){fetch('/api/leads/'+encodeURIComponent(slug),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(ch)}).then(recarrega);return}
@@ -226,11 +237,13 @@ function abrirEdit(slug){editSlug=slug;var l=leads.filter(function(x){return x.s
  document.getElementById('m-titulo').textContent='Editar — '+(l.nome||slug);
  document.getElementById('m-status').innerHTML=Object.keys(NOMES).map(function(st){return '<option value="'+st+'"'+(l.status===st?' selected':'')+'>'+NOMES[st]+'</option>'}).join('');
  ['nome','email','telefone','whatsapp','cidade','nicho','valor','dataProposta','urlNova','obs','manutencao','contratoEm','docCliente','endCliente'].forEach(function(k){document.getElementById('m-'+k).value=l[k]==null?'':l[k]});
+ document.getElementById('m-websiteStatus').value=l.websiteStatus||(l.siteAntigo?'existing_weak':'none');
+ document.getElementById('m-siteMode').value=l.siteMode||(l.siteAntigo?'redesign':'new_site_concept');
  document.getElementById('m-pago').value=l.pago?1:0;document.getElementById('m-contratoStatus').value=l.contratoStatus||'pendente';
  document.getElementById('modal-bg').classList.add('aberto')}
 function fecharEdit(){document.getElementById('modal-bg').classList.remove('aberto');editSlug=null}
 function salvarEdit(){if(!editSlug)return;var ch={};
- ['nome','email','telefone','whatsapp','cidade','nicho','urlNova','obs','dataProposta','docCliente','endCliente'].forEach(function(k){ch[k]=document.getElementById('m-'+k).value||null});
+ ['nome','email','telefone','whatsapp','cidade','nicho','urlNova','obs','dataProposta','docCliente','endCliente','websiteStatus','siteMode'].forEach(function(k){ch[k]=document.getElementById('m-'+k).value||null});
  ch.status=document.getElementById('m-status').value;
  var v=document.getElementById('m-valor').value;ch.valor=v===''?null:parseFloat(v);
  var mn=document.getElementById('m-manutencao').value;ch.manutencao=mn===''?null:parseFloat(mn);
@@ -259,8 +272,11 @@ function acoes(l){var a=[];
  a.push('<a href="#" class="del" onclick="deletar(\''+l.slug+'\');return false">✕ excluir</a>');
  return '<div class="acoes">'+a.join('')+'</div>'}
 
-function card(l){var f=l.status==='proposta'&&dias(l.dataProposta)>=4?'<span class="tag fup">follow-up '+dias(l.dataProposta)+'d</span>':'';
- return '<div class="card" draggable="true" ondragstart="dragIni(event,\''+l.slug+'\')" ondragend="dragFim(event)" style="--cor:'+CORES[l.status]+'"><div class="nm">'+l.nome+f+'</div><div class="mt">'+(l.nota?'★ '+l.nota+' ('+l.avaliacoes+')':'')+(l.cidade?' · '+l.cidade:'')+'</div>'+(l.motivo?'<div class="motivo">'+l.motivo+'</div>':'')+(l.obs?'<div class="mt">'+l.obs+'</div>':'')+(l.valor?'<div class="valor">R$ '+l.valor.toLocaleString('pt-BR')+(l.manutencao?' <span style="color:var(--muted);font-weight:600;font-size:11px">+ R$ '+l.manutencao.toLocaleString('pt-BR')+'/mês</span>':'')+'</div>':'')+acoes(l)+'</div>'}
+function card(l){
+ var f=l.status==='proposta'&&dias(l.dataProposta)>=4?'<span class="tag fup">follow-up '+dias(l.dataProposta)+'d</span>':'';
+ var isSem=(l.siteMode==='new_site_concept')||(l.websiteStatus==='none')||(!l.siteAntigo);
+ var badgeMode=isSem?'<span class="tag" style="background:var(--ok-soft);color:var(--ok)">＋ Sem site</span>':'<span class="tag" style="background:var(--warn-soft);color:var(--warn)">🌐 Site fraco</span>';
+ return '<div class="card" draggable="true" ondragstart="dragIni(event,\''+l.slug+'\')" ondragend="dragFim(event)" style="--cor:'+CORES[l.status]+'"><div class="nm">'+l.nome+badgeMode+f+'</div><div class="mt">'+(l.nota?'★ '+l.nota+' ('+l.avaliacoes+')':'')+(l.cidade?' · '+l.cidade:'')+'</div>'+(l.motivo?'<div class="motivo">'+l.motivo+'</div>':'')+(l.obs?'<div class="mt">'+l.obs+'</div>':'')+(l.valor?'<div class="valor">R$ '+l.valor.toLocaleString('pt-BR')+(l.manutencao?' <span style="color:var(--muted);font-weight:600;font-size:11px">+ R$ '+l.manutencao.toLocaleString('pt-BR')+'/mês</span>':'')+'</div>':'')+acoes(l)+'</div>'}
 function vGeral(){
  var ls=fil(),at=ativos();
  var props=ls.filter(function(l){return l.status==='proposta'});
@@ -278,7 +294,11 @@ function vPipeline(){var por={};fil().forEach(function(l){(por[l.status]=por[l.s
 function vClientes(){var ls=fil().slice().sort(function(a,b){var x=a[sortCol]||'',y=b[sortCol]||'';return(x<y?-1:x>y?1:0)*(sortAsc?1:-1)});
  var pp=pagSize();var total=ls.length,paginas=Math.max(1,Math.ceil(total/pp));if(pag>paginas)pag=paginas;
  var ini=(pag-1)*pp,fim=Math.min(ini+pp,total);ls=ls.slice(ini,fim);
- return '<div class="painel tab"><div class="twrap"><table><thead><tr>'+[['nome','Cliente'],['nota','Nota'],['avaliacoes','Aval.'],['cidade','Cidade'],['status','Status'],['valor','Valor'],['x','Contato / páginas']].map(function(c){return '<th onclick="ordenar(\''+c[0]+'\')">'+c[1]+(sortCol===c[0]?(sortAsc?' ↑':' ↓'):'')+'</th>'}).join('')+'</tr></thead><tbody>'+ls.map(function(l){return '<tr><td><b>'+l.nome+'</b><div style="color:var(--muted);font-size:11.5px">'+(l.email||'sem e-mail')+'</div></td><td>'+(l.nota?'★ '+l.nota:'—')+'</td><td>'+(l.avaliacoes||'—')+'</td><td>'+(l.cidade||'—')+'</td><td>'+pillStatus(l.status)+'</td><td>'+(l.valor?'R$ '+l.valor.toLocaleString('pt-BR'):'—')+'</td><td>'+acoes(l)+'</td></tr>'}).join('')+'</tbody></table></div><div class="pagin"><span class="info">Mostrando '+(total?ini+1:0)+'–'+fim+' de '+total+' clientes</span><select onchange="mudaPorPag(this.value)"><option value="auto"'+(porPag==='auto'?' selected':'')+'>Auto ('+pp+' / página)</option>'+[10,25,50].map(function(n){return '<option value="'+n+'"'+(porPag===n?' selected':'')+'>'+n+' / página</option>'}).join('')+'</select><button onclick="irPag('+(pag-1)+')"'+(pag<=1?' disabled':'')+'>‹</button>'+Array.apply(null,{length:paginas}).map(function(_,i){return '<button class="'+(pag===i+1?'on':'')+'" onclick="irPag('+(i+1)+')">'+(i+1)+'</button>'}).join('')+'<button onclick="irPag('+(pag+1)+')"'+(pag>=paginas?' disabled':'')+'>›</button></div></div>'}
+ return '<div class="painel tab"><div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Filtrar modo:</span><button onclick="filtroModo=\'todos\';pag=1;render()" style="border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;background:'+(filtroModo==='todos'?'var(--ink)':'var(--surface)')+';color:'+(filtroModo==='todos'?'#fff':'var(--ink)')+'">Todos</button><button onclick="filtroModo=\'redesign\';pag=1;render()" style="border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;background:'+(filtroModo==='redesign'?'var(--ink)':'var(--surface)')+';color:'+(filtroModo==='redesign'?'#fff':'var(--ink)')+'">🌐 Site fraco (Redesign)</button><button onclick="filtroModo=\'new_site_concept\';pag=1;render()" style="border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;background:'+(filtroModo==='new_site_concept'?'var(--ink)':'var(--surface)')+';color:'+(filtroModo==='new_site_concept'?'#fff':'var(--ink)')+'">＋ Sem site (Novo conceito)</button></div><div class="twrap"><table><thead><tr>'+[['nome','Cliente'],['nota','Nota'],['avaliacoes','Aval.'],['cidade','Cidade'],['status','Status'],['valor','Valor'],['x','Contato / páginas']].map(function(c){return '<th onclick="ordenar(\''+c[0]+'\')">'+c[1]+(sortCol===c[0]?(sortAsc?' ↑':' ↓'):'')+'</th>'}).join('')+'</tr></thead><tbody>'+ls.map(function(l){
+  var isSem=(l.siteMode==='new_site_concept')||(l.websiteStatus==='none')||(!l.siteAntigo);
+  var badgeMode=isSem?'<span class="tag" style="background:var(--ok-soft);color:var(--ok)">＋ Sem site</span>':'<span class="tag" style="background:var(--warn-soft);color:var(--warn)">🌐 Site fraco</span>';
+  return '<tr><td><b>'+l.nome+'</b> '+badgeMode+'<div style="color:var(--muted);font-size:11.5px">'+(l.email||'sem e-mail')+'</div></td><td>'+(l.nota?'★ '+l.nota:'—')+'</td><td>'+(l.avaliacoes||'—')+'</td><td>'+(l.cidade||'—')+'</td><td>'+pillStatus(l.status)+'</td><td>'+(l.valor?'R$ '+l.valor.toLocaleString('pt-BR'):'—')+'</td><td>'+acoes(l)+'</td></tr>'
+ }).join('')+'</tbody></table></div><div class="pagin"><span class="info">Mostrando '+(total?ini+1:0)+'–'+fim+' de '+total+' clientes</span><select onchange="mudaPorPag(this.value)"><option value="auto"'+(porPag==='auto'?' selected':'')+'>Auto ('+pp+' / página)</option>'+[10,25,50].map(function(n){return '<option value="'+n+'"'+(porPag===n?' selected':'')+'>'+n+' / página</option>'}).join('')+'</select><button onclick="irPag('+(pag-1)+')"'+(pag<=1?' disabled':'')+'>‹</button>'+Array.apply(null,{length:paginas}).map(function(_,i){return '<button class="'+(pag===i+1?'on':'')+'" onclick="irPag('+(i+1)+')">'+(i+1)+'</button>'}).join('')+'<button onclick="irPag('+(pag+1)+')"'+(pag>=paginas?' disabled':'')+'>›</button></div></div>'}
 function irPag(n){pag=n;render()}
 function mudaPorPag(v){porPag=v==='auto'?'auto':parseInt(v);pag=1;render()}
 function vSites(){var ls=fil().filter(function(l){return['redesenhado','publicado','proposta','respondeu','fechado'].indexOf(l.status)>=0});
@@ -508,16 +528,39 @@ function dispararOutreach(canal){
    renderOutreachModal();
  });
 }
-function vComparador(){var ls=fil().filter(function(l){return l.slug&&['redesenhado','publicado','proposta','respondeu','fechado'].indexOf(l.status)>=0});
- if(!ls.length)return '<div class="painel"><div class="vazio">Sem sites redesenhados ainda — rode /redesenhar no Claude e o antes/depois aparece aqui.</div></div>';
+function vComparador(){
+ var ls=fil().filter(function(l){return l.slug&&['redesenhado','publicado','proposta','respondeu','fechado'].indexOf(l.status)>=0});
+ if(!ls.length)return '<div class="painel"><div class="vazio">Sem sites redesenhados ou conceitos criados ainda — rode /redesenhar e o antes/depois aparece aqui.</div></div>';
  if(!cmpSel||!ls.some(function(l){return l.slug===cmpSel}))cmpSel=ls[0].slug;
  var l=ls.filter(function(x){return x.slug===cmpSel})[0];
+ var isSem=(l.siteMode==='new_site_concept')||(l.websiteStatus==='none')||(!l.siteAntigo);
  var antiga=l.siteAntigo?((l.siteAntigo.indexOf('http')===0?l.siteAntigo:'https://'+l.siteAntigo)):null;
  var nova='sites/'+l.slug+'/'+l.slug+'.html';
- return '<div class="cmp-tabs">'+ls.map(function(x){return '<button class="'+(x.slug===cmpSel?'on':'')+'" onclick="cmpSel=\''+x.slug+'\';render()">'+x.nome+'</button>'}).join('')+'</div>'
- +'<div class="cmp-grid"><div class="cmp-col"><div class="cab antes">Antes — site atual'+(antiga?' · <a href="'+antiga+'" target="_blank" style="color:inherit">abrir ↗</a>':'')+'</div>'+(antiga?'<iframe src="'+antiga+'" loading="lazy"></iframe>':'<div class="vazio" style="padding:30px">Sem URL do site antigo registrada.</div>')+'</div>'
- +'<div class="cmp-col"><div class="cab depois">Depois — nova versão · <a href="'+nova+'" target="_blank" style="color:inherit">abrir ↗</a></div><iframe src="'+nova+'"></iframe></div></div>'
- +'<div style="font-size:11.5px;color:var(--muted);margin-top:8px">Alguns sites antigos bloqueiam visualização embutida — se o lado "Antes" ficar em branco, use o link "abrir ↗".</div>'}
+ var colAntesHtml = '';
+ if(isSem){
+   colAntesHtml = '<div class="cmp-col"><div class="cab antes">Presença Atual — Google Maps / Redes</div><div style="padding:22px;font-size:13.5px;line-height:1.7;color:var(--ink);background:var(--surface)">'+
+     '<h4 style="margin:0 0 10px;font-size:16px;font-weight:700">'+l.nome+'</h4>'+
+     '<p>• <b>Nicho/Categoria:</b> '+(l.nicho||'—')+'<br>'+
+     '• <b>Localização:</b> '+(l.cidade||'—')+'<br>'+
+     '• <b>Google Maps:</b> '+(l.nota?'★ '+l.nota+' ('+l.avaliacoes+' avaliações)':'Sem nota informada')+'<br>'+
+     '• <b>Situação:</b> Sem website oficial próprio cadastrado.<br>'+
+     '• <b>Presença verificada:</b> '+(antiga?'<a href="'+antiga+'" target="_blank" style="color:var(--accent-2)">'+antiga+' ↗</a>':'Perfil no Google Maps')+'</p>'+
+     '<div style="margin-top:14px;padding:12px;border-radius:8px;background:var(--paper);font-size:12px;color:var(--muted)">'+
+       '💡 <i>O conceito de site próprio ao lado centraliza contatos, localização e agendamentos diretos em uma página profissional de alta performance.</i>'+
+     '</div></div></div>';
+ } else {
+   colAntesHtml = '<div class="cmp-col"><div class="cab antes">Antes — site atual'+(antiga?' · <a href="'+antiga+'" target="_blank" style="color:inherit">abrir ↗</a>':'')+'</div>'+(antiga?'<iframe src="'+antiga+'" loading="lazy"></iframe>':'<div class="vazio" style="padding:30px">Sem URL do site antigo registrada.</div>')+'</div>';
+ }
+
+ return '<div class="cmp-tabs">'+ls.map(function(x){
+   var isSemX=(x.siteMode==='new_site_concept')||(x.websiteStatus==='none')||(!x.siteAntigo);
+   var iconX=isSemX?'＋ ':'🌐 ';
+   return '<button class="'+(x.slug===cmpSel?'on':'')+'" onclick="cmpSel=\''+x.slug+'\';render()">'+iconX+x.nome+'</button>';
+ }).join('')+'</div>'
+ +'<div class="cmp-grid">'+colAntesHtml
+ +'<div class="cmp-col"><div class="cab depois">'+(isSem?'Conceito de site oficial':'Depois — nova versão')+' · <a href="'+nova+'" target="_blank" style="color:inherit">abrir ↗</a></div><iframe src="'+nova+'"></iframe></div></div>'
+ +(!isSem?'<div style="font-size:11.5px;color:var(--muted);margin-top:8px">Alguns sites antigos bloqueiam visualização embutida — se o lado "Antes" ficar em branco, use o link "abrir ↗".</div>':'');
+}
 function render(){nav();document.getElementById('view').innerHTML={geral:vGeral,pipeline:vPipeline,clientes:vClientes,sites:vSites,comparador:vComparador,followup:vFollowup,contratos:vContratos,financeiro:vFinanceiro,config:vConfig}[view]()}
 var dragSlug=null;
 function dragIni(e,slug){dragSlug=slug;e.target.classList.add('arrastando');e.dataTransfer.effectAllowed='move'}
