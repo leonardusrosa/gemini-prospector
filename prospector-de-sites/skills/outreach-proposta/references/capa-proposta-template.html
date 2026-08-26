@@ -34,6 +34,11 @@
   .melhorias ul{padding-left:20px;color:var(--muted);font-size:14.5px;line-height:1.7}
   .melhorias li{margin-bottom:6px}
   .melhorias li b{color:var(--ink)}
+  .editor-feature{margin:20px auto 0;max-width:760px;padding:24px 28px;background:var(--card);border:1px solid var(--line);border-radius:14px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start}
+  .editor-feature .icon{width:42px;height:42px;border-radius:10px;background:#f2eee5;display:grid;place-items:center;color:var(--acc);font-weight:800;font-size:18px}
+  .editor-feature h3{font-size:16px;font-weight:750;margin-bottom:5px;color:var(--ink)}
+  .editor-feature p{color:var(--muted);font-size:14.5px;line-height:1.65}
+  .editor-feature small{display:block;color:var(--muted);font-size:12.5px;margin-top:8px}
   .portfolio-box{margin:28px auto 0;max-width:760px;text-align:center;padding:18px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
   .portfolio-box a{color:var(--acc);text-decoration:none;font-weight:600}
   .portfolio-box a:hover{text-decoration:underline}
@@ -43,6 +48,7 @@
   .btn:hover{background:#a94f30}
   .micro{font-size:13px;color:var(--muted);margin-top:10px}
   footer{border-top:1px solid var(--line);padding:22px 0 34px;text-align:center;color:var(--muted);font-size:13px}
+  @media(max-width:600px){.editor-feature{grid-template-columns:1fr}.editor-feature .icon{width:38px;height:38px}}
 </style>
 </head>
 <body>
@@ -64,6 +70,8 @@
 </div>
 <div class="wrap">
   __SECAO_MELHORIAS__
+
+  __SECAO_EDITOR_CLIENTE__
 
   __SECAO_PORTFOLIO__
 
