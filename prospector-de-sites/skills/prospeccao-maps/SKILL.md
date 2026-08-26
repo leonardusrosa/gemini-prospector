@@ -103,3 +103,45 @@ Antes de gerar os sites/redesigns, apresente a lista com distinção nítida de 
 - Contato: WhatsApp +55 11 98888-7777
 - Score de Oportunidade: 88/100
 ```
+
+---
+
+## 7. HARD RULE — Conteúdo do site oficial não termina na homepage
+
+Para leads `existing_weak`, a homepage serve para classificar fraqueza rapidamente, mas **não deve ser tratada como inventário completo de conteúdo/ativos do negócio**.
+
+### Durante qualificação
+
+Se o score de `Disponibilidade de Conteúdo` depender de saber se existem fotos reais, expert bios, serviços ou instalações, faça uma checagem targeted de links internos óbvios antes de concluir que o negócio tem pouco conteúdo.
+
+Priorize links oficiais para:
+
+- serviços/especialidades;
+- sobre/equipe/expert;
+- instalações/gallery;
+- contato/localização.
+
+Não precisa executar o crawl profundo de todo candidato antes de ranking inicial. O objetivo aqui é evitar falso negativo de conteúdo.
+
+### Handoff obrigatório para `redesign-premium`
+
+Quando um lead `existing_weak` for selecionado para redesign, o próximo estágio deve ler:
+
+```text
+redesign-premium/references/first-party-source-crawl.md
+```
+
+e executar o crawl dirigido do domínio oficial antes do Design Read final.
+
+O handoff correto é:
+
+```text
+QUALIFY
+→ official site confirmed
+→ candidate selected for redesign
+→ targeted first-party source-tree crawl
+→ facts/assets + provenance
+→ design
+```
+
+Uma homepage fraca pode esconder ótimas fotos, descrições e credenciais em subpáginas. Não penalize nem redesenhe com evidência incompleta quando essas páginas forem facilmente descobríveis.
