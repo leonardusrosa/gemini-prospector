@@ -8,13 +8,14 @@ import sys
 
 ROOT = Path(__file__).resolve().parent
 SCRIPT = ROOT / "prospector-de-sites" / "create_editor.py"
-PATCHER = ROOT / "prospector-de-sites" / "editor_brand_media_patch.py"
+BRAND_PATCHER = ROOT / "prospector-de-sites" / "editor_brand_media_patch.py"
+PUBLISH_PATCHER = ROOT / "prospector-de-sites" / "editor_publish_patch.py"
 
 if not SCRIPT.exists():
     raise SystemExit(f"Editor generator not found: {SCRIPT}")
 
 # Resolve the editor output before running the canonical generator so we can apply
-# post-generation compatibility fixes without changing the public source HTML.
+# post-generation compatibility/features without changing the public source HTML.
 args = sys.argv[1:]
 source = Path(args[0]) if args else None
 output = None
@@ -28,11 +29,22 @@ if source:
 
 runpy.run_path(str(SCRIPT), run_name="__main__")
 
-if output and output.exists() and PATCHER.exists():
-    spec = importlib.util.spec_from_file_location("prospector_editor_brand_patch", PATCHER)
+
+def load_patch(path: Path, name: str):
+    spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
-        raise SystemExit(f"Could not load editor brand-media patcher: {PATCHER}")
+        raise SystemExit(f"Could not load editor patcher: {path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    return module
+
+
+if output and output.exists() and BRAND_PATCHER.exists():
+    module = load_patch(BRAND_PATCHER, "prospector_editor_brand_patch")
     module.patch_editor(output)
     print(f"Logo/brand media editing enabled in: {output}")
+
+if output and output.exists() and source and PUBLISH_PATCHER.exists():
+    module = load_patch(PUBLISH_PATCHER, "prospector_editor_publish_patch")
+    module.patch_editor(output, source)
+    print(f"Draft/publish workflow enabled in: {output}")
