@@ -54,7 +54,9 @@ function cleanPublicDocument(){
   doc.removeAttribute('data-pe-publish-api');
   var body=doc.querySelector('body');
   if(body)body.classList.remove('pe-editing','pe-previewing');
-  return '<!DOCTYPE html>\n'+doc.outerHTML;
+  var html='<!DOCTYPE html>\n'+doc.outerHTML;
+  html=html.replace(/<!--\s*PROSPECTOR-(?:EDITOR|PUBLISH)-(?:START|END)\s*-->/gi,'');
+  return html;
 }
 function snapshotEditorDocument(){
   var doc=document.documentElement.cloneNode(true);
