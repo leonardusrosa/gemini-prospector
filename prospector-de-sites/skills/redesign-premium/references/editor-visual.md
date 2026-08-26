@@ -18,7 +18,7 @@ Saída padrão:
 sites/[slug]/[slug]-editor.html
 ```
 
-**HARD RULE:** use o wrapper da raiz, não invoque diretamente o gerador interno do plugin em workflows normais. O wrapper executa os compatibility patches do editor, incluindo reconhecimento/prioridade de logo/brand media.
+**HARD RULE:** use o wrapper da raiz, não invoque diretamente o gerador interno do plugin em workflows normais. O wrapper executa os compatibility patches do editor, incluindo reconhecimento/prioridade de logo/brand media e o workflow `Salvar rascunho / Publicar alterações`.
 
 **IMPORTANTE:** arquivos `*-editor.html` já gerados não se atualizam quando o gerador muda. Depois de atualizar o Prospector, regenere o editor a partir do HTML público.
 
@@ -278,12 +278,129 @@ O cliente não recebe edição arbitrária de:
 
 A experiência é um CMS leve de conteúdo, não editor de código.
 
-## Preview e exportação
+## Draft / Preview / Publish / Export — responsabilidades separadas
 
-O editor deve oferecer:
+O editor deve oferecer quatro ações distintas:
 
-- `Pré-visualizar`: permite testar links/comportamentos normalmente
-- `Exportar página`: baixa HTML limpo sem toolbar/painel/runtime do editor
+- **`Salvar rascunho`**: persiste o estado sem alterar o site público. O editor mantém snapshot no navegador e, quando o backend está disponível, também salva um draft server-side.
+- **`Pré-visualizar`**: testa a versão atual no próprio editor, sem publicar.
+- **`Publicar alterações`**: ação explícita que grava a versão limpa no destino autorizado. Nunca ocorre automaticamente a cada edição/keystroke.
+- **`Exportar página`**: fallback/portabilidade; baixa um HTML limpo. Não é mais o caminho principal para atualizar um site quando o publish backend está disponível.
+
+### HARD RULE — não auto-publicar edição
+
+```text
+editar texto/imagem/link
+≠ publicar
+```
+
+O fluxo correto é:
+
+```text
+Editar
+→ opcional Salvar rascunho
+→ Pré-visualizar
+→ Publicar alterações
+→ confirmação explícita
+→ backend autorizado
+→ site atualizado
+```
+
+Uma alteração de DOM nunca deve chegar à produção apenas porque o cliente digitou algo.
+
+## Publicação em localhost — suportada
+
+Para testar edição real localmente, não use apenas `python -m http.server` se quiser que o botão `Publicar alterações` escreva no arquivo.
+
+Na raiz do workspace:
+
+```bash
+python editor_server.py
+```
+
+Servidor padrão:
+
+```text
+http://127.0.0.1:8787
+```
+
+Abra o editor através desse servidor:
+
+```text
+http://127.0.0.1:8787/sites/[slug]/[slug]-editor.html
+```
+
+Ao clicar **Publicar alterações** em `local` mode:
+
+```text
+editor
+→ POST /api/editor/publish
+→ valida target canônico sites/[slug]/[slug].html
+→ cria backup
+→ grava HTML limpo atomicamente
+→ site localhost passa a servir a nova versão
+```
+
+O target permitido é estrito: `sites/<slug>/<slug>.html`. Path traversal e escrita arbitrária fora de `sites/` são bloqueados.
+
+O servidor local faz backup em `.prospector-editor/backups/` antes de substituir um arquivo existente. Drafts server-side ficam em `.prospector-editor/drafts/`.
+
+Se outro servidor local (ex.: porta 8088) também estiver servindo os mesmos arquivos, ele refletirá a alteração depois do publish/refresh porque o arquivo no disco foi atualizado. Para usar o botão de publish, porém, abra o editor pelo `editor_server.py` ou configure explicitamente um endpoint compatível.
+
+## Publicação em deploy — mesmo botão, backend protegido
+
+`Publicar alterações` usa a mesma API conceitual em local e produção. O comportamento vem do backend:
+
+```text
+local mode
+→ atualiza sites/[slug]/[slug].html no workspace
+
+git mode
+→ atualiza somente [basePath]/[slug]/index.html no clone de deploy
+→ git add SOMENTE desse caminho
+→ commit
+→ push branch configurada
+→ Vercel auto-deploy
+```
+
+O backend de referência é:
+
+```text
+prospector-de-sites/editor_publish_server.py
+```
+
+Modo local é default. Modo Git deve ser habilitado deliberadamente:
+
+```text
+PROSPECTOR_EDITOR_PUBLISH_MODE=git
+```
+
+Ele usa `deploy.repoPath`, `deploy.basePath` e `deploy.branch` do config quando disponíveis, ou overrides por environment/CLI.
+
+### HARD RULE — autorização de produção
+
+Nunca exponha `git mode` ou o editor online sem autenticação real.
+
+Para backend não-local/git, `PROSPECTOR_EDITOR_CLIENTS` é obrigatório e deve mapear um **token opaco de editor** aos slugs permitidos. Esse token NÃO é GitHub/Vercel credential.
+
+Exemplo conceitual:
+
+```json
+{
+  "opaque-editor-token-a": ["cliente-a"],
+  "opaque-editor-token-b": ["cliente-b"]
+}
+```
+
+Git credentials ficam apenas no servidor via Git Credential Manager/SSH/secret server-side. Nunca embuta GitHub PAT ou Vercel token no editor.
+
+Para entrega real ao cliente, coloque o backend atrás de HTTPS e autenticação/session/reverse proxy. O token prompt do backend de referência é um mecanismo técnico de autorização por slug, não substitui a UX final de login/magic-link.
+
+### Static Vercel sozinho não é CMS
+
+Um deploy puramente estático na Vercel não ganha persistência apenas porque o botão existe. Para o cliente publicar no ar, `/api/editor/publish` deve apontar para um backend protegido com acesso server-side ao repositório de deploy.
+
+Não vender/publicar o editor como auto-CMS em produção se esse backend ainda não estiver efetivamente configurado para aquele cliente.
 
 ## QA obrigatória do editor
 
@@ -298,7 +415,16 @@ Para cada site novo, teste no `*-editor.html` pelo menos:
 7. Trocar `brand.logo` altera todas as ocorrências compartilhadas relevantes (ex.: header + footer).
 8. Logo dentro de `<a href="/">` continua substituível sem navegar.
 9. Se houver `<picture>`, a alteração não fica visualmente anulada por `source/srcset` antigo.
-10. Preview volta a permitir navegação real.
-11. HTML exportado não contém a UI/runtime do editor.
+10. `Salvar rascunho` NÃO altera o HTML público.
+11. Reload oferece restauração do draft local salvo quando existente.
+12. Em `editor_server.py` local, editar texto → `Publicar alterações` → refresh do HTML público mostra a alteração.
+13. Publish exige confirmação explícita.
+14. Publish local cria backup antes da substituição quando existe versão anterior.
+15. Backend rejeita target fora de `sites/<slug>/<slug>.html`.
+16. Em git mode, token/slug não autorizado recebe 401 e nada é publicado.
+17. Em git mode, somente o path do cliente é staged/committed; mudanças previamente staged fazem o backend recusar publish misto.
+18. Preview volta a permitir navegação real.
+19. HTML publicado/exportado não contém toolbar, painel, `contenteditable` ou runtime do editor.
+20. `Exportar página` continua funcionando como fallback, sem ser confundido com publicação.
 
-Se qualquer CTA/social relevante ou logo principal não for editável conforme sua função, o editor falhou QA e não deve ser considerado concluído.
+Se qualquer CTA/social relevante, logo principal ou fluxo explícito de publish falhar conforme sua função, o editor falhou QA e não deve ser considerado concluído.
