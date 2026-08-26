@@ -45,33 +45,24 @@ E-mail confirmado cadastrado?
 
 ---
 
-## 3. Diretrizes de Mensagem por Canal
+## 3. Diretrizes de Mensagem por Canal & Mercado (pt-BR vs pt-PT)
+
+A geração de mensagem recebe `country`, `locale`, `language` e `siteMode`, aplicando o registro nativo de cada mercado:
 
 ### A. WhatsApp (Curto, Conversacional e Direto)
 - **Tamanho**: ~60 a 110 palavras.
-- **Estrutura para Redesign (`siteMode = 'redesign'`)**:
-  1. Saudação natural pelo nome real do profissional/empresa.
-  2. Observação específica e respeitosa sobre o site existente (ex.: leitura no celular).
-  3. Informar que preparou e publicou um conceito novo demonstrativo.
-  4. **1 único link**: a página da proposta (`https://[domain]/[basePath]/[slug]/proposta.html`).
-  5. CTA leve: dar uma olhada e dizer o que achou.
-- **Estrutura para Novo Site (`siteMode = 'new_site_concept'`)**:
-  1. Saudação natural pelo nome real.
-  2. Elogio factual ao destaque no Google Maps (nota/avaliações reais).
-  3. Observação de que não encontrou site oficial do negócio para agendamento direto.
-  4. Informar que preparou um conceito exclusivo de site próprio no ar para demonstração.
-  5. **1 único link**: a página da proposta.
-- **Restrições**: Sem emojis por padrão, sem formatação agressiva de marketing, sem anexos. **NUNCA dizer "redesenhei seu site" para leads sem site.**
+- **Estrutura para Brasil (`pt-BR`)**:
+  - *Redesign*: "Olá, [nome]! Tudo bem? Vi o trabalho excelente de vocês em [cidade]... Notei que no site atual [motivo]. Por conta disso, tomei a liberdade de preparar um conceito novo e mais moderno... Dá uma olhada quando puder (abre muito bem no celular)..."
+  - *Novo Site*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês... Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, tomei a liberdade de preparar um conceito exclusivo para demonstração... Dá uma olhada quando puder (abre muito bem no celular)..."
+- **Estrutura para Portugal (`pt-PT`)**:
+  - *Redesign*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho de referência em [cidade]... Notei que na página atual [motivo]. Por esse motivo, tomei a liberdade de preparar uma proposta nova e mais moderna para vocês... Veja quando tiver oportunidade (funciona perfeitamente no telemóvel)..."
+  - *Novo Site*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho de referência em [cidade]... Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, tomei a liberdade de preparar uma proposta de site exclusiva para demonstração... Veja quando tiver oportunidade (funciona perfeitamente no telemóvel)..."
+- **Restrições**: Sem emojis por padrão, sem formatação agressiva de marketing. **NUNCA dizer "redesenhei seu site" para leads sem site.**
 
 ### B. E-mail / Gmail (Rapport, Prova e Respeito)
 - **Tamanho**: ~120 a 180 palavras.
-- **Assunto**: Pergunta pessoal ≤ 60 caracteres sem cara de marketing (ex.: `[Nome], uma ideia de site próprio para a [Clínica]` para novo site, ou `[Nome], posso te mostrar uma ideia para o site?` para redesign).
-- **Estrutura**:
-  1. Rapport inicial com elogio específico (nota/avaliações reais do Google).
-  2. Contextualização honesta (análise do site atual para Redesign OU ausência de site próprio para Novo Site).
-  3. Trabalho já executado + 1 link HTML limpo da proposta.
-  4. CTA leve e assinatura completa (nome, apresentação, WhatsApp).
-- **Envio**: Criação de rascunho no Gmail via link compose ou conector para revisão humana.
+- **Assunto**: Pergunta pessoal ≤ 60 caracteres (ex.: `[Nome], uma proposta de site próprio para o vosso espaço` para PT, ou `[Nome], uma ideia de site próprio para o seu negócio` para BR).
+- **Assinatura**: Tratamento adequado (`Um abraço` para BR; `Com os melhores cumprimentos` para PT).
 
 ---
 

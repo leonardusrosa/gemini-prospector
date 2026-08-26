@@ -62,14 +62,18 @@ Antes de gerar qualquer linha de código, deduza uma leitura de design específi
 
 ---
 
-## 4. Fase 3: Geração do Código Estático
+## 4. Fase 3: Geração do Código Estático & Localização de Mercado
 
 Gere a página em `sites/[slug]/[slug].html`:
-1. Estrutura semântica HTML5 (`header`, `main`, `section`, `footer`).
-2. CSS inline no `<head>` com variáveis `:root` organizadas.
-3. Botão de contato/WhatsApp contextual com mensagem pré-formatada ou link de agendamento real.
-4. Mapa / localização e horários reais coletados do Maps.
-5. Camada do editor: gere `sites/[slug]/[slug]-editor.html` utilizando o template em `references/editor-visual.md`.
+1. **Estrutura Semântica HTML5** (`header`, `main`, `section`, `footer`) com `lang="pt-BR"` ou `lang="pt-PT"` conforme o `locale` do lead.
+2. **Localização Linguística Natural**:
+   - **Brasil (`pt-BR`)**: sintaxe e vocabulário natural do Brasil (ex.: *"Agendar Consulta"*, *"Fale Conosco"*, *"Como Chegar"*).
+   - **Portugal (`pt-PT`)**: sintaxe, ortografia e nível de formalidade de Portugal (ex.: *"Marcar Consulta"*, *"Contactar"*, *"Localização"*, *"Horário de Funcionamento"*, *"Telemóvel"*).
+   - **Nunca traduzir nomes de negócios, médicos/profissionais ou marcas registradas.**
+3. **CSS inline no `<head>`** com variáveis `:root` organizadas.
+4. **Botão de contato/WhatsApp contextual** com mensagem pré-formatada e telefone no formato internacional.
+5. **Mapa / localização e horários reais** coletados do Maps (respeitando formato de endereço do país).
+6. **Camada do editor**: gere `sites/[slug]/[slug]-editor.html` utilizando o template em `references/editor-visual.md`.
 
 ---
 

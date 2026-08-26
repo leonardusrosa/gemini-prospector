@@ -15,6 +15,13 @@ try:
 except ImportError:
     EvolutionClient = None
 
+try:
+    from market_service import detect_country, normalize_phone_by_country, resolve_market
+except ImportError:
+    detect_country = lambda *a, **k: ("BR", "pt-BR", "pt", "55")
+    normalize_phone_by_country = lambda r, c=None: (r, None)
+    resolve_market = lambda c="BR": {"country": "BR", "locale": "pt-BR", "language": "pt", "phoneCountryCode": "55"}
+
 
 def resolve_proposal_url(lead: Dict[str, Any], config: Dict[str, Any]) -> str:
     """Monta a URL pública definitiva ou fallback local da proposta."""
@@ -43,11 +50,20 @@ def resolve_channels(lead: Dict[str, Any], config: Dict[str, Any], evo_status: O
     outreach_cfg = config.get("outreach", {})
     priority = outreach_cfg.get("channelPriority", ["whatsapp", "email"])
 
-    # Verificação do WhatsApp
+    market_cfg = config.get("market", {})
+    def_country = market_cfg.get("defaultCountry", "BR")
+
+    lead_country = lead.get("country")
+    if not lead_country:
+        lead_country, _, _, _ = detect_country(lead.get("cidade"), lead.get("endCliente"), def_country)
+
+    # Verificação do WhatsApp com validação por país
     raw_phone = lead.get("whatsapp") or lead.get("telefone") or ""
     clean_wpp, wpp_err = (None, "Cliente Evolution não carregado")
     if EvolutionClient:
-        clean_wpp, wpp_err = EvolutionClient.validate_phone_number(raw_phone)
+        clean_wpp, wpp_err = EvolutionClient.validate_phone_number(raw_phone, country=lead_country)
+    else:
+        clean_wpp, wpp_err = normalize_phone_by_country(raw_phone, country=lead_country)
 
     evo_online = False
     if evo_status and evo_status.get("reachable") and evo_status.get("authenticated") and evo_status.get("instanceFound"):
@@ -67,7 +83,7 @@ def resolve_channels(lead: Dict[str, Any], config: Dict[str, Any], evo_status: O
     for ch in priority:
         if ch == "whatsapp" and wpp_available:
             selected = "whatsapp"
-            reason = "WhatsApp selecionado (número validado com DDI e Evolution API online)."
+            reason = f"WhatsApp selecionado (número validado com DDI e Evolution API online - {lead_country})."
             break
         elif ch == "email" and email_available:
             selected = "email"
@@ -94,6 +110,7 @@ def resolve_channels(lead: Dict[str, Any], config: Dict[str, Any], evo_status: O
         "whatsappError": wpp_err if not clean_wpp else (None if evo_online else "Evolution API desconectada"),
         "emailAvailable": email_available,
         "email": raw_email if email_available else None,
+        "country": lead_country,
         "priority": priority,
     }
 
@@ -127,7 +144,7 @@ def classify_website(raw_url: Optional[str]) -> Tuple[str, str]:
 
 
 def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
-    """Gera mensagens hiperpersonalizadas estritamente baseadas em dados factuais do lead."""
+    """Gera mensagens hiperpersonalizadas estritamente baseadas em dados factuais do lead e seu mercado/locale."""
     nome_lead = (lead.get("nome") or "Profissional").strip()
     nicho = (lead.get("nicho") or "").strip()
     cidade = (lead.get("cidade") or "").strip()
@@ -135,6 +152,17 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
     avaliacoes = lead.get("avaliacoes")
     site_antigo = (lead.get("siteAntigo") or "").strip()
     motivo = (lead.get("motivo") or "").strip()
+
+    market_cfg = config.get("market", {})
+    def_country = market_cfg.get("defaultCountry", "BR")
+
+    lead_country = lead.get("country")
+    if not lead_country:
+        lead_country, locale, _, _ = detect_country(cidade, lead.get("endCliente"), def_country)
+    else:
+        locale = lead.get("locale") or ("pt-PT" if lead_country == "PT" else "pt-BR")
+
+    is_pt = (lead_country == "PT") or (locale == "pt-PT")
 
     site_mode = lead.get("siteMode")
     website_status = lead.get("websiteStatus")
@@ -147,34 +175,107 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
     assinatura = config.get("assinatura", {})
     autor = assinatura.get("nome", "").strip() or "Especialista em Web"
-    apresentacao = assinatura.get("apresentacao", "").strip() or "Criação e Redesign de Páginas"
+    apresentacao = assinatura.get("apresentacao", "").strip() or ("Criação e Redesign de Páginas" if not is_pt else "Design e Criação de Páginas Web")
     wpp_autor = assinatura.get("whatsapp", "").strip()
 
     proposal_url = resolve_proposal_url(lead, config)
 
-    # 1. Mensagem de WhatsApp (~60-100 palavras, natural, 1 link, sem marketing)
     saudacao = f"Olá, {nome_lead}! Tudo bem?"
-    
-    contexto_prova = ""
-    if nota and avaliacoes:
-        contexto_prova = f"Vi o trabalho excelente de vocês em {cidade or 'sua região'} (nota {nota} no Google com {avaliacoes} avaliações)."
-    elif nicho:
-        contexto_prova = f"Acompanho o trabalho de referência de vocês na área de {nicho}."
 
-    if is_new_site:
-        wpp_text = (
-            f"{saudacao}\n\n"
-            f"{contexto_prova} Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, tomei a liberdade de preparar um conceito exclusivo para demonstração:\n"
-            f"{proposal_url}\n\n"
-            f"Dá uma olhada quando puder (abre muito bem no celular). Me conta o que achou!\n\n"
-            f"— {autor}"
-        ).strip()
-        
-        assunto = f"{nome_lead}, uma ideia de site próprio para o seu negócio"
-        if len(assunto) > 60:
-            assunto = f"Conceito de site para a {nome_lead[:35]}"
+    if is_pt:
+        # European Portuguese (pt-PT)
+        contexto_prova = ""
+        if nota and avaliacoes:
+            contexto_prova = f"Acompanho o vosso trabalho de referência em {cidade or 'sua região'} (classificação {nota} no Google com {avaliacoes} avaliações)."
+        elif nicho:
+            contexto_prova = f"Acompanho o vosso trabalho de referência na área de {nicho}."
 
-        email_body_html = f"""<p>Olá, {nome_lead},</p>
+        if is_new_site:
+            wpp_text = (
+                f"{saudacao}\n\n"
+                f"{contexto_prova} Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, tomei a liberdade de preparar uma proposta de site exclusiva para demonstração:\n"
+                f"{proposal_url}\n\n"
+                f"Veja quando tiver oportunidade (funciona perfeitamente no telemóvel). Diga-me o que achou!\n\n"
+                f"— {autor}"
+            ).strip()
+
+            assunto = f"{nome_lead}, uma proposta de site próprio para o vosso espaço"
+            if len(assunto) > 60:
+                assunto = f"Proposta de site para {nome_lead[:35]}"
+
+            email_body_html = f"""<p>Olá, {nome_lead},</p>
+
+<p>{contexto_prova or 'Encontrei o vosso negócio enquanto pesquisava referências na vossa área.'}</p>
+
+<p>Reparei que o negócio ainda não conta com uma página web oficial própria para centralizar informações, localização e facilitar marcações diretas de novos clientes.</p>
+
+<p>Para ilustrar na prática como uma presença digital profissional pode valorizar o vosso trabalho, preparei uma proposta de site completa e deixei online para demonstração:</p>
+
+<p><a href="{proposal_url}">{proposal_url}</a></p>
+
+<p>A página fica disponível para avaliar com calma no computador ou no telemóvel. Se gostar da proposta, fico ao dispor para conversarmos sem qualquer compromisso.</p>
+
+<p>Com os melhores cumprimentos,<br>
+<b>{autor}</b><br>
+{apresentacao}<br>
+{wpp_autor and f'WhatsApp: {wpp_autor}' or ''}</p>"""
+        else:
+            obs_site = "Notei que a página atual tem potencial de melhoria na leitura no telemóvel e na rapidez de marcação."
+            if motivo:
+                obs_site = f"Notei que no site atual {motivo.lower()}."
+
+            wpp_text = (
+                f"{saudacao}\n\n"
+                f"{contexto_prova} {obs_site}\n\n"
+                f"Por esse motivo, tomei a liberdade de preparar uma proposta nova e mais moderna para vocês, que já se encontra online para demonstração:\n"
+                f"{proposal_url}\n\n"
+                f"Veja quando tiver oportunidade (funciona perfeitamente no telemóvel). Diga-me o que achou!\n\n"
+                f"— {autor}"
+            ).strip()
+
+            assunto = f"{nome_lead}, posso mostrar-lhe uma ideia para o vosso site?"
+            if len(assunto) > 60:
+                assunto = f"Uma nova ideia para {nome_lead[:35]}"
+
+            email_body_html = f"""<p>Olá, {nome_lead},</p>
+
+<p>{contexto_prova or 'Encontrei o vosso negócio enquanto pesquisava referências na vossa área.'}</p>
+
+<p>Ao analisar a página atual ({site_antigo or 'do espaço'}), notei alguns pontos objetivos que podem estar a dificultar a conversão de novos clientes, especialmente na navegação via telemóvel e na rapidez de contacto.</p>
+
+<p>Para ilustrar na prática, montei uma nova versão completa do site e coloquei online para poder comparar o antes e depois:</p>
+
+<p><a href="{proposal_url}">{proposal_url}</a></p>
+
+<p>A página fica disponível para avaliar com calma no computador ou no telemóvel. Se gostar do conceito, fico ao dispor para conversarmos sem qualquer compromisso.</p>
+
+<p>Com os melhores cumprimentos,<br>
+<b>{autor}</b><br>
+{apresentacao}<br>
+{wpp_autor and f'WhatsApp: {wpp_autor}' or ''}</p>"""
+
+    else:
+        # Brazilian Portuguese (pt-BR)
+        contexto_prova = ""
+        if nota and avaliacoes:
+            contexto_prova = f"Vi o trabalho excelente de vocês em {cidade or 'sua região'} (nota {nota} no Google com {avaliacoes} avaliações)."
+        elif nicho:
+            contexto_prova = f"Acompanho o trabalho de referência de vocês na área de {nicho}."
+
+        if is_new_site:
+            wpp_text = (
+                f"{saudacao}\n\n"
+                f"{contexto_prova} Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, tomei a liberdade de preparar um conceito exclusivo para demonstração:\n"
+                f"{proposal_url}\n\n"
+                f"Dá uma olhada quando puder (abre muito bem no celular). Me conta o que achou!\n\n"
+                f"— {autor}"
+            ).strip()
+
+            assunto = f"{nome_lead}, uma ideia de site próprio para o seu negócio"
+            if len(assunto) > 60:
+                assunto = f"Conceito de site para a {nome_lead[:35]}"
+
+            email_body_html = f"""<p>Olá, {nome_lead},</p>
 
 <p>{contexto_prova or 'Encontrei o negócio de vocês enquanto pesquisava referências na sua área.'}</p>
 
@@ -190,25 +291,25 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 <b>{autor}</b><br>
 {apresentacao}<br>
 {wpp_autor and f'WhatsApp: {wpp_autor}' or ''}</p>"""
-    else:
-        obs_site = "Notei que a página atual tem muito potencial de melhoria na leitura pelo celular e no agendamento direto."
-        if motivo:
-            obs_site = f"Notei que no site atual {motivo.lower()}."
+        else:
+            obs_site = "Notei que a página atual tem muito potencial de melhoria na leitura pelo celular e no agendamento direto."
+            if motivo:
+                obs_site = f"Notei que no site atual {motivo.lower()}."
 
-        wpp_text = (
-            f"{saudacao}\n\n"
-            f"{contexto_prova} {obs_site}\n\n"
-            f"Por conta disso, tomei a liberdade de preparar um conceito novo e mais moderno para vocês, que já deixei publicado para demonstração:\n"
-            f"{proposal_url}\n\n"
-            f"Dá uma olhada quando puder (abre muito bem no celular). Me conta o que achou!\n\n"
-            f"— {autor}"
-        ).strip()
+            wpp_text = (
+                f"{saudacao}\n\n"
+                f"{contexto_prova} {obs_site}\n\n"
+                f"Por conta disso, tomei a liberdade de preparar um conceito novo e mais moderno para vocês, que já deixei publicado para demonstração:\n"
+                f"{proposal_url}\n\n"
+                f"Dá uma olhada quando puder (abre muito bem no celular). Me conta o que achou!\n\n"
+                f"— {autor}"
+            ).strip()
 
-        assunto = f"{nome_lead}, posso te mostrar uma ideia para o site?"
-        if len(assunto) > 60:
-            assunto = f"Uma nova ideia para a {nome_lead[:35]}"
+            assunto = f"{nome_lead}, posso te mostrar uma ideia para o site?"
+            if len(assunto) > 60:
+                assunto = f"Uma nova ideia para a {nome_lead[:35]}"
 
-        email_body_html = f"""<p>Olá, {nome_lead},</p>
+            email_body_html = f"""<p>Olá, {nome_lead},</p>
 
 <p>{contexto_prova or 'Encontrei o negócio de vocês enquanto pesquisava referências na sua área.'}</p>
 

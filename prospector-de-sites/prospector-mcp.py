@@ -23,7 +23,7 @@ DB = os.path.join(PASTA, 'prospector.db')
 CAMPOS = ['slug','nome','nicho','cidade','nota','avaliacoes','email','telefone','whatsapp',
           'siteAntigo','motivo','status','urlNova','dataProposta','valor','obs',
           'contratoStatus','contratoEm','manutencao','pago','docCliente','endCliente',
-          'websiteStatus','siteMode']
+          'websiteStatus','siteMode','country','locale','language','phoneCountryCode']
 STATUS_VALIDOS = ['novo','redesenhado','publicado','proposta','respondeu','fechado','descartado']
 
 def conexao():
@@ -35,10 +35,21 @@ def conexao():
         valor REAL, obs TEXT, contratoStatus TEXT DEFAULT 'pendente', contratoEm TEXT,
         manutencao REAL, pago INTEGER DEFAULT 0, docCliente TEXT, endCliente TEXT,
         websiteStatus TEXT DEFAULT 'existing_weak', siteMode TEXT DEFAULT 'redesign',
+        country TEXT, locale TEXT, language TEXT, phoneCountryCode TEXT,
         atualizado TEXT)''')
-    for col, tipo in [('contratoStatus',"TEXT DEFAULT 'pendente'"),('contratoEm','TEXT'),('manutencao','REAL'),('pago','INTEGER DEFAULT 0'),('docCliente','TEXT'),('endCliente','TEXT'),('websiteStatus',"TEXT DEFAULT 'existing_weak'"),('siteMode',"TEXT DEFAULT 'redesign'")]:
+    for col, tipo in [('contratoStatus',"TEXT DEFAULT 'pendente'"),('contratoEm','TEXT'),('manutencao','REAL'),('pago','INTEGER DEFAULT 0'),('docCliente','TEXT'),('endCliente','TEXT'),('websiteStatus',"TEXT DEFAULT 'existing_weak'"),('siteMode',"TEXT DEFAULT 'redesign'"),('country','TEXT'),('locale','TEXT'),('language','TEXT'),('phoneCountryCode','TEXT')]:
         try: c.execute('ALTER TABLE leads ADD COLUMN %s %s' % (col, tipo))
         except sqlite3.OperationalError: pass
+    try:
+        rows = c.execute("SELECT slug, cidade, endCliente, whatsapp, telefone FROM leads WHERE country IS NULL OR country = ''").fetchall()
+        for r in rows:
+            sl, cid, end, wpp, tel = r
+            if (wpp and str(wpp).startswith('351')) or (tel and str(tel).startswith('351')) or (cid and 'portugal' in str(cid).lower()):
+                c.execute("UPDATE leads SET country='PT', locale='pt-PT', language='pt', phoneCountryCode='351' WHERE slug=?", (sl,))
+            elif (wpp and str(wpp).startswith('55')) or (tel and str(tel).startswith('55')) or (cid and any(k in str(cid).lower() for k in ['sp','rj','mg','pr','rs','sc','brasil','são paulo','campinas','rio claro'])):
+                c.execute("UPDATE leads SET country='BR', locale='pt-BR', language='pt', phoneCountryCode='55' WHERE slug=?", (sl,))
+    except Exception:
+        pass
     c.execute('''CREATE TABLE IF NOT EXISTS outreach_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL, canal TEXT NOT NULL,
         destino TEXT, tipo TEXT DEFAULT 'proposta', mensagem TEXT, urlProposta TEXT,
