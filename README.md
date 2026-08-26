@@ -1,12 +1,12 @@
 # Prospector de Sites — Plugin para Google Antigravity
 
-Prospecção semiautomática de clientes com site fraco, redesign premium, publicação automática via GitHub + Vercel e proposta por e-mail — empacotado como **Plugin do Antigravity** (Agy 2.0 / IDE / CLI compartilham a mesma config).
+Prospecção semiautomática de clientes com site fraco, redesign premium, publicação automática via GitHub + Vercel e proposta multicanal — empacotado como **Plugin do Antigravity** (Agy 2.0 / IDE / CLI compartilham a mesma config).
 
 É a mesma lógica da versão Claude, no formato nativo do Antigravity: um **plugin** (`plugin.json` + `mcp_config.json` + `skills/`). A busca de negócios usa o plugin oficial **Google Maps Platform** (Places); o navegador entra só pra avaliar o site do lead.
 
 ## Estrutura do plugin
 
-```
+```text
 prospector-de-sites/          ← esta é a pasta do plugin
 ├── plugin.json               marcador do plugin
 ├── mcp_config.json           define os MCP (CRM + navegador Playwright)
@@ -23,6 +23,8 @@ prospector-de-sites/          ← esta é a pasta do plugin
 │   └── contrato-servico/
 └── dashboard/                painel local (Python/SQLite)
 ```
+
+Na raiz do workspace, `create_editor.py` gera o editor visual client-ready de qualquer site estático criado pelo Prospector.
 
 ## Instalação
 
@@ -57,11 +59,41 @@ Abra a pasta do projeto e diga no chat: **"configurar o prospector"**. A skill `
 
 ## Como usar (linguagem natural)
 
-1. **"prospecta nutricionistas em São Paulo"** → busca no Google Maps Platform, qualifica (nota alta + site ruim + e-mail) e monta o dashboard.
+1. **"prospecta nutricionistas em São Paulo"** → busca no Google Maps Platform, qualifica e monta o dashboard.
 2. **"redesenha os 5 melhores"** → redesign premium + editor + comparador antes/depois.
-3. **"publica os redesigns"** → copia para o repositório Git local, faz commit/push para o GitHub, a Vercel publica na hora e o plugin valida o HTTPS público.
+3. **"publica os redesigns"** → copia para o repositório Git local, faz commit/push para o GitHub, a Vercel publica e o plugin valida o HTTPS público.
 4. **"manda a proposta"** → outreach multicanal (WhatsApp via Evolution API ou Gmail) com link da proposta personalizada.
 5. Depois: contrato, e o `dashboard.html` administra tudo (kanban + financeiro + histórico de outreach).
+
+## Editor visual client-ready
+
+Para qualquer site gerado:
+
+```bash
+python create_editor.py sites/[slug]/[slug].html
+```
+
+Isso cria:
+
+```text
+sites/[slug]/[slug]-editor.html
+```
+
+O editor permite, sem editar código:
+
+- alterar headings, parágrafos e textos;
+- trocar imagens e `alt`;
+- editar label + hyperlink de CTAs;
+- editar WhatsApp e mensagem pré-preenchida;
+- editar telefone e e-mail;
+- editar Instagram/Facebook/outros links reais;
+- sincronizar destinos repetidos (ex.: o mesmo WhatsApp em navbar, hero, footer e botão flutuante);
+- pré-visualizar a página com os links funcionando;
+- exportar HTML limpo sem a camada do editor.
+
+Para CTAs complexos, o gerador de páginas deve usar `data-pe-label`; para contatos/socials repetidos, `data-pe-field`; e para backgrounds editáveis, `data-pe-bg`. A referência canônica está em `prospector-de-sites/skills/redesign-premium/references/editor-visual.md`.
+
+O editor **não** expõe HTML/CSS/JS arbitrário. Publicação direta pelo próprio cliente só deve ser habilitada quando houver backend autenticado com autorização restrita ao site/slug do cliente; tokens de GitHub/Vercel nunca devem ir para o browser.
 
 ## Diferenças pra versão Claude
 
@@ -75,6 +107,7 @@ Abra a pasta do projeto e diga no chat: **"configurar o prospector"**. A skill `
 | Publicação | HostGator / FTP | **GitHub + Vercel** (deploy estático automático) |
 | CRM | MCP stdio | mesmo MCP, no `mcp_config.json` do plugin |
 | Outreach | E-mail manual | **WhatsApp (Evolution API)** + **Gmail** com revisão humana |
+| Editor | conteúdo básico | **texto + imagens + CTAs + links + WhatsApp/socials** |
 
 Mesma lógica, mesmos entregáveis. O CRM (`prospector-mcp.py`), o painel e as templates são reaproveitados sem mudança.
 
