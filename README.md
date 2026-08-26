@@ -13,6 +13,7 @@ prospector-de-sites/          ← esta é a pasta do plugin
 ├── prospector-mcp.py         servidor MCP do CRM (SQLite)
 ├── evolution_client.py       conector seguro Evolution API WhatsApp
 ├── outreach_service.py       gerador e orquestrador de outreach multicanal
+├── editor_publish_server.py  backend de referência para draft/publish local ou Git
 ├── skills/                   as 8 skills (SKILL.md)
 │   ├── prospector-setup/
 │   ├── prospeccao-maps/
@@ -25,7 +26,10 @@ prospector-de-sites/          ← esta é a pasta do plugin
 └── dashboard/                painel local (Python/SQLite)
 ```
 
-Na raiz do workspace, `create_editor.py` gera o editor visual client-ready de qualquer site estático criado pelo Prospector.
+Na raiz do workspace:
+
+- `create_editor.py` gera o editor visual client-ready;
+- `editor_server.py` serve o site/editor e habilita `Salvar rascunho` + `Publicar alterações` em localhost.
 
 ## Instalação
 
@@ -77,12 +81,13 @@ sites/[slug]/assets/hero-expert-desktop.webp
 sites/[slug]/assets/hero-expert-mobile.webp
 ```
 
-Padrão visual:
+Padrão visual atual:
 
-- **desktop**: 16:9, expert grande à direita (~45–55%), left half limpa para copy HTML, background suave/desfocado, sem texto dentro da imagem;
+- **desktop**: preferir composição **ultrawide ~2.3:1–2.6:1** quando há copy à esquerda e expert à direita; expert centrado na metade direita (`x≈75%`), `contain`/rendering subject-safe, sem zoom destrutivo, edge integration quando necessária e alta resolução real (tipicamente 3.5K–4.5K+ de largura quando a fonte suporta);
 - **mobile**: composição vertical própria, expert grande no top ~50–55%, head + upper body, sem mostrar waist-down, lower half calma para headline/CTA HTML;
 - identidade/pose reais têm prioridade sobre novidade estética;
-- se a geração mudar materialmente o rosto, usar fallback source-preserving com o expert original.
+- se a geração mudar materialmente o rosto, usar fallback source-preserving com o expert original;
+- `4200×1728 WebP ~417 KB` é benchmark forte de qualidade para desktop ultrawide, não hard limit.
 
 ### Capability/billing order
 
@@ -119,18 +124,62 @@ sites/[slug]/[slug]-editor.html
 O editor permite, sem editar código:
 
 - alterar headings, parágrafos e textos;
-- trocar imagens e `alt`;
+- trocar imagens, logo e `alt`;
 - editar label + hyperlink de CTAs;
 - editar WhatsApp e mensagem pré-preenchida;
 - editar telefone e e-mail;
 - editar Instagram/Facebook/outros links reais;
-- sincronizar destinos repetidos (ex.: o mesmo WhatsApp em navbar, hero, footer e botão flutuante);
-- pré-visualizar a página com os links funcionando;
-- exportar HTML limpo sem a camada do editor.
+- sincronizar destinos/brand assets repetidos;
+- salvar rascunho;
+- pré-visualizar a página;
+- **publicar alterações explicitamente** quando o publish backend está disponível;
+- exportar HTML limpo como fallback/portabilidade.
 
-Para CTAs complexos, o gerador de páginas deve usar `data-pe-label`; para contatos/socials repetidos, `data-pe-field`; e para backgrounds editáveis, `data-pe-bg`. A referência canônica está em `prospector-de-sites/skills/redesign-premium/references/editor-visual.md`.
+### Localhost com publicação real
 
-O editor **não** expõe HTML/CSS/JS arbitrário. Publicação direta pelo próprio cliente só deve ser habilitada quando houver backend autenticado com autorização restrita ao site/slug do cliente; tokens de GitHub/Vercel nunca devem ir para o browser.
+Para testar persistência real no arquivo local:
+
+```bash
+python editor_server.py
+```
+
+Abra o editor via:
+
+```text
+http://127.0.0.1:8787/sites/[slug]/[slug]-editor.html
+```
+
+Fluxo:
+
+```text
+Editar
+→ Salvar rascunho (opcional)
+→ Pré-visualizar
+→ Publicar alterações
+→ confirmação
+→ backup
+→ sites/[slug]/[slug].html atualizado atomicamente
+```
+
+A publicação **não** ocorre a cada keystroke.
+
+`python -m http.server` continua útil para preview, mas sozinho não fornece endpoint de escrita. Se outro servidor estiver servindo os mesmos arquivos, ele refletirá o HTML atualizado após o publish + refresh.
+
+### Deploy / Client CMS
+
+O mesmo botão `Publicar alterações` pode usar o backend de referência em `git mode`, que escreve somente `[basePath]/[slug]/index.html`, faz `git add` apenas daquele path, commit e push; a Vercel pode então auto-deployar pela integração existente.
+
+Produção exige:
+
+- HTTPS;
+- editor protegido/autenticado;
+- autorização restrita por slug;
+- Git credentials somente server-side;
+- rota `/api/editor/publish` realmente conectada ao backend.
+
+Um deploy Vercel puramente estático **não vira CMS sozinho**. Nunca exponha `*-editor.html` publicamente sem proteção e nunca coloque GitHub/Vercel tokens no browser.
+
+Para CTAs complexos, use `data-pe-label`; para contatos/socials/logo repetidos, `data-pe-field`; e para backgrounds editáveis, `data-pe-bg`. A referência canônica está em `prospector-de-sites/skills/redesign-premium/references/editor-visual.md`.
 
 ## Diferenças pra versão Claude
 
@@ -144,8 +193,8 @@ O editor **não** expõe HTML/CSS/JS arbitrário. Publicação direta pelo próp
 | Publicação | HostGator / FTP | **GitHub + Vercel** (deploy estático automático) |
 | CRM | MCP stdio | mesmo MCP, no `mcp_config.json` do plugin |
 | Outreach | E-mail manual | **WhatsApp (Evolution API)** + **Gmail** com revisão humana |
-| Hero expert | manual/composição | **subskill autônoma desktop + mobile, Antigravity-native first** |
-| Editor | conteúdo básico | **texto + imagens + CTAs + links + WhatsApp/socials** |
+| Hero expert | manual/composição | **ultrawide desktop + mobile dedicado, Antigravity-native first** |
+| Editor | conteúdo básico | **texto + imagens/logo + CTAs + drafts + publish bridge local/Git** |
 
 Mesma lógica, mesmos entregáveis. O CRM (`prospector-mcp.py`), o painel e as templates são reaproveitados sem mudança.
 
