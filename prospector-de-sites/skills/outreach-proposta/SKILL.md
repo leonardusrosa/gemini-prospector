@@ -47,22 +47,71 @@ E-mail confirmado cadastrado?
 
 ## 3. Diretrizes de Mensagem por Canal & Mercado (pt-BR vs pt-PT)
 
-A geração de mensagem recebe `country`, `locale`, `language` e `siteMode`, aplicando o registro nativo de cada mercado:
+A geração de mensagem recebe `country`, `locale`, `language` e `siteMode`, aplicando o registro nativo de cada mercado.
+
+### HARD RULE — deixar claro que é a primeira proposta funcional, não o site final
+
+O prospecto deve entender simultaneamente que:
+
+1. existe um trabalho real, funcional e já navegável para avaliar;
+2. não é um mockup genérico nem apenas uma imagem;
+3. **a versão mostrada é uma primeira proposta funcional / primeira versão para demonstração**, ainda aberta a refinamento conjunto antes da entrega final.
+
+Não criar a impressão de que a página enviada já é o produto final fechado.
+
+### Vocabulário recomendado
+
+**pt-BR**
+
+- `primeira proposta funcional de site`
+- `primeira proposta de nova versão do site, já funcional`
+- `primeira versão para demonstração`
+- `serve como ponto de partida`
+- `se fizer sentido, a versão final é refinada em conjunto — textos, imagens, prioridades e demais ajustes`
+
+**pt-PT**
+
+- `primeira proposta funcional de site`
+- `primeira proposta de nova versão do site, já funcional`
+- `primeira versão para demonstração`
+- `serve como ponto de partida`
+- `se fizer sentido, a versão final é refinada em conjunto — textos, imagens, prioridades e restantes ajustes`
+
+### Evitar
+
+Não usar linguagem que sugira conclusão definitiva, como:
+
+- `site completo`
+- `proposta de site completa`
+- `nova versão completa do site`
+- `site final`
+- `site finalizado`
+- `versão definitiva`
+
+Também não desvalorizar o trabalho chamando-o de:
+
+- `rascunho`
+- `mockup`
+- `teste`
+- `protótipo simples`
+
+A posição correta é: **trabalho real e funcional, mas primeira proposta sujeita a refinamento com o cliente.**
 
 ### A. WhatsApp (Curto, Conversacional e Direto)
 - **Tamanho**: ~60 a 110 palavras.
 - **Estrutura para Brasil (`pt-BR`)**:
-  - *Redesign*: "Olá, [nome]! Tudo bem? Vi o trabalho excelente de vocês em [cidade]... Notei que no site atual [motivo]. Por conta disso, tomei a liberdade de preparar um conceito novo e mais moderno... Dá uma olhada quando puder (abre muito bem no celular)..."
-  - *Novo Site*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês... Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, tomei a liberdade de preparar um conceito exclusivo para demonstração... Dá uma olhada quando puder (abre muito bem no celular)..."
+  - *Redesign*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês em [cidade]... Notei que no site atual [motivo]. Por conta disso, preparei uma primeira proposta de nova versão do site, já funcional, para mostrar na prática a direção que imaginei... É uma primeira versão; se fizer sentido, refinamos juntos antes da entrega final."
+  - *Novo Site*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês... Como notei que vocês ainda não possuem um site próprio oficial, preparei uma primeira proposta funcional de site e deixei online para demonstração... Ela serve como ponto de partida; se fizer sentido, a versão final é refinada em conjunto."
 - **Estrutura para Portugal (`pt-PT`)**:
-  - *Redesign*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho de referência em [cidade]... Notei que na página atual [motivo]. Por esse motivo, tomei a liberdade de preparar uma proposta nova e mais moderna para vocês... Veja quando tiver oportunidade (funciona perfeitamente no telemóvel)..."
-  - *Novo Site*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho de referência em [cidade]... Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, tomei a liberdade de preparar uma proposta de site exclusiva para demonstração... Veja quando tiver oportunidade (funciona perfeitamente no telemóvel)..."
+  - *Redesign*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho em [cidade]... Notei que na página atual [motivo]. Por esse motivo, preparei uma primeira proposta de nova versão do site, já funcional, para mostrar a direção na prática... É uma primeira versão; se fizer sentido, refinamos em conjunto antes da entrega final."
+  - *Novo Site*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho... Como reparei que ainda não dispõem de um site oficial próprio, preparei uma primeira proposta funcional de site e deixei-a online para demonstração... Serve como ponto de partida; se fizer sentido, a versão final é refinada em conjunto."
 - **Restrições**: Sem emojis por padrão, sem formatação agressiva de marketing. **NUNCA dizer "redesenhei seu site" para leads sem site.**
 
 ### B. E-mail / Gmail (Rapport, Prova e Respeito)
 - **Tamanho**: ~120 a 180 palavras.
 - **Assunto**: Pergunta pessoal ≤ 60 caracteres (ex.: `[Nome], uma proposta de site próprio para o vosso espaço` para PT, ou `[Nome], uma ideia de site próprio para o seu negócio` para BR).
 - **Assinatura**: Tratamento adequado (`Um abraço` para BR; `Com os melhores cumprimentos` para PT).
+- Depois do link, incluir naturalmente que a página é uma **primeira versão funcional para demonstração** e que, havendo interesse, a versão final será refinada em conjunto.
 
 ### HARD RULE — não transformar o primeiro contato em lista de features
 
@@ -86,10 +135,27 @@ Não afirmar que o cliente "publica sozinho" ou que existe `/admin` autenticado 
 ## 4. Página-Capa da Proposta (`proposta.html`)
 
 Publicada em `[basePath]/[slug]/proposta.html` junto à página gerada:
-1. **Para Redesign**: Comparador antes/depois interativo (`Site atual` vs `Nova versão`) + seção **O que foi repensado** (2 a 4 melhorias reais).
-2. **Para Novo Site**: Apresentação contextual da presença atual vs conceito (`Presença atual` vs `Conceito de site`) + seção **O que este conceito organiza** (centralização de informações, contato ágil, agendamento, mobile).
-3. **Autonomia de conteúdo**: quando o editor visual estiver incluído na oferta, mostrar uma seção curta de valor explicando que textos, imagens, telefone, WhatsApp e redes/links podem ser mantidos por um editor simples, sem transformar a proposta em ficha técnica.
-4. **Sobre quem preparou**: breve apresentação do autor e link para portfólio (`outreach.portfolioUrl`) apenas se configurado.
+1. **Status da proposta, visível cedo**: deixar inequívoco que se trata de uma **primeira versão funcional para demonstração**, que serve como ponto de partida e será refinada com o cliente antes da entrega final.
+2. **Para Redesign**: Comparador antes/depois interativo (`Site atual` vs `Nova versão`) + seção **O que foi repensado** (2 a 4 melhorias reais).
+3. **Para Novo Site**: Apresentação contextual da presença atual vs conceito (`Presença atual` vs `Conceito de site`) + seção **O que este conceito organiza** (centralização de informações, contato ágil, agendamento, mobile).
+4. **Autonomia de conteúdo**: quando o editor visual estiver incluído na oferta, mostrar uma seção curta de valor explicando que textos, imagens, telefone, WhatsApp e redes/links podem ser mantidos por um editor simples, sem transformar a proposta em ficha técnica.
+5. **Sobre quem preparou**: breve apresentação do autor e link para portfólio (`outreach.portfolioUrl`) apenas se configurado.
+
+### Copy obrigatória de status da proposta
+
+O template possui `__STATUS_PROPOSTA__`. Preencha sempre de acordo com o locale.
+
+**pt-BR**
+
+> **Primeira versão funcional**  
+> Esta proposta serve como ponto de partida. Se a direção fizer sentido, a versão final é refinada em conjunto antes da publicação definitiva — textos, imagens, prioridades e demais ajustes.
+
+**pt-PT**
+
+> **Primeira versão funcional**  
+> Esta proposta serve como ponto de partida. Se a direção fizer sentido, a versão final é refinada em conjunto antes da publicação definitiva — textos, imagens, prioridades e restantes ajustes.
+
+Não esconder esse esclarecimento apenas no rodapé. Ele deve aparecer antes ou imediatamente junto da demonstração do site.
 
 ### Como apresentar o editor na proposta
 
