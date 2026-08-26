@@ -16,3 +16,4 @@ iniciar-dashboard.bat
 iniciar-dashboard.command
 sites/
 .agents/
+.prospector-editor/
