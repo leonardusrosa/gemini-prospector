@@ -118,52 +118,137 @@ Quando a URL for verificada com sucesso:
 
 ## 6. Client CMS — Entrega do Editor ao Cliente
 
-O editor visual gerado pelo Prospector já resolve a **interface de edição**. Para o cliente alterar o próprio site no ar sem depender do desenvolvedor, falta uma camada autenticada de persistência/publicação.
+O editor visual gerado pelo Prospector possui agora a interface de edição e um **publish bridge de referência** para localhost e backend Git protegido:
 
-### Experiência-alvo
+```text
+prospector-de-sites/editor_publish_server.py
+```
+
+A experiência deve continuar sendo:
 
 ```text
 site-do-cliente.com
         ↓
-site-do-cliente.com/admin
+/editor protegido
         ↓
-login / magic link
+login / sessão autorizada
         ↓
 editor visual
         ↓
-Salvar rascunho / Publicar
+Salvar rascunho / Pré-visualizar / Publicar alterações
         ↓
 backend autorizado
         ↓
-validação por cliente + slug + campos permitidos
+validação por cliente + slug
         ↓
-GitHub commit restrito ao diretório do cliente
+Git commit restrito ao diretório do cliente
         ↓
 Vercel deploy
         ↓
 site atualizado
 ```
 
-O cliente não deve precisar ver GitHub, Vercel, HTML ou tokens.
+O cliente não deve precisar ver GitHub, Vercel ou HTML.
 
-### HARD RULE — nenhuma credencial no navegador
+### HARD RULE — Publish é explícito
+
+Editar não publica.
+
+```text
+keystroke/edit
+≠ deploy
+```
+
+O editor oferece ações separadas:
+
+- **Salvar rascunho**: mantém snapshot sem alterar produção;
+- **Pré-visualizar**: testa a versão editada;
+- **Publicar alterações**: exige confirmação explícita;
+- **Exportar página**: fallback/portabilidade, não mecanismo principal de deploy.
+
+Nunca publicar automaticamente a cada keystroke.
+
+### Local publish mode — disponível
+
+Na raiz do workspace:
+
+```bash
+python editor_server.py
+```
+
+Abra:
+
+```text
+http://127.0.0.1:8787/sites/[slug]/[slug]-editor.html
+```
+
+Em `local` mode o botão `Publicar alterações`:
+
+```text
+POST /api/editor/publish
+→ aceita somente target sites/[slug]/[slug].html
+→ cria backup em .prospector-editor/backups/
+→ faz atomic write do HTML limpo
+→ localhost passa a servir a nova versão após refresh
+```
+
+Isso permite testar o fluxo real antes de deploy. `python -m http.server` continua válido para preview somente, mas não implementa POST/persistência.
+
+### Git publish mode — backend de referência
+
+Quando explicitamente configurado:
+
+```text
+PROSPECTOR_EDITOR_PUBLISH_MODE=git
+```
+
+o backend mapeia a publicação do editor para:
+
+```text
+[deploy.repoPath]/[deploy.basePath]/[slug]/index.html
+```
+
+Depois:
+
+1. recusa se já houver mudanças previamente staged, evitando commit misto;
+2. `git add` somente no path daquele cliente;
+3. cria commit `Client publish: [slug]`;
+4. `git push` para remote/branch configurados;
+5. Vercel pode executar auto-deploy pela integração existente.
+
+O backend não usa `--force`.
+
+### HARD RULE — nenhuma credencial Git/Vercel no navegador
 
 Nunca inserir no HTML/editor:
 - GitHub PAT/token;
 - Vercel token;
 - chave privada;
-- credencial do backend;
-- segredo de sessão mestre.
+- Git credential;
+- segredo mestre do backend.
 
-Toda escrita no GitHub/Vercel deve acontecer server-side.
+Toda escrita no GitHub/Vercel acontece server-side.
 
 ### Autorização por site
 
-Uma sessão do cliente deve ser autorizada apenas para o próprio site. Exemplo:
+Para qualquer modo Git ou bind não-local, o backend de referência exige `PROSPECTOR_EDITOR_CLIENTS`, mapeando **token opaco de editor** → slug(s) autorizados.
+
+Exemplo conceitual:
+
+```json
+{
+  "opaque-client-token-a": ["instituto-ferreira"],
+  "opaque-client-token-b": ["outro-cliente"]
+}
+```
+
+Esse token é somente autorização do editor. **Nunca reutilizar GitHub PAT/Vercel token como token do cliente.**
+
+Uma credencial/sessão do cliente deve autorizar apenas o próprio site:
 
 ```text
 cliente: instituto-ferreira
-permitido: clientes/instituto-ferreira/**
+permitido: clientes/instituto-ferreira/index.html
 bloqueado: clientes/outro-cliente/**
 bloqueado: plugin/**
 bloqueado: dashboard/**
@@ -171,11 +256,21 @@ bloqueado: dashboard/**
 
 Bloquear path traversal e qualquer caminho fora do slug autorizado.
 
+Para produção real, colocar o backend atrás de HTTPS e login/session/reverse proxy. O prompt de token do backend de referência é um mecanismo técnico mínimo de autorização por slug, não a UX final de autenticação.
+
+### HARD RULE — static Vercel sozinho não fornece persistência
+
+Uma página estática na Vercel não consegue gravar no GitHub sozinha.
+
+Para o botão `Publicar alterações` funcionar no deploy, `/api/editor/publish` deve ser roteado para o backend protegido, com Git credentials server-side e autorização daquele slug.
+
+Não publicar `*-editor.html` desprotegido e não afirmar que o Client CMS online está funcional para um cliente antes dessa rota/autenticação estar realmente configurada.
+
 ### Campos publicáveis pelo cliente
 
-Permitir por padrão apenas conteúdo de negócio:
+Permitir por padrão apenas conteúdo de negócio através da UI do editor:
 - texto;
-- imagens/alt;
+- imagens/alt/logo;
 - telefone;
 - WhatsApp + mensagem;
 - e-mail;
@@ -184,7 +279,7 @@ Permitir por padrão apenas conteúdo de negócio:
 - Maps;
 - horários/endereço quando modelados como conteúdo editável.
 
-Bloquear:
+Bloquear na UI:
 - CSS/design system;
 - estrutura HTML arbitrária;
 - JavaScript/GSAP;
@@ -193,39 +288,36 @@ Bloquear:
 - deploy config;
 - dependências externas.
 
+O publish bridge também rejeita documentos contendo runtime/UI do editor e restringe rigidamente o target; segurança de produção ainda depende de autenticação e exposição controlada do editor.
+
 ### Dados compartilhados
 
-Campos como `business.whatsapp`, `business.phone`, `business.instagram` etc. devem atualizar todas as ocorrências relevantes do site de uma vez.
-
-### Save Draft x Publish
-
-Manter ações separadas:
-- **Salvar rascunho**: persiste conteúdo sem afetar produção;
-- **Publicar**: exige ação explícita e dispara a atualização do site.
-
-Nunca publicar automaticamente a cada keystroke.
+Campos como `brand.logo`, `business.whatsapp`, `business.phone`, `business.instagram` etc. devem atualizar todas as ocorrências relevantes do site de uma vez.
 
 ### Versionamento e rollback
 
-Como o deploy já usa Git, cada publicação deve gerar versão identificável. O Client CMS deve registrar:
+Em Git mode, cada publicação gera commit SHA identificável. O backend retorna o SHA ao editor quando o push é concluído.
+
+Manter no roadmap/entrega completa:
 - autor/cliente;
 - timestamp;
 - slug;
 - resumo dos campos alterados;
-- commit SHA.
+- UI de rollback/restauração.
 
-Permitir restaurar a versão anterior sem editar Git manualmente.
+Local mode cria backup antes de sobrescrever a página pública para permitir recuperação manual durante desenvolvimento.
 
 ### Status atual do Prospector
 
-Até que um backend autenticado de Client CMS esteja implementado/configurado:
-
 ```text
 editor visual = disponível
-edição de textos/imagens/links = disponível
-exportação de HTML atualizado = disponível
-publicação autônoma pelo cliente = NÃO presumir
-/admin protegido = NÃO presumir
+edição de textos/imagens/links/logo = disponível
+Salvar rascunho = disponível (browser + backend quando alcançável)
+Publicar alterações em localhost = disponível via editor_server.py
+publish bridge Git restrito por slug = implementado como backend de referência
+Vercel auto-deploy após push = compatível com integração existente
+login/magic-link final do cliente = ainda deve ser configurado/implementado por entrega
+/editor público protegido = NÃO presumir sem infraestrutura real
 ```
 
-A proposta comercial deve ser fiel a esse status. Não vender publicação autônoma como pronta se o backend ainda não existir.
+A proposta comercial deve distinguir **capacidade implementada** de **configuração de produção concluída**. Não vender `/editor` protegido/login como pronto para um cliente enquanto essa infraestrutura não estiver efetivamente configurada.
