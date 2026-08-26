@@ -52,6 +52,19 @@ prospector-sites/
 - URL final do site: `https://[domain]/[basePath]/[slug]/`
 - URL da proposta: `https://[domain]/[basePath]/[slug]/proposta.html`
 
+### HARD RULE — não publicar `*-editor.html` como página pública desprotegida
+
+O arquivo visual `sites/[slug]/[slug]-editor.html` é uma ferramenta de edição, não uma página pública do prospecto.
+
+Durante preview/prospecção:
+- não copiar `*-editor.html` para a pasta pública;
+- não enviar URL pública do editor ao lead;
+- não assumir que um arquivo estático em `/admin` está protegido só porque a URL não foi divulgada.
+
+Para cliente final, o editor só pode ser exposto online quando houver autenticação/autorização real conforme a seção **Client CMS** abaixo.
+
+---
+
 ## 3. Fluxo de Publicação
 
 Ao receber ordens como *"publica os 5 redesigns"* ou *"sobe o site da clinica-exemplo"*:
@@ -63,6 +76,7 @@ Ao receber ordens como *"publica os 5 redesigns"* ou *"sobe o site da clinica-ex
    - Criar diretório `[repoPath]/[basePath]/[slug]/`.
    - Copiar `sites/[slug]/[slug].html` para `[repoPath]/[basePath]/[slug]/index.html`.
    - Se houver `sites/[slug]/proposta.html`, copiar para `[repoPath]/[basePath]/[slug]/proposta.html`.
+   - **Não copiar `*-editor.html` automaticamente.**
    - Garantir `robots.txt` na raiz de `repoPath` (`User-agent: *\nDisallow: /`) para evitar indexação de rascunhos.
    - Garantir `index.html` básico na raiz se ainda não existir.
 3. **Controle Git seguro**:
@@ -99,3 +113,119 @@ Quando a URL for verificada com sucesso:
 2. No MCP: chamar `salvar_lead(slug=slug, urlNova=url)` e `atualizar_status(slug, 'publicado')`.
 3. Chamar `regenerar_dashboard()` para atualizar o `dashboard.html`.
 4. Informar ao usuário as URLs publicadas ativas prontas para a etapa de proposta.
+
+---
+
+## 6. Client CMS — Entrega do Editor ao Cliente
+
+O editor visual gerado pelo Prospector já resolve a **interface de edição**. Para o cliente alterar o próprio site no ar sem depender do desenvolvedor, falta uma camada autenticada de persistência/publicação.
+
+### Experiência-alvo
+
+```text
+site-do-cliente.com
+        ↓
+site-do-cliente.com/admin
+        ↓
+login / magic link
+        ↓
+editor visual
+        ↓
+Salvar rascunho / Publicar
+        ↓
+backend autorizado
+        ↓
+validação por cliente + slug + campos permitidos
+        ↓
+GitHub commit restrito ao diretório do cliente
+        ↓
+Vercel deploy
+        ↓
+site atualizado
+```
+
+O cliente não deve precisar ver GitHub, Vercel, HTML ou tokens.
+
+### HARD RULE — nenhuma credencial no navegador
+
+Nunca inserir no HTML/editor:
+- GitHub PAT/token;
+- Vercel token;
+- chave privada;
+- credencial do backend;
+- segredo de sessão mestre.
+
+Toda escrita no GitHub/Vercel deve acontecer server-side.
+
+### Autorização por site
+
+Uma sessão do cliente deve ser autorizada apenas para o próprio site. Exemplo:
+
+```text
+cliente: instituto-ferreira
+permitido: clientes/instituto-ferreira/**
+bloqueado: clientes/outro-cliente/**
+bloqueado: plugin/**
+bloqueado: dashboard/**
+```
+
+Bloquear path traversal e qualquer caminho fora do slug autorizado.
+
+### Campos publicáveis pelo cliente
+
+Permitir por padrão apenas conteúdo de negócio:
+- texto;
+- imagens/alt;
+- telefone;
+- WhatsApp + mensagem;
+- e-mail;
+- socials;
+- booking;
+- Maps;
+- horários/endereço quando modelados como conteúdo editável.
+
+Bloquear:
+- CSS/design system;
+- estrutura HTML arbitrária;
+- JavaScript/GSAP;
+- analytics;
+- secrets;
+- deploy config;
+- dependências externas.
+
+### Dados compartilhados
+
+Campos como `business.whatsapp`, `business.phone`, `business.instagram` etc. devem atualizar todas as ocorrências relevantes do site de uma vez.
+
+### Save Draft x Publish
+
+Manter ações separadas:
+- **Salvar rascunho**: persiste conteúdo sem afetar produção;
+- **Publicar**: exige ação explícita e dispara a atualização do site.
+
+Nunca publicar automaticamente a cada keystroke.
+
+### Versionamento e rollback
+
+Como o deploy já usa Git, cada publicação deve gerar versão identificável. O Client CMS deve registrar:
+- autor/cliente;
+- timestamp;
+- slug;
+- resumo dos campos alterados;
+- commit SHA.
+
+Permitir restaurar a versão anterior sem editar Git manualmente.
+
+### Status atual do Prospector
+
+Até que um backend autenticado de Client CMS esteja implementado/configurado:
+
+```text
+editor visual = disponível
+edição de textos/imagens/links = disponível
+exportação de HTML atualizado = disponível
+publicação autônoma pelo cliente = NÃO presumir
+/admin protegido = NÃO presumir
+```
+
+A proposta comercial deve ser fiel a esse status. Não vender publicação autônoma como pronta se o backend ainda não existir.
