@@ -9,7 +9,10 @@ Esta skill é uma etapa de produção visual do `redesign-premium`, não um subs
 
 Leia e siga integralmente:
 
-`../redesign-premium/references/expert-hero-generation.md`
+```text
+../redesign-premium/references/expert-hero-generation.md
+../redesign-premium/references/hero-image-quality.md
+```
 
 ## Trigger obrigatório
 
@@ -61,7 +64,9 @@ Não sobrescreva o retrato-fonte.
 Para `expert_fullscreen`, **prefira um asset desktop ultrawide art-directed em vez de 16:9** quando o layout tiver copy à esquerda e o expert à direita.
 
 - aspect ratio preferencial: aproximadamente `2.3:1–2.6:1` quando suportado;
-- resolução de classe 3K/4K é recomendada quando útil; `3584×1533` é apenas um exemplo, não requisito;
+- resolução de classe 3K/4K é recomendada quando útil;
+- **para qualidade final, prefira aproximadamente `3500–4500+ px` de largura quando a fonte/gerador suportar isso de forma real**;
+- `4200×1728` é um benchmark forte de produção, não requisito;
 - **o expert deve ficar centrado dentro da metade direita do canvas** — visual center aproximadamente em `x ≈ 75%` do quadro;
 - não empurre o expert contra a borda direita e não deixe o sujeito derivar para o centro da página;
 - preserve breathing room suficiente ao redor do sujeito para que widescreen/contain não corte cabeça/torso;
@@ -73,6 +78,28 @@ Para `expert_fullscreen`, **prefira um asset desktop ultrawide art-directed em v
 - nenhum gradient/fog sobre o expert.
 
 **16:9 deixa de ser o default desktop para este modo.** Use 16:9 apenas se a composição real funcionar melhor ou se a capacidade de geração não suportar um ultrawide útil.
+
+### HARD RULE — high-quality source/output
+
+Não gere um hero pequeno/soft para depois ampliá-lo no CSS.
+
+Qualidade deve ser avaliada visualmente, não apenas pelo número de pixels:
+
+- rosto, cabelo, roupa e bordas importantes devem permanecer nítidos em 1440p e wide-screen review;
+- compressão não pode criar smearing, ringing, halos, blockiness ou perda material de detalhe facial;
+- não faça upscale destrutivo de uma fonte ruim só para atingir 4K nominal;
+- prefira uma fonte first-party melhor, enhancement source-preserving ou geração de referência que preserve identidade;
+- mantenha qualidade facial antes de perseguir um limite arbitrário de KB.
+
+Benchmark de referência, não hard limit:
+
+```text
+4200 × 1728 WebP
+~417 KB
+ultrawide expert hero
+```
+
+Um hero em torno de `400–500 KB` pode ser aceitável quando a qualidade visual justifica o payload e o carregamento LCP está corretamente otimizado.
 
 ### Edge integration / post-process
 
@@ -92,7 +119,9 @@ Quando o ultrawide for renderizado com `contain` e puder revelar suas bordas:
 - head + upper body;
 - **não mostrar waist-down**;
 - lower ~45–50% calma para HTML copy;
-- nenhum texto/logo/UI dentro da imagem.
+- nenhum texto/logo/UI dentro da imagem;
+- usar resolução suficiente para nitidez HiDPI; `1080px` de largura é um baseline útil, não teto;
+- não reutilizar um crop mobile de baixa qualidade do ultrawide desktop.
 
 ## Identity QA
 
@@ -105,6 +134,25 @@ Se o output alterar materialmente rosto/idade/expression/pose:
 3. gere/construa apenas background/environment quando possível;
 4. composite o expert real sem feather/fade no sujeito;
 5. nunca use uma pessoa sintética parecida como substituta.
+
+## Quality QA — obrigatório
+
+Antes de aceitar o hero desktop, confirme:
+
+```text
+Source/output resolution: PASS
+Large-screen sharpness: PASS
+Expert facial detail: PASS
+Hair/clothing edge detail: PASS
+Compression artifacts: NONE MATERIAL
+Oversharpening/halos: NONE MATERIAL
+Ultrawide composition: PASS
+Expert Right-Half Centering: PASS
+No destructive upscale: PASS
+LCP/preload integration: PASS
+```
+
+Se qualquer item crítico falhar, reprocessar, regenerar ou usar fallback antes de concluir a página.
 
 ## Factual visual safety
 
@@ -130,7 +178,12 @@ Após gerar/validar assets:
    - source portrait path;
    - desktop/mobile output paths;
    - desktop aspect ratio;
+   - desktop dimensions e encoded size quando mensuráveis;
    - `Expert Right-Half Centering: PASS | FAIL`;
+   - `Large-Screen Sharpness QA: PASS | FAIL`;
+   - `Facial Detail QA: PASS | FAIL`;
+   - `Compression Artifact QA: PASS | FAIL`;
+   - `No Destructive Upscale: PASS | FAIL`;
    - identity QA;
 2. para desktop ultrawide, preferir integração fluida/subject-safe (`contain`, controlled `<img>`/`<picture>` ou equivalente), evitando `cover` destrutivo;
 3. manter headline, supporting copy, CTA e trust facts como HTML semântico;
@@ -143,7 +196,7 @@ Não bloquear todo o redesign apenas porque geração nativa não existe.
 Se a capacidade nativa não estiver disponível e nenhum provider externo tiver sido explicitamente configurado:
 
 - use fonte real + background source-preserving/CSS/compositing;
-- mantenha as regras de expert dominance e right-half centering;
+- mantenha as regras de expert dominance, right-half centering e quality QA;
 - registre `Hero Asset Generation: source-preserving-fallback`.
 
 Nunca fingir que uma imagem foi gerada nativamente quando não foi.
