@@ -591,3 +591,116 @@ Depois de aprovação, o fluxo normal pode seguir para proposta/deploy conforme 
 4. não registrar outreach durante geração de site.
 
 A mudança de status deve seguir o lifecycle atual do CRM e nunca implicar contato/envio sem autorização específica.
+
+---
+
+## 18. HARD RULE — Companion Research, Hero Engineering & Performance References
+
+Estas referências fazem parte do workflow desta skill; não são documentação opcional:
+
+```text
+references/first-party-source-crawl.md
+references/design-performance-playbook.md
+```
+
+Quando `Hero Mode = expert_fullscreen`, leia também:
+
+```text
+references/expert-hero-generation.md
+```
+
+### Existing-site research
+
+Para `siteMode = redesign`, **não finalize o Design Read com evidência apenas da homepage** quando houver subpáginas oficiais úteis e descobríveis.
+
+Antes do Design Read final:
+
+```text
+official domain
+→ homepage
+→ targeted same-domain source-tree crawl
+→ facts/assets + provenance
+→ asset manifest
+→ FACTUAL SOURCE SET
+→ DESIGN READ
+```
+
+Serviços/especialidades, equipe/expert, instalações/gallery e contato/localização são páginas prioritárias. O crawl é dirigido e normalmente depth ~2–3, não spider indiscriminado.
+
+### Subject-safe hero rendering
+
+`cover` nunca é um requisito. Não use `background-size: cover`/`object-fit: cover` se ele cortar ou ampliar destrutivamente o sujeito principal em widescreen.
+
+Quando necessário, use:
+
+- asset dedicado desktop/mobile;
+- `<picture>` e posicionamento controlado;
+- `contain` + anchoring;
+- source-preserving compositing.
+
+Se houver gradient/overlay para legibilidade da copy, restrinja-o ao território da copy/ambiente. **Nunca lave o expert.**
+
+Quando composição/outpainting revelar bordas retangulares, dissolva essas bordas de forma sutil no background. Isso é condicional, não efeito obrigatório.
+
+### Header — default condicional
+
+Prefira header primário limpo em vez de `utility bar + navbar` redundantes. Mantenha utility bar quando ela tiver utilidade comercial real.
+
+Glass/translucency pode ser usada sobre hero imersivo quando melhorar legibilidade e fizer sentido para a identidade. **Glassmorphism não é estética padrão.** Valores CSS exatos do playbook são referência, não tokens universais.
+
+### Mobile immersive flow
+
+Para `expert_fullscreen`/hero imersivo no mobile, evite por padrão o retrato recortado numa caixa superior visualmente desconectada de um card branco inferior. Quando compatível com a direção, use continuidade/fade suave entre visual e copy.
+
+### HARD RULE — image performance
+
+- hero/LCP **não** usa `loading="lazy"`;
+- use `fetchpriority="high"` no `<img>` LCP quando adequado;
+- preload desktop/mobile hero quando forem recursos críticos conhecidos;
+- `<img>` deve ter `width`/`height` intrínsecos quando conhecidos para reduzir CLS;
+- imagens abaixo da dobra usam `loading="lazy"` + `decoding="async"` por padrão;
+- prefira WebP/AVIF/formatos modernos e compressão perceptual apropriada.
+
+Qualidade WebP, dimensão 2x e budgets de KB são **heurísticas**, não hard limits. Não degrade rosto/ativo real para atingir número arbitrário.
+
+### Location conversion module
+
+Quando localização física for relevante à conversão, prefira módulo compacto com endereço factual + CTA direto de rota. Map iframe é opcional e, se abaixo da dobra, deve ser lazy-loaded.
+
+Não force mapa em todo site.
+
+### Workflow efetivo
+
+Interprete o workflow da seção 16 como:
+
+```text
+RESEARCH
+→ FIRST-PARTY SOURCE TREE (redesign)
+→ FACTUAL SOURCE SET + ASSET MANIFEST
+→ DESIGN READ
+→ SELECT HERO MODE
+→ HERO ASSET/RENDERING STRATEGY
+→ DEFINE CREATIVE INTERVENTION SCOPE
+→ GPT-TASTE ART DIRECTION
+→ STATIC BUILD
+→ MOBILE-SPECIFIC PASS
+→ IMAGE/PERFORMANCE PASS
+→ MOTION & BEHAVIOR PASS
+→ IMPECCABLE QA
+→ SCREENSHOT REVIEW
+→ HUMAN APPROVAL
+```
+
+### QA adicional obrigatório
+
+Além da seção 15, confirme:
+
+- subpáginas oficiais relevantes foram consideradas no redesign;
+- hero não perde cabeça/torso/sujeito em 1280/1440 e telas mais largas;
+- nenhum `cover` destrutivo;
+- nenhum gradient cruza/lava o sujeito;
+- hero não foi lazy-loaded;
+- preload/fetchpriority foram usados apenas quando realmente críticos;
+- dimensões intrínsecas evitam CLS evitável;
+- imagens abaixo da dobra estão lazy/async salvo exceção justificada;
+- glass/map/vignette/fades aparecem somente quando justificados pelo caso.
