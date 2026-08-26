@@ -280,3 +280,56 @@ Mobile First-Fold QA: PASS
 ```
 
 Never report `antigravity-native` unless that capability was actually used.
+
+## 12. Hero Rendering Engineering — HARD RULES vs defaults
+
+Image generation quality is only half of the hero problem. The final CSS/HTML integration must preserve the composition.
+
+Read `design-performance-playbook.md` for the general engineering rules.
+
+### HARD RULE — no destructive `cover`
+
+Do not use `background-size: cover` or `object-fit: cover` merely because the asset is 16:9.
+
+At 1280, 1440 and wider desktop widths, verify that:
+
+- the expert's head/torso remains intact;
+- the expert still owns the intended right-side territory;
+- copy negative space remains usable;
+- scale does not become an accidental zoom.
+
+If `cover` fails, switch to a subject-safe rendering strategy:
+
+- `<picture>`/`<img>` with controlled dimensions/position;
+- `contain` + right anchoring;
+- dedicated art-directed breakpoint asset;
+- source-preserving compositing.
+
+`contain` is a preferred option for many expert heroes, **not a universal law**.
+
+### Copy overlay boundary
+
+Any readability gradient belongs behind the copy/environment only. Its transparent end must resolve before it crosses the expert silhouette.
+
+Do not use a global white overlay over the image.
+
+### Edge integration
+
+If the hero asset does not naturally fill the container and its rectangular boundaries become visible, dissolve the image edges into the page background using subtle tonal continuation/vignette/gradient masks.
+
+Do this only when needed. Do not force a vignette onto naturally full-bleed imagery.
+
+### Mobile continuity
+
+For immersive mobile expert heroes, prefer continuous visual flow between the upper expert image and lower HTML copy instead of a visibly clipped image-box + solid-card split.
+
+A soft bottom fade into the page background is a valid default when it improves continuity, but its height/color must be tuned to the actual asset.
+
+### LCP integration
+
+- hero image must not be lazy-loaded;
+- use `fetchpriority="high"` for the actual LCP image when appropriate;
+- preload dedicated desktop/mobile hero resources when they are known critical;
+- preserve intrinsic dimensions/aspect ratio to avoid layout shift.
+
+Compression numbers are tuning heuristics. Preserve expert facial quality before chasing an arbitrary KB target.
