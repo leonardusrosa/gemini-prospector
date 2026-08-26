@@ -2,11 +2,11 @@
 
 Todo site gerado pelo Prospector deve poder receber uma versão de editor visual sem expor HTML/CSS/JS arbitrário ao cliente.
 
-O objetivo é permitir manutenção cotidiana de conteúdo sem depender do desenvolvedor para cada troca de texto, telefone, WhatsApp, rede social ou imagem.
+O objetivo é permitir manutenção cotidiana de conteúdo sem depender do desenvolvedor para cada troca de texto, telefone, WhatsApp, rede social, link ou imagem.
 
 ## Geração
 
-Use o gerador canônico da raiz do projeto:
+Use o gerador canônico do plugin através do wrapper da raiz:
 
 ```bash
 python create_editor.py sites/[slug]/[slug].html
@@ -18,114 +18,78 @@ Saída padrão:
 sites/[slug]/[slug]-editor.html
 ```
 
-O editor é injetado antes de `</body>` e não deve alterar a página pública original.
+**IMPORTANTE:** arquivos `*-editor.html` já gerados não se atualizam quando o gerador muda. Depois de atualizar o Prospector, regenere o editor a partir do HTML público.
 
-## O que deve ser editável
+## HARD RULE — ações do negócio precisam ser editáveis
 
-### Texto
+Todo CTA/link relevante deve abrir o painel de propriedades em modo edição, inclusive quando o clique ocorrer no SVG/ícone interno.
 
-- headings
-- parágrafos
-- listas
-- captions
-- textos editoriais comuns
+Inclui obrigatoriamente:
 
-Colar conteúdo deve virar **texto puro**, sem HTML arbitrário.
-
-### Imagens
-
-Ao clicar em uma imagem, abrir propriedades para:
-
-- trocar arquivo
-- editar URL/origem
-- editar `alt`
-
-Arquivos escolhidos localmente podem ser incorporados como Data URL no HTML exportado. Para produção em escala, prefira posteriormente um pipeline de upload de assets em vez de Base64.
-
-### Imagens de fundo
-
-Se uma imagem de fundo precisar ser editável pelo cliente, marque o elemento explicitamente:
-
-```html
-<section
-  data-pe-bg
-  data-pe-bg-src="assets/hero.webp"
-  style="background-image:url('assets/hero.webp')">
-</section>
-```
-
-Não dependa de introspecção automática de CSS complexo.
-
-### Botões, links e CTAs
-
-**HARD RULE:** todo botão/link relevante ao negócio deve ser editável no editor.
-
-Inclui:
-
+- botão `Agendar Consulta`
+- botão/CTA sticky ou flutuante `Agendar no WhatsApp`
+- CTA de navbar
+- CTA de hero
+- CTA de rodapé
 - WhatsApp
 - telefone
 - e-mail
 - Instagram
 - Facebook
-- TikTok/YouTube quando reais
+- YouTube/TikTok quando reais
 - booking/agendamento
 - Google Maps
-- links internos
-- links externos
-- CTA de navbar
-- CTA de hero
-- CTA flutuante
-- CTA de rodapé
+- links internos e externos
 
-Ao clicar no link em modo edição, **não navegar**. Abra painel de propriedades.
+O editor usa **event delegation em capture phase** para interceptar esses cliques antes dos handlers da página. Isso evita que SVGs internos, scripts de navegação ou `stopPropagation()` tornem os links impossíveis de editar.
 
-O painel deve permitir editar:
+Também existe compatibilidade com navegação legada via `onclick` simples (`window.open`, `location.href`, `location.assign`), mas novos sites devem preferir links semânticos.
 
-- texto/label do botão quando houver label simples
-- tipo de ação
-- destino
-- mensagem pré-preenchida do WhatsApp
-- `aria-label`
-- abrir ou não em nova aba
+## Markup obrigatório para novos sites
 
-Tipos suportados:
+Prefira sempre `<a href>` para ações navegáveis, mesmo quando visualmente parece um botão.
 
-```text
-URL/página
-WhatsApp
-Telefone
-E-mail
-Âncora interna
-```
-
-URLs com esquemas perigosos como `javascript:` devem ser rejeitadas.
-
-## Campos compartilhados / conteúdo repetido
-
-Contato e socials normalmente aparecem várias vezes. O cliente não deve precisar trocar o mesmo WhatsApp em cinco lugares.
-
-O editor oferece atualização de todos os links com o mesmo destino automaticamente.
-
-Para controle ainda mais robusto, marque elementos equivalentes com `data-pe-field`:
+### WhatsApp
 
 ```html
 <a
   href="https://wa.me/5511999999999"
   data-pe-field="business.whatsapp">
-  <span data-pe-label>Agendar no WhatsApp</span>
-</a>
-
-<a
-  href="https://wa.me/5511999999999"
-  data-pe-field="business.whatsapp"
-  aria-label="WhatsApp">
-  ...ícone...
+  <svg aria-hidden="true">...</svg>
+  <span data-pe-label>Agendar Consulta</span>
 </a>
 ```
 
-Quando `data-pe-field` existe, alterações de destino devem sincronizar todas as ocorrências do campo.
+### Sticky WhatsApp
 
-Campos recomendados quando aplicável:
+```html
+<a
+  href="https://wa.me/5511999999999"
+  data-pe-field="business.whatsapp"
+  aria-label="Agendar no WhatsApp">
+  <svg aria-hidden="true">...</svg>
+  <span data-pe-label>Agendar no WhatsApp</span>
+</a>
+```
+
+### Social apenas com ícone
+
+```html
+<a
+  href="https://instagram.com/empresa"
+  data-pe-field="business.instagram"
+  aria-label="Instagram">
+  <svg aria-hidden="true">...</svg>
+</a>
+```
+
+Links somente com ícone continuam editáveis: o cliente altera destino e `aria-label`; o SVG não é destruído.
+
+## Campos compartilhados
+
+Use `data-pe-field` para dados repetidos. Alterar um campo pode atualizar todas as suas ocorrências quando a opção de sincronização estiver marcada.
+
+Campos recomendados:
 
 ```text
 business.whatsapp
@@ -139,26 +103,81 @@ business.maps
 business.booking
 ```
 
-Não invente canais ausentes.
+Mesmo em páginas antigas sem `data-pe-field`, o runtime tenta inferir automaticamente campos conhecidos a partir do URL (`wa.me`, `tel:`, `mailto:`, Instagram, Facebook, YouTube, TikTok e Google Maps).
 
-## Labels de botões complexos
+## Painel de ações
 
-Para CTAs que contêm SVG/ícone + texto, marque explicitamente a parte editável:
+Ao clicar em um CTA/link em modo edição, não navegue. Abra o painel para editar:
 
-```html
-<a href="..." data-pe-field="business.whatsapp">
-  <svg aria-hidden="true">...</svg>
-  <span data-pe-label>Agendar consulta</span>
-</a>
+- texto/label, quando houver um nó de label simples
+- tipo de ação
+- destino
+- mensagem pré-preenchida do WhatsApp
+- `aria-label`
+- abrir ou não em nova aba
+- sincronizar ocorrências do mesmo campo/canal
+
+Tipos suportados:
+
+```text
+URL/página
+WhatsApp
+Telefone
+E-mail
+Âncora interna
 ```
 
-Isso evita destruir ícones ao alterar o texto.
+Bloqueie esquemas perigosos como `javascript:`, `vbscript:` e `data:text/html`.
 
-Se o botão for apenas ícone, o editor deve alterar o destino e `aria-label`, não substituir o SVG.
+## Texto
+
+Editável:
+
+- headings
+- parágrafos
+- listas
+- captions
+- textos editoriais comuns
+
+Colar conteúdo deve virar texto puro, sem HTML arbitrário.
+
+## Imagens
+
+Ao clicar em uma imagem, permitir:
+
+- trocar arquivo
+- editar URL/origem
+- editar `alt`
+
+Arquivos locais podem ser incorporados como Data URL no HTML exportado. Para produção em escala, prefira futuramente pipeline de upload de assets.
+
+### Imagens de fundo
+
+Marque explicitamente imagens de fundo editáveis:
+
+```html
+<section
+  data-pe-bg
+  data-pe-bg-src="assets/hero.webp"
+  style="background-image:url('assets/hero.webp')">
+</section>
+```
+
+Não dependa de introspecção automática de CSS complexo.
+
+## Labels complexos
+
+Para CTA com SVG/ícone + texto, marque a parte textual:
+
+```html
+<span data-pe-label>Agendar consulta</span>
+```
+
+Isso permite trocar o texto sem substituir o SVG.
 
 ## Limites de segurança
 
-O cliente **não** recebe edição arbitrária de:
+O cliente não recebe edição arbitrária de:
 
 - HTML
 - CSS
@@ -166,79 +185,28 @@ O cliente **não** recebe edição arbitrária de:
 - GSAP/motion logic
 - tokens/chaves
 - configuração de deploy
-- scripts de analytics
+- analytics
 - código de terceiros
 
-A experiência deve funcionar como um CMS leve de conteúdo, não como editor de código.
+A experiência é um CMS leve de conteúdo, não editor de código.
 
 ## Preview e exportação
 
 O editor deve oferecer:
 
-- `Pré-visualizar`: desliga temporariamente os handlers de edição e permite testar a página
-- `Exportar página`: baixa HTML limpo, sem toolbar/painel/runtime do editor
+- `Pré-visualizar`: permite testar links/comportamentos normalmente
+- `Exportar página`: baixa HTML limpo sem toolbar/painel/runtime do editor
 
-A exportação deve manter `data-pe-field`, `data-pe-label` e `data-pe-bg` porque esses atributos são inofensivos na página pública e permitem recriar o editor futuramente.
+## QA obrigatória do editor
 
-## Publicação pelo próprio cliente
+Para cada site novo, teste no `*-editor.html` pelo menos:
 
-A versão atual do editor é **client-ready para edição**, mas `Exportar página` ainda é o limite seguro do runtime estático.
+1. CTA principal do hero abre propriedades, não navega.
+2. CTA sticky/flutuante do WhatsApp abre propriedades.
+3. Clique diretamente no SVG de Instagram/Facebook abre o link pai no editor.
+4. Link social somente com ícone permite alterar URL e `aria-label`.
+5. Alterar `business.whatsapp` com sincronização atualiza navbar + hero + sticky + footer quando existirem.
+6. Preview volta a permitir navegação real.
+7. HTML exportado não contém a UI/runtime do editor.
 
-Não finja que existe publicação direta se não houver backend autenticado.
-
-Para permitir `Salvar rascunho` / `Publicar` no site ao vivo, a arquitetura futura deve ser:
-
-```text
-cliente autenticado
-→ editor protegido
-→ endpoint backend/serverless autorizado
-→ valida payload/slug/campos permitidos
-→ salva assets
-→ commit restrito ao diretório do cliente
-→ GitHub
-→ Vercel deploy
-```
-
-### Segurança da publicação futura
-
-- nunca expor GitHub token no browser
-- nunca expor Vercel token no browser
-- autenticar cliente
-- autorizar cliente apenas ao próprio slug/site
-- bloquear path traversal
-- aceitar somente campos/assets permitidos
-- separar `Salvar rascunho` de `Publicar`
-- manter histórico/versionamento
-- permitir rollback
-- registrar auditoria de publicação
-
-Até esse backend existir e estar protegido, mantenha publicação como ação manual/controlada após exportação.
-
-## QA obrigatório do editor
-
-Para cada novo site, testar pelo menos:
-
-1. editar heading/parágrafo
-2. editar label de CTA com ícone sem destruir SVG
-3. trocar WhatsApp e confirmar sincronização nas ocorrências repetidas
-4. trocar Instagram/Facebook
-5. editar telefone/e-mail
-6. editar URL normal
-7. trocar imagem + `alt`
-8. preview permite usar os links normalmente
-9. exportação remove totalmente o runtime visual do editor
-10. HTML exportado continua funcional e responsivo
-11. `javascript:` é rejeitado
-12. nenhum segredo/config de deploy aparece no HTML
-
-## Regra permanente de geração
-
-Ao criar qualquer página futura, pense na editabilidade durante o próprio markup:
-
-- CTAs importantes com `<a href>` real em vez de handlers opacos
-- `data-pe-label` em labels dentro de botões complexos
-- `data-pe-field` em contatos/socials repetidos
-- `data-pe-bg` para backgrounds que o cliente deve poder trocar
-- `alt` factual e editável em imagens
-
-A editabilidade não deve mudar a estética da página pública.
+Se qualquer CTA/social relevante não for link-editável, o editor falhou QA e não deve ser considerado concluído.
