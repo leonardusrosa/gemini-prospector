@@ -2,11 +2,11 @@
 
 Todo site gerado pelo Prospector deve poder receber uma versão de editor visual sem expor HTML/CSS/JS arbitrário ao cliente.
 
-O objetivo é permitir manutenção cotidiana de conteúdo sem depender do desenvolvedor para cada troca de texto, telefone, WhatsApp, rede social, link ou imagem.
+O objetivo é permitir manutenção cotidiana de conteúdo sem depender do desenvolvedor para cada troca de texto, telefone, WhatsApp, rede social, link, logo ou imagem.
 
 ## Geração
 
-Use o gerador canônico do plugin através do wrapper da raiz:
+Use o gerador canônico através do wrapper da raiz:
 
 ```bash
 python create_editor.py sites/[slug]/[slug].html
@@ -17,6 +17,8 @@ Saída padrão:
 ```text
 sites/[slug]/[slug]-editor.html
 ```
+
+**HARD RULE:** use o wrapper da raiz, não invoque diretamente o gerador interno do plugin em workflows normais. O wrapper executa os compatibility patches do editor, incluindo reconhecimento/prioridade de logo/brand media.
 
 **IMPORTANTE:** arquivos `*-editor.html` já gerados não se atualizam quando o gerador muda. Depois de atualizar o Prospector, regenere o editor a partir do HTML público.
 
@@ -45,7 +47,89 @@ O editor usa **event delegation em capture phase** para interceptar esses clique
 
 Também existe compatibilidade com navegação legada via `onclick` simples (`window.open`, `location.href`, `location.assign`), mas novos sites devem preferir links semânticos.
 
-## Markup obrigatório para novos sites
+## HARD RULE — logo/marca é mídia editável de primeira classe
+
+Header/footer logo, wordmark e imagem de marca devem ser substituíveis pelo cliente como **mídia**, não tratados apenas como link para a home.
+
+Isso vale mesmo quando o logo está dentro de:
+
+```html
+<a href="/">...</a>
+```
+
+### Prioridade de clique
+
+Quando o clique ocorre diretamente em uma imagem editável dentro de um link:
+
+```text
+imagem/logo
+→ abrir propriedades de mídia
+→ NÃO abrir propriedades do link pai
+→ NÃO navegar
+```
+
+Quando o usuário clicar numa área do link que não seja a própria imagem, o link/ação pode continuar abrindo o painel de ação.
+
+Assim, um logo clicável continua tendo **duas responsabilidades separadas**:
+
+```text
+brand.logo = arquivo/URL/alt da marca
+brand.home = destino do link da marca
+```
+
+### Markup recomendado para novos sites
+
+```html
+<a href="/" data-pe-field="brand.home" aria-label="Página inicial">
+  <img
+    src="assets/logo.webp"
+    alt="Nome do negócio"
+    data-pe-field="brand.logo">
+</a>
+```
+
+Use `brand.logo` para ocorrências que devem trocar juntas, por exemplo header + footer.
+
+Quando existirem variantes genuinamente diferentes, use campos explícitos, por exemplo:
+
+```text
+brand.logo
+brand.logo.mobile
+brand.logo.light
+brand.logo.dark
+```
+
+Não crie variantes sem necessidade.
+
+### Inferência para sites existentes
+
+Mesmo sem `data-pe-field`, o runtime/wrapper tenta reconhecer logos por sinais como:
+
+- `src`/`alt` contendo `logo`, `logotipo`, `brand` ou `marca`;
+- classes/IDs de logo/brand;
+- imagem clicável dentro de header/nav/footer apontando para a home.
+
+Quando inferido como logo, o campo compartilhado é `brand.logo`.
+
+A inferência é fallback. **Novos sites devem marcar explicitamente `data-pe-field="brand.logo"`.**
+
+### `<picture>` / `srcset`
+
+Logo/imagem editável dentro de `<picture>` deve continuar trocável. Quando o editor altera a imagem principal, fontes associadas do `<picture>` não podem manter uma versão antiga que sobreponha visualmente a alteração.
+
+Evite estruturas de imagem responsiva desnecessariamente complexas para logos simples.
+
+### SVG
+
+- SVG usado via `<img src="logo.svg">` é mídia editável normalmente.
+- SVG inline não deve abrir edição arbitrária de paths/código.
+- Se uma marca inline SVG precisar ser substituível, prefira transformá-la em asset externo ou fornecer mecanismo explícito de brand asset.
+
+### Proporção
+
+Trocar o logo não deve deformá-lo. Layout/CSS deve preservar `object-fit`, proporção e limites de tamanho adequados.
+
+## Markup obrigatório para novos sites — ações
 
 Prefira sempre `<a href>` para ações navegáveis, mesmo quando visualmente parece um botão.
 
@@ -92,6 +176,8 @@ Use `data-pe-field` para dados repetidos. Alterar um campo pode atualizar todas 
 Campos recomendados:
 
 ```text
+brand.logo
+brand.home
 business.whatsapp
 business.phone
 business.email
@@ -103,7 +189,7 @@ business.maps
 business.booking
 ```
 
-Mesmo em páginas antigas sem `data-pe-field`, o runtime tenta inferir automaticamente campos conhecidos a partir do URL (`wa.me`, `tel:`, `mailto:`, Instagram, Facebook, YouTube, TikTok e Google Maps).
+Mesmo em páginas antigas sem `data-pe-field`, o runtime tenta inferir automaticamente campos conhecidos a partir do URL (`wa.me`, `tel:`, `mailto:`, Instagram, Facebook, YouTube, TikTok e Google Maps) e sinais de identidade visual para logos.
 
 ## Painel de ações
 
@@ -148,6 +234,7 @@ Ao clicar em uma imagem, permitir:
 - trocar arquivo
 - editar URL/origem
 - editar `alt`
+- sincronizar ocorrências quando houver campo compartilhado
 
 Arquivos locais podem ser incorporados como Data URL no HTML exportado. Para produção em escala, prefira futuramente pipeline de upload de assets.
 
@@ -182,6 +269,7 @@ O cliente não recebe edição arbitrária de:
 - HTML
 - CSS
 - JavaScript
+- SVG paths/código inline
 - GSAP/motion logic
 - tokens/chaves
 - configuração de deploy
@@ -206,7 +294,11 @@ Para cada site novo, teste no `*-editor.html` pelo menos:
 3. Clique diretamente no SVG de Instagram/Facebook abre o link pai no editor.
 4. Link social somente com ícone permite alterar URL e `aria-label`.
 5. Alterar `business.whatsapp` com sincronização atualiza navbar + hero + sticky + footer quando existirem.
-6. Preview volta a permitir navegação real.
-7. HTML exportado não contém a UI/runtime do editor.
+6. **Clique diretamente no logo do header abre `Logo / marca` como mídia, não o link da home.**
+7. Trocar `brand.logo` altera todas as ocorrências compartilhadas relevantes (ex.: header + footer).
+8. Logo dentro de `<a href="/">` continua substituível sem navegar.
+9. Se houver `<picture>`, a alteração não fica visualmente anulada por `source/srcset` antigo.
+10. Preview volta a permitir navegação real.
+11. HTML exportado não contém a UI/runtime do editor.
 
-Se qualquer CTA/social relevante não for link-editável, o editor falhou QA e não deve ser considerado concluído.
+Se qualquer CTA/social relevante ou logo principal não for editável conforme sua função, o editor falhou QA e não deve ser considerado concluído.
