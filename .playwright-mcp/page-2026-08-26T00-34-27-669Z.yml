@@ -1,0 +1,260 @@
+- generic [active] [ref=f9e1]:
+  - generic [ref=f9e3]:
+    - generic [ref=f9e4]:
+      - generic [ref=f9e5]: Rua 5, 3379 (entre Avs. 46 e 50), Jardim Portugal — Rio Claro/SP
+      - generic [ref=f9e9]: "Segunda a Sexta: 08:45 às 10:45 | 11:45 às 18:00"
+    - link "(19) 3534-6554" [ref=f9e14] [cursor=pointer]:
+      - /url: tel:1935346554
+  - banner [ref=f9e17]:
+    - generic [ref=f9e18]:
+      - link [ref=f9e19] [cursor=pointer]:
+        - /url: "#"
+        - img "Instituto Ferreira — Odontologia e Harmonização Orofacial" [ref=f9e20]
+      - navigation [ref=f9e21]:
+        - list [ref=f9e22]:
+          - listitem [ref=f9e23]:
+            - link "Especialidades" [ref=f9e24] [cursor=pointer]:
+              - /url: "#especialidades"
+          - listitem [ref=f9e25]:
+            - link "Corpo Clínico" [ref=f9e26] [cursor=pointer]:
+              - /url: "#corpo-clinico"
+          - listitem [ref=f9e27]:
+            - link "Estrutura" [ref=f9e28] [cursor=pointer]:
+              - /url: "#estrutura"
+          - listitem [ref=f9e29]:
+            - link "Localização" [ref=f9e30] [cursor=pointer]:
+              - /url: "#localizacao"
+      - link "Agendar Consulta" [ref=f9e32] [cursor=pointer]:
+        - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20consulta%20no%20Instituto%20Ferreira.
+  - main [ref=f9e35]:
+    - generic [ref=f9e37]:
+      - generic [ref=f9e38]:
+        - generic [ref=f9e39]: Ortodontia Especializada & Harmonização Orofacial
+        - heading [level=1] [ref=f9e41]:
+          - text: Excelência técnica e acolhimento para o seu
+          - emphasis [ref=f9e42]: sorriso e harmonia facial
+          - text: .
+        - paragraph [ref=f9e43]:
+          - text: Tratamentos odontológicos integrados em Rio Claro/SP sob a coordenação do
+          - strong [ref=f9e44]: Dr. Cássio Ferreira
+          - text: ", Mestre em Ortodontia (FHO/Uniararas) com filiações à ABOR e World Federation of Orthodontists (WFO)."
+        - generic [ref=f9e45]:
+          - link "Agendar Avaliação" [ref=f9e46] [cursor=pointer]:
+            - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20consulta%20no%20Instituto%20Ferreira.
+          - link "Conhecer Tratamentos" [ref=f9e49] [cursor=pointer]:
+            - /url: "#especialidades"
+        - generic [ref=f9e50]:
+          - generic [ref=f9e51]: Avaliação 4.9 no Google
+          - generic [ref=f9e55]: 3 Consultórios + Raio-X Próprio
+          - generic [ref=f9e60]: Estacionamento p/ Motos
+      - generic [ref=f9e66]:
+        - img "Dr. Cássio Renato Lourenço Ferreira — Responsável Técnico do Instituto Ferreira" [ref=f9e67]
+        - generic [ref=f9e68]:
+          - generic [ref=f9e69]:
+            - generic [ref=f9e70]: Dr. Cássio Ferreira
+            - generic [ref=f9e71]: Mestre em Ortodontia & Harmonização Orofacial
+          - generic [ref=f9e72]: ABOR · WFO
+    - generic [ref=f9e74]:
+      - generic [ref=f9e75]:
+        - generic [ref=f9e76]: Tratamentos Especializados
+        - heading "Soluções odontológicas com planejamento individualizado" [level=2] [ref=f9e77]
+        - paragraph [ref=f9e78]: Cuidado multidisciplinar com protocolos modernos de diagnóstico e conforto clínico para cada perfil de paciente.
+      - generic [ref=f9e79]:
+        - generic [ref=f9e80]:
+          - generic [ref=f9e81]: Destaque
+          - heading "Invisalign & Ortodontia Digital" [level=3] [ref=f9e86]
+          - paragraph [ref=f9e87]: Alinhadores invisíveis e ortodontia corretiva (convencional e autoligada) com planejamento digital preciso sob orientação de mestre ortodontista.
+          - link "Consultar sobre Invisalign" [ref=f9e88] [cursor=pointer]:
+            - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20Invisalign%20e%20Ortodontia.
+        - generic [ref=f9e91]:
+          - generic [ref=f9e92]: Especialidade
+          - heading "Harmonização Orofacial (HOF)" [level=3] [ref=f9e97]
+          - paragraph [ref=f9e98]: Procedimentos estético-funcionais estruturados para realçar proporções faciais, equilíbrio do sorriso e bem-estar com naturalidade.
+          - link "Saber mais sobre HOF" [ref=f9e99] [cursor=pointer]:
+            - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20Harmoniza%C3%A7%C3%A3o%20Orofacial.
+        - generic [ref=f9e102]:
+          - heading "Lentes de Contato & Facetas" [level=3] [ref=f9e107]
+          - paragraph [ref=f9e108]: Lâminas ultrafinas de cerâmica personalizadas para harmonizar formato, textura e cor dos dentes preservando a estrutura dental.
+          - link "Ver detalhes" [ref=f9e109] [cursor=pointer]:
+            - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20sobre%20Lentes%20de%20Contato%20Dental.
+        - generic [ref=f9e112]:
+          - heading "Implantes & Reabilitação" [level=3] [ref=f9e116]
+          - paragraph [ref=f9e117]: Substituição segura de perdas dentárias com materiais biocompatíveis para restabelecer a mastigação e estética oral com estabilidade.
+          - link "Ver detalhes" [ref=f9e118] [cursor=pointer]:
+            - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20Implantes.
+        - generic [ref=f9e121]:
+          - heading "Odontopediatria (Sala Temática)" [level=3] [ref=f9e128]
+          - paragraph [ref=f9e129]: Consultório pediátrico lúdico e especialmente decorado para que a experiência das crianças seja tranquila, divertida e segura.
+          - link "Ver detalhes" [ref=f9e130] [cursor=pointer]:
+            - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20atendimento%20para%20Odontopediatria.
+        - generic [ref=f9e133]:
+          - heading "Clareamento & Dentística" [level=3] [ref=f9e137]
+          - paragraph [ref=f9e138]: Clareamento a laser, caseiro supervisionado com moldeiras e restaurações estéticas em resina para valorizar a luminosidade dos dentes.
+          - link "Ver detalhes" [ref=f9e139] [cursor=pointer]:
+            - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20sobre%20Clareamento%20Dental.
+      - generic [ref=f9e142]:
+        - generic [ref=f9e143]: "Outras Especialidades Atendidas no Instituto:"
+        - generic [ref=f9e144]:
+          - generic [ref=f9e145]: Cirurgia Oral & Extrações
+          - generic [ref=f9e146]: Endodontia (Tratamento de Canal)
+          - generic [ref=f9e147]: Prótese Dentária
+          - generic [ref=f9e148]: Periodontia & Saúde Gengival
+          - generic [ref=f9e149]: Prevenção & Profilaxia Periódica
+    - generic [ref=f9e151]:
+      - generic [ref=f9e152]:
+        - img "Dr. Cássio Renato Lourenço Ferreira em consultório no Instituto Ferreira" [ref=f9e154]
+        - generic [ref=f9e155]:
+          - strong [ref=f9e156]: Mestre
+          - text: Ortodontia FHO
+      - generic [ref=f9e157]:
+        - generic [ref=f9e158]: Responsável Técnico
+        - heading "Dr. Cássio Renato Lourenço Ferreira" [level=2] [ref=f9e159]
+        - generic [ref=f9e160]: Cirurgião-Dentista | Ortodontista & Harmonização Orofacial
+        - paragraph [ref=f9e161]: Com sólida trajetória acadêmica e dedicação à ortodontia e estética funcional, o Dr. Cássio Renato Lourenço Ferreira lidera o Instituto Ferreira em Rio Claro/SP, unindo rigor científico, atualização contínua e atendimento ético centrado no paciente.
+        - generic [ref=f9e162]:
+          - generic [ref=f9e167]:
+            - strong [ref=f9e168]: Graduação em Odontologia
+            - text: pela Faculdade de Odontologia de Araras (FHO/Uniararas).
+          - generic [ref=f9e173]:
+            - strong [ref=f9e174]: Especialista em Ortodontia e Ortopedia Facial
+            - text: pela Faculdade de Odontologia de Araras.
+          - generic [ref=f9e179]:
+            - strong [ref=f9e180]: Mestre em Ortodontia e Ortopedia Facial
+            - text: pela Faculdade de Odontologia de Araras.
+          - generic [ref=f9e185]:
+            - strong [ref=f9e186]: Membro Efetivo
+            - text: da Associação Brasileira de Ortodontia e Ortopedia Facial (ABOR).
+          - generic [ref=f9e191]:
+            - strong [ref=f9e192]: Filiado Internacional
+            - text: à World Federation of Orthodontists (WFO).
+          - generic [ref=f9e197]:
+            - strong [ref=f9e198]: Especialização em Harmonização Orofacial (HOF)
+            - text: e capacitação em alinhadores transparentes.
+        - link "Agendar com Dr. Cássio" [ref=f9e199] [cursor=pointer]:
+          - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20consulta%20com%20o%20Dr.%20C%C3%A1ssio%20Ferreira.
+    - generic [ref=f9e201]:
+      - generic [ref=f9e202]:
+        - generic [ref=f9e203]: Ambiente & Infraestrutura
+        - heading "Instalações planejadas para o seu conforto" [level=2] [ref=f9e204]
+        - paragraph [ref=f9e205]: Espaços climatizados, tecnologia para diagnósticos rápidos no local e áreas setorizadas para cada fase do atendimento.
+      - generic [ref=f9e206]:
+        - generic [ref=f9e207]:
+          - heading "3 Salas de Atendimento Clínico" [level=3] [ref=f9e208]
+          - paragraph [ref=f9e209]: Salas equipadas individualmente, incluindo ambiente cirúrgico com aparelho de Raio-X integrado para diagnósticos imediatos.
+        - generic [ref=f9e210]:
+          - heading "Sala de Espera Confortável" [level=3] [ref=f9e211]
+          - paragraph [ref=f9e212]: Recepção ampla, ambiente climatizado com TV a cabo e suporte para o bem-estar de pacientes e acompanhantes.
+        - generic [ref=f9e213]:
+          - heading "Estacionamento para Motos" [level=3] [ref=f9e214]
+          - paragraph [ref=f9e215]: Área privativa e segura reservada exclusivamente para o estacionamento de motocicletas dos nossos pacientes.
+      - generic [ref=f9e216]:
+        - generic [ref=f9e217]:
+          - img "Recepção e sala de espera do Instituto Ferreira em Rio Claro" [ref=f9e218]
+          - generic [ref=f9e219]: Recepção e Sala de Espera
+        - generic [ref=f9e220]:
+          - img "Consultório cirúrgico e sala clínica do Instituto Ferreira" [ref=f9e221]
+          - generic [ref=f9e222]: Consultório Cirúrgico & Raio-X
+        - generic [ref=f9e223]:
+          - img "Sala temática de atendimento infantil em Odontopediatria" [ref=f9e224]
+          - generic [ref=f9e225]: Espaço Temático de Odontopediatria
+        - generic [ref=f9e226]:
+          - img "Consultório odontológico de atendimento geral e ortodontia" [ref=f9e227]
+          - generic [ref=f9e228]: Consultório de Ortodontia & HOF
+        - generic [ref=f9e229]:
+          - img "Estrutura de atendimento e esterilização clínica" [ref=f9e230]
+          - generic [ref=f9e231]: Equipamentos & Biossegurança
+        - generic [ref=f9e232]:
+          - img "Vista da fachada e ambiente do Instituto Ferreira" [ref=f9e233]
+          - generic [ref=f9e234]: Instituto Ferreira — Jardim Portugal
+    - generic [ref=f9e237]:
+      - generic [ref=f9e238]:
+        - generic [ref=f9e239]:
+          - generic [ref=f9e240]: Atendimento & Local
+          - heading "Venha nos visitar em Rio Claro" [level=2] [ref=f9e241]
+          - paragraph [ref=f9e242]: Fácil acesso no Jardim Portugal, com estrutura completa para acolher você e sua família.
+          - generic [ref=f9e243]:
+            - generic [ref=f9e249]:
+              - generic [ref=f9e250]: Endereço
+              - generic [ref=f9e251]: Rua 5, nº 3379 (entre Avs. 46 e 50)
+              - generic [ref=f9e252]: "Jardim Portugal — CEP: 13504-072 · Rio Claro - SP"
+            - generic [ref=f9e257]:
+              - generic [ref=f9e258]: Telefone Fixo
+              - link "(19) 3534-6554" [ref=f9e260] [cursor=pointer]:
+                - /url: tel:1935346554
+            - generic [ref=f9e265]:
+              - generic [ref=f9e266]: WhatsApp Direto
+              - link "(19) 99749-1316" [ref=f9e268] [cursor=pointer]:
+                - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20consulta%20no%20Instituto%20Ferreira.
+            - generic [ref=f9e274]:
+              - generic [ref=f9e275]: E-mail Institucional
+              - link "contato@clinicaferreira.com.br" [ref=f9e277] [cursor=pointer]:
+                - /url: mailto:contato@clinicaferreira.com.br
+        - link "Abrir rota no Google Maps" [ref=f9e278] [cursor=pointer]:
+          - /url: https://maps.google.com/?q=Rua+5,+3379,+Jardim+Portugal,+Rio+Claro+-+SP
+      - generic [ref=f9e281]:
+        - heading "Horário de Atendimento" [level=3] [ref=f9e282]
+        - paragraph [ref=f9e283]: Agende previamente seu horário para atendimento pontual e sem esperas desnecessárias.
+        - table [ref=f9e284]:
+          - rowgroup [ref=f9e285]:
+            - row [ref=f9e286]:
+              - cell "Segunda-feira" [ref=f9e287]
+              - cell "08:45 às 10:45 | 11:45 às 18:00" [ref=f9e288]
+            - row [ref=f9e289]:
+              - cell "Terça-feira" [ref=f9e290]
+              - cell "08:45 às 10:45 | 11:45 às 18:00" [ref=f9e291]
+            - row [ref=f9e292]:
+              - cell "Quarta-feira" [ref=f9e293]
+              - cell "08:45 às 10:45 | 11:45 às 18:00" [ref=f9e294]
+            - row [ref=f9e295]:
+              - cell "Quinta-feira" [ref=f9e296]
+              - cell "08:45 às 10:45 | 11:45 às 18:00" [ref=f9e297]
+            - row [ref=f9e298]:
+              - cell "Sexta-feira" [ref=f9e299]
+              - cell "08:45 às 10:45 | 11:45 às 18:00" [ref=f9e300]
+            - row [ref=f9e301]:
+              - cell "Sábado & Domingo" [ref=f9e302]
+              - cell "Fechado" [ref=f9e303]
+        - link "Solicitar Agendamento via WhatsApp" [ref=f9e304] [cursor=pointer]:
+          - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20consulta%20no%20Instituto%20Ferreira.
+  - link "Fale no WhatsApp" [ref=f9e307] [cursor=pointer]:
+    - /url: https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20consulta%20no%20Instituto%20Ferreira.
+  - contentinfo [ref=f9e311]:
+    - generic [ref=f9e312]:
+      - generic [ref=f9e313]:
+        - generic [ref=f9e314]:
+          - heading "INSTITUTO FERREIRA" [level=4] [ref=f9e315]
+          - paragraph [ref=f9e316]: Odontologia Integrada & Harmonização Orofacial. Compromisso com rigor técnico, conforto e atendimento humanizado.
+          - generic [ref=f9e317]: "Resp. Técnico: Dr. Cássio Renato Lourenço Ferreira Membro ABOR · Filiado WFO · Rio Claro - SP"
+        - generic [ref=f9e318]:
+          - heading "Navegação" [level=5] [ref=f9e319]
+          - list [ref=f9e320]:
+            - listitem [ref=f9e321]:
+              - link "Especialidades Clínicas" [ref=f9e322] [cursor=pointer]:
+                - /url: "#especialidades"
+            - listitem [ref=f9e323]:
+              - link "Dr. Cássio Ferreira" [ref=f9e324] [cursor=pointer]:
+                - /url: "#corpo-clinico"
+            - listitem [ref=f9e325]:
+              - link "Estrutura das Instalações" [ref=f9e326] [cursor=pointer]:
+                - /url: "#estrutura"
+            - listitem [ref=f9e327]:
+              - link "Horários e Localização" [ref=f9e328] [cursor=pointer]:
+                - /url: "#localizacao"
+        - generic [ref=f9e329]:
+          - heading "Redes Sociais & Contato" [level=5] [ref=f9e330]
+          - list [ref=f9e331]:
+            - listitem [ref=f9e332]:
+              - link "Instagram (@institutoferreirarc) ↗" [ref=f9e333] [cursor=pointer]:
+                - /url: https://www.instagram.com/institutoferreirarc/
+            - listitem [ref=f9e334]:
+              - link "Facebook (institutoferreirarc) ↗" [ref=f9e335] [cursor=pointer]:
+                - /url: https://www.facebook.com/institutoferreirarc
+            - listitem [ref=f9e336]:
+              - 'link "Telefone: (19) 3534-6554" [ref=f9e337] [cursor=pointer]':
+                - /url: tel:1935346554
+            - listitem [ref=f9e338]:
+              - 'link "WhatsApp: (19) 99749-1316" [ref=f9e339] [cursor=pointer]':
+                - /url: https://wa.me/5519997491316
+      - generic [ref=f9e340]:
+        - generic [ref=f9e341]: © 2026 Instituto Ferreira — Todos os direitos reservados.
+        - generic [ref=f9e342]: Rua 5, nº 3379 (Avs. 46/50), Jardim Portugal, Rio Claro - SP

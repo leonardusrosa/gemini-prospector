@@ -1,0 +1,327 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Pular para o conteúdo" [ref=e3] [cursor=pointer]:
+      - /url: "#content"
+    - banner [ref=e4]:
+      - generic [ref=e8]:
+        - link [ref=e9] [cursor=pointer]:
+          - /url: https://www.institutoferreira.com.br/
+          - img "Instituto Ferreira" [ref=e10]
+        - generic:
+          - heading [level=1] [ref=e11]:
+            - link "Instituto Ferreira" [ref=e12] [cursor=pointer]:
+              - /url: https://www.institutoferreira.com.br/
+          - paragraph [ref=e13]: Excelência em Odontologia
+      - generic [ref=e15]:
+        - navigation "Menu do topo" [ref=e16]:
+          - list [ref=e18]:
+            - listitem [ref=e19]:
+              - link "Página Inicial" [ref=e20] [cursor=pointer]:
+                - /url: https://www.institutoferreira.com.br/
+            - listitem [ref=e21]:
+              - link "Especialidades" [ref=e22] [cursor=pointer]:
+                - /url: https://www.institutoferreira.com.br/especialidades/
+              - list [ref=e25]:
+                - listitem [ref=e26]:
+                  - link "Invisalign" [ref=e27] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/invisalign/
+                - listitem [ref=e28]:
+                  - link "Harmonização Orofacial" [ref=e29] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/harmonizacao-facial/
+                - listitem [ref=e30]:
+                  - link "Lentes de Contato" [ref=e31] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/lentes-de-contato/
+                - listitem [ref=e32]:
+                  - link "Ortodontia" [ref=e33] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/ortodontia/
+                - listitem [ref=e34]:
+                  - link "Implantes" [ref=e35] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/implantes/
+                - listitem [ref=e36]:
+                  - link "Cirurgia" [ref=e37] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/cirurgia/
+                - listitem [ref=e38]:
+                  - link "Endodontia" [ref=e39] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/endodontia/
+                - listitem [ref=e40]:
+                  - link "Dentística" [ref=e41] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/dentistica/
+                - listitem [ref=e42]:
+                  - link "Estética" [ref=e43] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/estetica/
+                - listitem [ref=e44]:
+                  - link "Prótese" [ref=e45] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/protese/
+                - listitem [ref=e46]:
+                  - link "Prevenção" [ref=e47] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/prevencao/
+                - listitem [ref=e48]:
+                  - link "Periodontia" [ref=e49] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/periodontia/
+                - listitem [ref=e50]:
+                  - link "Odontopediatria" [ref=e51] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/especialidades/odontopediatria/
+            - listitem [ref=e52]:
+              - link "Corpo Clínico" [ref=e53] [cursor=pointer]:
+                - /url: https://www.institutoferreira.com.br/sobre/
+            - listitem [ref=e54]:
+              - link "Curiosidades" [ref=e55] [cursor=pointer]:
+                - /url: https://www.institutoferreira.com.br/novidades-clinica-ferreira/
+            - listitem [ref=e56]:
+              - link "Contato" [ref=e57] [cursor=pointer]:
+                - /url: https://www.institutoferreira.com.br/contato/
+            - listitem [ref=e58]:
+              - link "Local" [ref=e59] [cursor=pointer]:
+                - /url: https://www.institutoferreira.com.br/local/
+          - link "Ir para o conteúdo" [ref=e60] [cursor=pointer]:
+            - /url: "#content"
+        - list [ref=e64]:
+          - listitem [ref=e65]:
+            - link [ref=e66] [cursor=pointer]:
+              - /url: https://www.facebook.com/institutoferreirarc/
+              - img "facebook" [ref=e67]
+          - listitem [ref=e68]:
+            - link [ref=e69] [cursor=pointer]:
+              - /url: https://www.instagram.com/institutoferreirarc/
+              - img "instagram" [ref=e70]
+    - generic [ref=e71]:
+      - main [ref=e74]:
+        - article [ref=e75]:
+          - generic [ref=e77]:
+            - heading "Home" [level=2] [ref=e79]
+            - paragraph [ref=e81]: Bem-vindo(a) a Clínica Ferreira! Excelência em Odontologia!
+        - article [ref=e82]:
+          - generic [ref=e86]:
+            - heading "A Clínica" [level=2] [ref=e88]
+            - generic [ref=e89]:
+              - paragraph [ref=e90]: Nossa clínica conta com 3 salas de atendimento, sendo uma para cirurgias e Raio-X, uma para atendimento geral e outra para atendimento pediátrico, decorada com motivos temáticos para tornar mais agradável a visita das crianças.
+              - paragraph [ref=e91]: Ampla sala de espera com TV à cabo para o conforto de nossos pacientes.
+              - paragraph [ref=e92]: Área exclusiva para estacionamento de motocicletas, com total segurança.
+              - paragraph [ref=e93]:
+                - text: "Rua 05, N. 3379 (Avs. 46/50) Jardim PortugalCEP: 13504-072 – Rio Claro – SPFone:"
+                - strong [ref=e94]: 3534-6554
+                - text: Segunda a Sexta-Feira
+                - strong [ref=e95]: 9:00 às 18:00h
+        - article [ref=e105]:
+          - generic [ref=e109]:
+            - heading "Corpo Clínico" [level=2] [ref=e111]
+            - generic [ref=e112]:
+              - figure [ref=e113]
+              - heading [level=2] [ref=e114]:
+                - strong [ref=e115]: Dr. Cássio Renato Lourenço Ferreira
+              - paragraph [ref=e116]:
+                - strong [ref=e117]: Graduado
+                - text: em Odontologia pela Faculdade de Odontologia de Araras
+              - paragraph [ref=e118]:
+                - strong [ref=e119]: Especialista
+                - text: em Ortodontia e Ortopedia Facial pela Faculdade de Odontologia de Araras
+              - paragraph [ref=e120]:
+                - strong [ref=e121]: Mestre
+                - text: em Ortodontia e Ortopedia Facial pela Faculdade de Odontologia de Araras
+              - paragraph [ref=e122]:
+                - strong [ref=e123]: Membro
+                - text: da Associação Brasileira de Ortodontia e Ortopedia Facial – ABOR
+              - paragraph [ref=e124]:
+                - strong [ref=e125]: Filiado
+                - text: à World Federation of Orthodontists – WFO
+              - paragraph [ref=e126]:
+                - strong [ref=e127]: Especialização
+                - text: em Hof
+              - paragraph
+        - article [ref=e128]:
+          - generic [ref=e132]:
+            - heading "Curiosidades" [level=2] [ref=e134]
+            - article [ref=e136]:
+              - generic [ref=e137]:
+                - generic [ref=e138]:
+                  - generic [ref=e139]: Publicado em
+                  - link [ref=e140] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/ola-mundo/
+                    - time [ref=e141]: 10 de julho de 2020
+                - heading [level=3] [ref=e142]:
+                  - link "Olá!" [ref=e143] [cursor=pointer]:
+                    - /url: https://www.institutoferreira.com.br/ola-mundo/
+              - paragraph [ref=e145]: Boas-vindas! Esse é o seu primeiro post. Essa sessão do site você vai conhecer muito mais sobre odontologia, curiosidades, dicas valiosas e o que há de mais moderno para você!
+        - article [ref=e146]:
+          - generic [ref=e150]:
+            - heading "Contato" [level=2] [ref=e152]
+            - generic [ref=e153]:
+              - paragraph [ref=e154]: Esta é uma página com algumas informações básicas de contato, como um endereço e número de telefone e também telefone de emergência. Você também pode entrar em contato através do formulário abaixo e nossa equipe retornará o mais breve possível.
+              - form [ref=e155]:
+                - generic [ref=e156]:
+                  - status
+                  - list
+                - generic [ref=e157]:
+                  - paragraph [ref=e158]:
+                    - generic [ref=e159]:
+                      - text: Seu nome (obrigatório)
+                      - textbox "Seu nome (obrigatório)" [ref=e161]
+                  - paragraph [ref=e162]:
+                    - generic [ref=e163]:
+                      - text: Seu e-mail (obrigatório)
+                      - textbox "Seu e-mail (obrigatório)" [ref=e165]
+                  - paragraph [ref=e166]:
+                    - generic [ref=e167]:
+                      - text: Assunto
+                      - textbox "Assunto" [ref=e169]
+                  - paragraph [ref=e170]:
+                    - generic [ref=e171]:
+                      - text: Sua mensagem
+                      - textbox "Sua mensagem" [ref=e173]
+                  - paragraph
+                  - iframe [ref=e177]:
+                    - generic [ref=f2e2]:
+                      - generic [ref=f2e3]:
+                        - checkbox "I'm not a robot" [ref=f2e7]
+                        - generic [ref=f2e9]: I'm not a robot
+                      - generic [ref=f2e12]: reCAPTCHA
+                  - paragraph
+                  - paragraph [ref=e178]:
+                    - button "Enviar" [ref=e179] [cursor=pointer]
+              - paragraph
+      - contentinfo [ref=e180]:
+        - generic [ref=e181]:
+          - complementary "Rodapé" [ref=e182]:
+            - generic [ref=e184]:
+              - heading "Encontre-nos" [level=2] [ref=e185]
+              - generic [ref=e186]:
+                - paragraph [ref=e187]:
+                  - strong [ref=e188]: Endereço
+                  - text: "Rua 5, N. 3379 (Entre avenidas 46 e 50) Jardim Portugal, CEP: 13504-114 – Rio Claro – SP Fones: (19) 3534-6554 |"
+                  - link "99749-1316 (WhatsApp)" [ref=e189] [cursor=pointer]:
+                    - /url: https://api.whatsapp.com/send?phone=5519997491316&text=
+                - paragraph [ref=e190]:
+                  - strong [ref=e191]: Horário
+                - generic [ref=e192]:
+                  - strong [ref=e194]: "Segunda:"
+                  - generic [ref=e196]:
+                    - generic [ref=e197]: 08:45 às 10:45
+                    - generic [ref=e198]: 11:45 às 18:00
+                - generic [ref=e199]:
+                  - strong [ref=e201]: "Terça:"
+                  - generic [ref=e203]:
+                    - generic [ref=e204]: 08:45 às 10:45
+                    - generic [ref=e205]: 11:45 às 18:00
+                - generic [ref=e206]:
+                  - strong [ref=e208]: "Quarta:"
+                  - generic [ref=e210]:
+                    - generic [ref=e211]: 08:45 às 10:45
+                    - generic [ref=e212]: 11:45 às 18:00
+                - generic [ref=e213]:
+                  - strong [ref=e215]: "Quinta:"
+                  - generic [ref=e217]:
+                    - generic [ref=e218]: 08:45 às 10:45
+                    - generic [ref=e219]: 11:45 às 18:00
+                - generic [ref=e220]:
+                  - strong [ref=e222]: "Sexta:"
+                  - generic [ref=e224]:
+                    - generic [ref=e225]: 08:45 às 10:45
+                    - generic [ref=e226]: 11:45 às 18:00
+                - generic [ref=e228]:
+                  - strong [ref=e230]: "Sábado:"
+                  - text: FECHADO
+                - generic [ref=e232]:
+                  - strong [ref=e234]: "Domingo:"
+                  - text: FECHADO
+            - generic [ref=e235]:
+              - generic [ref=e236]:
+                - heading "Local" [level=2] [ref=e237]
+                - paragraph [ref=e239]:
+                  - iframe [ref=e240]
+              - generic [ref=e241]:
+                - heading "Busca" [level=2] [ref=e242]
+                - search [ref=e243]:
+                  - generic: "Pesquisar por:"
+                  - searchbox "Pesquisar por:" [ref=e245]
+                  - button "Pesquisar" [ref=e246] [cursor=pointer]
+          - navigation "Menu de links sociais do rodapé" [ref=e250]:
+            - list [ref=e252]:
+              - listitem [ref=e253]:
+                - link "Facebook" [ref=e254] [cursor=pointer]:
+                  - /url: https://www.facebook.com/institutoferreirarc
+              - listitem [ref=e258]:
+                - link "Instagram" [ref=e259] [cursor=pointer]:
+                  - /url: https://www.instagram.com/institutoferreirarc/
+              - listitem [ref=e263]:
+                - link "E-mail" [ref=e264] [cursor=pointer]:
+                  - /url: mailto:contato@clinicaferreira.com.br
+  - generic:
+    - generic:
+      - navigation:
+        - list [ref=e268]:
+          - listitem [ref=e269]:
+            - link [ref=e270] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/invisalign/
+              - generic [ref=e271]: 
+              - text: Invisalign
+          - listitem [ref=e273]:
+            - link [ref=e274] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/harmonizacao-facial/
+              - generic [ref=e275]: 
+              - text: Harmonização Orofacial
+          - listitem [ref=e277]:
+            - link [ref=e278] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/lentes-de-contato/
+              - generic [ref=e279]: 
+              - text: Lentes de Contato
+          - listitem [ref=e281]:
+            - link [ref=e282] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/ortodontia/
+              - generic [ref=e283]: 
+              - text: Ortodontia
+          - listitem [ref=e285]:
+            - link [ref=e286] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/implantes/
+              - generic [ref=e287]: 
+              - text: Implantes
+          - listitem [ref=e289]:
+            - link [ref=e290] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/cirurgia/
+              - generic [ref=e291]: 
+              - text: Cirurgia
+          - listitem [ref=e293]:
+            - link [ref=e294] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/endodontia/
+              - generic [ref=e295]: 
+              - text: Endodontia
+          - listitem [ref=e297]:
+            - link [ref=e298] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/dentistica/
+              - generic [ref=e299]: 
+              - text: Dentística
+          - listitem [ref=e301]:
+            - link [ref=e302] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/estetica/
+              - generic [ref=e303]: 
+              - text: Estética
+          - listitem [ref=e305]:
+            - link [ref=e306] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/protese/
+              - generic [ref=e307]: 
+              - text: Prótese
+          - listitem [ref=e309]:
+            - link [ref=e310] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/prevencao/
+              - generic [ref=e311]: 
+              - text: Prevenção
+          - listitem [ref=e313]:
+            - link [ref=e314] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/periodontia/
+              - generic [ref=e315]: 
+              - text: Periodontia
+          - listitem [ref=e317]:
+            - link [ref=e318] [cursor=pointer]:
+              - /url: https://www.clinicaferreira.com.br/especialidades/odontopediatria/
+              - generic [ref=e319]: 
+              - text: Odontopediatria
+  - heading "Clínica Ferreira - Odontologia, Invisalign, Harmonização Orofacial, Lentes de Contato, Ortodontia, Implantes, Cirurgia, Endodontia, Dentística, Estética, Prótese, Prevenção, Periodontia, Odontopediatria, Invisalign em Rio Claro, Clareamento em Rio Claro, Autoclareamento em Rio Claro, Clareamento Caseiro em Rio Claro, Clareamento com placas em Rio Claro, Clareamento a Laser em Rio Claro, Clareamento misto em Rio Claro, Clareamento com moldeiras em Rio Claro." [level=1]:
+    - text: Clínica Ferreira - Odontologia,
+    - link "Invisalign":
+      - /url: https://www.clinicaferreira.com.br/especialidades/invisalign/
+    - text: ","
+    - link "Harmonização Orofacial":
+      - /url: https://www.clinicaferreira.com.br/especialidades/harmonizacao-facial/
+    - text: ","
+    - link "Lentes de Contato":
+      - /url: https://www.clinicaferreira.com.br/especialidades/lentes-de-contato/
+    - text: ", Ortodontia, Implantes, Cirurgia, Endodontia, Dentística, Estética, Prótese, Prevenção, Periodontia, Odontopediatria, Invisalign em Rio Claro, Clareamento em Rio Claro, Autoclareamento em Rio Claro, Clareamento Caseiro em Rio Claro, Clareamento com placas em Rio Claro, Clareamento a Laser em Rio Claro, Clareamento misto em Rio Claro, Clareamento com moldeiras em Rio Claro."

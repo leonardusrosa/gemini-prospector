@@ -1,0 +1,131 @@
+- generic [active] [ref=e1]:
+  - link "Ir para o conteúdo" [ref=e2] [cursor=pointer]:
+    - /url: "#content"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e9]:
+        - link [ref=e14] [cursor=pointer]:
+          - /url: https://www.drcarloslaudares.com.br/
+          - img "Dentista em Rio Claro | Clínica Dr. Carlos Laudares – Implantes, Estética e Ortodontia" [ref=e15]
+        - generic [ref=e17]:
+          - 'navigation "Site Navigation: Principal" [ref=e21]':
+            - list [ref=e23]:
+              - listitem [ref=e24]:
+                - link "Home" [ref=e25] [cursor=pointer]:
+                  - /url: "#inicio"
+              - listitem [ref=e27]:
+                - link "Nossos Tratamentos" [ref=e28] [cursor=pointer]:
+                  - /url: "#tratamentos"
+              - listitem [ref=e30]:
+                - link "Avaliações" [ref=e31] [cursor=pointer]:
+                  - /url: "#avaliacao"
+              - listitem [ref=e33]:
+                - link "Dentistas" [ref=e34] [cursor=pointer]:
+                  - /url: "#dentistas"
+              - listitem [ref=e36]:
+                - link "Contato" [ref=e37] [cursor=pointer]:
+                  - /url: "#contato"
+          - link "19. 99658-4789" [ref=e41] [cursor=pointer]:
+            - /url: https://wa.me/5519996584789?text=Olá!%20Vi%20o%20site%20da%20Clínica%20Dr.%20Carlos%20Laudares%20e%20quero%20garantir%20um%20horário%20para%20avaliação%20ainda%20esta%20semana.
+        - generic [ref=e47]:
+          - link "Instagram" [ref=e48] [cursor=pointer]:
+            - /url: https://www.instagram.com/clinicacarloslaudares/
+          - link "Facebook" [ref=e52] [cursor=pointer]:
+            - /url: https://www.facebook.com/clinicacarloslaudares
+    - main [ref=e59]:
+      - article [ref=e60]:
+        - generic [ref=e62]:
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e70]:
+                - heading "27 anos cuidando de sorrisos em Rio Claro." [level=1] [ref=e71]
+                - generic [ref=e73]: A Clínica Dr. Carlos Laudares oferece tratamentos completos em odontologia, incluindo implantes dentários, clareamento dental, ortodontia e próteses.
+              - link "Clique e Garanta Seu Horário no WhatsApp" [ref=e79] [cursor=pointer]:
+                - /url: https://wa.me/5519996584789?text=Olá!%20Vi%20o%20site%20da%20Clínica%20Dr.%20Carlos%20Laudares%20e%20quero%20garantir%20um%20horário%20para%20avaliação%20ainda%20esta%20semana.
+            - generic [ref=e87]:
+              - group "1 / 2"
+              - group "2 / 2"
+              - group "1 / 2" [ref=e88]
+              - group "2 / 2"
+              - group "1 / 2"
+              - group "2 / 2"
+          - generic [ref=e91]:
+            - generic [ref=e94]:
+              - heading "Nossos Tratamentos" [level=1] [ref=e95]
+              - generic [ref=e99]: Todos os tratamentos que você precisa, com a qualidade e praticidade de um só lugar. Agende sua avaliação hoje mesmo!
+            - generic [ref=e104]:
+              - generic [ref=e124]:
+                - heading "Clínica Geral" [level=3] [ref=e125]
+                - paragraph [ref=e126]: Oferecemos atendimento completo e personalizado para todas as necessidades odontológicas, com foco na saúde bucal e bem-estar do paciente.
+              - generic [ref=e146]:
+                - heading "Endodontia" [level=3] [ref=e147]
+                - paragraph [ref=e148]: Tratamentos especializados para salvar dentes comprometidos, com técnicas avançadas em canal radicular, garantindo a recuperação e saúde do seu sorriso.
+              - generic [ref=e162]:
+                - heading "Estética" [level=3] [ref=e163]
+                - paragraph [ref=e164]: Transforme seu sorriso com procedimentos estéticos de alta qualidade, como clareamento dental, facetas e lentes de contato, proporcionando resultados naturais e harmônicos.
+              - generic [ref=e184]:
+                - heading "Implantes" [level=3] [ref=e185]
+                - paragraph [ref=e186]: Recupere a funcionalidade e estética do seu sorriso com implantes dentários de alta precisão, feitos sob medida para o seu conforto e segurança.
+              - generic [ref=e203]:
+                - heading "Prótese" [level=3] [ref=e204]
+                - paragraph [ref=e205]: Proteses dentárias fixas ou removíveis para restaurar dentes ausentes, oferecendo conforto, durabilidade e um sorriso perfeito.
+              - generic [ref=e217]:
+                - heading "Cirurgias" [level=3] [ref=e218]
+                - paragraph [ref=e219]: Procedimentos cirúrgicos como extração de dentes do siso e cirurgia de implantes, realizados com técnica precisa e acompanhamento cuidadoso em cada etapa, do planejamento à recuperação.
+          - generic [ref=e225]:
+            - generic [ref=e233]:
+              - heading "Silmara Paulino" [level=4] [ref=e235]
+              - generic [ref=e236]: Paciente há seis anos, chegou por indicação e se encantou pelo profissionalismo e acolhimento da clínica. Destaca o atendimento familiar e humanizado, que transmite confiança e cuidado, além da paciência para explicar cada detalhe do tratamento, trazendo segurança. Superou o medo de dentista e recomenda o Dr. Carlos Laudares a todos, afirmando sempre sair tranquila e satisfeita com os resultados.
+            - generic [ref=e245]:
+              - heading "Paulo" [level=4] [ref=e247]
+              - generic [ref=e248]: Paciente há 15 anos, chegou por indicação da família e destaca o atendimento sempre excelente, pontual e acolhedor. Ressalta a disposição da equipe para encaixes e emergências, além da qualidade e cuidado em todos os procedimentos que já realizou, incluindo implante. Recomenda a Clínica Dr. Carlos Laudares a amigos e familiares pela confiança, profissionalismo e atenção em cada detalhe.
+          - generic [ref=e258]:
+            - generic [ref=e261]:
+              - heading "Seja para um tratamento estético ou cuidar da sua saúde bucal, estamos há 27 anos transformando sorrisos com qualidade e confiança!" [level=1] [ref=e262]
+              - generic [ref=e266]: Agende sua consulta e venha transformar seu sorriso com a gente!
+            - link "Agende Agora e Transforme Seu Sorriso!" [ref=e270] [cursor=pointer]:
+              - /url: https://wa.me/5519996584789?text=Olá!%20Vi%20o%20site%20da%20Clínica%20Dr.%20Carlos%20Laudares%20e%20quero%20garantir%20um%20horário%20para%20avaliação%20ainda%20esta%20semana.
+          - heading "O que Nossos Clientes Dizem Sobre Nós" [level=2] [ref=e281]
+          - generic [ref=e284]:
+            - generic [ref=e293]:
+              - heading "Nossos Dentistas" [level=1] [ref=e294]
+              - generic [ref=e298]: Profissionais capacitados e comprometidos com a sua saúde bucal, garantindo tratamentos de qualidade e confiança.
+            - generic [ref=e299]:
+              - generic [ref=e307]:
+                - heading "Carlos Laudares" [level=4] [ref=e309]
+                - generic [ref=e310]: CROSP 65861
+              - generic [ref=e319]:
+                - heading "Fábio Laudares" [level=4] [ref=e321]
+                - generic [ref=e322]: CROSP 169242
+              - generic [ref=e331]:
+                - heading "Rodrigo Drumond" [level=4] [ref=e333]
+                - generic [ref=e334]: CROSP 130.416
+          - generic [ref=e336]:
+            - generic [ref=e339]:
+              - heading "Nossos Contato" [level=1] [ref=e340]
+              - generic [ref=e344]: Escolha um dos canais abaixo para agendar sua avaliação e cuidar do seu sorriso com qualidade e confiança.
+            - generic [ref=e346]:
+              - generic [ref=e355]:
+                - heading "Endereço" [level=3] [ref=e356]
+                - paragraph [ref=e357]: Av. 11, 633 - Saude, Rio Claro - SP, 13500-350
+              - generic [ref=e366]:
+                - heading "Funcionamento" [level=3] [ref=e367]
+                - paragraph [ref=e368]: "Segunda à Sexta: 08h - 18h Sábados: 09h - 13h"
+              - generic [ref=e372]:
+                - link "Agendar Avaliação" [ref=e374] [cursor=pointer]:
+                  - /url: https://wa.me/5519996584789
+                - generic [ref=e377]:
+                  - heading [level=3] [ref=e378]:
+                    - link "Agendar Avaliação" [ref=e379] [cursor=pointer]:
+                      - /url: https://wa.me/5519996584789
+                  - paragraph [ref=e380]: (19) 99658-4789
+            - iframe [ref=e384]:
+              
+    - contentinfo [ref=e385]:
+      - paragraph [ref=e392]:
+        - text: © 2026 Clínica Dr. Carlos Laudares
+        - strong [ref=e393]: CROSP 034547
+        - text: "| Desenvolvimento"
+        - link "Aliança Produtora & MKT" [ref=e394] [cursor=pointer]:
+          - /url: https://www.aliancamkt.com.br
+  - generic [ref=e395]: desktop
