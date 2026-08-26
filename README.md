@@ -13,10 +13,11 @@ prospector-de-sites/          ← esta é a pasta do plugin
 ├── prospector-mcp.py         servidor MCP do CRM (SQLite)
 ├── evolution_client.py       conector seguro Evolution API WhatsApp
 ├── outreach_service.py       gerador e orquestrador de outreach multicanal
-├── skills/                   as 7 skills (SKILL.md)
+├── skills/                   as 8 skills (SKILL.md)
 │   ├── prospector-setup/
 │   ├── prospeccao-maps/
 │   ├── redesign-premium/
+│   ├── expert-hero-assets/   geração autônoma de hero desktop/mobile a partir de expert real
 │   ├── outreach-proposta/    outreach multicanal (WhatsApp + Gmail)
 │   ├── deploy-site/          deploy via GitHub + Vercel
 │   ├── dashboard-leads/
@@ -60,10 +61,46 @@ Abra a pasta do projeto e diga no chat: **"configurar o prospector"**. A skill `
 ## Como usar (linguagem natural)
 
 1. **"prospecta nutricionistas em São Paulo"** → busca no Google Maps Platform, qualifica e monta o dashboard.
-2. **"redesenha os 5 melhores"** → redesign premium + editor + comparador antes/depois.
+2. **"redesenha os 5 melhores"** → redesign premium + assets de hero quando aplicável + editor + comparador antes/depois.
 3. **"publica os redesigns"** → copia para o repositório Git local, faz commit/push para o GitHub, a Vercel publica e o plugin valida o HTTPS público.
 4. **"manda a proposta"** → outreach multicanal (WhatsApp via Evolution API ou Gmail) com link da proposta personalizada.
 5. Depois: contrato, e o `dashboard.html` administra tudo (kanban + financeiro + histórico de outreach).
+
+## Hero expert autônomo
+
+Quando `redesign-premium` classifica o hero como `expert_fullscreen` e existe uma foto real/verificada do profissional, a skill `expert-hero-assets` entra como etapa de produção antes do HTML final do hero.
+
+Outputs canônicos:
+
+```text
+sites/[slug]/assets/hero-expert-desktop.webp
+sites/[slug]/assets/hero-expert-mobile.webp
+```
+
+Padrão visual:
+
+- **desktop**: 16:9, expert grande à direita (~45–55%), left half limpa para copy HTML, background suave/desfocado, sem texto dentro da imagem;
+- **mobile**: composição vertical própria, expert grande no top ~50–55%, head + upper body, sem mostrar waist-down, lower half calma para headline/CTA HTML;
+- identidade/pose reais têm prioridade sobre novidade estética;
+- se a geração mudar materialmente o rosto, usar fallback source-preserving com o expert original.
+
+### Capability/billing order
+
+O fluxo padrão prefere primeiro a capacidade de geração/edição de imagem que já estiver disponível na sessão do **Google Antigravity**.
+
+```text
+Antigravity-native
+→ source-preserving fallback
+→ API/provider externo apenas se explicitamente configurado
+```
+
+O Prospector **não exige `GEMINI_API_KEY` por padrão**, não deve pedir API key automaticamente para gerar o hero e não pode ativar uma rota paga silenciosamente. Assinatura Google AI Pro/quota do Antigravity e billing de Gemini API devem ser tratados como coisas distintas.
+
+A referência completa de prompts, QA, identidade e fallback fica em:
+
+```text
+prospector-de-sites/skills/redesign-premium/references/expert-hero-generation.md
+```
 
 ## Editor visual client-ready
 
@@ -107,6 +144,7 @@ O editor **não** expõe HTML/CSS/JS arbitrário. Publicação direta pelo próp
 | Publicação | HostGator / FTP | **GitHub + Vercel** (deploy estático automático) |
 | CRM | MCP stdio | mesmo MCP, no `mcp_config.json` do plugin |
 | Outreach | E-mail manual | **WhatsApp (Evolution API)** + **Gmail** com revisão humana |
+| Hero expert | manual/composição | **subskill autônoma desktop + mobile, Antigravity-native first** |
 | Editor | conteúdo básico | **texto + imagens + CTAs + links + WhatsApp/socials** |
 
 Mesma lógica, mesmos entregáveis. O CRM (`prospector-mcp.py`), o painel e as templates são reaproveitados sem mudança.
