@@ -162,9 +162,8 @@ class PublishConfig:
             raise SystemExit("Editor publish mode must be 'local' or 'git'")
 
         env_repo = os.environ.get("PROSPECTOR_EDITOR_DEPLOY_REPO", "")
-        self.deploy_repo = pathlib.Path(args.deploy_repo or env_repo or deploy.get("repoPath", "")).expanduser()
-        if str(self.deploy_repo):
-            self.deploy_repo = self.deploy_repo.resolve()
+        repo_raw = str(args.deploy_repo or env_repo or deploy.get("repoPath") or "").strip()
+        self.deploy_repo = pathlib.Path(repo_raw).expanduser().resolve() if repo_raw else None
         self.base_path = (args.base_path or os.environ.get("PROSPECTOR_EDITOR_DEPLOY_BASE_PATH") or deploy.get("basePath") or "clientes").strip("/\\")
         self.branch = args.branch or os.environ.get("PROSPECTOR_EDITOR_DEPLOY_BRANCH") or deploy.get("branch") or "main"
         self.remote = args.remote or os.environ.get("PROSPECTOR_EDITOR_DEPLOY_REMOTE") or "origin"
@@ -178,7 +177,7 @@ class PublishConfig:
                 "Map opaque editor tokens to allowed slugs; never use a GitHub token here."
             )
         if self.mode == "git":
-            if not str(self.deploy_repo) or not self.deploy_repo.exists():
+            if self.deploy_repo is None or not self.deploy_repo.exists():
                 raise SystemExit("Git publish mode requires a valid deploy repo path")
             try:
                 inside = _run_git(self.deploy_repo, ["rev-parse", "--is-inside-work-tree"]).stdout.strip()
@@ -315,6 +314,7 @@ class PublishApp(SimpleHTTPRequestHandler):
 
             # Protected git-backed publishing. Never stages arbitrary repository paths.
             repo = self.config.deploy_repo
+            assert repo is not None
             rel = pathlib.PurePosixPath(self.config.base_path) / slug / "index.html"
             dest = (repo / pathlib.Path(*rel.parts)).resolve()
             if repo not in dest.parents:
