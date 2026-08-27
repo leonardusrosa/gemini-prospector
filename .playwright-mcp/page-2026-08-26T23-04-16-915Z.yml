@@ -1,0 +1,22 @@
+- generic [active] [ref=f3e1]:
+  - main [ref=f3e2]:
+    - generic [ref=f3e3]:
+      - img "Instituto Ferreira" [ref=f3e4]
+      - generic [ref=f3e5]: Primeira Versão Funcional
+    - heading "Uma nova apresentação digital para o Instituto Ferreira" [level=1] [ref=f3e7]
+    - paragraph [ref=f3e8]: O Instituto já possui um acervo consistente de especialidades, estrutura clínica e a trajetória do Dr. Cássio Ferreira. Esta proposta organiza esses materiais em uma experiência digital mais clara, direta e contemporânea para os pacientes de Rio Claro.
+    - generic [ref=f3e9]:
+      - generic [ref=f3e14]:
+        - strong [ref=f3e15]: "Conteúdo e fotos reais:"
+        - text: Ortodontia, Invisalign, Harmonização, estrutura cirúrgica com Raio-X e consultórios já integrados.
+      - generic [ref=f3e20]:
+        - strong [ref=f3e21]: "Navegação interativa:"
+        - text: Não é um mockup estático. Seções, diferenciais e canais de contato estão navegáveis para teste.
+      - generic [ref=f3e26]:
+        - strong [ref=f3e27]: "Leitura rápida no celular:"
+        - text: Diagramação fluida pensada no comportamento do paciente ao buscar atendimento.
+    - generic [ref=f3e28]:
+      - link "Ver primeira versão funcional" [ref=f3e29] [cursor=pointer]:
+        - /url: instituto-ferreira-odontologia-rio-claro.html
+      - paragraph [ref=f3e33]: Se esta direção fizer sentido para a clínica, textos, prioridades de fotos e detalhes finais serão refinados em conjunto antes de qualquer publicação definitiva.
+  - contentinfo [ref=f3e34]: Instituto Ferreira Odontologia • Demonstração e Proposta Funcional

@@ -1,0 +1,213 @@
+--- backup
++++ current
+@@ -1,3 +1,3 @@
+ <!DOCTYPE html>
+-<html lang="pt-BR" style="scroll-behavior: smooth;"><head>
++<html lang="pt-BR" style="scroll-behavior: smooth;" data-darkreader-proxy-injected="true"><head>
+   <meta charset="UTF-8">
+@@ -1269,3 +1269,3 @@
+           <li><a href="#instalacoes">Instalações</a></li>
+-          <li><a href="#corpo-clinico">Dr. Cássio Ferreira</a></li>
++          <li class=""><a href="#corpo-clinico" class="">Dr. Cássio Ferreira</a></li>
+           <li><a href="#localizacao">Horários &amp; Local</a></li>
+@@ -1291,3 +1291,3 @@
+         <button class="mobile-toggle" id="openDrawer" aria-label="Abrir Menu">
+-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+             <line x1="3" y1="12" x2="21" y2="12"></line>
+@@ -1306,3 +1306,3 @@
+         <span class="brand-text">INSTITUTO FERREIRA</span>
+-        <button id="closeDrawer" style="background:none;border:none;font-size:24px;cursor:pointer;">✕</button>
++        <button id="closeDrawer" style="background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: none; font-size: 24px; cursor: pointer; --darkreader-inline-bgimage: none; --darkreader-inline-bgcolor: initial;" data-darkreader-inline-bgimage="" data-darkreader-inline-bgcolor="">✕</button>
+       </div>
+@@ -1334,3 +1334,3 @@
+         </a>
+-        <a href="tel:1935346554" style="text-align:center;font-size:0.875rem;font-weight:700;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);">
++        <a href="tel:1935346554" style="text-align: center; font-size: 0.875rem; font-weight: 700; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); --darkreader-inline-border-short: 1px solid var(--darkreader-border--border);" data-darkreader-inline-border-short="">
+           Ligar: (19) 3534-6554
+@@ -1355,4 +1355,3 @@
+           <h1 class="hero-headline" style="translate: none; rotate: none; scale: none; transform: translate(0px, 0px); opacity: 1;">
+-            Excelência técnica e acolhimento para o seu sorriso e <em>harmonia facial</em>.
+-          </h1>
++            Excelência técnica e acolhimento para o seu sorriso e <em>harmonia facial</em></h1>
+ 
+@@ -1365,3 +1364,3 @@
+             <a href="https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20no%20Instituto%20Ferreira." target="_blank" rel="noopener noreferrer" class="btn-primary-whatsapp">
+-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
+@@ -1378,3 +1377,3 @@
+             <div class="chip-item" style="translate: none; rotate: none; scale: none; transform: translate(0px, 0px); opacity: 1;">
+-              <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++              <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                 <polyline points="20 6 9 17 4 12"></polyline>
+@@ -1384,3 +1383,3 @@
+             <div class="chip-item" style="translate: none; rotate: none; scale: none; transform: translate(0px, 0px); opacity: 1;">
+-              <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++              <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                 <polyline points="20 6 9 17 4 12"></polyline>
+@@ -1391,3 +1390,3 @@
+             <div class="chip-item" style="translate: none; rotate: none; scale: none; transform: translate(0px, 0px); opacity: 1;">
+-              <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++              <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                 <polyline points="20 6 9 17 4 12"></polyline>
+@@ -1416,3 +1415,3 @@
+           <a href="https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20no%20Instituto%20Ferreira." target="_blank" rel="noopener noreferrer" class="btn-primary-whatsapp">
+-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
+@@ -1425,3 +1424,3 @@
+           <div class="chip-item">
+-            <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++            <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+               <polyline points="20 6 9 17 4 12"></polyline>
+@@ -1431,3 +1430,3 @@
+           <div class="chip-item">
+-            <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++            <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+               <polyline points="20 6 9 17 4 12"></polyline>
+@@ -1457,3 +1456,3 @@
+               <div class="treatment-icon-wrap">
+-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                   <path d="M12 2C7.5 2 4 4.5 4 8.5c0 3.2 1.8 6.5 3.2 10.5C8 20.8 9.8 22 12 22s4-1.2 4.8-3C18.2 15 20 11.7 20 8.5 20 4.5 16.5 2 12 2z"></path>
+@@ -1476,3 +1475,3 @@
+               <div class="treatment-icon-wrap">
+-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                   <circle cx="12" cy="12" r="10"></circle>
+@@ -1497,3 +1496,3 @@
+               <div class="treatment-icon-wrap">
+-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+@@ -1516,3 +1515,3 @@
+               <div class="treatment-icon-wrap">
+-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+@@ -1535,3 +1534,3 @@
+               <div class="treatment-icon-wrap">
+-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+@@ -1556,3 +1555,3 @@
+               <div class="treatment-icon-wrap">
+-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                   <circle cx="12" cy="12" r="5"></circle>
+@@ -1579,3 +1578,3 @@
+ 
+-        <div style="margin-top: 40px; padding: 22px 28px; background-color: var(--surface-subtle); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); font-family: var(--font-serif); font-style: italic; font-size: 1.0625rem; color: var(--primary); text-align: center;">
++        <div style="margin-top: 40px; padding: 22px 28px; background-color: var(--surface-subtle); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); font-family: var(--font-serif); font-style: italic; font-size: 1.0625rem; color: var(--primary); text-align: center; --darkreader-inline-border-left-short: 3px solid var(--darkreader-border--accent); --darkreader-inline-bgcolor: var(--darkreader-bg--surface-subtle, var(--darkreader-background-ffffff, #181a1b)); --darkreader-inline-color: var(--darkreader-text--primary, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-border-left-short="" data-darkreader-inline-bgcolor="" data-darkreader-inline-color="">
+           “O planejamento exaustivo e a excelência na realização são as chaves para o sucesso de qualquer tratamento.”
+@@ -1599,3 +1598,3 @@
+           <div class="facility-feature-box" style="translate: none; rotate: none; scale: none; transform: translate(0px, 12px); opacity: 0;">
+-            <svg class="facility-feature-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++            <svg class="facility-feature-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+@@ -1609,3 +1608,3 @@
+           <div class="facility-feature-box" style="translate: none; rotate: none; scale: none; transform: translate(0px, 12px); opacity: 0;">
+-            <svg class="facility-feature-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++            <svg class="facility-feature-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+               <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+@@ -1619,3 +1618,3 @@
+           <div class="facility-feature-box" style="translate: none; rotate: none; scale: none; transform: translate(0px, 12px); opacity: 0;">
+-            <svg class="facility-feature-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++            <svg class="facility-feature-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+               <circle cx="12" cy="12" r="10"></circle>
+@@ -1637,5 +1636,5 @@
+             <div class="info">
+-              <h3 style="font-size:1.15rem;font-weight:700;color:var(--ink);margin-bottom:4px;">Recepção &amp; Sala de
++              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; --darkreader-inline-color: var(--darkreader-text--ink, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Recepção &amp; Sala de
+                 Espera Climatizada</h3>
+-              <p style="font-size:0.875rem;color:var(--ink-muted);">Ambiente projetado para tranquilidade e pontualidade
++              <p style="font-size: 0.875rem; color: var(--ink-muted); --darkreader-inline-color: var(--darkreader-text--ink-muted, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Ambiente projetado para tranquilidade e pontualidade
+                 no Jardim Portugal.</p>
+@@ -1648,4 +1647,4 @@
+               <div class="info">
+-                <h4 style="font-size:1rem;font-weight:700;color:var(--ink);">Sala Cirúrgica com Raio-X Próprio</h4>
+-                <p style="font-size:0.8125rem;color:var(--ink-muted);">Diagnóstico integrado no local.</p>
++                <h4 style="font-size: 1rem; font-weight: 700; color: var(--ink); --darkreader-inline-color: var(--darkreader-text--ink, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Sala Cirúrgica com Raio-X Próprio</h4>
++                <p style="font-size: 0.8125rem; color: var(--ink-muted); --darkreader-inline-color: var(--darkreader-text--ink-muted, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Diagnóstico integrado no local.</p>
+               </div>
+@@ -1656,4 +1655,4 @@
+               <div class="info">
+-                <h4 style="font-size:1rem;font-weight:700;color:var(--ink);">Espaço Temático Infantil</h4>
+-                <p style="font-size:0.8125rem;color:var(--ink-muted);">Atendimento odontopediátrico lúdico.</p>
++                <h4 style="font-size: 1rem; font-weight: 700; color: var(--ink); --darkreader-inline-color: var(--darkreader-text--ink, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Espaço Temático Infantil</h4>
++                <p style="font-size: 0.8125rem; color: var(--ink-muted); --darkreader-inline-color: var(--darkreader-text--ink-muted, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Atendimento odontopediátrico lúdico.</p>
+               </div>
+@@ -1667,4 +1666,4 @@
+             <div class="info">
+-              <h4 style="font-size:0.95rem;font-weight:700;color:var(--ink);">Consultório Clínico</h4>
+-              <p style="font-size:0.8125rem;color:var(--ink-muted);">Ortodontia digital e HOF.</p>
++              <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--ink); --darkreader-inline-color: var(--darkreader-text--ink, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Consultório Clínico</h4>
++              <p style="font-size: 0.8125rem; color: var(--ink-muted); --darkreader-inline-color: var(--darkreader-text--ink-muted, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Ortodontia digital e HOF.</p>
+             </div>
+@@ -1675,4 +1674,4 @@
+             <div class="info">
+-              <h4 style="font-size:0.95rem;font-weight:700;color:var(--ink);">Central de Esterilização</h4>
+-              <p style="font-size:0.8125rem;color:var(--ink-muted);">Protocolos estritos de biossegurança.</p>
++              <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--ink); --darkreader-inline-color: var(--darkreader-text--ink, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Central de Esterilização</h4>
++              <p style="font-size: 0.8125rem; color: var(--ink-muted); --darkreader-inline-color: var(--darkreader-text--ink-muted, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Protocolos estritos de biossegurança.</p>
+             </div>
+@@ -1683,4 +1682,4 @@
+             <div class="info">
+-              <h4 style="font-size:0.95rem;font-weight:700;color:var(--ink);">Fácil Acesso &amp; Estacionamento</h4>
+-              <p style="font-size:0.8125rem;color:var(--ink-muted);">Vagas privativas para motos.</p>
++              <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--ink); --darkreader-inline-color: var(--darkreader-text--ink, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Fácil Acesso &amp; Estacionamento</h4>
++              <p style="font-size: 0.8125rem; color: var(--ink-muted); --darkreader-inline-color: var(--darkreader-text--ink-muted, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">Vagas privativas para motos.</p>
+             </div>
+@@ -1760,4 +1759,4 @@
+ 
+-            <div class="map-embed-wrapper" style="margin-bottom: 22px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); width: 100%; height: 190px;">
+-              <iframe src="https://maps.google.com/maps?q=Rua+5,+3379,+Jardim+Portugal,+Rio+Claro+-+SP&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" width="100%" height="100%" style="border:0; display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de Localização Instituto Ferreira">
++            <div class="map-embed-wrapper" style="margin-bottom: 22px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); width: 100%; height: 190px; --darkreader-inline-border-short: 1px solid var(--darkreader-border--border);" data-darkreader-inline-border-short="">
++              <iframe src="https://maps.google.com/maps?q=Rua+5,+3379,+Jardim+Portugal,+Rio+Claro+-+SP&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" width="100%" height="100%" style="border: 0px; display: block; --darkreader-inline-border-top: 0px; --darkreader-inline-border-right: 0px; --darkreader-inline-border-bottom: 0px; --darkreader-inline-border-left: 0px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de Localização Instituto Ferreira" data-darkreader-inline-border-top="" data-darkreader-inline-border-right="" data-darkreader-inline-border-bottom="" data-darkreader-inline-border-left="">
+               </iframe>
+@@ -1777,3 +1776,3 @@
+             <a href="https://maps.google.com/?q=Rua+5,+3379,+Jardim+Portugal,+Rio+Claro+-+SP" target="_blank" rel="noopener noreferrer" class="btn-secondary-phone" style="width:100%;justify-content:center;">
+-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+@@ -1785,3 +1784,3 @@
+ 
+-          <div class="location-card" style="background: linear-gradient(145deg, rgb(255, 255, 255) 0%, rgb(240, 245, 242) 100%); translate: none; rotate: none; scale: none; transform: translate(0px, 14px); opacity: 0;">
++          <div class="location-card" style="background: linear-gradient(145deg, rgb(255, 255, 255) 0%, rgb(240, 245, 242) 100%); translate: none; rotate: none; scale: none; transform: translate(0px, 14px); opacity: 0; --darkreader-inline-bgimage: linear-gradient(145deg, var(--darkreader-background-ffffff, #181a1b) 0%, var(--darkreader-background-f0f5f2, #1a2822) 100%); --darkreader-inline-bgcolor: initial;" data-darkreader-inline-bgimage="" data-darkreader-inline-bgcolor="">
+             <span class="section-kicker">Canais de Atendimento</span>
+@@ -1795,8 +1794,8 @@
+               <div style="font-size:0.95rem;">
+-                <strong>WhatsApp Direto:</strong> <a href="https://wa.me/5519997491316" style="color:var(--primary);font-weight:700;">(19) 99749-1316</a>
++                <strong>WhatsApp Direto:</strong> <a href="https://wa.me/5519997491316" style="color: var(--primary); font-weight: 700; --darkreader-inline-color: var(--darkreader-text--primary, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">(19) 99749-1316</a>
+               </div>
+               <div style="font-size:0.95rem;">
+-                <strong>Telefone Fixo:</strong> <a href="tel:1935346554" style="color:var(--primary);font-weight:700;">(19) 3534-6554</a>
++                <strong>Telefone Fixo:</strong> <a href="tel:1935346554" style="color: var(--primary); font-weight: 700; --darkreader-inline-color: var(--darkreader-text--primary, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">(19) 3534-6554</a>
+               </div>
+-              <div style="font-size:0.95rem;color:var(--ink-muted);">
++              <div style="font-size: 0.95rem; color: var(--ink-muted); --darkreader-inline-color: var(--darkreader-text--ink-muted, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">
+                 <strong>E-mail:</strong> contato@clinicaferreira.com.br
+@@ -1822,3 +1821,3 @@
+         <a href="https://wa.me/5519997491316?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20no%20Instituto%20Ferreira." target="_blank" rel="noopener noreferrer" class="btn-banner-whatsapp">
+-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" data-darkreader-inline-stroke="" style="--darkreader-inline-stroke: currentColor;">
+             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
+@@ -1850,3 +1849,3 @@
+           </p>
+-          <div style="margin-top:16px;font-size:0.8125rem;color:var(--ink-light);">
++          <div style="margin-top: 16px; font-size: 0.8125rem; color: var(--ink-light); --darkreader-inline-color: var(--darkreader-text--ink-light, var(--darkreader-text-000000, #e8e6e3));" data-darkreader-inline-color="">
+             Responsável Técnico: Dr. Cássio Renato Lourenço Ferreira<br>
+@@ -2159,2 +2158,12 @@
+ 
++
++
++
++
++
++
++
++
++
++
+ </body></html>

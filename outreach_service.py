@@ -36,7 +36,7 @@ def resolve_proposal_url(lead: Dict[str, Any], config: Dict[str, Any]) -> str:
         return f"{domain}/{base_path}/{slug}/proposta.html"
 
     # Fallback para urlNova ou caminho local relativo
-    url_nova = lead.get("urlNova", "").strip()
+    url_nova = (lead.get("urlNova") or "").strip()
     if url_nova and url_nova.startswith("http"):
         if not url_nova.endswith("proposta.html"):
             url_nova = url_nova.rstrip("/") + "/proposta.html"
