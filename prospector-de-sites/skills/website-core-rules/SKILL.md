@@ -1,6 +1,6 @@
 ---
 name: website-core-rules
-description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Proíbe tags/pills decorativos, emojis e travessões em copy visível, limita o hero a um único botão CTA e exige CTAs contextuais sem repetição mecânica de wording.
+description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Proíbe tags/pills decorativos, emojis e travessões em copy visível, limita o hero a um único botão CTA, exige CTAs contextuais sem repetição mecânica de wording e aplica sentence case natural ao PT-BR.
 ---
 
 # Website Core Rules
@@ -183,7 +183,53 @@ Se a resposta indicar redundância, reescreva ou remova o CTA.
 
 Nunca prometa uma ação diferente daquilo que o link realmente faz. Um botão que abre WhatsApp não deve sugerir confirmação imediata de consulta se isso não estiver garantido.
 
-## 6. Hero específico
+## 6. HARD RULE: PT-BR usa sentence case natural, não Title Case inglês
+
+Para interfaces e copy em português do Brasil, use capitalização natural de PT-BR.
+
+Por padrão, títulos, subtítulos, labels, itens de navegação, botões e headings devem usar **sentence case**:
+
+- primeira palavra com inicial maiúscula quando apropriado
+- nomes próprios, marcas, siglas e termos oficialmente grafados preservam sua capitalização
+- demais palavras permanecem em minúsculas conforme a norma natural do português
+
+Exemplos corretos:
+
+- `Conheça nossos tratamentos`
+- `Tecnologia para cada etapa do seu tratamento`
+- `Agendar avaliação`
+- `Falar com a equipe`
+- `Ortodontia e harmonização orofacial`
+
+Exemplos a evitar quando usados como capitalização de interface:
+
+- `Conheça Nossos Tratamentos`
+- `Tecnologia Para Cada Etapa Do Seu Tratamento`
+- `Agendar Avaliação`
+- `Falar Com A Equipe`
+
+Não replique automaticamente Title Case de referências, templates ou copy em inglês.
+
+### Exceções legítimas
+
+Preserve capitalização oficial ou necessária em:
+
+- nomes próprios
+- marcas
+- siglas e acrônimos, como `ABOR`, `WFO`, `CRO`
+- produtos cuja grafia oficial exija maiúsculas, como `Invisalign`
+- início de frase
+- abreviações convencionais
+
+### Caixa alta visual
+
+Evite frases ou headings inteiros em `ALL CAPS` como recurso editorial padrão em PT-BR.
+
+Se houver microtexto muito curto visualmente estilizado por CSS com `text-transform: uppercase`, use apenas quando houver razão clara de hierarquia visual e a leitura continuar natural. Não transforme frases completas, CTAs ou headings principais em caixa alta.
+
+A preferência é que o texto-fonte no HTML continue escrito em sentence case mesmo quando um micro-rótulo aprovado receber transformação visual por CSS.
+
+## 7. Hero específico
 
 Hero deve começar com composição e tipografia, não com uma coleção de UI ornaments.
 
@@ -200,7 +246,7 @@ Trust facts, quando necessários, devem ser integrados de forma tipográfica, es
 
 O hero deve manter um único CTA principal, conforme a regra anterior.
 
-## 7. Componentes funcionais versus decoração
+## 8. Componentes funcionais versus decoração
 
 Não confunda esta regra com proibição de todos os elementos arredondados.
 
@@ -223,7 +269,7 @@ Proibido quando decorativo ou metadata-first:
 - mini tag acima do título
 - fileira de chips de serviços
 
-## 8. QA obrigatório antes de aprovar qualquer site
+## 9. QA obrigatório antes de aprovar qualquer site
 
 Antes do Screenshot Review e antes de publicar, faça uma revisão explícita:
 
@@ -239,6 +285,9 @@ Hero CTA buttons: EXACTLY 1
 CTA button functional: PASS
 Repeated CTA wording across distinct sections: NONE or JUSTIFIED
 CTA wording matches section context and destination: PASS
+PT-BR headings/buttons/labels use natural sentence case: PASS
+Unjustified Title Case in PT-BR: NONE
+Unjustified ALL CAPS phrases/headings in PT-BR: NONE
 ```
 
 Faça também uma busca textual no HTML final por `—` e `–` e revise qualquer ocorrência visível ao usuário.
@@ -251,8 +300,10 @@ Conte também os elementos clicáveis com aparência de botão dentro do hero. O
 
 Liste os textos de todos os CTAs da página e revise repetições. Se houver wording idêntico em seções diferentes, ele deve ter justificativa funcional clara ou ser variado/removido.
 
-## 9. Precedência
+Para páginas em PT-BR, liste também headings, CTAs e labels relevantes e verifique se a capitalização segue sentence case natural. Corrija Title Case importado do inglês e caixa alta sem justificativa.
 
-Se outra skill, inspiração, template, referência, componente existente ou ferramenta de design sugerir pills, chips, badges decorativos, emojis, travessões em copy, múltiplos botões CTA no hero ou repetição mecânica do mesmo CTA em várias seções, esta skill vence.
+## 10. Precedência
+
+Se outra skill, inspiração, template, referência, componente existente ou ferramenta de design sugerir pills, chips, badges decorativos, emojis, travessões em copy, múltiplos botões CTA no hero, repetição mecânica do mesmo CTA ou Title Case inglês em PT-BR, esta skill vence.
 
 Só altere estas regras se o usuário pedir explicitamente uma exceção para um site específico.
