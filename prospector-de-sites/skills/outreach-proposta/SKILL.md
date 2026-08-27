@@ -138,6 +138,32 @@ Depois que o lead demonstrar interesse, o editor pode ser usado como argumento d
 
 Não afirmar que o cliente "publica sozinho" ou que existe `/admin` autenticado se o backend Client CMS ainda não estiver efetivamente configurado para aquele projeto.
 
+### HARD RULE — termos comerciais de domínio, hospedagem e alterações
+
+Estes são os termos comerciais padrão atuais e devem ser tratados como fonte de verdade até o usuário alterá-los:
+
+- **Domínio**: o domínio e sua renovação são por conta do cliente. Preferir registro/propriedade sob controle do próprio cliente; nunca apresentar o domínio como incluído gratuitamente no preço do serviço.
+- **Hospedagem**: a AutoCORA pode hospedar o site **sem cobrança separada de hospedagem para o cliente**. Para clientes que já possuem site/hospedagem, isso pode ser apresentado depois que houver interesse como economia potencial de custo recorrente.
+- **Hospedagem existente**: o cliente pode optar por manter a hospedagem atual por sua própria conta, desde que o ambiente seja tecnicamente compatível com a entrega. Não pressionar migração quando a infraestrutura atual for preferência do cliente.
+- **Painel/editor de conteúdo**: faz parte da proposta comercial. Alterações simples de conteúdo que o painel suportar, como textos, imagens, contatos, WhatsApp, links e dados equivalentes, não geram cobrança adicional por alteração feita pelo próprio cliente.
+- **Alterações complexas**: mudanças estruturais ou de escopo podem ter custo adicional e devem ser orçadas antes da execução. Exemplos: novas páginas/seções relevantes, redesign estrutural, novas integrações, funcionalidades inéditas, formulários/fluxos especiais ou mudanças técnicas fora do escopo entregue.
+- **Sem manutenção obrigatória inventada**: não criar mensalidade de manutenção ou suporte se ela não tiver sido explicitamente acordada. Hospedagem sem cobrança separada não deve ser descrita automaticamente como "plano de manutenção".
+- **Preço/FAQ da LP da AutoCORA**: `https://autocora.com.br/pt/landing-pages` serve atualmente como referência de identidade/portfólio. Preços, FAQ, pacotes, métricas e condições publicados ali podem estar desatualizados e **não são fonte comercial canônica** para cotação até confirmação do usuário.
+
+#### Como usar esses diferenciais na conversa
+
+Não despejar estes pontos no primeiro WhatsApp frio. Depois de interesse real, objeção de preço ou comparação com o site/hospedagem atual, usar somente o que for relevante.
+
+Para lead que já paga hospedagem, exemplo factual de argumento:
+
+> `Se preferirem, a hospedagem pode ficar por minha conta sem uma cobrança separada. Se quiserem manter o provedor atual, também é possível, desde que o ambiente seja compatível. O domínio continua sendo de responsabilidade de vocês.`
+
+Para autonomia de conteúdo:
+
+> `O site também inclui um editor de conteúdo para alterações simples. Mudanças estruturais ou funcionalidades novas ficam fora desse escopo e, se forem necessárias, são orçadas antes.`
+
+Não prometer "hospedagem grátis para sempre", SLA, backups, suporte ilimitado ou qualquer prazo/garantia de infraestrutura que ainda não esteja formalizado.
+
 ---
 
 ## 4. Página-Capa da Proposta (`proposta.html`)
@@ -147,7 +173,9 @@ Publicada em `[basePath]/[slug]/proposta.html` junto à página gerada:
 2. **Para Redesign**: Comparador antes/depois interativo (`Site atual` vs `Nova versão`) + seção **O que foi repensado** (2 a 4 melhorias reais).
 3. **Para Novo Site**: Apresentação contextual da presença atual vs conceito (`Presença atual` vs `Conceito de site`) + seção **O que este conceito organiza** (centralização de informações, contato ágil, agendamento, mobile).
 4. **Autonomia de conteúdo**: quando o editor visual estiver incluído na oferta, mostrar uma seção curta de valor explicando que textos, imagens, telefone, WhatsApp e redes/links podem ser mantidos por um editor simples, sem transformar a proposta em ficha técnica.
-5. **Sobre quem preparou**: breve apresentação do autor e link para portfólio (`outreach.portfolioUrl`) apenas se configurado.
+5. **Hospedagem/domínio**: após existir interesse comercial, a proposta pode informar de forma concisa que a hospedagem pode ser fornecida pela AutoCORA sem cobrança separada, que o cliente pode manter hospedagem própria se preferir e que domínio/renovação ficam por conta do cliente. Não transformar isso em headline principal nem promessa de infraestrutura ilimitada.
+6. **Alterações futuras**: deixar claro, quando pertinente, que alterações simples cobertas pelo editor não geram cobrança por edição; mudanças estruturais/complexas podem ser orçadas separadamente antes da execução.
+7. **Sobre quem preparou**: breve apresentação do autor e link para portfólio (`outreach.portfolioUrl`) apenas se configurado.
 
 ### Copy obrigatória de status da proposta
 
