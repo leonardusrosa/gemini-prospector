@@ -97,15 +97,23 @@ Também não desvalorizar o trabalho chamando-o de:
 
 A posição correta é: **trabalho real e funcional, mas primeira proposta sujeita a refinamento com o cliente.**
 
-### A. WhatsApp (Curto, Conversacional e Direto)
-- **Tamanho**: ~60 a 110 palavras.
+### A. WhatsApp (Curto, Conversacional e Direto — Permissão Primeiro)
+- **Regra fundamental**: O primeiro WhatsApp frio **NUNCA contém link/URL**. O objetivo é abrir conversa humana e pedir permissão antes de enviar o link da proposta.
+- **Tamanho**: ~45 a 85 palavras.
+- **Fluxo canonical**:
+  1. Primeiro contato no WhatsApp: saudação + contextualização real + aviso de que preparou uma primeira proposta funcional + **pedido de permissão para enviar o link**.
+  2. Prospecto responde com autorização/interesse.
+  3. Envio da mensagem com o link da proposta (`afterPermission`), explicando que é uma versão demonstrativa para refinamento conjunto.
+  4. Conversa e alinhamento.
 - **Estrutura para Brasil (`pt-BR`)**:
-  - *Redesign*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês em [cidade]... Notei que no site atual [motivo]. Por conta disso, preparei uma primeira proposta de nova versão do site, já funcional, para mostrar na prática a direção que imaginei... É uma primeira versão; se fizer sentido, refinamos juntos antes da entrega final."
-  - *Novo Site*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês... Como notei que vocês ainda não possuem um site próprio oficial, preparei uma primeira proposta funcional de site e deixei online para demonstração... Ela serve como ponto de partida; se fizer sentido, a versão final é refinada em conjunto."
+  - *Redesign (primeiro contato)*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês em [cidade]... Notei que no site atual [motivo]. Por conta disso, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para celular, para mostrar na prática a direção que imaginei. Posso te mandar o link para dar uma olhada? — [Autor]"
+  - *Novo Site (primeiro contato)*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês... Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, preparei uma primeira proposta funcional de como o site poderia ficar, já navegável e adaptada para celular. Posso te mandar o link para dar uma olhada? — [Autor]"
+  - *Mensagem após permissão*: "Claro. Fiz essa primeira versão principalmente para mostrar a direção visual e a organização do conteúdo na prática. Se fizer sentido para vocês, textos, fotos e detalhes finais podem ser ajustados em conjunto antes da publicação definitiva.\n\n[URL_PROPOSTA]"
 - **Estrutura para Portugal (`pt-PT`)**:
-  - *Redesign*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho em [cidade]... Notei que na página atual [motivo]. Por esse motivo, preparei uma primeira proposta de nova versão do site, já funcional, para mostrar a direção na prática... É uma primeira versão; se fizer sentido, refinamos em conjunto antes da entrega final."
-  - *Novo Site*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho... Como reparei que ainda não dispõem de um site oficial próprio, preparei uma primeira proposta funcional de site e deixei-a online para demonstração... Serve como ponto de partida; se fizer sentido, a versão final é refinada em conjunto."
-- **Restrições**: Sem emojis por padrão, sem formatação agressiva de marketing. **NUNCA dizer "redesenhei seu site" para leads sem site.**
+  - *Redesign (primeiro contato)*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho em [cidade]... Notei que na página atual [motivo]. Por esse motivo, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para telemóvel, para mostrar na prática a direção que imaginei. Posso enviar-lhe o link para dar uma vista de olhos? — [Autor]"
+  - *Novo Site (primeiro contato)*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho... Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, preparei uma primeira proposta funcional de como a página poderia ficar, já navegável e adaptada para telemóvel. Posso enviar-lhe o link para dar uma vista de olhos? — [Autor]"
+  - *Mensagem após permissão*: "Com certeza. Preparei esta primeira versão principalmente para mostrar a direção visual e a organização do conteúdo na prática. Se fizer sentido para vocês, textos, fotografias e detalhes finais podem ser ajustados em conjunto antes da publicação definitiva.\n\n[URL_PROPOSTA]"
+- **Restrições**: Sem emojis por padrão, sem formatação agressiva de marketing. **NUNCA enviar link no primeiro WhatsApp.** **NUNCA dizer "redesenhei seu site" para leads sem site.**
 
 ### B. E-mail / Gmail (Rapport, Prova e Respeito)
 - **Tamanho**: ~120 a 180 palavras.
@@ -119,7 +127,7 @@ O editor de conteúdo é um diferencial da oferta, mas **não deve ser despejado
 
 No primeiro contato:
 - vender a curiosidade e a prova visual já pronta;
-- usar um único link principal para a proposta;
+- pedir permissão antes de enviar o link no WhatsApp;
 - não listar funcionalidades do pacote;
 - mencionar o editor apenas se for naturalmente necessário para responder a uma objeção/pergunta do lead.
 

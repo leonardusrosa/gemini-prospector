@@ -196,12 +196,16 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
             contexto_prova = f"Acompanho o vosso trabalho de referência na área de {nicho}."
 
         if is_new_site:
-            wpp_text = (
+            wpp_first_contact = (
                 f"{saudacao}\n\n"
-                f"{contexto_prova} Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, tomei a liberdade de preparar uma primeira proposta funcional de site e deixei-a online para demonstração:\n"
-                f"{proposal_url}\n\n"
-                f"É um ponto de partida; se a direção fizer sentido, a versão final é refinada em conjunto antes da publicação definitiva. Veja quando tiver oportunidade e diga-me o que achou.\n\n"
+                f"{contexto_prova} Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, preparei uma primeira proposta funcional de como a página poderia ficar, já navegável e adaptada para telemóvel.\n\n"
+                f"Posso enviar-lhe o link para dar uma vista de olhos?\n\n"
                 f"— {autor}"
+            ).strip()
+
+            wpp_after_permission = (
+                f"Com certeza. Preparei esta primeira versão principalmente para mostrar a direção visual e a organização do conteúdo na prática. Se fizer sentido para vocês, textos, fotografias e detalhes finais podem ser ajustados em conjunto antes da publicação definitiva.\n\n"
+                f"{proposal_url}"
             ).strip()
 
             assunto = f"{nome_lead}, uma proposta de site próprio para o vosso espaço"
@@ -231,13 +235,17 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
             if motivo:
                 obs_site = f"Notei que no site atual {motivo.lower()}."
 
-            wpp_text = (
+            wpp_first_contact = (
                 f"{saudacao}\n\n"
                 f"{contexto_prova} {obs_site}\n\n"
-                f"Por esse motivo, preparei uma primeira proposta de nova versão do site, já funcional, para mostrar a direção na prática:\n"
-                f"{proposal_url}\n\n"
-                f"É uma primeira versão; se fizer sentido, refinamos em conjunto antes da entrega final. Veja quando tiver oportunidade e diga-me o que achou.\n\n"
+                f"Por esse motivo, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para telemóvel, para mostrar na prática a direção que imaginei.\n\n"
+                f"Posso enviar-lhe o link para dar uma vista de olhos?\n\n"
                 f"— {autor}"
+            ).strip()
+
+            wpp_after_permission = (
+                f"Com certeza. Preparei esta primeira versão principalmente para mostrar a direção visual e a organização do conteúdo na prática. Se fizer sentido para vocês, textos, fotografias e detalhes finais podem ser ajustados em conjunto antes da publicação definitiva.\n\n"
+                f"{proposal_url}"
             ).strip()
 
             assunto = f"{nome_lead}, posso mostrar-lhe uma ideia para o vosso site?"
@@ -272,12 +280,16 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
             contexto_prova = f"Acompanho o trabalho de referência de vocês na área de {nicho}."
 
         if is_new_site:
-            wpp_text = (
+            wpp_first_contact = (
                 f"{saudacao}\n\n"
-                f"{contexto_prova} Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, tomei a liberdade de preparar uma primeira proposta funcional de site e deixei online para demonstração:\n"
-                f"{proposal_url}\n\n"
-                f"Ela serve como ponto de partida; se a direção fizer sentido, a versão final é refinada em conjunto antes da publicação definitiva. Dá uma olhada quando puder e me conta o que achou.\n\n"
+                f"{contexto_prova} Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, preparei uma primeira proposta funcional de como o site poderia ficar, já navegável e adaptada para celular.\n\n"
+                f"Posso te mandar o link para dar uma olhada?\n\n"
                 f"— {autor}"
+            ).strip()
+
+            wpp_after_permission = (
+                f"Claro. Fiz essa primeira versão principalmente para mostrar a direção visual e a organização do conteúdo na prática. Se fizer sentido para vocês, textos, fotos e detalhes finais podem ser ajustados em conjunto antes da publicação definitiva.\n\n"
+                f"{proposal_url}"
             ).strip()
 
             assunto = f"{nome_lead}, uma ideia de site próprio para o seu negócio"
@@ -307,13 +319,17 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
             if motivo:
                 obs_site = f"Notei que no site atual {motivo.lower()}."
 
-            wpp_text = (
+            wpp_first_contact = (
                 f"{saudacao}\n\n"
                 f"{contexto_prova} {obs_site}\n\n"
-                f"Por conta disso, preparei uma primeira proposta de nova versão do site, já funcional, para mostrar na prática a direção que imaginei:\n"
-                f"{proposal_url}\n\n"
-                f"É uma primeira versão; se fizer sentido, refinamos juntos antes da entrega final. Dá uma olhada quando puder e me conta o que achou.\n\n"
+                f"Por conta disso, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para celular, para mostrar na prática a direção que imaginei.\n\n"
+                f"Posso te mandar o link para dar uma olhada?\n\n"
                 f"— {autor}"
+            ).strip()
+
+            wpp_after_permission = (
+                f"Claro. Fiz essa primeira versão principalmente para mostrar a direção visual e a organização do conteúdo na prática. Se fizer sentido para vocês, textos, fotos e detalhes finais podem ser ajustados em conjunto antes da publicação definitiva.\n\n"
+                f"{proposal_url}"
             ).strip()
 
             assunto = f"{nome_lead}, posso te mostrar uma ideia para o site?"
@@ -354,8 +370,11 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
         "proposalUrl": proposal_url,
         "proposalStage": "first_functional_version",
         "whatsapp": {
-            "text": wpp_text,
-            "wordCount": len(wpp_text.split()),
+            "firstContact": wpp_first_contact,
+            "afterPermission": wpp_after_permission,
+            "text": wpp_first_contact,
+            "wordCount": len(wpp_first_contact.split()),
+            "afterPermissionWordCount": len(wpp_after_permission.split()),
         },
         "email": {
             "subject": assunto,
