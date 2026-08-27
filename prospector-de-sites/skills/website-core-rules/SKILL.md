@@ -1,6 +1,6 @@
 ---
 name: website-core-rules
-description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Proíbe tags/pills decorativos, emojis e travessões em copy visível.
+description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Proíbe tags/pills decorativos, emojis e travessões em copy visível, e limita o hero a um único botão CTA.
 ---
 
 # Website Core Rules
@@ -97,7 +97,49 @@ Esta regra vale para:
 
 Hífens ortográficos necessários continuam permitidos. Hífens em código, CSS, nomes de classe, slugs, URLs, atributos e nomes de arquivo não são travessões de copy e não devem ser alterados.
 
-## 4. Hero específico
+## 4. HARD RULE: hero tem exatamente um botão CTA
+
+Todo hero deve conter **um único botão CTA**.
+
+Não use dois ou mais botões de ação lado a lado ou empilhados no hero.
+
+Exemplos proibidos:
+
+- `Agendar pelo WhatsApp` + `Ligar agora`
+- `Solicitar orçamento` + `Conhecer serviços`
+- CTA primário + CTA secundário em estilo outline
+- dois botões diferentes apontando para canais de contato distintos
+
+### Como escolher
+
+Escolha a ação de maior prioridade comercial e deixe apenas ela como botão do hero.
+
+As demais ações devem ser movidas para:
+
+- header
+- navegação
+- seção de contato
+- seção imediatamente abaixo da dobra
+- link textual discreto somente quando realmente necessário e sem competir visualmente com o CTA principal
+
+Não transforme a segunda ação em outro elemento com aparência de botão para contornar esta regra.
+
+Ícones sociais ou de contato no header não contam como CTA do hero, desde que estejam fora do hero e cumpram função clara.
+
+### Mobile
+
+A mesma regra vale no mobile: exatamente um botão CTA na primeira composição do hero.
+
+Se faltar espaço, preserve primeiro:
+
+1. identidade/visual principal
+2. headline
+3. supporting copy curta
+4. CTA principal único
+
+Remova ações secundárias antes de reduzir ou duplicar o CTA.
+
+## 5. Hero específico
 
 Hero deve começar com composição e tipografia, não com uma coleção de UI ornaments.
 
@@ -112,7 +154,9 @@ Evite especialmente o padrão AI-slop:
 
 Trust facts, quando necessários, devem ser integrados de forma tipográfica, estrutural ou editorial, sem badges.
 
-## 5. Componentes funcionais versus decoração
+O hero deve manter um único CTA principal, conforme a regra anterior.
+
+## 6. Componentes funcionais versus decoração
 
 Não confunda esta regra com proibição de todos os elementos arredondados.
 
@@ -135,7 +179,7 @@ Proibido quando decorativo ou metadata-first:
 - mini tag acima do título
 - fileira de chips de serviços
 
-## 6. QA obrigatório antes de aprovar qualquer site
+## 7. QA obrigatório antes de aprovar qualquer site
 
 Antes do Screenshot Review e antes de publicar, faça uma revisão explícita:
 
@@ -147,7 +191,8 @@ Emoji in public UI: NONE
 Visible em dash: NONE
 Visible en dash used as punctuation: NONE
 Hero metadata capsule: NONE
-CTA buttons/icons remain functional: PASS
+Hero CTA buttons: EXACTLY 1
+CTA button functional: PASS
 ```
 
 Faça também uma busca textual no HTML final por `—` e `–` e revise qualquer ocorrência visível ao usuário.
@@ -156,8 +201,10 @@ Revise visualmente o screenshot, pois pills/tags podem existir sem nomes de clas
 
 Para emoji, revise tanto texto visível quanto pseudo-elements CSS `content:`.
 
-## 7. Precedência
+Conte também os elementos clicáveis com aparência de botão dentro do hero. O total deve ser exatamente 1.
 
-Se outra skill, inspiração, template, referência, componente existente ou ferramenta de design sugerir pills, chips, badges decorativos, emojis ou travessões em copy, esta skill vence.
+## 8. Precedência
+
+Se outra skill, inspiração, template, referência, componente existente ou ferramenta de design sugerir pills, chips, badges decorativos, emojis, travessões em copy ou múltiplos botões CTA no hero, esta skill vence.
 
 Só altere estas regras se o usuário pedir explicitamente uma exceção para um site específico.
