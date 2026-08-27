@@ -1,291 +1,399 @@
 ---
 name: website-core-rules
-description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Proíbe tags/pills decorativos, emojis, travessões em copy visível e citações inventadas, limita o hero a um único botão CTA, exige CTAs contextuais sem repetição mecânica de wording e aplica sentence case natural ao PT-BR.
+description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Prioriza verdade factual, design específico sem AI-slop, copy natural, CTA disciplinado, imagens semanticamente corretas, acessibilidade, performance e SEO adequados ao ambiente.
 ---
 
 # Website Core Rules
 
-Estas regras são globais, permanentes e têm precedência sobre escolhas estéticas de `gpt-taste`, `design-taste-frontend`, referências visuais e padrões de template.
+Estas regras são globais, permanentes e têm precedência sobre escolhas estéticas de `gpt-taste`, `design-taste-frontend`, referências visuais, templates e atalhos de geração.
 
 Aplicam-se a qualquer UI pública criada para cliente ou prospecto, incluindo hero, header, serviços, cards, bio, galeria, CTA, footer, landing page, proposta visual e preview funcional.
 
-Não se aplicam ao dashboard interno do Prospector, código-fonte, nomes de arquivo, slugs, URLs ou documentação técnica.
+Não se aplicam ao dashboard interno do Prospector, código-fonte, nomes de arquivo, slugs, URLs ou documentação técnica, exceto quando uma regra técnica abaixo tratar explicitamente do build/deploy público.
 
-## 1. HARD RULE: nunca usar tags, pills, chips ou badges decorativos
+## 1. HARD RULE: verdade factual e rastreabilidade vencem o design
 
-Não use elementos de metadata em formato de cápsula, etiqueta, chip, tag, badge ou bubble em nenhum ponto do site.
+Nunca invente, complete ou embeleze como fato qualquer informação que não esteja sustentada por fonte verificável do lead ou por material fornecido explicitamente pelo usuário.
 
-Exemplo proibido acima do headline do hero:
+Isto inclui:
+
+- citações e depoimentos
+- nomes, cargos, credenciais e títulos
+- números, percentuais, anos de experiência e métricas
+- certificações, selos, rankings e avaliações
+- serviços, especialidades e tecnologias
+- endereços, horários, canais de contato e formas de atendimento
+- resultados, promessas, diferenciais e claims comerciais
+- autoria de frases
+- contexto de imagens
+
+Se houver dúvida, não presuma. Remova, reescreva de forma factual ou marque internamente para verificação.
+
+### Citações, depoimentos e falas atribuídas
+
+Nunca coloque entre aspas uma frase criada pelo agente, inferida, embelezada ou parafraseada como se tivesse sido dita pelo profissional, pela clínica, por um cliente ou por qualquer pessoa real.
+
+Uma citação só pode aparecer quando o texto estiver verbatim em fonte verificável do lead ou em material fornecido pelo usuário.
+
+Ao usar uma quote real:
+
+- preserve o sentido e a redação original dentro das aspas
+- preserve a atribuição somente se ela existir na fonte
+- se a fonte não atribuir a uma pessoa específica, não invente autor
+- mantenha rastreável internamente a URL, página ou arquivo de origem
+- se precisar editar ou condensar, remova as aspas e converta em prosa factual
+
+Nunca estilize um parágrafo comum como blockquote apenas para preencher espaço ou criar “personalidade”. Quotes devem parecer quotes porque são quotes.
+
+## 2. HARD RULE: cada componente precisa ganhar o direito de existir
+
+Nenhum elemento visual deve existir apenas para “preencher”, “dar cara de design”, ocupar espaço ou imitar um template premium.
+
+Antes de adicionar qualquer elemento, pergunte:
+
+> Se eu remover isto, alguma informação, hierarquia, significado, prova, navegação ou experiência relevante é perdida?
+
+Se a resposta for não, remova.
+
+Resolva primeiro:
+
+- espaço
+- grid
+- alinhamento
+- contraste
+- escala
+- ritmo
+- hierarquia
+- tipografia
+- fotografia
+
+Não tente consertar composição fraca adicionando ornamentos.
+
+Como teste final de edição, considere se é possível cortar aproximadamente 20% dos elementos sem perda real. Se for, simplifique.
+
+## 3. HARD RULE: nunca usar tags, pills, chips ou badges decorativos
+
+Não use metadata em formato de cápsula, etiqueta, chip, tag, badge ou bubble em nenhum ponto do site.
+
+Exemplo proibido acima do headline:
 
 `Ortodontia & Harmonização · Rio Claro · Jardim Portugal`
 
-Também é proibido transformar esse conteúdo em um retângulo arredondado, cápsula com border, fundo colorido, chip ou badge.
+Também é proibido transformar esse conteúdo em retângulo arredondado, cápsula com border, fundo colorido ou mini-card decorativo.
 
-Isto vale site-wide, não apenas para o hero.
-
-### Alternativas permitidas
-
-Quando a informação for realmente necessária, use uma destas soluções:
+Alternativas permitidas quando a informação for necessária:
 
 - microtexto simples sem container
 - eyebrow tipográfico sem fundo e sem borda
-- linha curta de texto integrada à composição
+- linha curta integrada à composição
 - informação incorporada naturalmente ao headline ou supporting copy
-- lista textual simples quando houver múltiplos fatos
-- ícone real + texto quando o ícone tiver função clara
+- lista textual simples
+- ícone real + texto quando o ícone tiver função semântica clara
 
-CTA buttons e controles funcionais continuam permitidos. A proibição é contra metadata e decoração disfarçadas de componente clicável ou capsule UI.
+CTA buttons e controles funcionais continuam permitidos.
 
-### Regra de teste
+## 4. HARD RULE: evitar ornamentos automáticos e sem semântica
 
-Se remover `background`, `border` e `border-radius` fizer o elemento parecer apenas metadata normal, provavelmente ele não deveria ter sido uma pill/tag/badge.
+Não use automaticamente:
 
-## 2. HARD RULE: nunca usar emoji
+- traços decorativos antes/depois de eyebrows
+- numeração `01 / 02 / 03` em cards independentes
+- estrelas sem avaliação real
+- selos sem certificação real
+- gráficos sem dados
+- porcentagens sem fonte
+- círculos, setas ou ícones que não comuniquem algo
+- aspas gigantes sem citação real
+- linhas ou divisores usados apenas porque “faltou design”
 
-Não use emoji em nenhum texto, botão, navegação, CTA, trust fact, contato, card, título ou elemento decorativo da UI pública.
+### Numeração
 
-Exemplos proibidos incluem pictogramas Unicode como telefone, localização, estrela, check, envelope, foguete, fogo, seta decorativa ou similares quando usados como emoji.
+Só use números quando houver informação real de ordem, como:
 
-### Use ícones de verdade
+- etapas sequenciais
+- cronologia
+- ranking
+- prioridade
+- processo estruturado
+- referência posterior ao item
+
+Se `03` puder virar `07` sem mudar o significado, a numeração provavelmente é decorativa e deve sair.
+
+### Eyebrows
+
+Eyebrows podem se sustentar por tipografia, tamanho, peso, cor, espaço e posicionamento. Não adicione automaticamente uma linha horizontal antes ou depois.
+
+## 5. HARD RULE: evitar estética de “template premium genérico”
+
+Não use como padrão automático:
+
+- glassmorphism
+- glow
+- gradientes decorativos
+- sombras em todos os componentes
+- cantos excessivamente arredondados
+- bento grid sem necessidade do conteúdo
+- ícones dentro de círculos apenas por estilo
+- cards para todo tipo de informação
+
+Esses recursos só são permitidos quando a identidade, a referência aprovada ou a função do componente realmente pedir.
+
+“Premium” deve vir de composição, tipografia, fotografia, proporção, detalhe e especificidade, não de uma coleção de efeitos.
+
+## 6. HARD RULE: variar a estrutura conforme o conteúdo
+
+Evite repetir seção após seção o mesmo molde:
+
+`eyebrow + título + parágrafo + 3 cards`
+
+A estrutura deve nascer do conteúdo. Quando apropriado, varie com:
+
+- composição editorial
+- imagem + conteúdo
+- galeria
+- timeline
+- processo
+- FAQ
+- prova documental
+- comparativo
+- case
+- lista tipográfica
+- seção de contato
+
+Não varie apenas por variedade visual. A mudança de estrutura deve melhorar leitura ou significado.
+
+A página deve parecer específica daquele lead. Use fatos, palavras, imagens, objetos de mercado, história e repertório reais do cliente. Evite uma página que poderia ser trocada de nome e usada por qualquer concorrente.
+
+## 7. HARD RULE: nunca usar emoji em UI pública
+
+Não use emoji em texto, botão, navegação, CTA, trust fact, contato, card, título ou elemento decorativo.
 
 Quando houver necessidade visual, use:
 
 - SVG inline
-- biblioteca de ícones já aprovada no projeto
+- biblioteca de ícones já aprovada
 - ícone vetorial local
 - CSS simples quando apropriado
 
-O ícone deve ser semanticamente adequado, visualmente consistente e acessível.
+O ícone precisa representar algo real, ser visualmente consistente e ter texto acessível ou `aria-label` quando necessário.
 
 Não substitua emoji por outro caractere Unicode com aparência de emoji.
 
-Para links com ícone, preserve `aria-label` ou texto acessível quando necessário.
+## 8. HARD RULE: nunca usar travessões em copy pública
 
-## 3. HARD RULE: nunca usar travessões em copy pública
-
-Não use travessão longo ou médio em textos visíveis do site:
+Não use travessão longo ou médio em textos visíveis:
 
 - `—`
 - `–`
 
-Reescreva a frase usando pontuação natural:
+Reescreva naturalmente com ponto, vírgula, dois-pontos, ponto e vírgula, parênteses com moderação ou quebra de frase.
 
-- ponto
-- vírgula
-- dois-pontos
-- ponto e vírgula quando apropriado
-- parênteses com moderação
-- quebra de frase
+Vale para headlines, parágrafos, CTAs, labels, navegação, captions, metadata textual, footer e proposta pública.
 
-A solução preferida é normalmente reescrever a frase, não apenas trocar o caractere mecanicamente.
+Hífens ortográficos, URLs, classes, slugs, CSS, JS e nomes de arquivo não entram nesta regra.
 
-### Escopo
-
-Esta regra vale para:
-
-- headlines
-- supporting copy
-- parágrafos
-- CTAs
-- labels
-- navegação
-- captions
-- testimonials quando editáveis
-- metadata textual
-- footer
-- proposta pública
-
-Hífens ortográficos necessários continuam permitidos. Hífens em código, CSS, nomes de classe, slugs, URLs, atributos e nomes de arquivo não são travessões de copy e não devem ser alterados.
-
-## 4. HARD RULE: hero tem exatamente um botão CTA
-
-Todo hero deve conter **um único botão CTA**.
-
-Não use dois ou mais botões de ação lado a lado ou empilhados no hero.
-
-Exemplos proibidos:
-
-- `Agendar pelo WhatsApp` + `Ligar agora`
-- `Solicitar orçamento` + `Conhecer serviços`
-- CTA primário + CTA secundário em estilo outline
-- dois botões diferentes apontando para canais de contato distintos
-
-### Como escolher
-
-Escolha a ação de maior prioridade comercial e deixe apenas ela como botão do hero.
-
-As demais ações devem ser movidas para:
-
-- header
-- navegação
-- seção de contato
-- seção imediatamente abaixo da dobra
-- link textual discreto somente quando realmente necessário e sem competir visualmente com o CTA principal
-
-Não transforme a segunda ação em outro elemento com aparência de botão para contornar esta regra.
-
-Ícones sociais ou de contato no header não contam como CTA do hero, desde que estejam fora do hero e cumpram função clara.
-
-### Mobile
-
-A mesma regra vale no mobile: exatamente um botão CTA na primeira composição do hero.
-
-Se faltar espaço, preserve primeiro:
-
-1. identidade/visual principal
-2. headline
-3. supporting copy curta
-4. CTA principal único
-
-Remova ações secundárias antes de reduzir ou duplicar o CTA.
-
-## 5. HARD RULE: evitar redundância de wording nos CTAs
-
-Não repita mecanicamente o mesmo texto de botão em várias seções da página.
-
-Exemplo ruim:
-
-- hero: `Agendar no WhatsApp`
-- serviços: `Agendar no WhatsApp`
-- bio: `Agendar no WhatsApp`
-- contato: `Agendar no WhatsApp`
-
-Quatro botões com o mesmo wording deixam a página repetitiva, genérica e com aparência de template.
-
-### Regra de contexto
-
-Cada CTA deve refletir o contexto da seção e a próxima ação real do usuário.
-
-Se todos os botões levarem ao mesmo canal, como WhatsApp, ainda assim varie a copy de forma contextual e honesta.
-
-Exemplos possíveis, apenas quando factualmente adequados ao contexto:
-
-- hero: `Agendar avaliação`
-- seção de ortodontia: `Conversar sobre ortodontia`
-- bio do profissional: `Falar com a equipe`
-- seção de dúvidas: `Tirar uma dúvida`
-- contato final: `Chamar no WhatsApp`
-
-Não use sinônimos aleatórios só para parecer diferente. A variação deve comunicar intenção, etapa ou assunto diferente.
-
-### Consistência sem repetição mecânica
-
-É aceitável repetir um CTA em um ponto estrutural persistente, como header ou floating CTA, quando a consistência funcional justificar. Mesmo assim, evite espalhar o mesmo wording por todas as seções.
-
-Antes de adicionar um novo botão, pergunte:
-
-1. este CTA acrescenta uma próxima ação relevante?
-2. o texto corresponde ao contexto da seção?
-3. já existe outro botão com wording idêntico muito próximo?
-4. a página está repetindo o canal em vez de avançar a narrativa?
-
-Se a resposta indicar redundância, reescreva ou remova o CTA.
-
-Nunca prometa uma ação diferente daquilo que o link realmente faz. Um botão que abre WhatsApp não deve sugerir confirmação imediata de consulta se isso não estiver garantido.
-
-## 6. HARD RULE: PT-BR usa sentence case natural, não Title Case inglês
+## 9. HARD RULE: PT-BR usa sentence case natural
 
 Para interfaces e copy em português do Brasil, use capitalização natural de PT-BR.
 
-Por padrão, títulos, subtítulos, labels, itens de navegação, botões e headings devem usar **sentence case**:
+Por padrão, títulos, subtítulos, labels, itens de navegação, botões e headings usam sentence case:
 
 - primeira palavra com inicial maiúscula quando apropriado
-- nomes próprios, marcas, siglas e termos oficialmente grafados preservam sua capitalização
-- demais palavras permanecem em minúsculas conforme a norma natural do português
+- nomes próprios, marcas, siglas e produtos preservam grafia oficial
+- demais palavras ficam em minúsculas conforme o português natural
 
-Exemplos corretos:
+Correto:
 
 - `Conheça nossos tratamentos`
 - `Tecnologia para cada etapa do seu tratamento`
 - `Agendar avaliação`
 - `Falar com a equipe`
-- `Ortodontia e harmonização orofacial`
 
-Exemplos a evitar quando usados como capitalização de interface:
+Evitar:
 
 - `Conheça Nossos Tratamentos`
 - `Tecnologia Para Cada Etapa Do Seu Tratamento`
 - `Agendar Avaliação`
-- `Falar Com A Equipe`
 
-Não replique automaticamente Title Case de referências, templates ou copy em inglês.
+Evite também headings, CTAs e frases completas em ALL CAPS. Microtexto curto pode receber `text-transform: uppercase` somente quando houver razão clara de hierarquia e o texto-fonte continuar natural.
 
-### Exceções legítimas
+## 10. HARD RULE: hero tem exatamente um botão CTA
 
-Preserve capitalização oficial ou necessária em:
+Todo hero deve conter exatamente **um botão CTA** no desktop e no mobile.
 
-- nomes próprios
-- marcas
-- siglas e acrônimos, como `ABOR`, `WFO`, `CRO`
-- produtos cuja grafia oficial exija maiúsculas, como `Invisalign`
-- início de frase
-- abreviações convencionais
+Não use:
 
-### Caixa alta visual
+- CTA primário + secundário
+- dois botões lado a lado
+- CTA + botão outline
+- dois canais de contato como botões concorrentes
 
-Evite frases ou headings inteiros em `ALL CAPS` como recurso editorial padrão em PT-BR.
+Escolha a ação comercial prioritária. Mova ações secundárias para header, navegação, contato ou seção abaixo da dobra.
 
-Se houver microtexto muito curto visualmente estilizado por CSS com `text-transform: uppercase`, use apenas quando houver razão clara de hierarquia visual e a leitura continuar natural. Não transforme frases completas, CTAs ou headings principais em caixa alta.
+Não transforme a segunda ação em outro elemento com aparência de botão para contornar a regra.
 
-A preferência é que o texto-fonte no HTML continue escrito em sentence case mesmo quando um micro-rótulo aprovado receber transformação visual por CSS.
+## 11. HARD RULE: evitar redundância de wording nos CTAs
 
-## 7. HARD RULE: nunca inventar citações, depoimentos ou falas atribuídas
+Não repita mecanicamente o mesmo texto em várias seções, como quatro botões `Agendar no WhatsApp`.
 
-Nunca coloque entre aspas uma frase criada pelo agente, inferida, embelezada ou parafraseada como se tivesse sido dita pelo profissional, pela clínica, por um cliente ou por qualquer pessoa real.
+Cada CTA deve refletir o contexto da seção e a próxima ação real do usuário.
 
-Também é proibido inventar:
+Mesmo quando vários CTAs levam ao WhatsApp, varie de forma contextual e honesta, por exemplo:
 
-- depoimentos de pacientes ou clientes
-- endorsements
-- frases de efeito atribuídas ao profissional
-- filosofia profissional em primeira pessoa
-- citações supostamente retiradas do site antigo sem fonte verificável
-- nomes, cargos ou autores para uma frase cuja atribuição não exista na fonte
+- hero: `Agendar avaliação`
+- ortodontia: `Conversar sobre ortodontia`
+- bio: `Falar com a equipe`
+- dúvidas: `Tirar uma dúvida`
+- contato final: `Chamar no WhatsApp`
 
-### Quando uma citação é permitida
+Não use sinônimos aleatórios apenas para parecer diferente. Nunca prometa uma ação diferente daquilo que o link realmente faz.
 
-Uma citação só pode aparecer como citação quando o texto estiver **verbatim em uma fonte verificável do lead** ou em material fornecido explicitamente pelo usuário.
+Repetição em CTA estrutural persistente, como header ou floating CTA, pode ser aceita quando houver justificativa funcional clara.
 
-Ao usar uma citação real:
+## 12. HARD RULE: imagens precisam provar o que a interface diz
 
-- preserve o sentido e a redação original dentro das aspas
-- não reescreva silenciosamente a frase e mantenha as aspas
-- preserve a atribuição apenas se ela existir na fonte
-- se a fonte não atribuir a frase a uma pessoa específica, não invente autor
-- registre ou consiga apontar internamente a URL, página ou arquivo de origem
+Toda imagem de conteúdo deve ser semanticamente compatível com o card, título, alt e contexto em que aparece.
 
-Se for necessário editar, condensar ou melhorar a redação, remova as aspas e transforme o conteúdo em prosa normal, mantendo apenas afirmações sustentadas pela fonte.
+Exemplos:
 
-### Em caso de dúvida
+- card `Consultório clínico` precisa mostrar um consultório/sala de atendimento real
+- `Central de esterilização` precisa mostrar esterilização/biossegurança real
+- `Fachada` precisa mostrar a fachada real
 
-Se não for possível verificar de onde veio a frase, trate-a como não autorizada:
+Nunca escolha uma imagem apenas pelo filename. Faça inspeção visual.
 
-1. remova a citação
-2. não invente substituto em primeira pessoa
-3. use, quando necessário, uma paráfrase factual sustentada pelas fontes do lead
+Prioridade de fonte:
 
-Design não justifica fabricação. Nunca crie uma quote apenas para preencher um bloco visual, testimonial card, hero, bio ou seção editorial.
+1. imagens first-party do site/material do lead
+2. imagens fornecidas explicitamente pelo usuário
+3. imagem gerada ou stock somente quando o projeto permitir e ficar claramente separada de qualquer alegação factual sobre instalações, pessoas ou resultados reais
 
-## 8. Hero específico
+Não use lavabo como consultório, recepção como sala clínica, foto genérica como estrutura real ou imagem de outro profissional como se fosse o lead.
 
-Hero deve começar com composição e tipografia, não com uma coleção de UI ornaments.
+O `alt` deve descrever honestamente o que a imagem mostra, sem acrescentar claims não visíveis ou não verificáveis.
 
-Acima do headline, prefira nada. Se uma eyebrow realmente acrescentar contexto, ela deve ser texto puro e discreto, sem capsule, badge, tag, chip, bubble, ícone emoji ou container decorativo.
+## 13. HARD RULE: estatísticas só com fonte e valor decisório
 
-Evite especialmente o padrão AI-slop:
+Não crie automaticamente faixas com 3 ou 4 números para preencher a página.
+
+Uma métrica deve existir somente quando:
+
+- for verificável
+- tiver contexto
+- ajudar a provar autoridade, dimensão, resultado ou vantagem
+- for relevante para a decisão do usuário
+
+Evite métricas banais, porcentagens sem fonte e números usados apenas porque o template espera uma seção de stats.
+
+Quando o dado for útil, prefira integrá-lo à narrativa, bio, case, timeline ou prova correspondente antes de criar uma faixa exclusiva.
+
+Se uma seção de estatísticas for realmente justificada, motion discreto pode apoiar leitura, mas deve respeitar `prefers-reduced-motion` e nunca virar espetáculo.
+
+## 14. PERFORMANCE CORE: mídia, fontes e renderização
+
+Para páginas públicas, performance faz parte da qualidade visual.
+
+### Imagens
+
+- entregue raster em formato moderno e otimizado, preferindo WebP ou AVIF conforme suporte do stack
+- não faça lazy-load da imagem crítica acima da dobra
+- use prioridade alta apenas para a principal imagem crítica do hero quando aplicável
+- use `loading="lazy"` nas imagens de conteúdo abaixo da dobra, quando apropriado
+- declare `width` e `height` ou `aspect-ratio` para evitar CLS
+- não sirva arquivos muito maiores que o tamanho de renderização necessário
+- preserve masters/originais fora do bundle público quando forem úteis como fonte; não delete evidência original apenas para otimizar deploy
+
+### Fontes
+
+- prefira no máximo 2 famílias tipográficas no site
+- carregue somente pesos realmente usados
+- quando self-hosted, prefira WOFF2 e `font-display: swap`
+- não bloqueie renderização inicial com fonte ou stylesheet desnecessário
+
+### Scripts e animação
+
+- scripts de terceiros devem ser `async` ou `defer` quando tecnicamente compatível
+- remova bibliotecas não utilizadas
+- use bibliotecas de animação somente quando interação/scroll realmente justificarem
+- loop visual simples deve preferir CSS, não JS contínuo
+- `will-change` só em elementos que realmente serão animados e pelo menor tempo necessário
+- respeite `prefers-reduced-motion`
+
+Não prometa PageSpeed/Lighthouse 95+ sem medir. Quando o ambiente permitir medição, busque 95+ em Performance e 100 em SEO como alvo, mas reporte o resultado real e as limitações.
+
+## 15. ACCESSIBILITY CORE
+
+Toda página pública deve passar no mínimo por esta revisão:
+
+- `<html lang>` correto
+- imagens decorativas com `alt=""` e, quando necessário, `aria-hidden="true"`
+- imagens de conteúdo com alt factual e útil
+- contraste de texto visando WCAG AA, normalmente 4.5:1 para texto comum
+- botões e links com texto ou `aria-label` descritivo
+- headings em hierarquia coerente, sem saltos arbitrários
+- foco de teclado visível em controles interativos
+- elementos clicáveis semanticamente corretos (`button` para ação, `a` para navegação)
+- nenhuma informação essencial dependente apenas de cor, hover ou animação
+
+## 16. SEO E METADATA CORE
+
+Adapte SEO ao estágio do projeto. Nunca transforme preview de prospecção em página indexável “final” por acidente.
+
+### Produção final do cliente
+
+Quando houver domínio/URL final real:
+
+- title descritivo e conciso, geralmente até ~60 caracteres
+- meta description útil, normalmente entre 120 e 160 caracteres
+- canonical absoluto correto
+- robots coerente com intenção de indexação
+- Open Graph com `og:title`, `og:description`, `og:url`, `og:image`, `og:image:alt`, `og:site_name` e locale apropriado
+- social card equivalente quando necessário
+- JSON-LD Schema.org somente com tipo e dados realmente sustentados
+- favicon e apple-touch-icon quando houver identidade aprovada
+- `theme-color` quando fizer sentido
+
+Imagem de compartilhamento 1200x630 é o padrão preferido quando houver OG image dedicada, mas não invente uma arte ou branding não aprovado apenas para cumprir checklist.
+
+### Preview/proposta de prospecção
+
+Para preview temporário, demonstração ou URL genérica de Vercel:
+
+- prefira `noindex, nofollow` ou política equivalente quando aplicável
+- não invente canonical de domínio final que ainda não existe
+- não publique schema com dados não verificados
+- não simule autoria, propriedade ou domínio definitivo do cliente
+
+`meta author` não é requisito obrigatório. Use somente se existir autoria real e houver motivo para expô-la.
+
+## 17. SECURITY E BEST PRACTICES CORE
+
+Antes de publicar:
+
+- HTTPS ativo
+- `target="_blank"` acompanhado de `rel="noopener noreferrer"`
+- nenhum erro de console ou network relevante
+- nenhuma dependência conhecida e desnecessariamente vulnerável no build
+- nenhum segredo, token, chave, endpoint administrativo ou URL local exposto no HTML público
+- nenhuma UI de editor/debug publicada junto com o site final
+
+## 18. Hero específico
+
+Hero deve começar com composição e tipografia, não com uma coleção de ornaments.
+
+Acima do headline, prefira nada. Se uma eyebrow realmente acrescentar contexto, use texto puro e discreto, sem capsule, badge, tag, chip, bubble, emoji ou traço decorativo automático.
+
+Evite especialmente:
 
 `[ pill de categoria ]`
 `Headline grande`
 `Supporting copy`
-`[ dois ou três chips de confiança ]`
+`[ chips de confiança ]`
+`[ CTA primário ] [ CTA secundário ]`
 
-Trust facts, quando necessários, devem ser integrados de forma tipográfica, estrutural ou editorial, sem badges.
+Trust facts, quando necessários, devem ser integrados editorialmente, sem badges.
 
-O hero deve manter um único CTA principal, conforme a regra anterior.
-
-## 9. Componentes funcionais versus decoração
-
-Não confunda esta regra com proibição de todos os elementos arredondados.
+## 19. Componentes funcionais versus decoração
 
 Permitido quando funcional:
 
@@ -294,57 +402,97 @@ Permitido quando funcional:
 - select
 - menu
 - controle de formulário
-- card quando o card ajuda scanning ou agrupamento real
+- card quando melhora scanning ou agrupamento real
+- ícone quando comunica função/semântica real
 
 Proibido quando decorativo ou metadata-first:
 
 - category chip
 - location pill
 - specialty badge
-- trust badge estilizado como cápsula
+- trust badge
 - floating label decorativa
 - mini tag acima do título
 - fileira de chips de serviços
+- ícone sem significado
+- selo sem certificado
+- número sem ordem real
 
-## 10. QA obrigatório antes de aprovar qualquer site
-
-Antes do Screenshot Review e antes de publicar, faça uma revisão explícita:
+## 20. QA obrigatório antes de Screenshot Review e deploy
 
 ```text
 SITE CORE RULE QA
 
+SOURCE TRUTH
+Invented facts/metrics/credentials: NONE
+Invented quotes/testimonials/attributions: NONE
+All retained quotes traceable to verified source: PASS
+Image semantics match section/card labels: PASS
+Image source/provenance appropriate: PASS
+
+ANTI-SLOP
 Decorative pills/tags/chips/badges: NONE
+Decorative eyebrow strokes without rationale: NONE
+Decorative numbering without sequence meaning: NONE
+Fake quote styling: NONE
+Unsourced or weak stats strip: NONE
+Meaningless icons/seals/stars/graphs: NONE
+Repeated section template pattern: NONE or JUSTIFIED
+Generic premium effects: NONE or BRAND-JUSTIFIED
+Removable elements without information/hierarchy loss: NONE
+
+COPY / CTA
 Emoji in public UI: NONE
 Visible em dash: NONE
 Visible en dash used as punctuation: NONE
-Hero metadata capsule: NONE
-Hero CTA buttons: EXACTLY 1
-CTA button functional: PASS
-Repeated CTA wording across distinct sections: NONE or JUSTIFIED
-CTA wording matches section context and destination: PASS
-PT-BR headings/buttons/labels use natural sentence case: PASS
+PT-BR sentence case: PASS
 Unjustified Title Case in PT-BR: NONE
-Unjustified ALL CAPS phrases/headings in PT-BR: NONE
-Invented quotes/testimonials/attributions: NONE
-All quoted public copy traceable to a verified source: PASS
+Unjustified ALL CAPS phrases/headings: NONE
+Hero metadata capsule: NONE
+Hero CTA buttons desktop: EXACTLY 1
+Hero CTA buttons mobile: EXACTLY 1
+Repeated CTA wording across distinct sections: NONE or JUSTIFIED
+CTA wording matches context and destination: PASS
+
+ACCESSIBILITY
+html lang: PASS
+Content image alt text truthful: PASS
+Heading hierarchy: PASS
+Interactive labels/aria: PASS
+Keyboard focus: PASS
+Contrast AA target: PASS
+
+PERFORMANCE
+Hero critical image lazy-loaded: NO
+Below-fold content images lazy-loaded where appropriate: PASS
+Image dimensions/aspect-ratio prevent CLS: PASS
+Modern optimized raster delivery: PASS
+Fonts limited/optimized: PASS
+Blocking/unused scripts: NONE
+prefers-reduced-motion respected: PASS
+
+SEO / SECURITY
+Indexing policy matches environment: PASS
+Canonical matches real environment or omitted intentionally: PASS
+Metadata/OG appropriate to environment: PASS
+Schema uses verified facts only: PASS
+HTTPS: PASS
+Target blank rel security: PASS
+Console/network errors: NONE
+Secrets/editor/debug/local URLs in public build: NONE
 ```
 
-Faça também uma busca textual no HTML final por `—` e `–` e revise qualquer ocorrência visível ao usuário.
+Além do checklist automático:
 
-Revise visualmente o screenshot, pois pills/tags podem existir sem nomes de classe óbvios.
+1. faça busca textual por `—`, `–` e Unicode emoji em copy visível
+2. liste todos os CTAs e compare wording/destino
+3. liste quotes/depoimentos e a fonte de cada um
+4. revise visualmente cada imagem de conteúdo contra o label da seção
+5. revise screenshots desktop e mobile procurando AI-slop que não aparece em nomes de classe
+6. não marque Performance/SEO como PASS sem verificar o build real correspondente
 
-Para emoji, revise tanto texto visível quanto pseudo-elements CSS `content:`.
+## 21. Precedência
 
-Conte também os elementos clicáveis com aparência de botão dentro do hero. O total deve ser exatamente 1.
-
-Liste os textos de todos os CTAs da página e revise repetições. Se houver wording idêntico em seções diferentes, ele deve ter justificativa funcional clara ou ser variado/removido.
-
-Para páginas em PT-BR, liste também headings, CTAs e labels relevantes e verifique se a capitalização segue sentence case natural. Corrija Title Case importado do inglês e caixa alta sem justificativa.
-
-Liste também toda copy apresentada entre aspas, blockquotes, testimonial cards ou falas atribuídas. Cada item precisa ter fonte verificável. Se não houver fonte, remova antes do Screenshot Review.
-
-## 11. Precedência
-
-Se outra skill, inspiração, template, referência, componente existente ou ferramenta de design sugerir pills, chips, badges decorativos, emojis, travessões em copy, múltiplos botões CTA no hero, repetição mecânica do mesmo CTA, Title Case inglês em PT-BR ou citações/depoimentos inventados, esta skill vence.
+Se outra skill, inspiração, template, referência, componente existente ou ferramenta sugerir fabricação factual, pills/chips/badges, emoji, travessões, múltiplos CTAs no hero, CTA repetitivo, Title Case inglês em PT-BR, quotes inventadas, imagens semanticamente erradas, stats sem fonte ou ornamentação genérica sem função, esta skill vence.
 
 Só altere estas regras se o usuário pedir explicitamente uma exceção para um site específico.
