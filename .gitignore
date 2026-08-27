@@ -19,3 +19,6 @@ iniciar-dashboard.command
 sites/
 .agents/
 .prospector-editor/
+
+# Private contractual artifacts and synthetic dry-runs
+private/contracts/
