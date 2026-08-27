@@ -60,11 +60,17 @@ class EvolutionClient:
         return url
 
     @staticmethod
-    def validate_phone_number(raw: str) -> Tuple[Optional[str], Optional[str]]:
+    def validate_phone_number(raw: str, country: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
         """
-        Valida e normaliza o número com DDI e DDD sem adivinhações silenciosas.
+        Valida e normaliza o número com código de país de forma extensível e segura.
         Retorna (clean_number, error_message).
         """
+        try:
+            from market_service import normalize_phone_by_country
+            return normalize_phone_by_country(raw, country)
+        except ImportError:
+            pass
+
         if not raw or not isinstance(raw, str):
             return None, "Número de telefone não informado."
 
@@ -73,19 +79,31 @@ class EvolutionClient:
         if not clean:
             return None, "Número de telefone inválido (deve conter apenas dígitos)."
 
-        # Se começa com 55 (Brasil com DDI)
-        if clean.startswith("55"):
-            if len(clean) not in (12, 13):
-                return None, "Número brasileiro com formato inválido. Esperado: DDI 55 + DDD (2 dígitos) + 8 ou 9 dígitos (ex: 5511999999999)."
+        c_upper = (country or "").strip().upper()
+        if c_upper == "PT":
+            if clean.startswith("351") and len(clean) == 12:
+                return clean, None
+            if len(clean) == 9:
+                return "351" + clean, None
+        elif c_upper == "BR":
+            if clean.startswith("55") and len(clean) in (12, 13):
+                return clean, None
+            if len(clean) in (10, 11):
+                return "55" + clean, None
+
+        if has_plus and 10 <= len(clean) <= 15:
             return clean, None
 
-        # Se tem 10 ou 11 dígitos e não tem '+', é número local brasileiro sem DDI 55
-        if len(clean) in (10, 11) and not has_plus:
-            return None, "Número incompleto ou ambíguo. Informe o código do país DDI (ex: 55 para Brasil). Exemplo: 5511999999999"
+        if clean.startswith("55") and len(clean) in (12, 13):
+            return clean, None
+        if clean.startswith("351") and len(clean) == 12:
+            return clean, None
 
-        # Validação internacional geral (E.164: entre 10 e 15 dígitos)
-        if len(clean) < 10 or len(clean) > 15:
-            return None, "Número inválido. Deve conter entre 10 e 15 dígitos incluindo o código de país DDI."
+        if len(clean) in (10, 11) and not has_plus:
+            return None, "Número incompleto ou ambíguo. Informe o código de país (ex: +55 ou +351)."
+
+        if len(clean) < 9 or len(clean) > 15:
+            return None, "Número inválido. Deve conter entre 9 e 15 dígitos com código de país."
 
         return clean, None
 
