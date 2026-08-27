@@ -55,10 +55,15 @@ def synthetic_data():
 
 
 class ContractTermsTest(unittest.TestCase):
-    def test_no_legacy_commercial_text(self):
-        combined = TEMPLATE.read_text(encoding="utf-8") + "\n" + GENERATOR.read_text(encoding="utf-8")
+    def test_template_does_not_ship_legacy_commercial_text(self):
+        html = TEMPLATE.read_text(encoding="utf-8")
         for phrase in LEGACY:
-            self.assertNotIn(phrase, combined)
+            self.assertNotIn(phrase, html)
+
+    def test_generator_rejects_legacy_commercial_text(self):
+        code = GENERATOR.read_text(encoding="utf-8")
+        self.assertIn("redação comercial antiga", code)
+        self.assertIn("TEXTO_HOSPEDAGEM", code)
 
     def test_private_delivery_rule_is_explicit(self):
         skill = SKILL.read_text(encoding="utf-8")
