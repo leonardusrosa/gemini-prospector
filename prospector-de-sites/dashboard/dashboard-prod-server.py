@@ -95,11 +95,17 @@ function rewriteRemoteActions(){
     var lead=bySlug[slug];
     var label=(a.textContent||'').trim().toLowerCase();
     if(label.indexOf('editar site')>=0){a.remove();return;}
+    if(label==='página'){
+      // The base dashboard already renders a dedicated `no ar ↗` action from urlNova.
+      // On the VPS the local `página` link is not usable, so remove it instead of
+      // rewriting it to a second identical published-link action.
+      a.remove();
+      return;
+    }
     if(lead&&lead.urlNova){
       a.href=lead.urlNova;
       a.target='_blank';
       a.rel='noopener';
-      if(label==='página')a.textContent='no ar ↗';
     }else{
       a.style.display='none';
     }
