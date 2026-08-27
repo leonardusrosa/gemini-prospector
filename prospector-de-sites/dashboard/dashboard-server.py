@@ -3,13 +3,79 @@
 """Prospector — servidor local do dashboard (SQLite). Sem dependências: só Python padrão.
 Uso: python dashboard-server.py  (ou duplo clique em iniciar-dashboard.bat)
 Abre em http://localhost:8765 — edições, exclusões, outreach e drag&drop salvam no prospector.db"""
-import json, sqlite3, os, sys, webbrowser
+import json, sqlite3, os, sys, webbrowser, re
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 PASTA = os.path.dirname(os.path.abspath(__file__))
 os.chdir(PASTA)
 DB = os.path.join(PASTA, 'prospector.db')
 CONFIG = os.path.join(PASTA, 'prospector-config.json')
+SLUG_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]*$')
+
+# Runtime enhancement injected only while dashboard.html is served by this backend.
+# It keeps "view proposal" independent from the outreach provider/send workflow
+# without forcing every existing generated dashboard.html snapshot to be rebuilt.
+DASHBOARD_ENHANCEMENT = r'''<script id="prospector-proposal-dashboard-enhancement">
+(function(){
+'use strict';
+var proposalBySlug={};
+function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function slugFromOutreach(a){
+  var raw=a.getAttribute('onclick')||'';
+  var m=raw.match(/abrirOutreach\(\s*['"]([^'"]+)['"]\s*\)/);
+  return m?m[1]:'';
+}
+function enhanceProposalActions(){
+  document.querySelectorAll('a[onclick*="abrirOutreach"]').forEach(function(a){
+    var slug=slugFromOutreach(a);if(!slug)return;
+    a.textContent='outreach';
+    a.title='Preparar mensagem, canal e histórico de outreach';
+    var p=proposalBySlug[slug];
+    if(!p||!p.exists||!p.preferredUrl)return;
+    var parent=a.parentNode;if(!parent)return;
+    if(parent.querySelector('a[data-proposal-slug="'+CSS.escape(slug)+'"]'))return;
+    var view=document.createElement('a');
+    view.href=p.preferredUrl;
+    view.target='_blank';
+    view.rel='noopener';
+    view.textContent='ver proposta';
+    view.title=p.publicUrl?'Abrir proposta publicada':'Abrir proposta local';
+    view.setAttribute('data-proposal-slug',slug);
+    parent.insertBefore(view,a);
+  });
+}
+async function loadProposalMetadata(){
+  try{
+    var r=await fetch('/api/leads',{cache:'no-store'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var rows=await r.json();
+    (rows||[]).forEach(function(l){if(l&&l.slug&&l.proposal)proposalBySlug[l.slug]=l.proposal});
+    enhanceProposalActions();
+  }catch(e){console.warn('Proposal metadata unavailable:',e)}
+}
+
+// Keep review UI usable even when a provider status check fails.
+window.abrirOutreach=function(slug){
+  outSlug=slug;outData=null;outSendRes=null;
+  document.getElementById('outreach-bg').style.display='flex';
+  document.getElementById('out-modal-body').innerHTML='<div style="padding:20px;text-align:center;color:var(--muted)">Carregando dados de outreach...</div>';
+  fetch('/api/leads/'+encodeURIComponent(slug)+'/outreach',{cache:'no-store'}).then(async function(r){
+    var data={};try{data=await r.json()}catch(e){}
+    if(!r.ok)throw new Error(data.error||('HTTP '+r.status));
+    return data;
+  }).then(function(data){
+    outData=data;
+    outActiveChannel=(data.channels&&data.channels.selectedChannel)||'whatsapp';
+    renderOutreachModal();
+  }).catch(function(err){
+    document.getElementById('out-modal-body').innerHTML='<div style="color:var(--warn);padding:14px"><b>Não foi possível carregar o outreach.</b><br><span style="font-size:12px">'+esc(err&&err.message?err.message:String(err))+'</span></div>';
+  });
+};
+
+new MutationObserver(enhanceProposalActions).observe(document.documentElement,{childList:true,subtree:true});
+loadProposalMetadata();
+})();
+</script>'''
 
 # Carrega variáveis de ambiente persistidas no registro do Windows se ausentes no processo atual
 if sys.platform == 'win32':
@@ -50,6 +116,35 @@ CAMPOS = ['slug','nome','nicho','cidade','nota','avaliacoes','email','telefone',
           'siteAntigo','motivo','status','urlNova','dataProposta','valor','obs',
           'contratoStatus','contratoEm','manutencao','pago','docCliente','endCliente',
           'websiteStatus','siteMode','country','locale','language','phoneCountryCode']
+
+def _proposal_meta(lead, cfg):
+    slug = str((lead or {}).get('slug') or '').strip()
+    if not SLUG_RE.fullmatch(slug):
+        return {'exists': False, 'localUrl': None, 'publicUrl': None, 'preferredUrl': None}
+    local_rel = 'sites/%s/proposta.html' % slug
+    local_file = os.path.abspath(os.path.join(PASTA, 'sites', slug, 'proposta.html'))
+    sites_root = os.path.abspath(os.path.join(PASTA, 'sites'))
+    exists = local_file.startswith(sites_root + os.sep) and os.path.isfile(local_file)
+
+    deploy = cfg.get('deploy', {}) if isinstance(cfg.get('deploy'), dict) else {}
+    domain = str(deploy.get('domain') or '').strip().rstrip('/')
+    base_path = str(deploy.get('basePath') or 'clientes').strip().strip('/\\')
+    public_url = None
+    if domain:
+        if not domain.startswith(('http://', 'https://')):
+            domain = 'https://' + domain
+        public_url = '%s/%s/%s/proposta.html' % (domain, base_path, slug)
+    else:
+        url_nova = str((lead or {}).get('urlNova') or '').strip()
+        if url_nova.startswith(('http://', 'https://')):
+            public_url = url_nova if url_nova.endswith('proposta.html') else url_nova.rstrip('/') + '/proposta.html'
+
+    return {
+        'exists': bool(exists),
+        'localUrl': local_rel if exists else None,
+        'publicUrl': public_url,
+        'preferredUrl': public_url or (local_rel if exists else None),
+    }
 
 def conexao():
     c = sqlite3.connect(DB)
@@ -105,12 +200,36 @@ class App(SimpleHTTPRequestHandler):
         self.send_header('Content-Length', str(len(corpo)))
         self.end_headers(); self.wfile.write(corpo)
 
+    def _html(self, code, text):
+        corpo = text.encode('utf-8')
+        self.send_response(code)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Content-Length', str(len(corpo)))
+        self.end_headers(); self.wfile.write(corpo)
+
     def _corpo(self):
         n = int(self.headers.get('Content-Length', 0))
         return json.loads(self.rfile.read(n).decode('utf-8')) if n else {}
 
+    def _serve_dashboard(self):
+        path = os.path.join(PASTA, 'dashboard.html')
+        try:
+            html = open(path, encoding='utf-8').read()
+        except Exception as exc:
+            return self._json(404, {'error': 'dashboard.html não encontrado', 'detail': str(exc)})
+        if 'prospector-proposal-dashboard-enhancement' not in html:
+            if '</body>' in html.lower():
+                pos = html.lower().rfind('</body>')
+                html = html[:pos] + DASHBOARD_ENHANCEMENT + '\n' + html[pos:]
+            else:
+                html += DASHBOARD_ENHANCEMENT
+        return self._html(200, html)
+
     def do_GET(self):
         rota = self.path.split('?')[0]
+        if rota in ('/', '/dashboard.html'):
+            return self._serve_dashboard()
         if rota == '/api/config':
             cfg = ler_config()
             deploy = dict(cfg.get('deploy', {}))
@@ -147,27 +266,55 @@ class App(SimpleHTTPRequestHandler):
                 })
             return self._json(200, {'configured': False, 'hasApiKey': False, 'error': 'EvolutionClient indisponível'})
         if rota == '/api/leads':
-            c = conexao(); c.row_factory = sqlite3.Row
-            rows = [dict(r) for r in c.execute('SELECT * FROM leads').fetchall()]; c.close()
+            cfg = ler_config(); c = conexao(); c.row_factory = sqlite3.Row
+            rows = []
+            for r in c.execute('SELECT * FROM leads').fetchall():
+                lead = dict(r); lead['proposal'] = _proposal_meta(lead, cfg); rows.append(lead)
+            c.close()
             return self._json(200, rows)
+        if rota.startswith('/api/leads/') and rota.endswith('/proposal'):
+            partes = rota.split('/')
+            if len(partes) == 5:
+                slug = partes[3]
+                if not SLUG_RE.fullmatch(slug):
+                    return self._json(400, {'error': 'Slug inválido'})
+                c = conexao(); c.row_factory = sqlite3.Row
+                row = c.execute('SELECT * FROM leads WHERE slug=?', (slug,)).fetchone(); c.close()
+                if not row: return self._json(404, {'error': 'Lead não encontrado'})
+                return self._json(200, _proposal_meta(dict(row), ler_config()))
         if rota.startswith('/api/leads/') and rota.endswith('/outreach'):
             partes = rota.split('/')
             if len(partes) == 5:
                 slug = partes[3]
+                if not SLUG_RE.fullmatch(slug):
+                    return self._json(400, {'error': 'Slug inválido'})
                 c = conexao(); c.row_factory = sqlite3.Row
                 row = c.execute('SELECT * FROM leads WHERE slug=?', (slug,)).fetchone()
                 if not row:
                     c.close(); return self._json(404, {'error': 'Lead não encontrado'})
-                lead = dict(row); cfg = ler_config()
+                lead = dict(row); cfg = ler_config(); provider_warning = None
                 evo_client = EvolutionClient(cfg) if EvolutionClient else None
-                evo_status = evo_client.test_connection() if evo_client else None
-                channels = outreach_service.resolve_channels(lead, cfg, evo_status) if outreach_service else {}
-                messages = outreach_service.generate_messages(lead, cfg) if outreach_service else {}
-                history = outreach_service.get_outreach_history(c, slug) if outreach_service else []
+                evo_status = None
+                if evo_client:
+                    try:
+                        evo_status = evo_client.test_connection()
+                    except Exception as exc:
+                        provider_warning = 'Evolution indisponível durante consulta: %s' % exc
+                        evo_status = {'reachable': False, 'authenticated': False, 'instanceFound': False, 'connectionStateSupported': True, 'connectionState': None}
+                try:
+                    channels = outreach_service.resolve_channels(lead, cfg, evo_status) if outreach_service else {}
+                    messages = outreach_service.generate_messages(lead, cfg) if outreach_service else {}
+                    history = outreach_service.get_outreach_history(c, slug) if outreach_service else []
+                except Exception as exc:
+                    c.close(); return self._json(500, {'error': 'Falha ao preparar dados de outreach: %s' % exc})
+                proposal = _proposal_meta(lead, cfg)
                 c.close()
                 return self._json(200, {
                     'lead': {'slug': lead['slug'], 'nome': lead['nome'], 'status': lead['status']},
-                    'channels': channels, 'messages': messages, 'history': history, 'outreachConfig': cfg.get('outreach', {})
+                    'proposal': proposal,
+                    'channels': channels, 'messages': messages, 'history': history,
+                    'outreachConfig': cfg.get('outreach', {}),
+                    'providerWarning': provider_warning,
                 })
         if rota.startswith('/api/leads/') and rota.endswith('/history'):
             partes = rota.split('/')
@@ -176,8 +323,6 @@ class App(SimpleHTTPRequestHandler):
                 c = conexao()
                 hist = outreach_service.get_outreach_history(c, slug) if outreach_service else []
                 c.close(); return self._json(200, hist)
-        if self.path in ('/', ''):
-            self.path = '/dashboard.html'
         return SimpleHTTPRequestHandler.do_GET(self)
 
     def do_POST(self):
