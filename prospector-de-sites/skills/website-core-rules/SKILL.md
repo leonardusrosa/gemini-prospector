@@ -1,6 +1,6 @@
 ---
 name: website-core-rules
-description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Proíbe tags/pills decorativos, emojis e travessões em copy visível, e limita o hero a um único botão CTA.
+description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Proíbe tags/pills decorativos, emojis e travessões em copy visível, limita o hero a um único botão CTA e exige CTAs contextuais sem repetição mecânica de wording.
 ---
 
 # Website Core Rules
@@ -139,7 +139,51 @@ Se faltar espaço, preserve primeiro:
 
 Remova ações secundárias antes de reduzir ou duplicar o CTA.
 
-## 5. Hero específico
+## 5. HARD RULE: evitar redundância de wording nos CTAs
+
+Não repita mecanicamente o mesmo texto de botão em várias seções da página.
+
+Exemplo ruim:
+
+- hero: `Agendar no WhatsApp`
+- serviços: `Agendar no WhatsApp`
+- bio: `Agendar no WhatsApp`
+- contato: `Agendar no WhatsApp`
+
+Quatro botões com o mesmo wording deixam a página repetitiva, genérica e com aparência de template.
+
+### Regra de contexto
+
+Cada CTA deve refletir o contexto da seção e a próxima ação real do usuário.
+
+Se todos os botões levarem ao mesmo canal, como WhatsApp, ainda assim varie a copy de forma contextual e honesta.
+
+Exemplos possíveis, apenas quando factualmente adequados ao contexto:
+
+- hero: `Agendar avaliação`
+- seção de ortodontia: `Conversar sobre ortodontia`
+- bio do profissional: `Falar com a equipe`
+- seção de dúvidas: `Tirar uma dúvida`
+- contato final: `Chamar no WhatsApp`
+
+Não use sinônimos aleatórios só para parecer diferente. A variação deve comunicar intenção, etapa ou assunto diferente.
+
+### Consistência sem repetição mecânica
+
+É aceitável repetir um CTA em um ponto estrutural persistente, como header ou floating CTA, quando a consistência funcional justificar. Mesmo assim, evite espalhar o mesmo wording por todas as seções.
+
+Antes de adicionar um novo botão, pergunte:
+
+1. este CTA acrescenta uma próxima ação relevante?
+2. o texto corresponde ao contexto da seção?
+3. já existe outro botão com wording idêntico muito próximo?
+4. a página está repetindo o canal em vez de avançar a narrativa?
+
+Se a resposta indicar redundância, reescreva ou remova o CTA.
+
+Nunca prometa uma ação diferente daquilo que o link realmente faz. Um botão que abre WhatsApp não deve sugerir confirmação imediata de consulta se isso não estiver garantido.
+
+## 6. Hero específico
 
 Hero deve começar com composição e tipografia, não com uma coleção de UI ornaments.
 
@@ -156,7 +200,7 @@ Trust facts, quando necessários, devem ser integrados de forma tipográfica, es
 
 O hero deve manter um único CTA principal, conforme a regra anterior.
 
-## 6. Componentes funcionais versus decoração
+## 7. Componentes funcionais versus decoração
 
 Não confunda esta regra com proibição de todos os elementos arredondados.
 
@@ -179,7 +223,7 @@ Proibido quando decorativo ou metadata-first:
 - mini tag acima do título
 - fileira de chips de serviços
 
-## 7. QA obrigatório antes de aprovar qualquer site
+## 8. QA obrigatório antes de aprovar qualquer site
 
 Antes do Screenshot Review e antes de publicar, faça uma revisão explícita:
 
@@ -193,6 +237,8 @@ Visible en dash used as punctuation: NONE
 Hero metadata capsule: NONE
 Hero CTA buttons: EXACTLY 1
 CTA button functional: PASS
+Repeated CTA wording across distinct sections: NONE or JUSTIFIED
+CTA wording matches section context and destination: PASS
 ```
 
 Faça também uma busca textual no HTML final por `—` e `–` e revise qualquer ocorrência visível ao usuário.
@@ -203,8 +249,10 @@ Para emoji, revise tanto texto visível quanto pseudo-elements CSS `content:`.
 
 Conte também os elementos clicáveis com aparência de botão dentro do hero. O total deve ser exatamente 1.
 
-## 8. Precedência
+Liste os textos de todos os CTAs da página e revise repetições. Se houver wording idêntico em seções diferentes, ele deve ter justificativa funcional clara ou ser variado/removido.
 
-Se outra skill, inspiração, template, referência, componente existente ou ferramenta de design sugerir pills, chips, badges decorativos, emojis, travessões em copy ou múltiplos botões CTA no hero, esta skill vence.
+## 9. Precedência
+
+Se outra skill, inspiração, template, referência, componente existente ou ferramenta de design sugerir pills, chips, badges decorativos, emojis, travessões em copy, múltiplos botões CTA no hero ou repetição mecânica do mesmo CTA em várias seções, esta skill vence.
 
 Só altere estas regras se o usuário pedir explicitamente uma exceção para um site específico.
