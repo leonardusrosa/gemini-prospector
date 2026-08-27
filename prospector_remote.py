@@ -30,9 +30,22 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-BASE = os.environ.get('PROSPECTOR_REMOTE_URL', '').strip().rstrip('/')
-USER = os.environ.get('PROSPECTOR_AUTH_USER', '')
-PASSWORD = os.environ.get('PROSPECTOR_AUTH_PASSWORD', '')
+def _env(key, default=''):
+    val = os.environ.get(key, '').strip()
+    if not val and sys.platform == 'win32':
+        try:
+            import winreg
+            k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Environment', 0, winreg.KEY_READ)
+            val, _ = winreg.QueryValueEx(k, key)
+            winreg.CloseKey(k)
+        except Exception:
+            val = ''
+    return (val or default).strip()
+
+
+BASE = _env('PROSPECTOR_REMOTE_URL').rstrip('/')
+USER = _env('PROSPECTOR_AUTH_USER')
+PASSWORD = _env('PROSPECTOR_AUTH_PASSWORD')
 
 
 def _headers(json_body=False):
