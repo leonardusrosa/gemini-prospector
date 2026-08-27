@@ -2,30 +2,59 @@
 # -*- coding: utf-8 -*-
 """
 Prospector de Sites — servidor MCP do CRM (STDIO)
-Funciona no Antigravity, ChatGPT e Claude por cima do prospector.db.
+Funciona no ChatGPT (Work/Codex) e no Claude (Desktop/Cowork) ao mesmo tempo,
+por cima do MESMO prospector.db do dashboard.
+
+Instalação:  pip install "mcp[cli]"
+Execução:    python prospector-mcp.py            (usa a pasta atual)
+             python prospector-mcp.py --pasta "C:\\Users\\voce\\Desktop\\Clientes"
+Teste local: python prospector-mcp.py --teste
 """
 import argparse, json, os, sqlite3, sys, datetime
 
-PASTA_ATUAL = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, PASTA_ATUAL)
-sys.path.insert(0, os.path.join(PASTA_ATUAL, 'prospector-de-sites'))
-
-import discovery_service
-
 parser = argparse.ArgumentParser()
-parser.add_argument('--pasta', default=os.environ.get('PROSPECTOR_DIR', PASTA_ATUAL),
+parser.add_argument('--pasta', default=os.environ.get('PROSPECTOR_DIR', '.'),
                     help='Pasta do projeto (onde ficam prospector.db e dashboard.html)')
 parser.add_argument('--teste', action='store_true', help='Roda o autoteste e sai')
 ARGS, _ = parser.parse_known_args()
 PASTA = os.path.abspath(ARGS.pasta)
 DB = os.path.join(PASTA, 'prospector.db')
 
-CAMPOS = discovery_service.CAMPOS_DISCOVERY
-STATUS_VALIDOS = discovery_service.LIFECYCLE_STATUSES
+CAMPOS = ['slug','nome','nicho','cidade','nota','avaliacoes','email','telefone','whatsapp',
+          'siteAntigo','motivo','status','urlNova','dataProposta','valor','obs',
+          'contratoStatus','contratoEm','manutencao','pago','docCliente','endCliente',
+          'websiteStatus','siteMode','country','locale','language','phoneCountryCode']
+STATUS_VALIDOS = ['novo','redesenhado','publicado','proposta','respondeu','fechado','descartado']
 
 def conexao():
     c = sqlite3.connect(DB)
-    discovery_service.setup_db(c)
+    c.execute('''CREATE TABLE IF NOT EXISTS leads(
+        slug TEXT PRIMARY KEY, nome TEXT, nicho TEXT, cidade TEXT, nota REAL,
+        avaliacoes INTEGER, email TEXT, telefone TEXT, whatsapp TEXT, siteAntigo TEXT,
+        motivo TEXT, status TEXT DEFAULT 'novo', urlNova TEXT, dataProposta TEXT,
+        valor REAL, obs TEXT, contratoStatus TEXT DEFAULT 'pendente', contratoEm TEXT,
+        manutencao REAL, pago INTEGER DEFAULT 0, docCliente TEXT, endCliente TEXT,
+        websiteStatus TEXT DEFAULT 'existing_weak', siteMode TEXT DEFAULT 'redesign',
+        country TEXT, locale TEXT, language TEXT, phoneCountryCode TEXT,
+        atualizado TEXT)''')
+    for col, tipo in [('contratoStatus',"TEXT DEFAULT 'pendente'"),('contratoEm','TEXT'),('manutencao','REAL'),('pago','INTEGER DEFAULT 0'),('docCliente','TEXT'),('endCliente','TEXT'),('websiteStatus',"TEXT DEFAULT 'existing_weak'"),('siteMode',"TEXT DEFAULT 'redesign'"),('country','TEXT'),('locale','TEXT'),('language','TEXT'),('phoneCountryCode','TEXT')]:
+        try: c.execute('ALTER TABLE leads ADD COLUMN %s %s' % (col, tipo))
+        except sqlite3.OperationalError: pass
+    try:
+        rows = c.execute("SELECT slug, cidade, endCliente, whatsapp, telefone FROM leads WHERE country IS NULL OR country = ''").fetchall()
+        for r in rows:
+            sl, cid, end, wpp, tel = r
+            if (wpp and str(wpp).startswith('351')) or (tel and str(tel).startswith('351')) or (cid and 'portugal' in str(cid).lower()):
+                c.execute("UPDATE leads SET country='PT', locale='pt-PT', language='pt', phoneCountryCode='351' WHERE slug=?", (sl,))
+            elif (wpp and str(wpp).startswith('55')) or (tel and str(tel).startswith('55')) or (cid and any(k in str(cid).lower() for k in ['sp','rj','mg','pr','rs','sc','brasil','são paulo','campinas','rio claro'])):
+                c.execute("UPDATE leads SET country='BR', locale='pt-BR', language='pt', phoneCountryCode='55' WHERE slug=?", (sl,))
+    except Exception:
+        pass
+    c.execute('''CREATE TABLE IF NOT EXISTS outreach_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL, canal TEXT NOT NULL,
+        destino TEXT, tipo TEXT DEFAULT 'proposta', mensagem TEXT, urlProposta TEXT,
+        mensagemId TEXT, status TEXT DEFAULT 'enviado', criadoEm TEXT DEFAULT (datetime('now','localtime')))''')
+    c.commit()
     return c
 
 def _linhas(rows, cols):
@@ -33,6 +62,8 @@ def _linhas(rows, cols):
 
 def _agora():
     return datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+
+# ---------- Lógica (compartilhada entre MCP e autoteste) ----------
 
 def f_listar(status=None):
     c = conexao(); cur = c.cursor()
@@ -49,10 +80,18 @@ def f_obter(slug):
     return dict(zip(CAMPOS, row)) if row else None
 
 def f_salvar(dados):
+    if not dados.get('slug'):
+        return {'erro': 'slug é obrigatório (ex.: maria-silva)'}
+    if dados.get('status') and dados['status'] not in STATUS_VALIDOS:
+        return {'erro': 'status inválido. Use: %s' % ', '.join(STATUS_VALIDOS)}
+    atual = f_obter(dados['slug']) or {}
+    atual.update({k: v for k, v in dados.items() if k in CAMPOS and v is not None})
+    atual.setdefault('status', 'novo'); atual.setdefault('contratoStatus', 'pendente'); atual.setdefault('pago', 0)
     c = conexao()
-    res = discovery_service.upsert_lead_discovery(c, dados)
-    c.close()
-    return res
+    c.execute('INSERT OR REPLACE INTO leads (%s,atualizado) VALUES (%s,?)' % (','.join(CAMPOS), ','.join('?'*len(CAMPOS))),
+              [atual.get(k) for k in CAMPOS] + [_agora()])
+    c.commit(); c.close()
+    return {'ok': True, 'lead': atual['slug'], 'status': atual['status']}
 
 def f_status(slug, status, obs_extra=None):
     if status not in STATUS_VALIDOS:
@@ -60,7 +99,7 @@ def f_status(slug, status, obs_extra=None):
     lead = f_obter(slug)
     if not lead: return {'erro': 'lead não encontrado: %s' % slug}
     c = conexao()
-    if status in ('proposta', 'contactado') and not lead.get('dataProposta'):
+    if status == 'proposta' and not lead.get('dataProposta'):
         c.execute('UPDATE leads SET dataProposta=? WHERE slug=?', (datetime.date.today().isoformat(), slug))
     if obs_extra:
         novo_obs = ((lead.get('obs') or '') + ' | ' + obs_extra).strip(' |')
@@ -81,7 +120,7 @@ def f_fechar(slug, valor, manutencao=None):
 def f_followups(dias=3):
     limite = (datetime.date.today() - datetime.timedelta(days=dias)).isoformat()
     c = conexao(); cur = c.cursor()
-    cur.execute("SELECT slug,nome,email,whatsapp,telefone,dataProposta,obs FROM leads WHERE (status='proposta' OR status='contactado') AND dataProposta<=? ", (limite,))
+    cur.execute("SELECT slug,nome,email,whatsapp,telefone,dataProposta,obs FROM leads WHERE status='proposta' AND dataProposta<=? ", (limite,))
     r = _linhas(cur.fetchall(), ['slug','nome','email','whatsapp','telefone','dataProposta','obs']); c.close()
     return [x for x in r if 'follow-up' not in (x.get('obs') or '').lower()]
 
@@ -93,7 +132,7 @@ def f_financeiro():
             'a_receber': total - recebido, 'mrr_manutencoes': mrr, 'projecao_12m': total + mrr*12}
 
 def f_dashboard():
-    """Regenera o dashboard.html (snapshot) a partir do banco."""
+    """Regenera o dashboard.html (snapshot) a partir do banco, se houver template na pasta."""
     tpl_path = None
     for cand in ['dashboard-template.html', 'dashboard.html']:
         p = os.path.join(PASTA, cand)
@@ -101,11 +140,7 @@ def f_dashboard():
     if not tpl_path: return {'erro': 'dashboard.html/template não encontrado na pasta %s' % PASTA}
     import re
     t = open(tpl_path, encoding='utf-8').read()
-    c = conexao(); cur = c.cursor()
-    cur.execute('SELECT * FROM discovery_runs ORDER BY id DESC LIMIT 5')
-    runs = [dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()]
-    c.close()
-    dados = json.dumps({'atualizado': _agora(), 'leads': f_listar(), 'discovery_runs': runs}, ensure_ascii=False)
+    dados = json.dumps({'atualizado': _agora(), 'leads': f_listar()}, ensure_ascii=False)
     if '__DADOS__' in t:
         novo = t.replace('__DADOS__', dados)
     else:
@@ -117,10 +152,11 @@ def f_dashboard():
 if ARGS.teste:
     import tempfile
     PASTA = tempfile.mkdtemp(); DB = os.path.join(PASTA, 'prospector.db')
-    print('1 salvar:', f_salvar({'slug':'teste-mcp','nome':'Teste MCP','email':'t@t.com','nicho':'nutricionista','cidade':'SP','websiteStatus':'existing_weak'}))
+    print('1 salvar:', f_salvar({'slug':'teste-mcp','nome':'Teste MCP','email':'t@t.com','nicho':'nutricionista','cidade':'SP'}))
     print('2 listar:', len(f_listar()), 'lead(s)')
-    print('3 status:', f_status('teste-mcp','contactado'))
-    c=sqlite3.connect(DB); c.execute("UPDATE leads SET dataProposta=date('now','-5 day') WHERE slug='teste-mcp'"); c.commit(); c.close()
+    print('3 status:', f_status('teste-mcp','proposta'))
+    import sqlite3 as s3
+    c=s3.connect(DB); c.execute("UPDATE leads SET dataProposta=date('now','-5 day') WHERE slug='teste-mcp'"); c.commit(); c.close()
     print('4 followups pendentes:', f_followups())
     print('5 fechar:', f_fechar('teste-mcp', 700, 100))
     print('6 financeiro:', f_financeiro())
@@ -134,7 +170,7 @@ mcp = FastMCP('prospector-crm')
 
 @mcp.tool()
 def listar_leads(status: str = '') -> str:
-    """Lista os leads do CRM. Opcional: filtrar por status."""
+    """Lista os leads do CRM. Opcional: filtrar por status (novo, redesenhado, publicado, proposta, respondeu, fechado, descartado)."""
     return json.dumps(f_listar(status or None), ensure_ascii=False)
 
 @mcp.tool()
@@ -145,41 +181,39 @@ def obter_lead(slug: str) -> str:
 @mcp.tool()
 def salvar_lead(slug: str, nome: str = '', nicho: str = '', cidade: str = '', nota: float = 0,
                 avaliacoes: int = 0, email: str = '', telefone: str = '', whatsapp: str = '',
-                siteAntigo: str = '', motivo: str = '', urlNova: str = '', obs: str = '',
-                websiteStatus: str = 'existing_weak', opportunityType: str = '',
-                opportunityScore: int = 0, classificationEvidence: str = '', mainRisk: str = '') -> str:
-    """Cria ou atualiza um lead no CRM (usar após prospectar ou ao corrigir dados)."""
+                siteAntigo: str = '', motivo: str = '', urlNova: str = '', obs: str = '') -> str:
+    """Cria ou atualiza um lead no CRM (usar após prospectar ou ao corrigir dados). Slug no formato nome-sobrenome."""
     d = {k: v for k, v in locals().items() if v not in ('', 0)}
     return json.dumps(f_salvar(d), ensure_ascii=False)
 
 @mcp.tool()
 def atualizar_status(slug: str, status: str, observacao: str = '') -> str:
-    """Move o lead no funil de ciclo de vida."""
+    """Move o lead no funil: novo → redesenhado → publicado → proposta → respondeu → fechado/descartado. NUNCA use 'fechado' sem confirmação explícita do usuário (para fechar com valor, use registrar_fechamento)."""
     return json.dumps(f_status(slug, status, observacao or None), ensure_ascii=False)
 
 @mcp.tool()
 def registrar_fechamento(slug: str, valor: float, manutencao_mensal: float = 0) -> str:
-    """Registra um cliente FECHADO com o valor acordado."""
+    """Registra um cliente FECHADO com o valor acordado (e manutenção mensal, se houver). Use somente quando o usuário confirmar o fechamento e o valor."""
     return json.dumps(f_fechar(slug, valor, manutencao_mensal or None), ensure_ascii=False)
 
 @mcp.tool()
 def followups_pendentes(dias: int = 3) -> str:
-    """Lista leads com proposta enviada há N+ dias sem resposta."""
+    """Lista leads com proposta enviada há N+ dias, sem resposta e sem follow-up registrado — os que precisam de follow-up agora."""
     return json.dumps(f_followups(dias), ensure_ascii=False)
 
 @mcp.tool()
 def registrar_followup(slug: str) -> str:
-    """Registra que o follow-up foi enviado hoje para o lead."""
-    return json.dumps(f_status(slug, 'contactado', 'Follow-up enviado em %s' % datetime.date.today().isoformat()), ensure_ascii=False)
+    """Registra que o follow-up foi enviado hoje para o lead (1 por lead, nunca repetir)."""
+    return json.dumps(f_status(slug, 'proposta', 'Follow-up enviado em %s' % datetime.date.today().isoformat()), ensure_ascii=False)
 
 @mcp.tool()
 def resumo_financeiro() -> str:
-    """Painel financeiro: total fechado, recebido, a receber, MRR e projeção 12 meses."""
+    """Painel financeiro: total fechado, recebido, a receber, MRR de manutenções e projeção 12 meses."""
     return json.dumps(f_financeiro(), ensure_ascii=False)
 
 @mcp.tool()
 def regenerar_dashboard() -> str:
-    """Regenera o dashboard.html com os dados atuais do banco."""
+    """Regenera o dashboard.html (painel visual) com os dados atuais do banco. Use ao final de qualquer sequência de alterações."""
     return json.dumps(f_dashboard(), ensure_ascii=False)
 
 if __name__ == '__main__':

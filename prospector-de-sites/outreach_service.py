@@ -25,10 +25,10 @@ except ImportError:
 
 def resolve_proposal_url(lead: Dict[str, Any], config: Dict[str, Any]) -> str:
     """Monta a URL pública definitiva ou fallback local da proposta."""
-    slug = lead.get("slug", "")
-    deploy = config.get("deploy", {})
-    domain = deploy.get("domain", "").strip()
-    base_path = deploy.get("basePath", "clientes").strip().strip("/")
+    slug = (lead.get("slug") or "").strip()
+    deploy = config.get("deploy", {}) if isinstance(config.get("deploy"), dict) else {}
+    domain = (deploy.get("domain") or "").strip()
+    base_path = (deploy.get("basePath") or "clientes").strip().strip("/")
 
     if domain:
         if not domain.startswith("http://") and not domain.startswith("https://"):
@@ -36,7 +36,7 @@ def resolve_proposal_url(lead: Dict[str, Any], config: Dict[str, Any]) -> str:
         return f"{domain}/{base_path}/{slug}/proposta.html"
 
     # Fallback para urlNova ou caminho local relativo
-    url_nova = lead.get("urlNova", "").strip()
+    url_nova = (lead.get("urlNova") or "").strip()
     if url_nova and url_nova.startswith("http"):
         if not url_nova.endswith("proposta.html"):
             url_nova = url_nova.rstrip("/") + "/proposta.html"
@@ -173,10 +173,10 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
     is_new_site = (site_mode == "new_site_concept") or (website_status == "none") or not site_antigo
 
-    assinatura = config.get("assinatura", {})
-    autor = assinatura.get("nome", "").strip() or "Especialista em Web"
-    apresentacao = assinatura.get("apresentacao", "").strip() or ("Criação e Redesign de Páginas" if not is_pt else "Design e Criação de Páginas Web")
-    wpp_autor = assinatura.get("whatsapp", "").strip()
+    assinatura = config.get("assinatura", {}) if isinstance(config.get("assinatura"), dict) else {}
+    autor = (assinatura.get("nome") or "").strip() or "Especialista em Web"
+    apresentacao = (assinatura.get("apresentacao") or "").strip() or ("Criação e Redesign de Páginas" if not is_pt else "Design e Criação de Páginas Web")
+    wpp_autor = (assinatura.get("whatsapp") or "").strip()
 
     proposal_url = resolve_proposal_url(lead, config)
 

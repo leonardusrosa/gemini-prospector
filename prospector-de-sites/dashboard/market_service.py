@@ -100,14 +100,24 @@ def detect_country(
     text = f"{query_or_city or ''} {address or ''}".lower()
     
     # 1. Checagem explícita para Portugal
-    if any(kw in text for kw in MARKETS["PT"]["keywords"]) or any(c in text for c in MARKETS["PT"]["cities"]):
-        pt = MARKETS["PT"]
-        return pt["country"], pt["locale"], pt["language"], pt["phoneCountryCode"]
+    for kw in MARKETS["PT"]["keywords"]:
+        if re.search(r'\b' + re.escape(kw) + r'\b', text):
+            pt = MARKETS["PT"]
+            return pt["country"], pt["locale"], pt["language"], pt["phoneCountryCode"]
+    for c in MARKETS["PT"]["cities"]:
+        if c in text:
+            pt = MARKETS["PT"]
+            return pt["country"], pt["locale"], pt["language"], pt["phoneCountryCode"]
 
     # 2. Checagem explícita para Brasil
-    if any(kw in text for kw in MARKETS["BR"]["keywords"]) or any(c in text for c in MARKETS["BR"]["cities"]):
-        br = MARKETS["BR"]
-        return br["country"], br["locale"], br["language"], br["phoneCountryCode"]
+    for kw in MARKETS["BR"]["keywords"]:
+        if re.search(r'\b' + re.escape(kw) + r'\b', text):
+            br = MARKETS["BR"]
+            return br["country"], br["locale"], br["language"], br["phoneCountryCode"]
+    for c in MARKETS["BR"]["cities"]:
+        if c in text:
+            br = MARKETS["BR"]
+            return br["country"], br["locale"], br["language"], br["phoneCountryCode"]
 
     # 3. Fallback do config se especificado e válido
     def_code = (default_country or "").strip().upper()

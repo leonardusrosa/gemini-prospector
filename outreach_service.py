@@ -25,10 +25,10 @@ except ImportError:
 
 def resolve_proposal_url(lead: Dict[str, Any], config: Dict[str, Any]) -> str:
     """Monta a URL pública definitiva ou fallback local da proposta."""
-    slug = lead.get("slug", "")
-    deploy = config.get("deploy", {})
-    domain = deploy.get("domain", "").strip()
-    base_path = deploy.get("basePath", "clientes").strip().strip("/")
+    slug = (lead.get("slug") or "").strip()
+    deploy = config.get("deploy", {}) if isinstance(config.get("deploy"), dict) else {}
+    domain = (deploy.get("domain") or "").strip()
+    base_path = (deploy.get("basePath") or "clientes").strip().strip("/")
 
     if domain:
         if not domain.startswith("http://") and not domain.startswith("https://"):
@@ -144,7 +144,7 @@ def classify_website(raw_url: Optional[str]) -> Tuple[str, str]:
 
 
 def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
-    """Gera mensagens hiperpersonalizadas estritamente baseadas em dados factuais do lead e seu mercado/locale."""
+    """Gera mensagens factuais deixando claro que o preview é a primeira proposta funcional, não o site final."""
     nome_lead = (lead.get("nome") or "Profissional").strip()
     nicho = (lead.get("nicho") or "").strip()
     cidade = (lead.get("cidade") or "").strip()
@@ -173,10 +173,10 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
     is_new_site = (site_mode == "new_site_concept") or (website_status == "none") or not site_antigo
 
-    assinatura = config.get("assinatura", {})
-    autor = assinatura.get("nome", "").strip() or "Especialista em Web"
-    apresentacao = assinatura.get("apresentacao", "").strip() or ("Criação e Redesign de Páginas" if not is_pt else "Design e Criação de Páginas Web")
-    wpp_autor = assinatura.get("whatsapp", "").strip()
+    assinatura = config.get("assinatura", {}) if isinstance(config.get("assinatura"), dict) else {}
+    autor = (assinatura.get("nome") or "").strip() or "Especialista em Web"
+    apresentacao = (assinatura.get("apresentacao") or "").strip() or ("Criação e Redesign de Páginas" if not is_pt else "Design e Criação de Páginas Web")
+    wpp_autor = (assinatura.get("whatsapp") or "").strip()
 
     proposal_url = resolve_proposal_url(lead, config)
 
@@ -193,9 +193,9 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
         if is_new_site:
             wpp_text = (
                 f"{saudacao}\n\n"
-                f"{contexto_prova} Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, tomei a liberdade de preparar uma proposta de site exclusiva para demonstração:\n"
+                f"{contexto_prova} Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, tomei a liberdade de preparar uma primeira proposta funcional de site e deixei-a online para demonstração:\n"
                 f"{proposal_url}\n\n"
-                f"Veja quando tiver oportunidade (funciona perfeitamente no telemóvel). Diga-me o que achou!\n\n"
+                f"É um ponto de partida; se a direção fizer sentido, a versão final é refinada em conjunto antes da publicação definitiva. Veja quando tiver oportunidade e diga-me o que achou.\n\n"
                 f"— {autor}"
             ).strip()
 
@@ -209,9 +209,11 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
 <p>Reparei que o negócio ainda não conta com uma página web oficial própria para centralizar informações, localização e facilitar marcações diretas de novos clientes.</p>
 
-<p>Para ilustrar na prática como uma presença digital profissional pode valorizar o vosso trabalho, preparei uma proposta de site completa e deixei online para demonstração:</p>
+<p>Para mostrar na prática uma possível direção, preparei uma primeira proposta funcional de site e deixei-a online para demonstração:</p>
 
 <p><a href="{proposal_url}">{proposal_url}</a></p>
+
+<p>Esta é uma primeira versão para demonstração e serve como ponto de partida. Se a direção fizer sentido, a versão final é refinada em conjunto — textos, imagens, prioridades e restantes ajustes — antes da publicação definitiva.</p>
 
 <p>A página fica disponível para avaliar com calma no computador ou no telemóvel. Se gostar da proposta, fico ao dispor para conversarmos sem qualquer compromisso.</p>
 
@@ -227,9 +229,9 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
             wpp_text = (
                 f"{saudacao}\n\n"
                 f"{contexto_prova} {obs_site}\n\n"
-                f"Por esse motivo, tomei a liberdade de preparar uma proposta nova e mais moderna para vocês, que já se encontra online para demonstração:\n"
+                f"Por esse motivo, preparei uma primeira proposta de nova versão do site, já funcional, para mostrar a direção na prática:\n"
                 f"{proposal_url}\n\n"
-                f"Veja quando tiver oportunidade (funciona perfeitamente no telemóvel). Diga-me o que achou!\n\n"
+                f"É uma primeira versão; se fizer sentido, refinamos em conjunto antes da entrega final. Veja quando tiver oportunidade e diga-me o que achou.\n\n"
                 f"— {autor}"
             ).strip()
 
@@ -243,9 +245,11 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
 <p>Ao analisar a página atual ({site_antigo or 'do espaço'}), notei alguns pontos objetivos que podem estar a dificultar a conversão de novos clientes, especialmente na navegação via telemóvel e na rapidez de contacto.</p>
 
-<p>Para ilustrar na prática, montei uma nova versão completa do site e coloquei online para poder comparar o antes e depois:</p>
+<p>Para mostrar uma possível direção na prática, montei uma primeira proposta de nova versão do site, já funcional, e coloquei-a online para poder comparar o antes e depois:</p>
 
 <p><a href="{proposal_url}">{proposal_url}</a></p>
+
+<p>Esta é uma primeira versão para demonstração. Se a direção fizer sentido, a versão final é refinada em conjunto — textos, imagens, prioridades e restantes ajustes — antes da publicação definitiva.</p>
 
 <p>A página fica disponível para avaliar com calma no computador ou no telemóvel. Se gostar do conceito, fico ao dispor para conversarmos sem qualquer compromisso.</p>
 
@@ -265,9 +269,9 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
         if is_new_site:
             wpp_text = (
                 f"{saudacao}\n\n"
-                f"{contexto_prova} Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, tomei a liberdade de preparar um conceito exclusivo para demonstração:\n"
+                f"{contexto_prova} Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, tomei a liberdade de preparar uma primeira proposta funcional de site e deixei online para demonstração:\n"
                 f"{proposal_url}\n\n"
-                f"Dá uma olhada quando puder (abre muito bem no celular). Me conta o que achou!\n\n"
+                f"Ela serve como ponto de partida; se a direção fizer sentido, a versão final é refinada em conjunto antes da publicação definitiva. Dá uma olhada quando puder e me conta o que achou.\n\n"
                 f"— {autor}"
             ).strip()
 
@@ -281,9 +285,11 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
 <p>Notei que o negócio ainda não conta com uma página web oficial própria para centralizar informações, localização e facilitar o agendamento direto de novos clientes.</p>
 
-<p>Para ilustrar na prática como uma presença digital profissional pode valorizar o trabalho de vocês, montei uma proposta de site completa e deixei no ar para demonstração:</p>
+<p>Para mostrar na prática uma possível direção, montei uma primeira proposta funcional de site e deixei no ar para demonstração:</p>
 
 <p><a href="{proposal_url}">{proposal_url}</a></p>
+
+<p>Esta é uma primeira versão para demonstração e serve como ponto de partida. Se a direção fizer sentido, a versão final é refinada em conjunto — textos, imagens, prioridades e demais ajustes — antes da publicação definitiva.</p>
 
 <p>A página fica disponível para você avaliar com calma no computador ou no celular. Se gostar da ideia, fico à disposição para conversarmos sem qualquer compromisso.</p>
 
@@ -299,9 +305,9 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
             wpp_text = (
                 f"{saudacao}\n\n"
                 f"{contexto_prova} {obs_site}\n\n"
-                f"Por conta disso, tomei a liberdade de preparar um conceito novo e mais moderno para vocês, que já deixei publicado para demonstração:\n"
+                f"Por conta disso, preparei uma primeira proposta de nova versão do site, já funcional, para mostrar na prática a direção que imaginei:\n"
                 f"{proposal_url}\n\n"
-                f"Dá uma olhada quando puder (abre muito bem no celular). Me conta o que achou!\n\n"
+                f"É uma primeira versão; se fizer sentido, refinamos juntos antes da entrega final. Dá uma olhada quando puder e me conta o que achou.\n\n"
                 f"— {autor}"
             ).strip()
 
@@ -315,9 +321,11 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
 <p>Ao analisar a página atual ({site_antigo or 'do consultório'}), notei alguns pontos objetivos que podem estar dificultando a conversão de novos clientes, especialmente na navegação via celular e na rapidez de agendamento.</p>
 
-<p>Para ilustrar na prática, montei uma nova versão completa do site e coloquei no ar para você comparar o antes e depois:</p>
+<p>Para mostrar uma possível direção na prática, montei uma primeira proposta de nova versão do site, já funcional, e coloquei no ar para você comparar o antes e depois:</p>
 
 <p><a href="{proposal_url}">{proposal_url}</a></p>
+
+<p>Esta é uma primeira versão para demonstração. Se a direção fizer sentido, a versão final é refinada em conjunto — textos, imagens, prioridades e demais ajustes — antes da publicação definitiva.</p>
 
 <p>A página fica disponível para você avaliar com calma no computador ou no celular. Se gostar do conceito, fico à disposição para conversarmos sem qualquer compromisso.</p>
 
@@ -339,6 +347,7 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
     return {
         "proposalUrl": proposal_url,
+        "proposalStage": "first_functional_version",
         "whatsapp": {
             "text": wpp_text,
             "wordCount": len(wpp_text.split()),

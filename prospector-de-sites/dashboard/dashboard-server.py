@@ -25,24 +25,32 @@ function slugFromOutreach(a){
   var m=raw.match(/abrirOutreach\(\s*['"]([^'"]+)['"]\s*\)/);
   return m?m[1]:'';
 }
+var isEnhancing=false;
 function enhanceProposalActions(){
-  document.querySelectorAll('a[onclick*="abrirOutreach"]').forEach(function(a){
-    var slug=slugFromOutreach(a);if(!slug)return;
-    a.textContent='outreach';
-    a.title='Preparar mensagem, canal e histórico de outreach';
-    var p=proposalBySlug[slug];
-    if(!p||!p.exists||!p.preferredUrl)return;
-    var parent=a.parentNode;if(!parent)return;
-    if(parent.querySelector('a[data-proposal-slug="'+CSS.escape(slug)+'"]'))return;
-    var view=document.createElement('a');
-    view.href=p.preferredUrl;
-    view.target='_blank';
-    view.rel='noopener';
-    view.textContent='ver proposta';
-    view.title=p.publicUrl?'Abrir proposta publicada':'Abrir proposta local';
-    view.setAttribute('data-proposal-slug',slug);
-    parent.insertBefore(view,a);
-  });
+  if(isEnhancing)return;
+  isEnhancing=true;
+  try{
+    document.querySelectorAll('a[onclick*="abrirOutreach"]').forEach(function(a){
+      var slug=slugFromOutreach(a);if(!slug)return;
+      if(a.textContent!=='outreach')a.textContent='outreach';
+      if(a.title!=='Preparar mensagem, canal e histórico de outreach')a.title='Preparar mensagem, canal e histórico de outreach';
+      var p=proposalBySlug[slug];
+      if(!p||!p.exists||!p.preferredUrl)return;
+      var parent=a.parentNode;if(!parent)return;
+      var safeSlug=(window.CSS&&CSS.escape)?CSS.escape(slug):slug.replace(/["\\]/g,'\\$&');
+      if(parent.querySelector('a[data-proposal-slug="'+safeSlug+'"]'))return;
+      var view=document.createElement('a');
+      view.href=p.preferredUrl;
+      view.target='_blank';
+      view.rel='noopener';
+      view.textContent='ver proposta';
+      view.title=p.publicUrl?'Abrir proposta publicada':'Abrir proposta local';
+      view.setAttribute('data-proposal-slug',slug);
+      parent.insertBefore(view,a);
+    });
+  }finally{
+    isEnhancing=false;
+  }
 }
 async function loadProposalMetadata(){
   try{
