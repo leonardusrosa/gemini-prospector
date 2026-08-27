@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parent
 SLUG = "instituto-ferreira-odontologia-rio-claro"
 PUBLIC_PATH = ROOT / "sites" / SLUG / f"{SLUG}.html"
 EDITOR_PATH = ROOT / "sites" / SLUG / f"{SLUG}-editor.html"
-BACKUP_CLEAN = ROOT / ".prospector-editor" / "backups" / SLUG / "20260826-190040-911938.html"
 BASE_URL = "http://127.0.0.1:8787"
 
 
@@ -75,9 +74,12 @@ async def main():
     print("STARTING EDITOR PUBLISH SOURCE-INDEPENDENCE TEST")
     print("==================================================")
 
-    # Restore known good backup before test
-    assert BACKUP_CLEAN.exists(), f"Backup clean file not found: {BACKUP_CLEAN}"
-    shutil.copy2(BACKUP_CLEAN, PUBLIC_PATH)
+    # Snapshot current clean public HTML before test
+    assert PUBLIC_PATH.exists(), f"Public file not found: {PUBLIC_PATH}"
+    clean_baseline_html = PUBLIC_PATH.read_text(encoding="utf-8")
+    subprocess_res = None
+    import subprocess
+    subprocess.run(["python", "create_editor.py", str(PUBLIC_PATH)], check=True)
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -147,7 +149,7 @@ async def main():
         # Test 7: Authored inline opacity & transform preservation test
         print("\nVerifying authored inline opacity & transform preservation...")
         # Inject fixture elements with legitimate author opacity & transform
-        fixture_html = BACKUP_CLEAN.read_text(encoding="utf-8")
+        fixture_html = clean_baseline_html
         fixture_needle = "</body>"
         fixture_insert = (
             '<div id="author-fixture-opacity" style="opacity: 0.85; margin: 10px;">Authored Opacity</div>\n'
@@ -157,7 +159,6 @@ async def main():
         PUBLIC_PATH.write_text(fixture_html, encoding="utf-8")
 
         # Regenerate editor for fixture
-        import subprocess
         subprocess.run(["python", "create_editor.py", str(PUBLIC_PATH)], check=True)
 
         # Open editor and publish
@@ -171,8 +172,8 @@ async def main():
         print("  [PASS] Authored inline opacity: 0.85 PRESERVED")
         print("  [PASS] Authored inline transform: rotate(-2deg) PRESERVED")
 
-        # Restore clean backup after fixture test
-        shutil.copy2(BACKUP_CLEAN, PUBLIC_PATH)
+        # Restore clean baseline after fixture test
+        PUBLIC_PATH.write_text(clean_baseline_html, encoding="utf-8")
         subprocess.run(["python", "create_editor.py", str(PUBLIC_PATH)], check=True)
 
         await browser.close()
