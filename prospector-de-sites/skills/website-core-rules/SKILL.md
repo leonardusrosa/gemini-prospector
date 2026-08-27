@@ -1,244 +1,130 @@
 ---
 name: website-core-rules
-description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Prioriza verdade factual, design específico sem AI-slop, copy natural, CTA disciplinado, imagens semanticamente corretas, fidelidade em fotos de experts, acessibilidade, performance e SEO adequados ao ambiente.
+description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Prioriza verdade factual, design específico sem AI-slop, copy natural, CTA disciplinado, imagens semanticamente corretas, fidelidade em fotos de experts, prova social verificável, acessibilidade, performance e SEO adequados ao ambiente.
 ---
 
 # Website Core Rules
 
-Estas regras são globais, permanentes e têm precedência sobre escolhas estéticas de `gpt-taste`, `design-taste-frontend`, referências visuais, templates e atalhos de geração.
+Estas regras são globais e permanentes. Têm precedência sobre `gpt-taste`, `design-taste-frontend`, templates, referências visuais e atalhos de geração.
 
-Aplicam-se a qualquer UI pública criada para cliente ou prospecto, incluindo hero, header, serviços, cards, bio, galeria, CTA, footer, landing page, proposta visual e preview funcional.
+Aplicam-se a qualquer UI pública criada para cliente ou prospecto. Não se aplicam ao dashboard interno, nomes de arquivo, slugs ou documentação técnica, exceto quando uma regra tratar explicitamente do build/deploy.
 
-Não se aplicam ao dashboard interno do Prospector, código-fonte, nomes de arquivo, slugs, URLs ou documentação técnica, exceto quando uma regra técnica abaixo tratar explicitamente do build/deploy público.
+## 1. Verdade factual e rastreabilidade vencem o design
 
-## 1. HARD RULE: verdade factual e rastreabilidade vencem o design
+Nunca invente, complete ou embeleze como fato informação não sustentada por fonte verificável do lead ou material fornecido pelo usuário.
 
-Nunca invente, complete ou embeleze como fato qualquer informação que não esteja sustentada por fonte verificável do lead ou por material fornecido explicitamente pelo usuário.
-
-Isto inclui:
+Inclui:
 
 - citações e depoimentos
 - nomes, cargos, credenciais e títulos
-- números, percentuais, anos de experiência e métricas
+- números, percentuais, avaliações e métricas
 - certificações, selos, rankings e avaliações
 - serviços, especialidades e tecnologias
-- endereços, horários, canais de contato e formas de atendimento
-- resultados, promessas, diferenciais e claims comerciais
+- endereços, horários e canais de contato
+- resultados, promessas, diferenciais e claims
 - autoria de frases
 - contexto de imagens
 
 Se houver dúvida, não presuma. Remova, reescreva de forma factual ou marque internamente para verificação.
 
-### Citações, depoimentos e falas atribuídas
+### Quotes, depoimentos e falas
 
-Nunca coloque entre aspas uma frase criada pelo agente, inferida, embelezada ou parafraseada como se tivesse sido dita pelo profissional, pela clínica, por um cliente ou por qualquer pessoa real.
+Nunca coloque entre aspas uma frase criada, inferida, embelezada ou parafraseada como se tivesse sido dita por pessoa real.
 
-Uma citação só pode aparecer quando o texto estiver verbatim em fonte verificável do lead ou em material fornecido pelo usuário.
+Uma quote só pode aparecer quando o texto estiver verbatim em fonte verificável do lead ou material fornecido pelo usuário.
 
-Ao usar uma quote real:
+- preserve a redação e o sentido dentro das aspas
+- preserve atribuição somente se ela existir na fonte
+- não invente autor
+- mantenha URL/página/arquivo de origem rastreável internamente
+- se editar ou condensar, remova as aspas e transforme em prosa factual
+- nunca estilize parágrafo comum como quote apenas para preencher espaço
 
-- preserve o sentido e a redação original dentro das aspas
-- preserve a atribuição somente se ela existir na fonte
-- se a fonte não atribuir a uma pessoa específica, não invente autor
-- mantenha rastreável internamente a URL, página ou arquivo de origem
-- se precisar editar ou condensar, remova as aspas e converta em prosa factual
+## 2. Cada componente precisa ganhar o direito de existir
 
-Nunca estilize um parágrafo comum como blockquote apenas para preencher espaço ou criar “personalidade”. Quotes devem parecer quotes porque são quotes.
+Nenhum elemento visual deve existir só para preencher, “dar cara de design” ou imitar template premium.
 
-## 2. HARD RULE: cada componente precisa ganhar o direito de existir
-
-Nenhum elemento visual deve existir apenas para “preencher”, “dar cara de design”, ocupar espaço ou imitar um template premium.
-
-Antes de adicionar qualquer elemento, pergunte:
+Teste:
 
 > Se eu remover isto, alguma informação, hierarquia, significado, prova, navegação ou experiência relevante é perdida?
 
-Se a resposta for não, remova.
+Se não, remova.
 
-Resolva primeiro:
+Resolva primeiro espaço, grid, alinhamento, contraste, escala, ritmo, hierarquia, tipografia e fotografia. Não conserte composição fraca com ornamentos.
 
-- espaço
-- grid
-- alinhamento
-- contraste
-- escala
-- ritmo
-- hierarquia
-- tipografia
-- fotografia
+## 3. Anti-AI-slop
 
-Não tente consertar composição fraca adicionando ornamentos.
+### Nunca usar como padrão
 
-Como teste final de edição, considere se é possível cortar aproximadamente 20% dos elementos sem perda real. Se for, simplifique.
-
-## 3. HARD RULE: nunca usar tags, pills, chips ou badges decorativos
-
-Não use metadata em formato de cápsula, etiqueta, chip, tag, badge ou bubble em nenhum ponto do site.
-
-Exemplo proibido acima do headline:
-
-`Ortodontia & Harmonização · Rio Claro · Jardim Portugal`
-
-Também é proibido transformar esse conteúdo em retângulo arredondado, cápsula com border, fundo colorido ou mini-card decorativo.
-
-Alternativas permitidas quando a informação for necessária:
-
-- microtexto simples sem container
-- eyebrow tipográfico sem fundo e sem borda
-- linha curta integrada à composição
-- informação incorporada naturalmente ao headline ou supporting copy
-- lista textual simples
-- ícone real + texto quando o ícone tiver função semântica clara
-
-CTA buttons e controles funcionais continuam permitidos.
-
-## 4. HARD RULE: evitar ornamentos automáticos e sem semântica
-
-Não use automaticamente:
-
-- traços decorativos antes/depois de eyebrows
-- numeração `01 / 02 / 03` em cards independentes
+- tags, pills, chips, badges ou bubbles decorativos
+- traços automáticos antes/depois de eyebrows
+- numeração `01 / 02 / 03` sem ordem real
 - estrelas sem avaliação real
 - selos sem certificação real
 - gráficos sem dados
 - porcentagens sem fonte
-- círculos, setas ou ícones que não comuniquem algo
+- ícones, círculos ou setas sem semântica
 - aspas gigantes sem citação real
-- linhas ou divisores usados apenas porque “faltou design”
-
-### Numeração
-
-Só use números quando houver informação real de ordem, como:
-
-- etapas sequenciais
-- cronologia
-- ranking
-- prioridade
-- processo estruturado
-- referência posterior ao item
-
-Se `03` puder virar `07` sem mudar o significado, a numeração provavelmente é decorativa e deve sair.
-
-### Eyebrows
-
-Eyebrows podem se sustentar por tipografia, tamanho, peso, cor, espaço e posicionamento. Não adicione automaticamente uma linha horizontal antes ou depois.
-
-## 5. HARD RULE: evitar estética de “template premium genérico”
-
-Não use como padrão automático:
-
-- glassmorphism
-- glow
-- gradientes decorativos
-- sombras em todos os componentes
-- cantos excessivamente arredondados
+- linhas/divisores só porque “faltou design”
+- glassmorphism, glow ou gradientes decorativos como fórmula
 - bento grid sem necessidade do conteúdo
-- ícones dentro de círculos apenas por estilo
+- sombras em todos os componentes
 - cards para todo tipo de informação
 
-Esses recursos só são permitidos quando a identidade, a referência aprovada ou a função do componente realmente pedir.
+“Premium” deve vir de composição, tipografia, fotografia, proporção, detalhe e especificidade.
 
-“Premium” deve vir de composição, tipografia, fotografia, proporção, detalhe e especificidade, não de uma coleção de efeitos.
+### Estrutura
 
-## 6. HARD RULE: variar a estrutura conforme o conteúdo
-
-Evite repetir seção após seção o mesmo molde:
+Evite repetir seção após seção:
 
 `eyebrow + título + parágrafo + 3 cards`
 
-A estrutura deve nascer do conteúdo. Quando apropriado, varie com:
+A estrutura deve nascer do conteúdo. Varie quando isso melhorar leitura: editorial, imagem + texto, galeria, timeline, processo, FAQ, prova, comparativo, case, lista tipográfica ou contato.
 
-- composição editorial
-- imagem + conteúdo
-- galeria
-- timeline
-- processo
-- FAQ
-- prova documental
-- comparativo
-- case
-- lista tipográfica
-- seção de contato
+A página deve parecer específica daquele lead, com fatos, linguagem, imagens e repertório reais.
 
-Não varie apenas por variedade visual. A mudança de estrutura deve melhorar leitura ou significado.
+## 4. Copy pública
 
-A página deve parecer específica daquele lead. Use fatos, palavras, imagens, objetos de mercado, história e repertório reais do cliente. Evite uma página que poderia ser trocada de nome e usada por qualquer concorrente.
+### Sem emoji
 
-## 7. HARD RULE: nunca usar emoji em UI pública
+Não use emoji em UI pública. Use SVG, ícone vetorial real ou CSS quando houver função semântica.
 
-Não use emoji em texto, botão, navegação, CTA, trust fact, contato, card, título ou elemento decorativo.
+### Sem travessões
 
-Quando houver necessidade visual, use:
+Não use `—` ou `–` em copy pública. Reescreva naturalmente com pontuação comum.
 
-- SVG inline
-- biblioteca de ícones já aprovada
-- ícone vetorial local
-- CSS simples quando apropriado
+Hífens ortográficos, URLs, classes, slugs, CSS, JS e nomes de arquivo são exceções técnicas.
 
-O ícone precisa representar algo real, ser visualmente consistente e ter texto acessível ou `aria-label` quando necessário.
+### PT-BR em sentence case natural
 
-Não substitua emoji por outro caractere Unicode com aparência de emoji.
-
-## 8. HARD RULE: nunca usar travessões em copy pública
-
-Não use travessão longo ou médio em textos visíveis:
-
-- `—`
-- `–`
-
-Reescreva naturalmente com ponto, vírgula, dois-pontos, ponto e vírgula, parênteses com moderação ou quebra de frase.
-
-Vale para headlines, parágrafos, CTAs, labels, navegação, captions, metadata textual, footer e proposta pública.
-
-Hífens ortográficos, URLs, classes, slugs, CSS, JS e nomes de arquivo não entram nesta regra.
-
-## 9. HARD RULE: PT-BR usa sentence case natural
-
-Para interfaces e copy em português do Brasil, use capitalização natural de PT-BR.
-
-Por padrão, títulos, subtítulos, labels, itens de navegação, botões e headings usam sentence case:
-
-- primeira palavra com inicial maiúscula quando apropriado
-- nomes próprios, marcas, siglas e produtos preservam grafia oficial
-- demais palavras ficam em minúsculas conforme o português natural
+Em PT-BR, títulos, subtítulos, labels, navegação, botões e headings usam sentence case.
 
 Correto:
 
 - `Conheça nossos tratamentos`
-- `Tecnologia para cada etapa do seu tratamento`
 - `Agendar avaliação`
 - `Falar com a equipe`
 
 Evitar:
 
 - `Conheça Nossos Tratamentos`
-- `Tecnologia Para Cada Etapa Do Seu Tratamento`
 - `Agendar Avaliação`
 
-Evite também headings, CTAs e frases completas em ALL CAPS. Microtexto curto pode receber `text-transform: uppercase` somente quando houver razão clara de hierarquia e o texto-fonte continuar natural.
+Preserve nomes próprios, marcas, siglas e produtos. Evite frases, headings e CTAs inteiros em ALL CAPS. Microtexto curto pode receber uppercase por CSS somente com justificativa visual clara.
 
-## 10. HARD RULE: hero tem exatamente um botão CTA
+## 5. CTA
 
-Todo hero deve conter exatamente **um botão CTA** no desktop e no mobile.
+### Hero: exatamente um botão
 
-Não use:
+Todo hero deve conter exatamente um botão CTA no desktop e no mobile.
 
-- CTA primário + secundário
-- dois botões lado a lado
-- CTA + botão outline
-- dois canais de contato como botões concorrentes
+Não use CTA primário + secundário, dois botões lado a lado, botão outline concorrente ou dois canais de contato como botões do hero.
 
-Escolha a ação comercial prioritária. Mova ações secundárias para header, navegação, contato ou seção abaixo da dobra.
+### Evitar wording repetitivo
 
-Não transforme a segunda ação em outro elemento com aparência de botão para contornar a regra.
+Não espalhe o mesmo texto de botão por várias seções.
 
-## 11. HARD RULE: evitar redundância de wording nos CTAs
-
-Não repita mecanicamente o mesmo texto em várias seções, como quatro botões `Agendar no WhatsApp`.
-
-Cada CTA deve refletir o contexto da seção e a próxima ação real do usuário.
-
-Mesmo quando vários CTAs levam ao WhatsApp, varie de forma contextual e honesta, por exemplo:
+Mesmo quando vários CTAs levam ao WhatsApp, varie de forma contextual e honesta:
 
 - hero: `Agendar avaliação`
 - ortodontia: `Conversar sobre ortodontia`
@@ -246,258 +132,210 @@ Mesmo quando vários CTAs levam ao WhatsApp, varie de forma contextual e honesta
 - dúvidas: `Tirar uma dúvida`
 - contato final: `Chamar no WhatsApp`
 
-Não use sinônimos aleatórios apenas para parecer diferente. Nunca prometa uma ação diferente daquilo que o link realmente faz.
+Não use sinônimos aleatórios e nunca prometa ação diferente do destino real.
 
-Repetição em CTA estrutural persistente, como header ou floating CTA, pode ser aceita quando houver justificativa funcional clara.
+## 6. Imagens precisam provar o que a interface diz
 
-## 12. HARD RULE: imagens precisam provar o que a interface diz
+Toda imagem de conteúdo deve ser semanticamente compatível com card, título, alt e contexto.
 
-Toda imagem de conteúdo deve ser semanticamente compatível com o card, título, alt e contexto em que aparece.
+- `Consultório clínico` mostra consultório/sala de atendimento real
+- `Central de esterilização` mostra esterilização real
+- `Fachada` mostra fachada real
 
-Exemplos:
+Nunca escolha apenas pelo filename. Faça inspeção visual.
 
-- card `Consultório clínico` precisa mostrar um consultório/sala de atendimento real
-- `Central de esterilização` precisa mostrar esterilização/biossegurança real
-- `Fachada` precisa mostrar a fachada real
+Prioridade:
 
-Nunca escolha uma imagem apenas pelo filename. Faça inspeção visual.
+1. first-party do lead
+2. fornecida pelo usuário
+3. gerada/stock apenas quando o projeto permitir e sem simular fato real sobre instalações, pessoas ou resultados
 
-Prioridade de fonte:
+O `alt` deve descrever honestamente o que a imagem mostra.
 
-1. imagens first-party do site/material do lead
-2. imagens fornecidas explicitamente pelo usuário
-3. imagem gerada ou stock somente quando o projeto permitir e ficar claramente separada de qualquer alegação factual sobre instalações, pessoas ou resultados reais
+## 7. Hero com foto real de expert
 
-Não use lavabo como consultório, recepção como sala clínica, foto genérica como estrutura real ou imagem de outro profissional como se fosse o lead.
+Quando houver foto real utilizável do profissional, ela é a fonte de identidade. Preserve rosto, expressão, identidade, pose, roupa, cabelo, textura de pele e proporções.
 
-O `alt` deve descrever honestamente o que a imagem mostra, sem acrescentar claims não visíveis ou não verificáveis.
+Proibido:
 
-## 13. HARD RULE: estatísticas só com fonte e valor decisório
+- beauty filter
+- smoothing artificial
+- rejuvenescimento
+- troca de roupa não solicitada
+- mudança de expressão/pose sem necessidade aprovada
+- reconstrução facial que altere identidade
+- extensão de fundo que invente diplomas, logos, equipamentos, instalações ou arquitetura como se fossem reais
 
-Não crie automaticamente faixas com 3 ou 4 números para preencher a página.
+Se não existir uma foto-fonte utilizável, não invente uma suposta foto real do expert.
 
-Uma métrica deve existir somente quando:
+### Desktop: asset ultrawide dedicado é regra
 
-- for verificável
-- tiver contexto
-- ajudar a provar autoridade, dimensão, resultado ou vantagem
-- for relevante para a decisão do usuário
+Para hero desktop full-width com expert, gere/use **um asset ultrawide dedicado**, não apenas uma imagem 16:9 reaproveitada.
 
-Evite métricas banais, porcentagens sem fonte e números usados apenas porque o template espera uma seção de stats.
+Direção padrão:
 
-Quando o dado for útil, prefira integrá-lo à narrativa, bio, case, timeline ou prova correspondente antes de criar uma faixa exclusiva.
+- proporção alvo aproximadamente 2:1 a 2.4:1 ou mais larga conforme o layout, equivalente a uma composição 21:9-ish quando útil
+- expert no lado oposto ao bloco principal de texto, normalmente à direita
+- espaço negativo real e suficiente para headline, supporting copy e CTA
+- expert preservado inteiro na região visual importante, sem corte arbitrário por responsividade
+- composição deve continuar funcional em telas desktop largas e ultrawide
 
-Se uma seção de estatísticas for realmente justificada, motion discreto pode apoiar leitura, mas deve respeitar `prefers-reduced-motion` e nunca virar espetáculo.
+16:9 só é aceitável quando o hero não é realmente full-width/ultrawide ou quando há limitação factual/técnica da imagem-fonte. Não trate 16:9 como default para hero desktop com expert.
 
-## 14. PERFORMANCE CORE: mídia, fontes e renderização
+### Overlay de contraste
 
-Para páginas públicas, performance faz parte da qualidade visual.
+Overlay/gradiente é permitido quando tiver função de legibilidade.
+
+- área do texto pode ser sólida/mais opaca
+- transição começa perto do centro conforme a composição
+- overlay deve desaparecer antes de chegar ao expert
+- nunca lavar rosto, pele, cabelo ou roupa
+- sem névoa, haze, wash ou aspecto artificial
+
+Este gradiente funcional não viola a regra anti-gradiente decorativo.
+
+### Mobile: composição própria
+
+Use asset/crop mobile dedicado quando necessário.
+
+- composição vertical apropriada
+- expert central ou levemente acima do centro conforme o layout
+- preserve anatomia e proporções
+- evite cortes ruins em cabeça, pescoço, articulações e mãos
+- reserve espaço real para texto sem cobrir o rosto
+- não use simples crop automático do desktop se isso degradar a composição
+
+## 8. Google Reviews como prova social
+
+Sempre que houver avaliações positivas **reais e verificáveis** no Google Business Profile correto do lead, incorpore prova social baseada nessas avaliações no site.
+
+### Regra de apresentação
+
+Quando houver material suficiente para múltiplas avaliações, use **carrossel de avaliações** como formato padrão.
+
+- prefira avaliações positivas específicas, informativas e relevantes
+- use somente reviews do perfil correto do negócio/profissional
+- preserve texto fiel quando apresentado entre aspas
+- não invente, combine ou reescreva avaliações como se fossem verbatim
+- não invente nome, nota, data ou número de reviews
+- se truncar um review, use trecho fiel e não altere o sentido
+- identifique a origem como Google de forma factual, sem simular widget oficial quando não for
+- estrelas só podem aparecer quando correspondem à nota real daquele review ou ao aggregate real verificado
+- aggregate rating e total de avaliações só podem aparecer se forem verificados no momento da coleta
+- mantenha internamente fonte/URL/place/profile e evidência da coleta
+
+Se existir somente uma avaliação positiva utilizável, não invente slides adicionais; use a avaliação real de forma adequada até haver material suficiente para um carrossel real.
+
+### UX do carrossel
+
+- deve funcionar em desktop e mobile
+- suporte swipe/touch quando apropriado
+- controles com labels/aria
+- navegação por teclado
+- não dependa apenas de autoplay
+- se houver autoplay, ofereça pausa/controle e respeite `prefers-reduced-motion`
+- não use carrossel só para decorar; cada slide deve conter prova social real
+
+Se não houver reviews verificáveis, não crie seção falsa de depoimentos.
+
+## 9. Estatísticas
+
+Não crie faixa de números automaticamente.
+
+Uma métrica só entra quando for verificável, tiver contexto, ajudar a provar algo relevante e apoiar decisão do usuário.
+
+Sem porcentagem inventada, número sem fonte ou stats strip de preenchimento.
+
+## 10. Performance
 
 ### Imagens
 
-- entregue raster em formato moderno e otimizado, preferindo WebP ou AVIF conforme suporte do stack
-- não faça lazy-load da imagem crítica acima da dobra
-- use prioridade alta apenas para a principal imagem crítica do hero quando aplicável
-- use `loading="lazy"` nas imagens de conteúdo abaixo da dobra, quando apropriado
-- declare `width` e `height` ou `aspect-ratio` para evitar CLS
-- não sirva arquivos muito maiores que o tamanho de renderização necessário
-- preserve masters/originais fora do bundle público quando forem úteis como fonte; não delete evidência original apenas para otimizar deploy
+- raster moderno e otimizado, preferindo WebP/AVIF
+- hero crítico sem lazy load
+- prioridade alta apenas para a principal imagem crítica quando aplicável
+- imagens abaixo da dobra com lazy load quando apropriado
+- `width`/`height` ou `aspect-ratio` para evitar CLS
+- não sirva imagem muito maior que o necessário
+- preserve masters/originais fora do bundle público quando úteis como evidência
 
 ### Fontes
 
-- prefira no máximo 2 famílias tipográficas no site
-- carregue somente pesos realmente usados
-- quando self-hosted, prefira WOFF2 e `font-display: swap`
-- não bloqueie renderização inicial com fonte ou stylesheet desnecessário
+- preferir no máximo 2 famílias
+- carregar apenas pesos usados
+- WOFF2 + `font-display: swap` quando self-hosted
 
-### Scripts e animação
+### Scripts/motion
 
-- scripts de terceiros devem ser `async` ou `defer` quando tecnicamente compatível
-- remova bibliotecas não utilizadas
-- use bibliotecas de animação somente quando interação/scroll realmente justificarem
-- loop visual simples deve preferir CSS, não JS contínuo
-- `will-change` só em elementos que realmente serão animados e pelo menor tempo necessário
-- respeite `prefers-reduced-motion`
+- terceiros com `async`/`defer` quando compatível
+- remover bibliotecas não utilizadas
+- biblioteca de animação só quando interação/scroll justificar
+- respeitar `prefers-reduced-motion`
+- não deixar runtime de animação serializado no HTML publicado
 
-Não prometa PageSpeed/Lighthouse 95+ sem medir. Quando o ambiente permitir medição, busque 95+ em Performance e 100 em SEO como alvo, mas reporte o resultado real e as limitações.
+Não prometa PageSpeed/Lighthouse 95+ sem medir. Reporte resultado real.
 
-## 15. ACCESSIBILITY CORE
-
-Toda página pública deve passar no mínimo por esta revisão:
+## 11. Acessibilidade
 
 - `<html lang>` correto
-- imagens decorativas com `alt=""` e, quando necessário, `aria-hidden="true"`
-- imagens de conteúdo com alt factual e útil
-- contraste de texto visando WCAG AA, normalmente 4.5:1 para texto comum
-- botões e links com texto ou `aria-label` descritivo
-- headings em hierarquia coerente, sem saltos arbitrários
-- foco de teclado visível em controles interativos
-- elementos clicáveis semanticamente corretos (`button` para ação, `a` para navegação)
-- nenhuma informação essencial dependente apenas de cor, hover ou animação
+- alt factual em imagem de conteúdo
+- imagem decorativa com alt vazio quando apropriado
+- contraste visando WCAG AA
+- headings em hierarquia coerente
+- foco de teclado visível
+- links/botões com texto ou `aria-label`
+- `button` para ação, `a` para navegação
+- informação essencial não depende só de cor, hover ou animação
 
-## 16. SEO E METADATA CORE
+## 12. SEO e metadata
 
-Adapte SEO ao estágio do projeto. Nunca transforme preview de prospecção em página indexável “final” por acidente.
+Adapte ao estágio do projeto.
 
-### Produção final do cliente
+### Produção final
 
-Quando houver domínio/URL final real:
+Quando houver URL/domínio final real:
 
-- title descritivo e conciso, geralmente até ~60 caracteres
-- meta description útil, normalmente entre 120 e 160 caracteres
+- title conciso e descritivo
+- meta description útil
 - canonical absoluto correto
-- robots coerente com intenção de indexação
-- Open Graph com `og:title`, `og:description`, `og:url`, `og:image`, `og:image:alt`, `og:site_name` e locale apropriado
-- social card equivalente quando necessário
-- JSON-LD Schema.org somente com tipo e dados realmente sustentados
-- favicon e apple-touch-icon quando houver identidade aprovada
-- `theme-color` quando fizer sentido
+- robots coerente
+- Open Graph/social metadata apropriados
+- JSON-LD somente com fatos verificados
+- favicons/theme-color quando houver identidade aprovada
 
-Imagem de compartilhamento 1200x630 é o padrão preferido quando houver OG image dedicada, mas não invente uma arte ou branding não aprovado apenas para cumprir checklist.
+### Preview/prospecção
 
-### Preview/proposta de prospecção
-
-Para preview temporário, demonstração ou URL genérica de Vercel:
-
-- prefira `noindex, nofollow` ou política equivalente quando aplicável
-- não invente canonical de domínio final que ainda não existe
+- prefira `noindex, nofollow` quando aplicável
+- não invente canonical de domínio final
 - não publique schema com dados não verificados
-- não simule autoria, propriedade ou domínio definitivo do cliente
+- não simule autoria, domínio ou propriedade definitiva do cliente
 
-`meta author` não é requisito obrigatório. Use somente se existir autoria real e houver motivo para expô-la.
-
-## 17. SECURITY E BEST PRACTICES CORE
+## 13. Segurança e best practices
 
 Antes de publicar:
 
-- HTTPS ativo
-- `target="_blank"` acompanhado de `rel="noopener noreferrer"`
-- nenhum erro de console ou network relevante
-- nenhuma dependência conhecida e desnecessariamente vulnerável no build
-- nenhum segredo, token, chave, endpoint administrativo ou URL local exposto no HTML público
-- nenhuma UI de editor/debug publicada junto com o site final
+- HTTPS
+- `target="_blank"` com `rel="noopener noreferrer"`
+- zero erros relevantes de console/network
+- nenhum segredo/token/chave no HTML público
+- nenhuma URL local, UI de editor/debug ou endpoint administrativo publicado
 
-## 18. Hero específico
+## 14. Hero específico
 
-Hero deve começar com composição e tipografia, não com uma coleção de ornaments.
+Hero começa com composição e tipografia, não uma coleção de ornaments.
 
-Acima do headline, prefira nada. Se uma eyebrow realmente acrescentar contexto, use texto puro e discreto, sem capsule, badge, tag, chip, bubble, emoji ou traço decorativo automático.
+Acima do headline, prefira nada. Se uma eyebrow for realmente necessária, use texto puro e discreto, sem capsule, badge, chip, emoji ou traço automático.
 
-Evite especialmente:
+Evite:
 
-`[ pill de categoria ]`
-`Headline grande`
+`[ pill ]`
+`Headline`
 `Supporting copy`
-`[ chips de confiança ]`
+`[ trust chips ]`
 `[ CTA primário ] [ CTA secundário ]`
 
-Trust facts, quando necessários, devem ser integrados editorialmente, sem badges.
+Trust facts, quando necessários, devem ser integrados editorialmente.
 
-### Hero com foto real de expert
-
-Quando o hero usa uma foto real do profissional/lead, a imagem deve funcionar como **retrato factual**, não como matéria-prima para recriar a pessoa.
-
-#### Fidelidade da pessoa
-
-Ao editar, expandir ou adaptar a foto fornecida, preserve a pessoa real. Não altere sem pedido explícito do usuário:
-
-- identidade e estrutura facial
-- expressão
-- pose
-- roupa
-- cabelo
-- textura natural da pele
-- proporções corporais
-- mãos e anatomia
-
-Evite beauty filter, smoothing artificial, “perfeição” de pele, rejuvenescimento, mudança de corpo, reconstrução facial, alteração de roupa ou qualquer transformação que faça o expert parecer outra pessoa.
-
-Se não existir foto-fonte utilizável do expert, **não gere uma suposta foto real dele por inferência**. Peça ou use uma fonte first-party verificável.
-
-#### Desktop
-
-Para hero editorial full-width com texto e expert:
-
-- prefira asset horizontal dedicado, 16:9 ou mais largo quando a composição pedir
-- coloque o expert no lado oposto ao bloco principal de texto; em layouts com copy à esquerda, o expert normalmente fica à direita
-- reserve uma área limpa de leitura para headline, supporting copy e CTA, tipicamente nos primeiros 40% a 50% do canvas quando o texto está à esquerda
-- não posicione texto sobre rosto, olhos, mãos ou detalhes importantes da pessoa
-- extensão de background deve manter perspectiva, luz, profundidade e ambiente coerentes
-- não adicione objetos, arquitetura, equipamento ou contexto que possa ser confundido com fatos reais sobre a clínica/profissional
-
-#### Overlay funcional para legibilidade
-
-Gradiente/overlay é permitido no hero quando tiver função real de contraste, mesmo que gradientes decorativos sejam evitados em outras partes.
-
-Quando usado:
-
-- escolha cor coerente com o background da página/identidade
-- mantenha a área do texto suficientemente sólida para contraste confiável
-- inicie a transição de forma progressiva próximo à região central, conforme a composição
-- faça o overlay desaparecer **antes de alcançar a pessoa**
-- nunca lave rosto, pele, roupa ou silhueta do expert
-- preserve contraste, nitidez e tons naturais no lado da pessoa
-- evite haze, neblina, blur artificial ou efeito “washed out”
-- prefira overlay em CSS quando isso oferecer melhor controle responsivo e não prejudicar a fotografia; baked overlay só quando houver motivo técnico/compositivo claro
-
-O objetivo é legibilidade, não criar atmosfera genérica.
-
-#### Mobile
-
-Não trate o mobile como simples crop automático do desktop quando isso prejudicar o expert ou a leitura.
-
-Prefira um asset/composição mobile dedicado quando necessário:
-
-- formato vertical ou portrait apropriado ao primeiro fold
-- expert central ou levemente acima do centro quando fizer sentido
-- preserve rosto, cabeça, ombros e anatomia sem cortes acidentais
-- evite crop em pescoço, articulações, mãos ou pontos visualmente estranhos
-- crie negative space real acima ou abaixo da pessoa para a copy, conforme a composição
-- use gradiente vertical apenas quando necessário para contraste e sem encobrir o expert
-- mantenha a pessoa dominante e reconhecível sem empurrar todo o conteúdo essencial para fora do primeiro fold
-
-Desktop e mobile podem usar assets diferentes derivados da mesma foto-fonte, desde que ambos preservem identidade e veracidade.
-
-#### Extensão generativa de background
-
-Pode ser usada para completar o canvas quando necessário, mas somente como extensão compositiva neutra.
-
-A extensão deve:
-
-- parecer continuidade plausível do ambiente
-- manter iluminação e perspectiva coerentes
-- não introduzir instalações, equipamentos, diplomas, logos, pessoas ou sinais que impliquem fatos não verificados
-- não competir com o expert
-- não ter aparência de stock genérico ou cenário artificial
-
-Se a extensão puder induzir o visitante a acreditar que um espaço gerado é a clínica real, não use esse recurso.
-
-## 19. Componentes funcionais versus decoração
-
-Permitido quando funcional:
-
-- botão CTA
-- input
-- select
-- menu
-- controle de formulário
-- card quando melhora scanning ou agrupamento real
-- ícone quando comunica função/semântica real
-
-Proibido quando decorativo ou metadata-first:
-
-- category chip
-- location pill
-- specialty badge
-- trust badge
-- floating label decorativa
-- mini tag acima do título
-- fileira de chips de serviços
-- ícone sem significado
-- selo sem certificado
-- número sem ordem real
-
-## 20. QA obrigatório antes de Screenshot Review e deploy
+## 15. QA obrigatório antes de Screenshot Review e deploy
 
 ```text
 SITE CORE RULE QA
@@ -509,24 +347,29 @@ All retained quotes traceable to verified source: PASS
 Image semantics match section/card labels: PASS
 Image source/provenance appropriate: PASS
 
-EXPERT HERO IMAGE (when applicable)
-Expert uses verified/source image: PASS
-Face/identity/expression/pose/clothing fidelity: PASS
-Natural skin/hair/body proportions preserved: PASS
+EXPERT HERO
+Real expert source image verified when applicable: PASS
+Desktop expert hero uses dedicated ultrawide composition: PASS
 Desktop text safe area: PASS
-Desktop text does not overlap important subject features: PASS
-Overlay reaches/washes over expert: NO
-Background extension introduces factual-looking invented context: NO
-Mobile uses deliberate composition/crop: PASS
-Mobile expert anatomy/crop natural: PASS
-Desktop/mobile hero asset quality: PASS
+Expert identity/face/pose/clothing fidelity: PASS
+Overlay does not wash over expert: PASS
+Generated background adds no false factual context: PASS
+Mobile composition/crop intentional and anatomically natural: PASS
+
+GOOGLE REVIEWS
+Verified Google reviews available: YES/NO
+If YES, positive review proof incorporated: PASS
+If multiple suitable reviews, carousel present: PASS
+Reviewer text/identity/rating/date not fabricated: PASS
+Aggregate rating/count, if shown, verified: PASS
+Review carousel accessible and reduced-motion safe: PASS
 
 ANTI-SLOP
 Decorative pills/tags/chips/badges: NONE
 Decorative eyebrow strokes without rationale: NONE
 Decorative numbering without sequence meaning: NONE
 Fake quote styling: NONE
-Unsourced or weak stats strip: NONE
+Unsourced/weak stats strip: NONE
 Meaningless icons/seals/stars/graphs: NONE
 Repeated section template pattern: NONE or JUSTIFIED
 Generic premium effects: NONE or BRAND-JUSTIFIED
@@ -539,7 +382,6 @@ Visible en dash used as punctuation: NONE
 PT-BR sentence case: PASS
 Unjustified Title Case in PT-BR: NONE
 Unjustified ALL CAPS phrases/headings: NONE
-Hero metadata capsule: NONE
 Hero CTA buttons desktop: EXACTLY 1
 Hero CTA buttons mobile: EXACTLY 1
 Repeated CTA wording across distinct sections: NONE or JUSTIFIED
@@ -555,7 +397,7 @@ Contrast AA target: PASS
 
 PERFORMANCE
 Hero critical image lazy-loaded: NO
-Below-fold content images lazy-loaded where appropriate: PASS
+Below-fold images lazy-loaded where appropriate: PASS
 Image dimensions/aspect-ratio prevent CLS: PASS
 Modern optimized raster delivery: PASS
 Fonts limited/optimized: PASS
@@ -573,18 +415,18 @@ Console/network errors: NONE
 Secrets/editor/debug/local URLs in public build: NONE
 ```
 
-Além do checklist automático:
+Além do checklist:
 
-1. faça busca textual por `—`, `–` e Unicode emoji em copy visível
-2. liste todos os CTAs e compare wording/destino
-3. liste quotes/depoimentos e a fonte de cada um
-4. revise visualmente cada imagem de conteúdo contra o label da seção
-5. em hero com expert, compare desktop e mobile com a foto-fonte e verifique identidade, crop, safe area e overlay
-6. revise screenshots desktop e mobile procurando AI-slop que não aparece em nomes de classe
-7. não marque Performance/SEO como PASS sem verificar o build real correspondente
+1. buscar `—`, `–` e Unicode emoji em copy visível
+2. listar CTAs e comparar wording/destino
+3. listar quotes/depoimentos e fonte
+4. revisar visualmente imagens contra labels
+5. verificar reviews Google e sua proveniência quando disponíveis
+6. revisar screenshots desktop/mobile procurando AI-slop
+7. não marcar Performance/SEO como PASS sem verificar o build real
 
-## 21. Precedência
+## 16. Precedência
 
-Se outra skill, inspiração, template, referência, componente existente ou ferramenta sugerir fabricação factual, pills/chips/badges, emoji, travessões, múltiplos CTAs no hero, CTA repetitivo, Title Case inglês em PT-BR, quotes inventadas, imagens semanticamente erradas, alteração indevida da identidade do expert, stats sem fonte ou ornamentação genérica sem função, esta skill vence.
+Se outra skill, template ou referência sugerir fabricação factual, pills/chips/badges, emoji, travessões, múltiplos CTAs no hero, CTA repetitivo, Title Case inglês em PT-BR, quote inventada, imagem semanticamente errada, stats sem fonte, hero desktop 16:9 genérico quando deveria ser ultrawide ou review fabricada, esta skill vence.
 
 Só altere estas regras se o usuário pedir explicitamente uma exceção para um site específico.
