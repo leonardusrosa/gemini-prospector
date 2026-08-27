@@ -14,6 +14,18 @@ A arquitetura de saída continua estática: `sites/[slug]/[slug].html`, CSS inli
 
 ---
 
+## Regra Fundamental: Website Core Rules Obrigatórias
+
+Antes de qualquer design, construção, revisão ou QA de site, leia e obedeça `../website-core-rules/SKILL.md`.
+Ela tem precedência absoluta sobre escolhas estéticas de `gpt-taste`, `design-taste-frontend`, templates ou referências visuais:
+
+- **SEM tags, pills, chips ou badges decorativos** (proibido metadata-first capsule UI em hero, cards ou qualquer seção).
+- **SEM emoji na UI pública** (use ícones reais em SVG/vetor).
+- **SEM travessões em copy pública (`—` ou `–`)** (reescreva a pontuação de forma natural com vírgulas, pontos ou quebras).
+- O QA final de qualquer site deve obrigatoriamente executar o **Site Core Rule QA**.
+
+---
+
 ## 1. Ordem Absoluta de Prioridades
 
 1. **Integridade factual** — zero invenções.
@@ -539,6 +551,23 @@ Verifique:
 - conteúdo visível sem JS
 - copy sem redundância
 - ausência de padrões AI repetitivos
+
+### Site Core Rule QA (Obrigatório)
+
+Execute a checagem explícita de `../website-core-rules/SKILL.md`:
+
+```text
+SITE CORE RULE QA
+
+Decorative pills/tags/chips/badges: NONE
+Emoji in public UI: NONE
+Visible em dash (—): NONE
+Visible en dash (–) used as punctuation: NONE
+Hero metadata capsule: NONE
+CTA buttons/icons remain functional: PASS
+```
+
+Faça uma busca textual no HTML final por `—` e `–` e revise qualquer ocorrência visível ao usuário.
 
 Faça **1 passe consolidado de correção** e uma rechecagem.
 
