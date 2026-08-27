@@ -8,15 +8,70 @@ description: Esta skill deve ser usada para criar e ATUALIZAR o dashboard de lea
 Arquitetura na RAIZ da pasta conectada:
 
 - **`prospector.db`** — banco SQLite, a FONTE DA VERDADE dos leads e do histórico de outreach.
-- **`dashboard-server.py` + `iniciar-dashboard.bat` (Windows) / `iniciar-dashboard.command` (Mac)`** — mini-servidor local (Python padrão, sem dependências). O usuário dá duplo clique no .bat → abre `http://localhost:8765` com o painel completo: editar, excluir, disparar propostas e arrastar cards salvam direto no banco.
+- **`dashboard-server.py` + `iniciar-dashboard.bat` (Windows) / `iniciar-dashboard.command` (Mac)`** — mini-servidor local (Python padrão, sem dependências). O usuário dá duplo clique no .bat → abre `http://localhost:8765` com o painel completo: editar, excluir, revisar outreach e arrastar cards salvam direto no banco.
 - **`dashboard.html`** — a página do painel (gerada do template). Servida pelo servidor (modo banco) ou aberta por duplo clique (modo arquivo: só leitura + edições presas ao navegador). O badge no topo indica o modo.
 
-## Setup (uma vez, no a configuração inicial (skill prospector-setup) ou no primeiro uso)
+## Setup (uma vez, na configuração inicial / skill prospector-setup ou no primeiro uso)
 
 1. Copie `dashboard-server.py` e `iniciar-dashboard.bat` para a raiz da pasta conectada.
 2. Crie o `prospector.db` com o schema abaixo (via python3/sqlite3 no bash).
 3. Gere o `dashboard.html` a partir de `dashboard-template.html` substituindo `__DADOS__` pelo snapshot JSON.
 4. Diga ao usuário: "duplo clique em `iniciar-dashboard.bat` abre o painel com o banco conectado" (requer Python instalado no Windows — se não tiver, o dashboard.html funciona no modo arquivo).
+
+## HARD RULE — Proposta e Outreach são ações diferentes
+
+Nunca trate a página `proposta.html` e o fluxo de outreach como a mesma ação.
+
+Para um lead com:
+
+```text
+sites/<slug>/proposta.html
+```
+
+o dashboard deve expor separadamente:
+
+```text
+ver proposta → abre a página personalizada diretamente
+outreach     → abre revisão de mensagem/canal/histórico/envio
+```
+
+### `ver proposta`
+
+- não depende de Evolution API;
+- não depende de Gmail;
+- não cria `outreach_history`;
+- não altera status do lead;
+- abre em nova aba;
+- em ambiente local usa `sites/<slug>/proposta.html`;
+- quando `deploy.domain` ou `urlNova` fornecem URL pública, prefere a proposta pública.
+
+O backend deve fornecer metadados seguros por slug:
+
+```json
+{
+  "exists": true,
+  "localUrl": "sites/cliente/proposta.html",
+  "publicUrl": "https://.../clientes/cliente/proposta.html",
+  "preferredUrl": "https://.../clientes/cliente/proposta.html"
+}
+```
+
+Validar slug e impedir traversal/escrita ou leitura arbitrária por caminho fornecido pelo browser.
+
+### `outreach`
+
+Abre o modal de revisão de:
+
+- canal recomendado;
+- destino mascarado;
+- mensagem;
+- URL da proposta;
+- histórico;
+- confirmação antes de qualquer envio.
+
+**HARD RULE:** a leitura/revisão do outreach deve degradar graciosamente quando um provider está offline. Falha de conexão com Evolution não pode, sozinha, impedir que o modal abra. Nesse caso, WhatsApp aparece indisponível e outros dados/canais continuam visíveis.
+
+O frontend deve respeitar `response.ok` e mostrar o erro real retornado pelo backend quando seguro, em vez de converter qualquer falha para uma mensagem genérica.
 
 ## Schema do banco
 
@@ -63,4 +118,4 @@ Se o banco não existir ainda (usuário antigo), crie-o e importe os leads do sn
 
 ## O que o painel faz sozinho (não reimplementar)
 
-Kanban drag & drop, edição em modal, exclusão, busca, paginação automática, funil, follow-ups (proposta 4+ dias), receita fechada/potencial, vista Contratos (status pendente/enviado/assinado + link do documento + pago) e vista Financeiro (recebido, a receber, MRR de manutenções, projeção 12 meses) — tudo no template. O plugin só mantém o BANCO correto e o snapshot em dia.
+Kanban drag & drop, edição em modal, exclusão, busca, paginação automática, funil, follow-ups (proposta 4+ dias), receita fechada/potencial, vista Contratos (status pendente/enviado/assinado + link do documento + pago) e vista Financeiro (recebido, a receber, MRR de manutenções, projeção 12 meses) — tudo no template/servidor. O plugin só mantém o BANCO correto e o snapshot em dia.
