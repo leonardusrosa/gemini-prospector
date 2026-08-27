@@ -5,13 +5,13 @@ description: Esta skill deve ser usada ao gerar contratos de prestação de serv
 
 # Contrato de prestação de serviço
 
-Gerar a minuta do contrato do serviço fechado (redesign + publicação de página, com manutenção opcional), pronta pra virar PDF e ir por e-mail.
+Gerar a minuta do contrato do serviço fechado (redesign + publicação de página, com manutenção opcional), pronta para virar PDF/DOCX e ser enviada de forma privada ao cliente.
 
 ## Fonte dos dados (nesta ordem)
 
 1. **Banco (`prospector.db`)**: nome do cliente, cidade, valor fechado, URL publicada.
 2. **Config (`prospector-config.json`)**: dados do PRESTADOR — nome, CPF/CNPJ, endereço, cidade/UF (campo `contratante`; se não existir, colete do usuário UMA vez e salve).
-3. **Usuário** (ele pergunta ao cliente): CPF/CNPJ e endereço do CONTRATANTE, forma de pagamento, prazo, manutenção mensal (sim/não + valor).
+3. **Usuário** (ele pergunta ao cliente): CPF/CNPJ e endereço do CONTRATANTE, forma de pagamento, prazo, manutenção mensal (sim/não + valor e escopo).
 
 ## Termos comerciais padrão atuais
 
@@ -33,28 +33,55 @@ Trate os pontos abaixo como padrão comercial atual, salvo exceção explicitame
 3. **hospedagem**, quando fornecida pela AutoCORA sem cobrança separada ou quando mantida pelo cliente por conta própria;
 4. **edição simples pelo painel**, incluída no escopo entregue;
 5. **alterações estruturais/complexas futuras**, sujeitas a orçamento separado;
-6. **manutenção mensal**, somente se tiver sido contratada explicitamente como serviço adicional.
+6. **manutenção mensal**, somente se tiver sido contratada explicitamente como serviço adicional e com escopo descrito.
 
 Nunca usar `manutenção` como sinônimo automático de `hospedagem`.
+
+## Privacidade e forma de entrega — HARD RULE
+
+Contrato contém dados pessoais, endereço, CPF/CNPJ e condições financeiras. Portanto:
+
+- **NUNCA publicar contrato no repositório público de previews** (`prospector-sites`) ou em rota previsível como `/clientes/[slug]/contrato.html`, `/contrato`, `/contrato.pdf` ou equivalente.
+- `noindex` não transforma uma URL pública em armazenamento privado. Não usar somente `robots` como proteção.
+- Gerar contrato em área local/privada de trabalho e entregar como **PDF/DOCX anexado diretamente** ao cliente.
+- Se no futuro existir portal web para contrato, ele deve ter autenticação/autorização ou link tokenizado de alta entropia, expiração adequada e controles coerentes de acesso. Não improvisar isso em hosting estático público.
+- Dados fictícios de dry-run devem estar claramente identificados como sintéticos e nunca ser persistidos como dados reais do lead.
 
 ## Geração
 
 - Template: `references/contrato-template.html` — arquivo único com CSS A4 de impressão. Substituir todos os `{{PLACEHOLDERS}}`; conferir que nenhum sobrou (busca por `{{`).
-- Salvar em `sites/[slug]/contrato-[slug].html`. PDF: abrir no navegador → Ctrl+P → Salvar como PDF (informe isso ao usuário).
-- Cláusulas parametrizáveis: manutenção mensal (incluir só se contratada) e parcelamento (texto muda conforme forma de pagamento).
-- Antes de finalizar, revisar o template gerado e garantir que domínio, hospedagem, editor e alterações futuras estejam coerentes com os termos comerciais acima. Se o template antigo conflitar, adaptar a redação do contrato para o acordo real; não preservar cláusula desatualizada apenas porque existe no template.
+- Salvar o HTML contratual apenas em diretório local/privado, por exemplo `private/contracts/[slug]/contrato-[slug].html`, e mantê-lo fora do repositório público de deploy.
+- PDF: gerar localmente a partir do HTML e manter na mesma área privada antes do envio ao cliente.
+- Cláusulas parametrizáveis: manutenção mensal somente se contratada explicitamente; parcelamento e escopo devem refletir o acordo real.
+- `TEXTO_OBJETO` deve funcionar tanto para redesign quanto para novo site. Não referenciar site anterior quando ele não existir.
+- `TEXTO_HOSPEDAGEM` deve representar exatamente uma das condições acordadas: hospedagem AutoCORA sem cobrança separada ou hospedagem própria do cliente validada como compatível.
+- Antes de finalizar, revisar o contrato e garantir que domínio, hospedagem, editor e alterações futuras estejam coerentes com os termos comerciais acima.
 
-## DOCX travado (o arquivo que vai pro cliente)
+## DOCX protegido (arquivo para o cliente)
 
-Script pronto: `references/gerar-docx.py` (requer `python-docx`). Recebe `dados.json` (mesmas chaves do template HTML + `MANUTENCAO: true/false` e `VALOR_MANUTENCAO`) e gera o .docx com proteção `readOnly` + regiões editáveis (`permStart/permEnd`, grupo everyone) nos pontos do cliente: CPF/CNPJ e endereço quando vierem como "(preencher)", data e assinatura — destacados em amarelo. Limitação honesta (avise o usuário 1 vez): a proteção do Word é dissuasória, guia o preenchimento mas não impede quem quiser desativá-la; para validade forte, assinatura eletrônica (gov.br, Autentique).
+Script: `references/gerar-docx.py` (requer `python-docx`). Recebe `dados.json` com os campos contratuais, além de `MANUTENCAO: true/false`. Se `MANUTENCAO=true`, exigir também `VALOR_MANUTENCAO` e `TEXTO_MANUTENCAO`; nunca presumir o escopo recorrente.
 
-## E-mail de envio (rascunho no Gmail)
+O DOCX usa proteção `readOnly` + regiões editáveis (`permStart/permEnd`, grupo everyone) nos pontos do cliente: CPF/CNPJ e endereço quando vierem como "(preencher)", data e assinatura. A proteção do Word é dissuasória, não substitui assinatura eletrônica nem controle forte de acesso.
 
-Assunto: `Contrato de prestação de serviço — nova página [Nome do negócio]`. Corpo (adaptar à voz do usuário): agradecer a confiança, resumir em 2 linhas o combinado (escopo + valor + prazo), pedir que leia a minuta anexa e responda com um "de acordo" (ou assine digitalmente, se o usuário usar alguma ferramenta), e fechar com a assinatura do config. Instruir o usuário a ANEXAR o PDF exportado antes de enviar.
+## Envio do contrato
+
+Depois do fechamento comercial e revisão humana:
+
+1. gerar PDF e/ou DOCX privado;
+2. revisar nomes, documento, endereço, valor, forma de pagamento, prazo, hospedagem, domínio, editor e eventuais serviços adicionais;
+3. mostrar ao usuário o arquivo e a mensagem que serão enviados;
+4. aguardar aprovação explícita;
+5. enviar diretamente ao cliente como anexo pelo canal acordado, preferencialmente e-mail para documentos formais;
+6. registrar no CRM apenas após o envio efetivo, sem tornar o documento público.
+
+Assunto sugerido para e-mail: `Contrato de prestação de serviço - [Nome do negócio]`.
+
+Corpo: agradecer a confiança, resumir brevemente escopo + valor + prazo, pedir revisão do documento anexo e orientar assinatura/aceite conforme a ferramenta escolhida. Fechar com a assinatura real do config.
 
 ## Limites
 
-- SEMPRE manter o aviso do rodapé: minuta base, recomenda-se revisão por advogado.
-- Não prometer validade jurídica nem substituir assinatura formal; se o usuário pedir assinatura eletrônica, sugerir que suba o PDF na ferramenta dele (gov.br, Autentique etc.).
+- SEMPRE manter o aviso de que a minuta base recomenda revisão por profissional jurídico.
+- Não prometer validade jurídica nem substituir assinatura formal.
 - Nunca inventar cláusula financeira: tudo vem do banco/usuário.
 - Nunca inventar prazo de hospedagem gratuita, SLA, suporte ilimitado ou condição de domínio que o usuário não tenha confirmado.
+- Nunca enviar contrato sem revisão e aprovação explícita do usuário.
