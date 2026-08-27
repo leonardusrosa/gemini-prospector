@@ -5,6 +5,8 @@ __pycache__/
 
 # Local CRM database & personal configs
 prospector.db
+prospector.db*
+prospector.db.backup*
 prospector-config.json
 prospector-config.backup.json
 
