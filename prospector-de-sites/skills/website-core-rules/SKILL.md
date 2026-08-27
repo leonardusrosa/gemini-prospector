@@ -1,6 +1,6 @@
 ---
 name: website-core-rules
-description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Prioriza verdade factual, design específico sem AI-slop, copy natural, CTA disciplinado, imagens semanticamente corretas, acessibilidade, performance e SEO adequados ao ambiente.
+description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Prioriza verdade factual, design específico sem AI-slop, copy natural, CTA disciplinado, imagens semanticamente corretas, fidelidade em fotos de experts, acessibilidade, performance e SEO adequados ao ambiente.
 ---
 
 # Website Core Rules
@@ -393,6 +393,85 @@ Evite especialmente:
 
 Trust facts, quando necessários, devem ser integrados editorialmente, sem badges.
 
+### Hero com foto real de expert
+
+Quando o hero usa uma foto real do profissional/lead, a imagem deve funcionar como **retrato factual**, não como matéria-prima para recriar a pessoa.
+
+#### Fidelidade da pessoa
+
+Ao editar, expandir ou adaptar a foto fornecida, preserve a pessoa real. Não altere sem pedido explícito do usuário:
+
+- identidade e estrutura facial
+- expressão
+- pose
+- roupa
+- cabelo
+- textura natural da pele
+- proporções corporais
+- mãos e anatomia
+
+Evite beauty filter, smoothing artificial, “perfeição” de pele, rejuvenescimento, mudança de corpo, reconstrução facial, alteração de roupa ou qualquer transformação que faça o expert parecer outra pessoa.
+
+Se não existir foto-fonte utilizável do expert, **não gere uma suposta foto real dele por inferência**. Peça ou use uma fonte first-party verificável.
+
+#### Desktop
+
+Para hero editorial full-width com texto e expert:
+
+- prefira asset horizontal dedicado, 16:9 ou mais largo quando a composição pedir
+- coloque o expert no lado oposto ao bloco principal de texto; em layouts com copy à esquerda, o expert normalmente fica à direita
+- reserve uma área limpa de leitura para headline, supporting copy e CTA, tipicamente nos primeiros 40% a 50% do canvas quando o texto está à esquerda
+- não posicione texto sobre rosto, olhos, mãos ou detalhes importantes da pessoa
+- extensão de background deve manter perspectiva, luz, profundidade e ambiente coerentes
+- não adicione objetos, arquitetura, equipamento ou contexto que possa ser confundido com fatos reais sobre a clínica/profissional
+
+#### Overlay funcional para legibilidade
+
+Gradiente/overlay é permitido no hero quando tiver função real de contraste, mesmo que gradientes decorativos sejam evitados em outras partes.
+
+Quando usado:
+
+- escolha cor coerente com o background da página/identidade
+- mantenha a área do texto suficientemente sólida para contraste confiável
+- inicie a transição de forma progressiva próximo à região central, conforme a composição
+- faça o overlay desaparecer **antes de alcançar a pessoa**
+- nunca lave rosto, pele, roupa ou silhueta do expert
+- preserve contraste, nitidez e tons naturais no lado da pessoa
+- evite haze, neblina, blur artificial ou efeito “washed out”
+- prefira overlay em CSS quando isso oferecer melhor controle responsivo e não prejudicar a fotografia; baked overlay só quando houver motivo técnico/compositivo claro
+
+O objetivo é legibilidade, não criar atmosfera genérica.
+
+#### Mobile
+
+Não trate o mobile como simples crop automático do desktop quando isso prejudicar o expert ou a leitura.
+
+Prefira um asset/composição mobile dedicado quando necessário:
+
+- formato vertical ou portrait apropriado ao primeiro fold
+- expert central ou levemente acima do centro quando fizer sentido
+- preserve rosto, cabeça, ombros e anatomia sem cortes acidentais
+- evite crop em pescoço, articulações, mãos ou pontos visualmente estranhos
+- crie negative space real acima ou abaixo da pessoa para a copy, conforme a composição
+- use gradiente vertical apenas quando necessário para contraste e sem encobrir o expert
+- mantenha a pessoa dominante e reconhecível sem empurrar todo o conteúdo essencial para fora do primeiro fold
+
+Desktop e mobile podem usar assets diferentes derivados da mesma foto-fonte, desde que ambos preservem identidade e veracidade.
+
+#### Extensão generativa de background
+
+Pode ser usada para completar o canvas quando necessário, mas somente como extensão compositiva neutra.
+
+A extensão deve:
+
+- parecer continuidade plausível do ambiente
+- manter iluminação e perspectiva coerentes
+- não introduzir instalações, equipamentos, diplomas, logos, pessoas ou sinais que impliquem fatos não verificados
+- não competir com o expert
+- não ter aparência de stock genérico ou cenário artificial
+
+Se a extensão puder induzir o visitante a acreditar que um espaço gerado é a clínica real, não use esse recurso.
+
 ## 19. Componentes funcionais versus decoração
 
 Permitido quando funcional:
@@ -429,6 +508,18 @@ Invented quotes/testimonials/attributions: NONE
 All retained quotes traceable to verified source: PASS
 Image semantics match section/card labels: PASS
 Image source/provenance appropriate: PASS
+
+EXPERT HERO IMAGE (when applicable)
+Expert uses verified/source image: PASS
+Face/identity/expression/pose/clothing fidelity: PASS
+Natural skin/hair/body proportions preserved: PASS
+Desktop text safe area: PASS
+Desktop text does not overlap important subject features: PASS
+Overlay reaches/washes over expert: NO
+Background extension introduces factual-looking invented context: NO
+Mobile uses deliberate composition/crop: PASS
+Mobile expert anatomy/crop natural: PASS
+Desktop/mobile hero asset quality: PASS
 
 ANTI-SLOP
 Decorative pills/tags/chips/badges: NONE
@@ -488,11 +579,12 @@ Além do checklist automático:
 2. liste todos os CTAs e compare wording/destino
 3. liste quotes/depoimentos e a fonte de cada um
 4. revise visualmente cada imagem de conteúdo contra o label da seção
-5. revise screenshots desktop e mobile procurando AI-slop que não aparece em nomes de classe
-6. não marque Performance/SEO como PASS sem verificar o build real correspondente
+5. em hero com expert, compare desktop e mobile com a foto-fonte e verifique identidade, crop, safe area e overlay
+6. revise screenshots desktop e mobile procurando AI-slop que não aparece em nomes de classe
+7. não marque Performance/SEO como PASS sem verificar o build real correspondente
 
 ## 21. Precedência
 
-Se outra skill, inspiração, template, referência, componente existente ou ferramenta sugerir fabricação factual, pills/chips/badges, emoji, travessões, múltiplos CTAs no hero, CTA repetitivo, Title Case inglês em PT-BR, quotes inventadas, imagens semanticamente erradas, stats sem fonte ou ornamentação genérica sem função, esta skill vence.
+Se outra skill, inspiração, template, referência, componente existente ou ferramenta sugerir fabricação factual, pills/chips/badges, emoji, travessões, múltiplos CTAs no hero, CTA repetitivo, Title Case inglês em PT-BR, quotes inventadas, imagens semanticamente erradas, alteração indevida da identidade do expert, stats sem fonte ou ornamentação genérica sem função, esta skill vence.
 
 Só altere estas regras se o usuário pedir explicitamente uma exceção para um site específico.
