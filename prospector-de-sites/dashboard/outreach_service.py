@@ -19,7 +19,7 @@ try:
     from market_service import detect_country, normalize_phone_by_country, resolve_market
 except ImportError:
     detect_country = lambda *a, **k: ("BR", "pt-BR", "pt", "55")
-    normalize_phone_by_country = lambda r, c=None: (r, None)
+    normalize_phone_by_country = lambda raw, country=None, *a, **k: (raw, None)
     resolve_market = lambda c="BR": {"country": "BR", "locale": "pt-BR", "language": "pt", "phoneCountryCode": "55"}
 
 
@@ -174,9 +174,14 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
     is_new_site = (site_mode == "new_site_concept") or (website_status == "none") or not site_antigo
 
     assinatura = config.get("assinatura", {}) if isinstance(config.get("assinatura"), dict) else {}
-    autor = (assinatura.get("nome") or "").strip() or "Especialista em Web"
-    apresentacao = (assinatura.get("apresentacao") or "").strip() or ("Criação e Redesign de Páginas" if not is_pt else "Design e Criação de Páginas Web")
+    autor = (assinatura.get("nome") or "").strip()
+    apresentacao = (assinatura.get("apresentacao") or "").strip()
     wpp_autor = (assinatura.get("whatsapp") or "").strip()
+
+    if not autor or not apresentacao:
+        raise ValueError(
+            "Identidade de outreach não configurada: assinatura.nome e assinatura.apresentacao são obrigatórios."
+        )
 
     proposal_url = resolve_proposal_url(lead, config)
 
