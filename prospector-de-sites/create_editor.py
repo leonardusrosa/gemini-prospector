@@ -12,6 +12,7 @@ not expose arbitrary HTML, CSS or JavaScript editing.
 from __future__ import annotations
 
 import argparse
+import html as html_lib
 import pathlib
 import re
 
@@ -320,13 +321,68 @@ $('#pe-preview').addEventListener('click',function(){
   closePanel();
 });
 
+function sanitizeRuntimeNode(root){
+  var all=Array.from(root.querySelectorAll('*'));
+  all.unshift(root);
+  all.forEach(function(el){
+    if(el.attributes){
+      Array.from(el.attributes).forEach(function(attr){
+        var n=attr.name.toLowerCase();
+        if(n.indexOf('data-darkreader')===0||n==='data-pe-target'||n==='data-pe-bound-text'){
+          el.removeAttribute(attr.name);
+        }
+      });
+    }
+    if(el.hasAttribute('data-pe-author-style')){
+      var authorStyle=el.getAttribute('data-pe-author-style')||'';
+      var bgSrc=el.getAttribute('data-pe-bg-src');
+      if(bgSrc){
+        var decls=authorStyle.split(';').map(function(d){return d.trim()}).filter(Boolean);
+        decls=decls.filter(function(d){return d.toLowerCase().indexOf('background-image:')!==0});
+        decls.push('background-image: url("'+bgSrc.replace(/"/g,'%22')+'")');
+        authorStyle=decls.join('; ')+';';
+      }
+      if(authorStyle.trim()){
+        el.setAttribute('style',authorStyle);
+      }else{
+        el.removeAttribute('style');
+      }
+      el.removeAttribute('data-pe-author-style');
+    }else{
+      var bgSrc=el.getAttribute('data-pe-bg-src');
+      if(bgSrc){
+        el.setAttribute('style','background-image: url("'+bgSrc.replace(/"/g,'%22')+'");');
+      }else{
+        el.removeAttribute('style');
+      }
+    }
+    if(el.id==='mainHeader'||el.tagName==='HEADER')el.classList.remove('scrolled');
+    if(el.id==='floatingWhatsapp'||el.classList.contains('floating-whatsapp'))el.classList.remove('visible');
+    if(el.id==='mobileDrawer'||el.classList.contains('drawer'))el.classList.remove('active');
+    if(el.hasAttribute('class')&&!el.getAttribute('class').trim())el.removeAttribute('class');
+  });
+}
 function cleanDocument(){
+  try{
+    if(window.ScrollTrigger&&typeof window.ScrollTrigger.getAll==='function'){
+      window.ScrollTrigger.getAll().forEach(function(st){try{st.revert(true,true)}catch(e){}});
+    }
+    if(window.gsap&&typeof window.gsap.killTweensOf==='function'){
+      try{window.gsap.killTweensOf('*')}catch(e){}
+    }
+  }catch(e){}
   var doc=document.documentElement.cloneNode(true);
   $$('[data-pe-ui],#pe-style,#pe-script',doc).forEach(function(n){n.remove()});
   $$('[contenteditable]',doc).forEach(function(n){n.removeAttribute('contenteditable')});
   $$('.pe-hover,.pe-selected',doc).forEach(function(n){n.classList.remove('pe-hover','pe-selected')});
   $$('[data-pe-bound-text]',doc).forEach(function(n){n.removeAttribute('data-pe-bound-text')});
   if(doc.querySelector('body'))doc.querySelector('body').classList.remove('pe-editing','pe-previewing');
+  sanitizeRuntimeNode(doc);
+  try{
+    if(window.ScrollTrigger&&typeof window.ScrollTrigger.refresh==='function'){
+      setTimeout(function(){try{window.ScrollTrigger.refresh()}catch(e){}},50);
+    }
+  }catch(e){}
   return'<!DOCTYPE html>\n'+doc.outerHTML;
 }
 $('#pe-export').addEventListener('click',function(){
@@ -340,6 +396,22 @@ new MutationObserver(function(){bindTextAll()}).observe(document.body,{childList
 })();
 </script>
 <!-- PROSPECTOR-EDITOR-END -->'''
+
+
+def tag_author_styles(html_text: str) -> str:
+    html_text = re.sub(r'\s+data-pe-author-style="[^"]*"', '', html_text)
+
+    def _repl(m):
+        tag = m.group(1)
+        attrs_before = m.group(2)
+        quote = m.group(3)
+        style_val = m.group(4)
+        attrs_after = m.group(5)
+        escaped_style = html_lib.escape(style_val, quote=True)
+        return f'<{tag}{attrs_before} data-pe-author-style="{escaped_style}" style={quote}{style_val}{quote}{attrs_after}>'
+
+    pattern = re.compile(r'<([a-zA-Z0-9\-]+)([^>]*?)\sstyle=(["\'])(.*?)\3([^>]*?)>', re.DOTALL | re.IGNORECASE)
+    return pattern.sub(_repl, html_text)
 
 
 def strip_existing_editor(html: str) -> str:
@@ -367,6 +439,7 @@ def main() -> None:
     if "</body>" not in html.lower():
         raise SystemExit("Source HTML has no </body> tag")
 
+    html = tag_author_styles(html)
     idx = html.lower().rfind("</body>")
     out = html[:idx] + EDITOR_LAYER + "\n" + html[idx:]
     output.parent.mkdir(parents=True, exist_ok=True)

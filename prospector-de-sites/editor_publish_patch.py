@@ -44,7 +44,56 @@ function setStatus(text,kind){
   statusEl.classList.remove('pe-error','pe-ok');
   if(kind)statusEl.classList.add(kind==='error'?'pe-error':'pe-ok');
 }
+function sanitizeRuntimeNode(root){
+  var all=Array.from(root.querySelectorAll('*'));
+  all.unshift(root);
+  all.forEach(function(el){
+    if(el.attributes){
+      Array.from(el.attributes).forEach(function(attr){
+        var n=attr.name.toLowerCase();
+        if(n.indexOf('data-darkreader')===0||n==='data-pe-target'||n==='data-pe-bound-text'){
+          el.removeAttribute(attr.name);
+        }
+      });
+    }
+    if(el.hasAttribute('data-pe-author-style')){
+      var authorStyle=el.getAttribute('data-pe-author-style')||'';
+      var bgSrc=el.getAttribute('data-pe-bg-src');
+      if(bgSrc){
+        var decls=authorStyle.split(';').map(function(d){return d.trim()}).filter(Boolean);
+        decls=decls.filter(function(d){return d.toLowerCase().indexOf('background-image:')!==0});
+        decls.push('background-image: url("'+bgSrc.replace(/"/g,'%22')+'")');
+        authorStyle=decls.join('; ')+';';
+      }
+      if(authorStyle.trim()){
+        el.setAttribute('style',authorStyle);
+      }else{
+        el.removeAttribute('style');
+      }
+      el.removeAttribute('data-pe-author-style');
+    }else{
+      var bgSrc=el.getAttribute('data-pe-bg-src');
+      if(bgSrc){
+        el.setAttribute('style','background-image: url("'+bgSrc.replace(/"/g,'%22')+'");');
+      }else{
+        el.removeAttribute('style');
+      }
+    }
+    if(el.id==='mainHeader'||el.tagName==='HEADER')el.classList.remove('scrolled');
+    if(el.id==='floatingWhatsapp'||el.classList.contains('floating-whatsapp'))el.classList.remove('visible');
+    if(el.id==='mobileDrawer'||el.classList.contains('drawer'))el.classList.remove('active');
+    if(el.hasAttribute('class')&&!el.getAttribute('class').trim())el.removeAttribute('class');
+  });
+}
 function cleanPublicDocument(){
+  try{
+    if(window.ScrollTrigger&&typeof window.ScrollTrigger.getAll==='function'){
+      window.ScrollTrigger.getAll().forEach(function(st){try{st.revert(true,true)}catch(e){}});
+    }
+    if(window.gsap&&typeof window.gsap.killTweensOf==='function'){
+      try{window.gsap.killTweensOf('*')}catch(e){}
+    }
+  }catch(e){}
   var doc=document.documentElement.cloneNode(true);
   Array.from(doc.querySelectorAll('[data-pe-ui],#pe-style,#pe-script,#pe-publish-style,#pe-publish-script')).forEach(function(n){n.remove()});
   Array.from(doc.querySelectorAll('[contenteditable]')).forEach(function(n){n.removeAttribute('contenteditable')});
@@ -54,6 +103,12 @@ function cleanPublicDocument(){
   doc.removeAttribute('data-pe-publish-api');
   var body=doc.querySelector('body');
   if(body)body.classList.remove('pe-editing','pe-previewing');
+  sanitizeRuntimeNode(doc);
+  try{
+    if(window.ScrollTrigger&&typeof window.ScrollTrigger.refresh==='function'){
+      setTimeout(function(){try{window.ScrollTrigger.refresh()}catch(e){}},50);
+    }
+  }catch(e){}
   var html='<!DOCTYPE html>\n'+doc.outerHTML;
   html=html.replace(/<!--\s*PROSPECTOR-(?:EDITOR|PUBLISH)-(?:START|END)\s*-->/gi,'');
   return html;

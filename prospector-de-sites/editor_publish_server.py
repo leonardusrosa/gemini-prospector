@@ -116,7 +116,18 @@ def _validate_html(html: str) -> None:
         raise ValueError("Editor runtime/UI must not be published")
 
 
+def _sanitize_html(html: str) -> str:
+    html = re.sub(r'\s+data-darkreader-[a-zA-Z0-9\-_]+(="[^"]*"|=\'[^\']*\'|=[^\s>]+)?', "", html)
+    html = re.sub(r'\s+data-darkreader-proxy-injected="true"', "", html)
+    html = re.sub(r'\s+data-pe-author-style="[^"]*"', "", html)
+    html = re.sub(r'(<header\b[^>]*)\bclass="([^"]*)\bscrolled\b([^"]*)"', lambda m: m.group(1) + (f' class="{(m.group(2) + " " + m.group(3)).strip()}"' if (m.group(2) + m.group(3)).strip() else ''), html)
+    html = re.sub(r'(<a\b[^>]*\bid="floatingWhatsapp"[^>]*)\bclass="([^"]*)\bvisible\b([^"]*)"', lambda m: m.group(1) + (f' class="{(m.group(2) + " " + m.group(3)).strip()}"' if (m.group(2) + m.group(3)).strip() else ''), html)
+    html = re.sub(r'\s+class=""', "", html)
+    return html
+
+
 def _atomic_write(path: pathlib.Path, text: str) -> None:
+    text = _sanitize_html(text)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=str(path.parent))
     try:
