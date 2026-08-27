@@ -5,6 +5,7 @@ REPO_DIR="${PROSPECTOR_REPO_DIR:-/opt/gemini-prospector}"
 DATA_DIR="${PROSPECTOR_DATA_DIR:-/var/lib/prospector-dashboard}"
 SERVICE_SRC="$REPO_DIR/deploy/phoenix/prospector-dashboard.service"
 SERVICE_DST="/etc/systemd/system/prospector-dashboard.service"
+ENV_SRC="$REPO_DIR/deploy/phoenix/prospector-dashboard.env.example"
 ENV_DST="/etc/prospector-dashboard.env"
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -28,12 +29,18 @@ cd "$REPO_DIR"
 git fetch origin
 git pull --ff-only origin main
 
-install -m 0644 "$SERVICE_SRC" "$SERVICE_DST"
+# Materialize the systemd unit with the actual checkout/data paths used on Phoenix.
+sed \
+  -e "s|/opt/gemini-prospector|$REPO_DIR|g" \
+  -e "s|/var/lib/prospector-dashboard|$DATA_DIR|g" \
+  "$SERVICE_SRC" > "$SERVICE_DST"
+chmod 0644 "$SERVICE_DST"
 systemctl daemon-reload
 systemctl enable prospector-dashboard.service >/dev/null
 
 if [ ! -f "$ENV_DST" ]; then
-  install -m 0600 "$REPO_DIR/deploy/phoenix/prospector-dashboard.env.example" "$ENV_DST"
+  sed -e "s|/var/lib/prospector-dashboard|$DATA_DIR|g" "$ENV_SRC" > "$ENV_DST"
+  chmod 0600 "$ENV_DST"
   echo "Created $ENV_DST from the example. Fill in the real auth password and Evolution API key before starting." >&2
   exit 2
 fi
@@ -61,4 +68,4 @@ if command -v curl >/dev/null 2>&1; then
   echo "Health check: PASS"
 fi
 
-echo "Phoenix dashboard backend updated and running on 127.0.0.1:8765."
+echo "Phoenix dashboard backend updated and running on loopback (default 127.0.0.1:8765)."
