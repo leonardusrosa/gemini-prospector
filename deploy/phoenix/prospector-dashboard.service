@@ -1,0 +1,24 @@
+[Unit]
+Description=Prospector Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=prospector
+Group=prospector
+WorkingDirectory=/opt/gemini-prospector/prospector-de-sites/dashboard
+EnvironmentFile=/etc/prospector-dashboard.env
+ExecStart=/usr/bin/python3 /opt/gemini-prospector/prospector-de-sites/dashboard/dashboard-prod-server.py
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/prospector-dashboard
+
+[Install]
+WantedBy=multi-user.target
