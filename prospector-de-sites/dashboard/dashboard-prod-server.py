@@ -57,13 +57,12 @@ core.PORTA = PORT
 # The dashboard template immediately switches to /api/leads when the backend is present,
 # so an empty bootstrap JSON is sufficient for a clean first render.
 dashboard_path = os.path.join(DATA_DIR, 'dashboard.html')
-if not os.path.exists(dashboard_path):
-    template_path = os.path.join(HERE, 'dashboard-template.html')
-    if not os.path.isfile(template_path):
-        raise SystemExit('dashboard-template.html not found beside dashboard-prod-server.py')
-    template = open(template_path, encoding='utf-8').read()
-    bootstrap = json.dumps({'atualizado': '', 'leads': []}, ensure_ascii=False)
-    open(dashboard_path, 'w', encoding='utf-8').write(template.replace('__DADOS__', bootstrap))
+template_path = os.path.join(HERE, 'dashboard-template.html')
+if not os.path.isfile(template_path):
+    raise SystemExit('dashboard-template.html not found beside dashboard-prod-server.py')
+template = open(template_path, encoding='utf-8').read()
+bootstrap = json.dumps({'atualizado': '', 'leads': []}, ensure_ascii=False)
+open(dashboard_path, 'w', encoding='utf-8').write(template.replace('__DADOS__', bootstrap))
 
 if not os.path.isfile(core.DB) and not ALLOW_EMPTY_DB:
     raise SystemExit(
