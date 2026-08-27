@@ -194,6 +194,27 @@ Overlay/gradiente é permitido quando tiver função de legibilidade.
 
 Este gradiente funcional não viola a regra anti-gradiente decorativo.
 
+### Contraste do texto de apoio no hero
+
+Supporting copy, subheading, trust facts, bullets e seus ícones são conteúdo essencial da primeira dobra. Eles podem ter hierarquia menor que o headline, mas **não podem parecer desabilitados, lavados ou excessivamente opacos contra o fundo**.
+
+- prefira cor sólida com contraste suficiente em vez de reduzir `opacity` do texto
+- não use cinza claro/translúcido sobre fundo cinza, bege ou gradiente de luminância semelhante
+- mire WCAG AA no texto efetivamente renderizado: normalmente pelo menos 4.5:1 para texto comum e 3:1 para texto grande
+- valide o contraste no pior ponto real do background e não apenas contra a cor CSS nominal
+- bullets, checkmarks e ícones que carregam significado também precisam permanecer claramente visíveis
+- se o background fotográfico/gradiente comprometer leitura, fortaleça a cor do texto e/ou o overlay na área de copy
+- ao fortalecer o overlay, preserve a regra anterior: ele deve desaparecer antes de alcançar o expert e não pode lavar a pessoa
+- não sacrifique legibilidade apenas para manter uma estética `muted`
+
+Hierarquia esperada:
+
+1. headline = maior destaque
+2. supporting copy/subheading = claramente legível, um nível abaixo
+3. trust facts/bullets = discretos, mas ainda imediatamente legíveis
+
+A revisão deve ser visual em desktop e mobile e, quando possível, acompanhada de medição de contraste sobre a composição final.
+
 ### Mobile: composição própria
 
 Use asset/crop mobile dedicado quando necessário.
@@ -353,6 +374,9 @@ Desktop expert hero uses dedicated ultrawide composition: PASS
 Desktop text safe area: PASS
 Expert identity/face/pose/clothing fidelity: PASS
 Overlay does not wash over expert: PASS
+Hero supporting copy contrast: PASS
+Hero trust facts/bullets contrast: PASS
+Hero text/icons meet WCAG AA target against rendered background: PASS
 Generated background adds no false factual context: PASS
 Mobile composition/crop intentional and anatomically natural: PASS
 
@@ -423,10 +447,11 @@ Além do checklist:
 4. revisar visualmente imagens contra labels
 5. verificar reviews Google e sua proveniência quando disponíveis
 6. revisar screenshots desktop/mobile procurando AI-slop
-7. não marcar Performance/SEO como PASS sem verificar o build real
+7. medir/revisar contraste do supporting copy, bullets/trust facts e ícones do hero contra o background final
+8. não marcar Performance/SEO como PASS sem verificar o build real
 
 ## 16. Precedência
 
-Se outra skill, template ou referência sugerir fabricação factual, pills/chips/badges, emoji, travessões, múltiplos CTAs no hero, CTA repetitivo, Title Case inglês em PT-BR, quote inventada, imagem semanticamente errada, stats sem fonte, hero desktop 16:9 genérico quando deveria ser ultrawide ou review fabricada, esta skill vence.
+Se outra skill, template ou referência sugerir fabricação factual, pills/chips/badges, emoji, travessões, múltiplos CTAs no hero, CTA repetitivo, Title Case inglês em PT-BR, quote inventada, imagem semanticamente errada, stats sem fonte, hero desktop 16:9 genérico quando deveria ser ultrawide, review fabricada ou texto de apoio do hero com contraste insuficiente, esta skill vence.
 
 Só altere estas regras se o usuário pedir explicitamente uma exceção para um site específico.
