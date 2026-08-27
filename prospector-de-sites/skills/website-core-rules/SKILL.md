@@ -1,6 +1,6 @@
 ---
 name: website-core-rules
-description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Proíbe tags/pills decorativos, emojis e travessões em copy visível, limita o hero a um único botão CTA, exige CTAs contextuais sem repetição mecânica de wording e aplica sentence case natural ao PT-BR.
+description: HARD RULES obrigatórias para qualquer site, landing page, conceito, redesign ou preview público criado pelo Prospector. Use SEMPRE junto com redesign-premium e qualquer skill que gere UI pública de cliente. Proíbe tags/pills decorativos, emojis, travessões em copy visível e citações inventadas, limita o hero a um único botão CTA, exige CTAs contextuais sem repetição mecânica de wording e aplica sentence case natural ao PT-BR.
 ---
 
 # Website Core Rules
@@ -229,7 +229,44 @@ Se houver microtexto muito curto visualmente estilizado por CSS com `text-transf
 
 A preferência é que o texto-fonte no HTML continue escrito em sentence case mesmo quando um micro-rótulo aprovado receber transformação visual por CSS.
 
-## 7. Hero específico
+## 7. HARD RULE: nunca inventar citações, depoimentos ou falas atribuídas
+
+Nunca coloque entre aspas uma frase criada pelo agente, inferida, embelezada ou parafraseada como se tivesse sido dita pelo profissional, pela clínica, por um cliente ou por qualquer pessoa real.
+
+Também é proibido inventar:
+
+- depoimentos de pacientes ou clientes
+- endorsements
+- frases de efeito atribuídas ao profissional
+- filosofia profissional em primeira pessoa
+- citações supostamente retiradas do site antigo sem fonte verificável
+- nomes, cargos ou autores para uma frase cuja atribuição não exista na fonte
+
+### Quando uma citação é permitida
+
+Uma citação só pode aparecer como citação quando o texto estiver **verbatim em uma fonte verificável do lead** ou em material fornecido explicitamente pelo usuário.
+
+Ao usar uma citação real:
+
+- preserve o sentido e a redação original dentro das aspas
+- não reescreva silenciosamente a frase e mantenha as aspas
+- preserve a atribuição apenas se ela existir na fonte
+- se a fonte não atribuir a frase a uma pessoa específica, não invente autor
+- registre ou consiga apontar internamente a URL, página ou arquivo de origem
+
+Se for necessário editar, condensar ou melhorar a redação, remova as aspas e transforme o conteúdo em prosa normal, mantendo apenas afirmações sustentadas pela fonte.
+
+### Em caso de dúvida
+
+Se não for possível verificar de onde veio a frase, trate-a como não autorizada:
+
+1. remova a citação
+2. não invente substituto em primeira pessoa
+3. use, quando necessário, uma paráfrase factual sustentada pelas fontes do lead
+
+Design não justifica fabricação. Nunca crie uma quote apenas para preencher um bloco visual, testimonial card, hero, bio ou seção editorial.
+
+## 8. Hero específico
 
 Hero deve começar com composição e tipografia, não com uma coleção de UI ornaments.
 
@@ -246,7 +283,7 @@ Trust facts, quando necessários, devem ser integrados de forma tipográfica, es
 
 O hero deve manter um único CTA principal, conforme a regra anterior.
 
-## 8. Componentes funcionais versus decoração
+## 9. Componentes funcionais versus decoração
 
 Não confunda esta regra com proibição de todos os elementos arredondados.
 
@@ -269,7 +306,7 @@ Proibido quando decorativo ou metadata-first:
 - mini tag acima do título
 - fileira de chips de serviços
 
-## 9. QA obrigatório antes de aprovar qualquer site
+## 10. QA obrigatório antes de aprovar qualquer site
 
 Antes do Screenshot Review e antes de publicar, faça uma revisão explícita:
 
@@ -288,6 +325,8 @@ CTA wording matches section context and destination: PASS
 PT-BR headings/buttons/labels use natural sentence case: PASS
 Unjustified Title Case in PT-BR: NONE
 Unjustified ALL CAPS phrases/headings in PT-BR: NONE
+Invented quotes/testimonials/attributions: NONE
+All quoted public copy traceable to a verified source: PASS
 ```
 
 Faça também uma busca textual no HTML final por `—` e `–` e revise qualquer ocorrência visível ao usuário.
@@ -302,8 +341,10 @@ Liste os textos de todos os CTAs da página e revise repetições. Se houver wor
 
 Para páginas em PT-BR, liste também headings, CTAs e labels relevantes e verifique se a capitalização segue sentence case natural. Corrija Title Case importado do inglês e caixa alta sem justificativa.
 
-## 10. Precedência
+Liste também toda copy apresentada entre aspas, blockquotes, testimonial cards ou falas atribuídas. Cada item precisa ter fonte verificável. Se não houver fonte, remova antes do Screenshot Review.
 
-Se outra skill, inspiração, template, referência, componente existente ou ferramenta de design sugerir pills, chips, badges decorativos, emojis, travessões em copy, múltiplos botões CTA no hero, repetição mecânica do mesmo CTA ou Title Case inglês em PT-BR, esta skill vence.
+## 11. Precedência
+
+Se outra skill, inspiração, template, referência, componente existente ou ferramenta de design sugerir pills, chips, badges decorativos, emojis, travessões em copy, múltiplos botões CTA no hero, repetição mecânica do mesmo CTA, Title Case inglês em PT-BR ou citações/depoimentos inventados, esta skill vence.
 
 Só altere estas regras se o usuário pedir explicitamente uma exceção para um site específico.
