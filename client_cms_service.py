@@ -1,0 +1,254 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Prospector Client CMS — Core Operations Service Module.
+Executes tenant publishing, drafting, rollback, and media uploads
+with strict path containment, Git staging isolation, and audit logging.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import json
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+from typing import Any, Dict, Optional, Tuple
+
+from client_cms_audit import log_audit_event
+
+MAX_HTML_BYTES = 25 * 1024 * 1024
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
+ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"}
+SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
+def validate_slug(slug: str) -> str:
+    """Validates slug format and rejects path traversal."""
+    s = (slug or "").strip()
+    if not s or ".." in s or "/" in s or "\\" in s or not SLUG_RE.fullmatch(s):
+        raise ValueError(f"Identificador de site inválido: '{slug}'")
+    return s
+
+
+def sanitize_html(html: str) -> str:
+    """Removes darkreader proxies and temporary runtime styles before saving/publishing."""
+    html = re.sub(r'\s+data-darkreader-[a-zA-Z0-9\-_]+(="[^"]*"|=\'[^\']*\'|=[^\s>]+)?', "", html)
+    html = re.sub(r'\s+data-darkreader-proxy-injected="true"', "", html)
+    html = re.sub(r'\s+data-pe-author-style="[^"]*"', "", html)
+    html = re.sub(r'(<header\b[^>]*)\bclass="([^"]*)\bscrolled\b([^"]*)"', lambda m: m.group(1) + (f' class="{(m.group(2) + " " + m.group(3)).strip()}"' if (m.group(2) + m.group(3)).strip() else ''), html)
+    html = re.sub(r'(<a\b[^>]*\bid="floatingWhatsapp"[^>]*)\bclass="([^"]*)\bvisible\b([^"]*)"', lambda m: m.group(1) + (f' class="{(m.group(2) + " " + m.group(3)).strip()}"' if (m.group(2) + m.group(3)).strip() else ''), html)
+    html = re.sub(r'\s+class=""', "", html)
+    return html
+
+
+def validate_html(html: str) -> None:
+    """Validates that candidate HTML is complete and free of editor UI artifacts."""
+    if not isinstance(html, str) or not html.strip():
+        raise ValueError("O HTML enviado está vazio.")
+    if len(html.encode("utf-8")) > MAX_HTML_BYTES:
+        raise ValueError("O HTML excede o limite máximo permitido de 25 MB.")
+    low = html.lower()
+    if "</body>" not in low or "</html>" not in low:
+        raise ValueError("O HTML está incompleto ou corrompido.")
+    forbidden = [
+        "prospector-editor-start",
+        "data-pe-ui",
+        'id="pe-script"',
+        "id='pe-script'",
+        'id="pe-publish-script"',
+        "id='pe-publish-script'",
+    ]
+    if any(mark in low for mark in forbidden):
+        raise ValueError("Artefatos de runtime do editor não podem ser publicados.")
+
+
+def atomic_write(path: pathlib.Path, text: str) -> None:
+    """Writes content atomically with explicit LF newlines."""
+    text = sanitize_html(text)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_file = path.parent / f"{path.name}.{os.getpid()}.tmp"
+    try:
+        with open(temp_file, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        temp_file.replace(path)
+    finally:
+        if temp_file.exists():
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
+
+
+def backup_version(root_dir: pathlib.Path, slug: str, source_path: pathlib.Path) -> Optional[pathlib.Path]:
+    """Creates a local timestamped backup of the current site HTML."""
+    if not source_path.exists():
+        return None
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
+    backup_file = root_dir / ".prospector-editor" / "backups" / slug / f"{stamp}.html"
+    backup_file.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source_path, backup_file)
+    return backup_file
+
+
+def run_git(repo: pathlib.Path, args: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
+    """Runs a git command inside the specified repository."""
+    git_bin = shutil.which("git") or "git"
+    return subprocess.run(
+        [git_bin, "-C", str(repo), *args],
+        text=True,
+        capture_output=True,
+        check=check,
+    )
+
+
+class ClientCmsService:
+    def __init__(self, root_dir: pathlib.Path, deploy_repo: Optional[pathlib.Path] = None, base_path: str = "clientes"):
+        self.root_dir = root_dir.resolve()
+        self.deploy_repo = deploy_repo.resolve() if deploy_repo else None
+        self.base_path = base_path.strip("/\\")
+
+    def save_draft(self, slug: str, html_content: str, actor: str) -> Dict[str, Any]:
+        """Saves an isolated draft for a tenant."""
+        v_slug = validate_slug(slug)
+        validate_html(html_content)
+
+        draft_file = self.root_dir / ".prospector-editor" / "drafts" / v_slug / f"{v_slug}.html"
+        atomic_write(draft_file, html_content)
+        log_audit_event(self.root_dir, v_slug, actor, "draft", status="success")
+
+        return {
+            "success": True,
+            "status": "draft_saved",
+            "slug": v_slug,
+            "savedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+        }
+
+    def get_draft(self, slug: str) -> Optional[str]:
+        """Loads tenant draft if exists."""
+        v_slug = validate_slug(slug)
+        draft_file = self.root_dir / ".prospector-editor" / "drafts" / v_slug / f"{v_slug}.html"
+        if draft_file.exists():
+            return draft_file.read_text(encoding="utf-8")
+        return None
+
+    def publish_content(
+        self,
+        slug: str,
+        html_content: str,
+        actor: str,
+        remote: str = "origin",
+        branch: str = "main",
+    ) -> Dict[str, Any]:
+        """
+        Publishes tenant content atomically to Git deploy repository.
+        Creates backup, stages ONLY the tenant index.html, commits and pushes.
+        """
+        v_slug = validate_slug(slug)
+        validate_html(html_content)
+
+        if not self.deploy_repo or not self.deploy_repo.exists():
+            raise RuntimeError("Repositório de deploy Git não configurado ou inacessível.")
+
+        rel_path = pathlib.PurePosixPath(self.base_path) / v_slug / "index.html"
+        target_path = (self.deploy_repo / pathlib.Path(*rel_path.parts)).resolve()
+
+        if self.deploy_repo not in target_path.parents:
+            raise ValueError("Tentativa de escape do diretório do repositório de deploy.")
+
+        # Check existing staged changes to prevent mixing
+        staged_before = run_git(self.deploy_repo, ["diff", "--cached", "--name-only"]).stdout.strip()
+        if staged_before:
+            raise RuntimeError("O repositório de deploy contém alterações pendentes em staging.")
+
+        # Backup current file before overwrite
+        backup_path = backup_version(self.root_dir, v_slug, target_path)
+
+        # Write sanitized HTML atomically
+        atomic_write(target_path, html_content)
+
+        # Stage only this tenant's index.html
+        run_git(self.deploy_repo, ["add", "--", rel_path.as_posix()])
+
+        # Check if diff exists
+        diff_check = run_git(self.deploy_repo, ["diff", "--cached", "--quiet", "--", rel_path.as_posix()], check=False)
+        if diff_check.returncode == 0:
+            log_audit_event(self.root_dir, v_slug, actor, "publish", status="no_changes")
+            return {
+                "success": True,
+                "status": "no_changes",
+                "slug": v_slug,
+                "message": "Nenhuma alteração detectada para publicação.",
+            }
+
+        # Commit
+        commit_msg = f"Client publish: {v_slug}"
+        run_git(self.deploy_repo, ["commit", "-m", commit_msg, "--", rel_path.as_posix()])
+        commit_sha = run_git(self.deploy_repo, ["rev-parse", "HEAD"]).stdout.strip()
+
+        # Push
+        push_res = run_git(self.deploy_repo, ["push", remote, branch], check=False)
+        if push_res.returncode != 0:
+            err_msg = (push_res.stderr or push_res.stdout or "Falha ao enviar commit para GitHub").strip()
+            log_audit_event(self.root_dir, v_slug, actor, "publish", commit_sha=commit_sha, status="push_failed", details={"error": err_msg})
+            return {
+                "success": False,
+                "status": "push_failed",
+                "commit": commit_sha,
+                "error": err_msg,
+            }
+
+        # Clean up draft after successful publish
+        draft_file = self.root_dir / ".prospector-editor" / "drafts" / v_slug / f"{v_slug}.html"
+        if draft_file.exists():
+            try:
+                draft_file.unlink()
+            except Exception:
+                pass
+
+        log_audit_event(self.root_dir, v_slug, actor, "publish", commit_sha=commit_sha, status="published")
+
+        return {
+            "success": True,
+            "status": "published_git",
+            "slug": v_slug,
+            "commit": commit_sha,
+            "backup": str(backup_path.relative_to(self.root_dir)) if backup_path else None,
+            "publishedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+        }
+
+    def rollback_content(
+        self,
+        slug: str,
+        actor: str,
+        remote: str = "origin",
+        branch: str = "main",
+    ) -> Dict[str, Any]:
+        """Rolls back the tenant index.html to the most recent backup."""
+        v_slug = validate_slug(slug)
+        backups_dir = self.root_dir / ".prospector-editor" / "backups" / v_slug
+        if not backups_dir.exists():
+            raise FileNotFoundError(f"Nenhum backup disponível para o site '{v_slug}'.")
+
+        backup_files = sorted(backups_dir.glob("*.html"))
+        if not backup_files:
+            raise FileNotFoundError(f"Nenhum arquivo de backup encontrado para '{v_slug}'.")
+
+        latest_backup = backup_files[-1]
+        restored_html = latest_backup.read_text(encoding="utf-8")
+
+        res = self.publish_content(
+            slug=v_slug,
+            html_content=restored_html,
+            actor=f"{actor}:rollback",
+            remote=remote,
+            branch=branch,
+        )
+        if res.get("success"):
+            log_audit_event(self.root_dir, v_slug, actor, "rollback", commit_sha=res.get("commit"), status="rolled_back", details={"restoredFrom": latest_backup.name})
+            res["status"] = "rolled_back"
+            res["restoredBackup"] = latest_backup.name
+
+        return res

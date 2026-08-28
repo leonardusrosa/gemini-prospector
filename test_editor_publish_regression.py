@@ -77,106 +77,124 @@ async def main():
     # Snapshot current clean public HTML before test
     assert PUBLIC_PATH.exists(), f"Public file not found: {PUBLIC_PATH}"
     clean_baseline_html = PUBLIC_PATH.read_text(encoding="utf-8")
-    subprocess_res = None
     import subprocess
+    import time
     subprocess.run(["python", "create_editor.py", str(PUBLIC_PATH)], check=True)
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+    # Auto-start editor server in local mode
+    server_proc = subprocess.Popen(
+        ["python", "editor_publish_server.py", "--mode", "local", "--port", "8787"],
+        cwd=str(ROOT),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    time.sleep(1.2)
 
-        # Test 1: Publish at TOP
-        page = await browser.new_page(viewport={"width": 1440, "height": 900})
-        html_top = await run_publish_test(page, "top", "")
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
 
-        # Test 2: Publish at MID
-        html_mid = await run_publish_test(page, "mid", "")
+            # Test 1: Publish at TOP
+            page = await browser.new_page(viewport={"width": 1440, "height": 900})
+            html_top = await run_publish_test(page, "top", "")
 
-        # Test 3: Publish at BOTTOM
-        html_bottom = await run_publish_test(page, "bottom", "")
+            # Test 2: Publish at MID
+            html_mid = await run_publish_test(page, "mid", "")
 
-        # Test 4: Verify SOURCE INDEPENDENCE EQUIVALENCE
-        print("\nVerifying equivalence between TOP, MID, and BOTTOM publishes...")
-        assert html_top == html_mid, "Top publish and Mid publish outputs differed!"
-        assert html_top == html_bottom, "Top publish and Bottom publish outputs differed!"
-        print("  [PASS] Source independence PASS: Output at scrollY=0, scrollY=mid, scrollY=bottom is 100% IDENTICAL")
+            # Test 3: Publish at BOTTOM
+            html_bottom = await run_publish_test(page, "bottom", "")
 
-        # Test 5: Verify Public Page Reload & Visibility
-        print("\nVerifying public page reload and reveal behavior...")
-        public_url = f"{BASE_URL}/sites/{SLUG}/{SLUG}.html"
-        await page.goto(public_url, wait_until="networkidle")
+            # Test 4: Verify SOURCE INDEPENDENCE EQUIVALENCE
+            print("\nVerifying equivalence between TOP, MID, and BOTTOM publishes...")
+            assert html_top == html_mid, "Top publish and Mid publish outputs differed!"
+            assert html_top == html_bottom, "Top publish and Bottom publish outputs differed!"
+            print("  [PASS] Source independence PASS: Output at scrollY=0, scrollY=mid, scrollY=bottom is 100% IDENTICAL")
 
-        # Check all key sections exist and become visible
-        sections = [
-            ".hero-headline",
-            ".section-header-block",
-            ".treatment-card",
-            ".facility-feature-box",
-            ".facility-card-primary",
-            ".doctor-image-frame",
-            ".location-card",
-            ".cta-banner-inner"
-        ]
+            # Test 5: Verify Public Page Reload & Visibility
+            print("\nVerifying public page reload and reveal behavior...")
+            public_url = f"{BASE_URL}/sites/{SLUG}/{SLUG}.html"
+            page_pub = await browser.new_page(viewport={"width": 1440, "height": 900})
+            await page_pub.goto(public_url, wait_until="networkidle")
 
-        # Scroll page to trigger ScrollTrigger
-        scroll_height = await page.evaluate("() => document.documentElement.scrollHeight")
-        for y in range(0, scroll_height + 400, 400):
-            await page.evaluate("(y) => window.scrollTo(0, y)", y)
-            await page.wait_for_timeout(80)
+            # Check all key sections exist and become visible
+            sections = [
+                ".hero-headline",
+                ".section-header-block",
+                ".treatment-card",
+                ".facility-feature-box",
+                ".facility-card-primary",
+                ".doctor-image-frame",
+                ".location-card",
+                ".cta-banner-inner"
+            ]
 
-        # Allow 0.5s GSAP reveal transitions to complete
-        await page.wait_for_timeout(700)
+            # Scroll page to trigger ScrollTrigger
+            scroll_height = await page_pub.evaluate("() => document.documentElement.scrollHeight")
+            for y in range(0, scroll_height + 400, 400):
+                await page_pub.evaluate("(y) => window.scrollTo(0, y)", y)
+                await page_pub.wait_for_timeout(80)
 
-        for sel in sections:
-            count = await page.locator(sel).count()
-            assert count > 0, f"Section selector {sel} not found on public page"
-            # Verify opacity is not stuck at 0
-            opacities = await page.eval_on_selector_all(sel, "(els) => els.map(e => window.getComputedStyle(e).opacity)")
-            for i, op in enumerate(opacities):
-                assert float(op) > 0.8, f"Element {sel}[{i}] stuck at opacity: {op}"
+            # Allow 0.5s GSAP reveal transitions to complete
+            await page_pub.wait_for_timeout(700)
 
-        print("  [PASS] All key sections and animated elements verified VISIBLE (opacity > 0.5)")
+            for sel in sections:
+                count = await page_pub.locator(sel).count()
+                assert count > 0, f"Section selector {sel} not found on public page"
+                # Verify opacity is not stuck at 0
+                opacities = await page_pub.eval_on_selector_all(sel, "(els) => els.map(e => window.getComputedStyle(e).opacity)")
+                for i, op in enumerate(opacities):
+                    assert float(op) > 0.8, f"Element {sel}[{i}] stuck at opacity: {op}"
 
-        # Test 6: Reduced motion check
-        print("\nVerifying reduced-motion mode...")
-        await page.emulate_media(reduced_motion="reduce")
-        await page.goto(public_url, wait_until="networkidle")
-        for sel in [".treatment-card", ".facility-feature-box", ".doctor-image-frame"]:
-            opacities = await page.eval_on_selector_all(sel, "(els) => els.map(e => window.getComputedStyle(e).opacity)")
-            for i, op in enumerate(opacities):
-                assert float(op) > 0.5, f"Reduced motion: {sel}[{i}] not visible"
-        print("  [PASS] Reduced-motion mode verified PASS")
+            print("  [PASS] All key sections and animated elements verified VISIBLE (opacity > 0.5)")
 
-        # Test 7: Authored inline opacity & transform preservation test
-        print("\nVerifying authored inline opacity & transform preservation...")
-        # Inject fixture elements with legitimate author opacity & transform
-        fixture_html = clean_baseline_html
-        fixture_needle = "</body>"
-        fixture_insert = (
-            '<div id="author-fixture-opacity" style="opacity: 0.85; margin: 10px;">Authored Opacity</div>\n'
-            '<div id="author-fixture-transform" style="transform: rotate(-2deg); padding: 5px;">Authored Transform</div>\n'
-        )
-        fixture_html = fixture_html.replace(fixture_needle, fixture_insert + fixture_needle)
-        PUBLIC_PATH.write_text(fixture_html, encoding="utf-8")
+            # Test 6: Reduced motion check
+            print("\nVerifying reduced-motion mode...")
+            page_red = await browser.new_page(viewport={"width": 1440, "height": 900})
+            await page_red.emulate_media(reduced_motion="reduce")
+            await page_red.goto(public_url, wait_until="networkidle")
+            for sel in [".treatment-card", ".facility-feature-box", ".doctor-image-frame"]:
+                opacities = await page_red.eval_on_selector_all(sel, "(els) => els.map(e => window.getComputedStyle(e).opacity)")
+                for i, op in enumerate(opacities):
+                    assert float(op) > 0.5, f"Reduced motion: {sel}[{i}] not visible"
+            print("  [PASS] Reduced-motion mode verified PASS")
 
-        # Regenerate editor for fixture
-        subprocess.run(["python", "create_editor.py", str(PUBLIC_PATH)], check=True)
+            # Test 7: Authored inline opacity & transform preservation test
+            print("\nVerifying authored inline opacity & transform preservation...")
+            # Inject fixture elements with legitimate author opacity & transform
+            fixture_html = clean_baseline_html
+            fixture_needle = "</body>"
+            fixture_insert = (
+                '<div id="author-fixture-opacity" style="opacity: 0.85; margin: 10px;">Authored Opacity</div>\n'
+                '<div id="author-fixture-transform" style="transform: rotate(-2deg); padding: 5px;">Authored Transform</div>\n'
+            )
+            fixture_html = fixture_html.replace(fixture_needle, fixture_insert + fixture_needle)
+            PUBLIC_PATH.write_text(fixture_html, encoding="utf-8")
 
-        # Open editor and publish
-        page_fixture = await browser.new_page(viewport={"width": 1440, "height": 900})
-        html_fixture_published = await run_publish_test(page_fixture, "mid", "")
+            # Regenerate editor for fixture
+            subprocess.run(["python", "create_editor.py", str(PUBLIC_PATH)], check=True)
 
-        assert 'id="author-fixture-opacity"' in html_fixture_published, "Author opacity fixture missing"
-        assert 'opacity: 0.85' in html_fixture_published or 'opacity:0.85' in html_fixture_published, "Authored opacity: 0.85 was destroyed!"
-        assert 'id="author-fixture-transform"' in html_fixture_published, "Author transform fixture missing"
-        assert 'rotate(-2deg)' in html_fixture_published, "Authored transform: rotate(-2deg) was destroyed!"
-        print("  [PASS] Authored inline opacity: 0.85 PRESERVED")
-        print("  [PASS] Authored inline transform: rotate(-2deg) PRESERVED")
+            # Open editor and publish
+            page_fixture = await browser.new_page(viewport={"width": 1440, "height": 900})
+            html_fixture_published = await run_publish_test(page_fixture, "mid", "")
 
-        # Restore clean baseline after fixture test
-        PUBLIC_PATH.write_text(clean_baseline_html, encoding="utf-8")
-        subprocess.run(["python", "create_editor.py", str(PUBLIC_PATH)], check=True)
+            assert 'id="author-fixture-opacity"' in html_fixture_published, "Author opacity fixture missing"
+            assert 'opacity: 0.85' in html_fixture_published or 'opacity:0.85' in html_fixture_published, "Authored opacity: 0.85 was destroyed!"
+            assert 'id="author-fixture-transform"' in html_fixture_published, "Author transform fixture missing"
+            assert 'rotate(-2deg)' in html_fixture_published, "Authored transform: rotate(-2deg) was destroyed!"
+            print("  [PASS] Authored inline opacity: 0.85 PRESERVED")
+            print("  [PASS] Authored inline transform: rotate(-2deg) PRESERVED")
 
-        await browser.close()
+            # Restore clean baseline after fixture test
+            PUBLIC_PATH.write_text(clean_baseline_html, encoding="utf-8")
+            subprocess.run(["python", "create_editor.py", str(PUBLIC_PATH)], check=True)
+
+            await browser.close()
+    finally:
+        server_proc.terminate()
+        try:
+            server_proc.wait(timeout=2)
+        except Exception:
+            server_proc.kill()
 
     print("\n==================================================")
     print("ALL EDITOR REGRESSION TESTS PASSED SUCCESSFULLY!")
