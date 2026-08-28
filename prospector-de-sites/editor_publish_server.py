@@ -356,7 +356,7 @@ class PublishApp(SimpleHTTPRequestHandler):
                 return self._json(401, {"success": False, "error": err})
 
             # Check draft first, then deploy repo HTML, then local sites HTML
-            draft_html = self.config.cms_service.load_draft(slug)
+            draft_html = self.config.cms_service.get_draft(slug)
             raw_html = None
             if draft_html:
                 raw_html = draft_html
@@ -405,7 +405,7 @@ class PublishApp(SimpleHTTPRequestHandler):
             ok, payload, err = self.config.auth_store.authorize_request(token, slug)
             if not ok:
                 return self._json(401, {"success": False, "error": err})
-            draft_html = self.config.cms_service.load_draft(slug)
+            draft_html = self.config.cms_service.get_draft(slug)
             return self._json(200, {"success": True, "slug": slug, "hasDraft": draft_html is not None, "html": draft_html})
 
         # Route 3: Client CMS Audit API

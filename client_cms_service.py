@@ -134,6 +134,10 @@ class ClientCmsService:
             return draft_file.read_text(encoding="utf-8")
         return None
 
+    def load_draft(self, slug: str) -> Optional[str]:
+        """Alias for get_draft."""
+        return self.get_draft(slug)
+
     def publish_content(
         self,
         slug: str,
