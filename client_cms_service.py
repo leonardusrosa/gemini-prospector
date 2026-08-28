@@ -158,8 +158,13 @@ class ClientCmsService:
         if self.deploy_repo not in target_path.parents:
             raise ValueError("Tentativa de escape do diretório do repositório de deploy.")
 
-        # Check existing staged changes to prevent mixing
-        staged_before = run_git(self.deploy_repo, ["diff", "--cached", "--name-only"]).stdout.strip()
+        # Git preflight 1: verify active branch
+        curr_branch = run_git(self.deploy_repo, ["rev-parse", "--abbrev-ref", "HEAD"], check=False).stdout.strip()
+        if curr_branch and curr_branch != branch:
+            raise RuntimeError(f"Repositório de deploy no branch incorreto: '{curr_branch}' (esperado '{branch}').")
+
+        # Git preflight 2: check for existing uncommitted / staged changes in other files
+        staged_before = run_git(self.deploy_repo, ["diff", "--cached", "--name-only"], check=False).stdout.strip()
         if staged_before:
             raise RuntimeError("O repositório de deploy contém alterações pendentes em staging.")
 

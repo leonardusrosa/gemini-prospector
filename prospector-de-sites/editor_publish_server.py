@@ -213,9 +213,10 @@ class PublishConfig:
             if inside != "true":
                 raise SystemExit("Deploy path is not inside a Git work tree")
 
-        self.auth_store = TenantAuthStore(self.root)
+        self.data_dir = pathlib.Path(os.environ.get("PROSPECTOR_CMS_DATA_DIR") or self.root).expanduser().resolve()
+        self.auth_store = TenantAuthStore(self.data_dir)
         self.cms_service = ClientCmsService(
-            root_dir=self.root,
+            root_dir=self.data_dir,
             deploy_repo=self.deploy_repo,
             base_path=self.base_path,
         )
@@ -252,11 +253,23 @@ class PublishApp(SimpleHTTPRequestHandler):
         self.config = config
         super().__init__(*args, directory=str(config.root), **kwargs)
 
+    def _client_ip(self) -> str:
+        x_forwarded = self.headers.get("X-Forwarded-For", "").strip()
+        if x_forwarded:
+            return x_forwarded.split(",")[0].strip()
+        return self.client_address[0] if self.client_address else "127.0.0.1"
+
+    def _send_security_headers(self) -> None:
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+
     def _json(self, code: int, obj: dict) -> None:
         data = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
+        self._send_security_headers()
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -265,7 +278,7 @@ class PublishApp(SimpleHTTPRequestHandler):
         data = html_str.encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
+        self._send_security_headers()
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
@@ -349,7 +362,7 @@ class PublishApp(SimpleHTTPRequestHandler):
             ok, payload, err = self.config.auth_store.authorize_request(token, slug)
             if not ok:
                 return self._json(401, {"success": False, "error": err})
-            history = get_audit_history(self.config.root, slug)
+            history = get_audit_history(self.config.data_dir, slug)
             return self._json(200, {"success": True, "slug": slug, "history": history})
 
         # Route 4: Legacy editor status
@@ -379,7 +392,7 @@ class PublishApp(SimpleHTTPRequestHandler):
                 slug = str(body.get("slug") or "").strip()
                 user = str(body.get("username") or "").strip()
                 pwd = str(body.get("password") or "")
-                client_ip = self.client_address[0] if self.client_address else "127.0.0.1"
+                client_ip = self._client_ip()
                 ok, token_or_err, err_code = self.config.auth_store.authenticate(slug, user, pwd, client_ip=client_ip)
                 if ok:
                     return self._json(200, {"success": True, "token": token_or_err, "slug": slug})
