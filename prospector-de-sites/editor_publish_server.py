@@ -196,13 +196,6 @@ class PublishConfig:
         self.remote = args.remote or os.environ.get("PROSPECTOR_EDITOR_DEPLOY_REMOTE") or "origin"
         self.domain = str(deploy.get("domain") or "").strip().rstrip("/")
 
-        self.clients = _parse_clients(os.environ.get("PROSPECTOR_EDITOR_CLIENTS", ""))
-        loopback = self.host in {"127.0.0.1", "localhost", "::1"}
-        if (self.mode == "git" or not loopback) and not self.clients:
-            raise SystemExit(
-                "Refusing protected/non-local editor publishing without PROSPECTOR_EDITOR_CLIENTS. "
-                "Map opaque editor tokens to allowed slugs; never use a GitHub token here."
-            )
         if self.mode == "git":
             if self.deploy_repo is None or not self.deploy_repo.exists():
                 raise SystemExit("Git publish mode requires a valid deploy repo path")
@@ -220,6 +213,13 @@ class PublishConfig:
             deploy_repo=self.deploy_repo,
             base_path=self.base_path,
         )
+
+        self.clients = _parse_clients(os.environ.get("PROSPECTOR_EDITOR_CLIENTS", ""))
+        loopback = self.host in {"127.0.0.1", "localhost", "::1"}
+        if (self.mode == "git" or not loopback) and not self.clients and not self.auth_store:
+            raise SystemExit(
+                "Refusing protected/non-local editor publishing without authentication store or PROSPECTOR_EDITOR_CLIENTS."
+            )
 
     def authorize(self, headers, slug: str) -> bool:
         auth = headers.get("Authorization", "")
