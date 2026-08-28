@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Regression tests for contract commercial terms and private delivery.
+"""Regression tests for contract commercial terms, legal provider fail-closed check, and private delivery.
 
 No CRM mutation, no outreach, no network calls.
 """
@@ -23,23 +23,23 @@ LEGACY = [
 ]
 
 
-def synthetic_data():
+def real_contract_data():
     return {
-        "NOME_CLIENTE": "Cliente de Teste",
+        "NOME_CLIENTE": "Cliente Real de Teste",
         "CPF_CNPJ_CLIENTE_LABEL": "inscrito no CPF",
-        "CPF_CNPJ_CLIENTE": "(preencher)",
-        "ENDERECO_CLIENTE": "(preencher)",
+        "CPF_CNPJ_CLIENTE": "123.456.789-00",
+        "ENDERECO_CLIENTE": "Rua das Flores, 123",
         "CIDADE_UF_CLIENTE": "Rio Claro/SP",
-        "NOME_PRESTADOR": "Prestador de Teste",
+        "NOME_PRESTADOR": "Leonardo Rosa",
         "CPF_CNPJ_PRESTADOR_LABEL": "inscrito no CPF",
-        "CPF_CNPJ_PRESTADOR": "000.000.000-00",
-        "ENDERECO_PRESTADOR": "Endereço sintético de teste",
+        "CPF_CNPJ_PRESTADOR": "987.654.321-11",
+        "ENDERECO_PRESTADOR": "Av. Paulista, 1000",
         "CIDADE_UF_PRESTADOR": "São Paulo/SP",
         "TEXTO_OBJETO": "a criação de uma nova versão da página institucional do CONTRATANTE",
         "URL_PUBLICADA": "https://example.invalid/preview",
         "VALOR": "1.234,00",
         "VALOR_EXTENSO": "mil duzentos e trinta e quatro reais",
-        "FORMA_PAGAMENTO": "condição sintética usada somente neste teste",
+        "FORMA_PAGAMENTO": "condição acordada",
         "PRAZO_ENTREGA": "7 (sete) dias úteis",
         "RODADAS_AJUSTES": "1 (uma)",
         "TEXTO_HOSPEDAGEM": (
@@ -47,11 +47,20 @@ def synthetic_data():
             "A hospedagem da página será disponibilizada pelo CONTRATADO(A) sem cobrança separada de hospedagem, "
             "sem que isso implique manutenção mensal ou suporte ilimitado."
         ),
-        "CIDADE_FORO": "Rio Claro/SP",
-        "CIDADE_ASSINATURA": "Rio Claro/SP",
-        "DATA_EXTENSO": "",
+        "CIDADE_FORO": "São Paulo/SP",
+        "CIDADE_ASSINATURA": "São Paulo/SP",
+        "DATA_EXTENSO": "27 de agosto de 2026",
         "MANUTENCAO": False,
+        "dry_run": False,
     }
+
+
+def synthetic_data():
+    d = real_contract_data()
+    d["dry_run"] = True
+    d["CPF_CNPJ_PRESTADOR"] = "(PREENCHER ANTES DO CONTRATO REAL)"
+    d["ENDERECO_PRESTADOR"] = "(PREENCHER ANTES DO CONTRATO REAL)"
+    return d
 
 
 class ContractTermsTest(unittest.TestCase):
@@ -85,7 +94,7 @@ class ContractTermsTest(unittest.TestCase):
             td = pathlib.Path(td)
             data_path = td / "dados.json"
             out_path = td / "contrato.docx"
-            data_path.write_text(json.dumps(synthetic_data(), ensure_ascii=False), encoding="utf-8")
+            data_path.write_text(json.dumps(real_contract_data(), ensure_ascii=False), encoding="utf-8")
             proc = subprocess.run(
                 [sys.executable, str(GENERATOR), str(data_path), str(out_path)],
                 capture_output=True,
@@ -100,10 +109,52 @@ class ContractTermsTest(unittest.TestCase):
             self.assertIn("sem cobrança por cada edição", xml)
             self.assertIn("orçamento separado", xml)
 
-    def test_maintenance_requires_explicit_scope(self):
+    def test_real_contract_fails_closed_when_provider_legal_data_missing(self):
+        """Real contract generation (dry_run=False) fails closed if provider legal fields have placeholders."""
+        bad_placeholders = [
+            "(PREENCHER ANTES DO CONTRATO REAL)",
+            "(preencher)",
+            "000.000.000-00",
+            "",
+        ]
+        for bad in bad_placeholders:
+            with tempfile.TemporaryDirectory() as td:
+                td = pathlib.Path(td)
+                d = real_contract_data()
+                d["CPF_CNPJ_PRESTADOR"] = bad
+                d["dry_run"] = False
+                data_path = td / "dados.json"
+                out_path = td / "contrato.docx"
+                data_path.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+                proc = subprocess.run(
+                    [sys.executable, str(GENERATOR), str(data_path), str(out_path)],
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertNotEqual(proc.returncode, 0)
+                out = proc.stdout + proc.stderr
+                self.assertTrue("Contrato real bloqueado" in out or "Campos obrigatórios ausentes" in out)
+
+    def test_dry_run_contract_generation_succeeds(self):
+        """Dry-run mode explicitly allows synthetic placeholders."""
         with tempfile.TemporaryDirectory() as td:
             td = pathlib.Path(td)
             d = synthetic_data()
+            data_path = td / "dados.json"
+            out_path = td / "contrato.docx"
+            data_path.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+            proc = subprocess.run(
+                [sys.executable, str(GENERATOR), str(data_path), str(out_path)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stdout + "\n" + proc.stderr)
+            self.assertTrue(out_path.exists())
+
+    def test_maintenance_requires_explicit_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = pathlib.Path(td)
+            d = real_contract_data()
             d["MANUTENCAO"] = True
             d["VALOR_MANUTENCAO"] = "99,00"
             data_path = td / "dados.json"
@@ -116,6 +167,11 @@ class ContractTermsTest(unittest.TestCase):
             )
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("TEXTO_MANUTENCAO", proc.stdout + proc.stderr)
+
+    def test_br_contract_delivery_language_rule(self):
+        skill = SKILL.read_text(encoding="utf-8")
+        self.assertIn("Atenciosamente", skill)
+        self.assertIn("proibido usar `Com os melhores cumprimentos`", skill)
 
 
 if __name__ == "__main__":

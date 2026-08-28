@@ -40,6 +40,22 @@ missing = [k for k in REQUIRED if not str(d.get(k, "")).strip()]
 if missing:
     raise ValueError("Campos obrigatórios ausentes no contrato: " + ", ".join(missing))
 
+is_dry_run = bool(d.get("dry_run") or d.get("DRY_RUN") or d.get("modo") == "dry_run" or d.get("is_dry_run"))
+
+if not is_dry_run:
+    provider_fields = [
+        ("NOME_PRESTADOR", d.get("NOME_PRESTADOR")),
+        ("CPF_CNPJ_PRESTADOR", d.get("CPF_CNPJ_PRESTADOR")),
+        ("ENDERECO_PRESTADOR", d.get("ENDERECO_PRESTADOR")),
+        ("CIDADE_UF_PRESTADOR", d.get("CIDADE_UF_PRESTADOR")),
+    ]
+    for field_name, val in provider_fields:
+        val_str = str(val or "").strip()
+        if not val_str or any(marker in val_str.lower() for marker in ["preencher", "fictício", "ficticio", "000.000.000-00", "00.000.000/0000-00"]):
+            raise ValueError(
+                f"Contrato real bloqueado: campo obrigatório do prestador '{field_name}' ausente ou contém placeholder."
+            )
+
 # Evita reintroduzir a lógica comercial antiga em que hospedagem e manutenção eram sinônimos.
 legacy_phrases = [
     "manutenção mensal da página (hospedagem, pequenas atualizações de texto/imagens e suporte)",

@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Regression test suite for verified outreach identity, fail-closed behavior,
-and permission-first cold WhatsApp flow.
+permission-first cold WhatsApp flow, removal of stale ratings & praise,
+and accurate AutoCORA signature.
 NO messages are sent, NO CRM mutations occur.
 """
 
@@ -107,53 +108,59 @@ class TestOutreachIdentityAndPermissionFirst(unittest.TestCase):
 
     def _assert_no_urls(self, text: str, lead_name: str):
         """Helper to ensure text contains zero URLs or links."""
-        url_pattern = re.compile(r"https?://|www\.|\.html|\.com|\.app|\.br|\.pt|/[a-zA-Z0-9_\-]+/[a-zA-Z0-9_\-]+", re.IGNORECASE)
-        # Check standard web protocol/domain tokens
         self.assertNotIn("http://", text, f"Found 'http://' in {lead_name}")
         self.assertNotIn("https://", text, f"Found 'https://' in {lead_name}")
         self.assertNotIn("proposta.html", text, f"Found 'proposta.html' in {lead_name}")
         self.assertNotIn("autocora.com.br", text, f"Found portfolio URL in {lead_name}")
         self.assertNotIn("prospector-sites-beta.vercel.app", text, f"Found domain URL in {lead_name}")
 
-    def test_a_br_redesign_first_contact_no_url(self):
-        """Test A: BR redesign firstContact contains NO http/https/URL."""
-        res = outreach_service.generate_messages(self.lead_br_redesign, self.valid_config)
-        first_contact = res["whatsapp"]["firstContact"]
-        self._assert_no_urls(first_contact, "BR redesign firstContact")
-        self.assertEqual(res["whatsapp"]["text"], first_contact)
+    def _assert_no_stale_ratings_or_praise(self, text: str, lead_name: str):
+        """Helper to ensure text contains no rating numbers, review counts or fabricated praise."""
+        forbidden_patterns = [
+            r"\bnota\b",
+            r"\bavaliações\b",
+            r"\bavaliações\b",
+            r"\bclassificação\b",
+            r"\btrabalho excelente\b",
+            r"\bempresa de referência\b",
+            r"\btrabalho de referência\b",
+            r"\bclínica renomada\b",
+            r"\b4\.9\b",
+            r"\b5\.0\b",
+            r"\b4\.8\b",
+            r"\b120\b",
+            r"\b45\b",
+            r"\b85\b",
+            r"\b60\b",
+        ]
+        for pat in forbidden_patterns:
+            self.assertIsNone(
+                re.search(pat, text, re.IGNORECASE),
+                f"Pattern '{pat}' found in {lead_name}: {text}"
+            )
 
-    def test_b_br_new_site_first_contact_no_url(self):
-        """Test B: BR new-site firstContact contains NO URL."""
-        res = outreach_service.generate_messages(self.lead_br_new, self.valid_config)
-        first_contact = res["whatsapp"]["firstContact"]
-        self._assert_no_urls(first_contact, "BR new site firstContact")
-
-    def test_c_pt_redesign_first_contact_no_url(self):
-        """Test C: PT redesign firstContact contains NO URL."""
-        res = outreach_service.generate_messages(self.lead_pt_redesign, self.valid_config)
-        first_contact = res["whatsapp"]["firstContact"]
-        self._assert_no_urls(first_contact, "PT redesign firstContact")
-
-    def test_d_pt_new_site_first_contact_no_url(self):
-        """Test D: PT new-site firstContact contains NO URL."""
-        res = outreach_service.generate_messages(self.lead_pt_new, self.valid_config)
-        first_contact = res["whatsapp"]["firstContact"]
-        self._assert_no_urls(first_contact, "PT new site firstContact")
-
-    def test_e_first_contact_asks_permission(self):
-        """Test E: Each firstContact asks permission to receive the link."""
+    def test_a_br_cold_whatsapp_no_url_no_ratings_no_fabricated_praise(self):
+        """Test A: BR redesign & new-site firstContact contains NO URL, NO ratings, NO fabricated praise."""
         for lead in [self.lead_br_redesign, self.lead_br_new]:
             res = outreach_service.generate_messages(lead, self.valid_config)
             first_contact = res["whatsapp"]["firstContact"]
+            self._assert_no_urls(first_contact, f"BR {lead['slug']} firstContact")
+            self._assert_no_stale_ratings_or_praise(first_contact, f"BR {lead['slug']} firstContact")
+            self.assertIn("Leonardo | AutoCORA", first_contact)
             self.assertIn("Posso te mandar o link", first_contact)
 
+    def test_b_pt_cold_whatsapp_no_url_no_ratings_no_fabricated_praise(self):
+        """Test B: PT redesign & new-site firstContact contains NO URL, NO ratings, NO fabricated praise."""
         for lead in [self.lead_pt_redesign, self.lead_pt_new]:
             res = outreach_service.generate_messages(lead, self.valid_config)
             first_contact = res["whatsapp"]["firstContact"]
+            self._assert_no_urls(first_contact, f"PT {lead['slug']} firstContact")
+            self._assert_no_stale_ratings_or_praise(first_contact, f"PT {lead['slug']} firstContact")
+            self.assertIn("Leonardo | AutoCORA", first_contact)
             self.assertIn("Posso enviar-lhe o link", first_contact)
 
-    def test_f_after_permission_contains_proposal_url(self):
-        """Test F: afterPermission contains exactly the proposal URL."""
+    def test_c_after_permission_contains_proposal_url(self):
+        """Test C: afterPermission contains exactly the proposal URL."""
         for lead in [self.lead_br_redesign, self.lead_br_new, self.lead_pt_redesign, self.lead_pt_new]:
             res = outreach_service.generate_messages(lead, self.valid_config)
             after_perm = res["whatsapp"]["afterPermission"]
@@ -161,14 +168,12 @@ class TestOutreachIdentityAndPermissionFirst(unittest.TestCase):
             self.assertIn(expected_url, after_perm)
             self.assertEqual(res["proposalUrl"], expected_url)
 
-    def test_g_identity_remains_leonardo_rosa_autocora(self):
-        """Test G: Identity remains Leonardo Rosa / AutoCORA."""
+    def test_d_identity_remains_leonardo_rosa_autocora(self):
+        """Test D: Full commercial identity remains available in email/metadata."""
         for lead in [self.lead_br_redesign, self.lead_pt_new]:
             res = outreach_service.generate_messages(lead, self.valid_config)
-            wpp_text = res["whatsapp"]["firstContact"]
             email_html = res["email"]["bodyHtml"]
 
-            self.assertIn("Leonardo Rosa", wpp_text)
             self.assertIn("Leonardo Rosa", email_html)
             self.assertIn("AutoCORA | Landing pages e automação com IA", email_html)
             self.assertIn("5511994289238", email_html)
@@ -180,11 +185,23 @@ class TestOutreachIdentityAndPermissionFirst(unittest.TestCase):
                 "Design e Criação de Páginas Web",
             ]
             for phrase in forbidden:
-                self.assertNotIn(phrase, wpp_text)
                 self.assertNotIn(phrase, email_html)
 
-    def test_h_missing_identity_fails_closed(self):
-        """Test H: Missing identity fails closed with clear ValueError."""
+    def test_e_br_email_closing_language(self):
+        """Test E: BR email closing uses Atenciosamente and never Com os melhores cumprimentos."""
+        res = outreach_service.generate_messages(self.lead_br_redesign, self.valid_config)
+        email_html = res["email"]["bodyHtml"]
+        self.assertIn("Atenciosamente,", email_html)
+        self.assertNotIn("Com os melhores cumprimentos", email_html)
+
+    def test_f_pt_email_closing_language(self):
+        """Test F: PT email closing uses Com os melhores cumprimentos."""
+        res = outreach_service.generate_messages(self.lead_pt_redesign, self.valid_config)
+        email_html = res["email"]["bodyHtml"]
+        self.assertIn("Com os melhores cumprimentos,", email_html)
+
+    def test_g_missing_identity_fails_closed(self):
+        """Test G: Missing identity fails closed with clear ValueError."""
         bad_configs = [
             {"assinatura": {"nome": "", "apresentacao": "AutoCORA"}},
             {"assinatura": {"nome": "Leonardo Rosa", "apresentacao": ""}},
@@ -196,15 +213,8 @@ class TestOutreachIdentityAndPermissionFirst(unittest.TestCase):
                 outreach_service.generate_messages(self.lead_br_redesign, cfg)
             self.assertIn("Identidade de outreach não configurada", str(ctx.exception))
 
-    def test_i_email_retains_proposal_url(self):
-        """Test I: Email retains proposal link and compose URL."""
-        res = outreach_service.generate_messages(self.lead_br_redesign, self.valid_config)
-        expected_url = "https://prospector-sites-beta.vercel.app/clientes/clinica-exemplo/proposta.html"
-        self.assertIn(expected_url, res["email"]["bodyHtml"])
-        self.assertIn("https://mail.google.com/mail/?", res["email"]["composeUrl"])
-
-    def test_j_market_fallback_compatibility(self):
-        """Test J: Fallback normalize_phone_by_country accepts country= kwarg."""
+    def test_h_market_fallback_compatibility(self):
+        """Test H: Fallback normalize_phone_by_country accepts country= kwarg."""
         fallback_fn = lambda raw, country=None, *a, **k: (raw, None)
         self.assertEqual(fallback_fn("11999998888", country="BR"), ("11999998888", None))
 

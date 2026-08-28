@@ -99,26 +99,28 @@ A posição correta é: **trabalho real e funcional, mas primeira proposta sujei
 
 ### A. WhatsApp (Curto, Conversacional e Direto — Permissão Primeiro)
 - **Regra fundamental**: O primeiro WhatsApp frio **NUNCA contém link/URL**. O objetivo é abrir conversa humana e pedir permissão antes de enviar o link da proposta.
+- **Sem avaliações/estrelas ou elogios fabricados**: O primeiro contato **NUNCA menciona nota do Google, contagem de avaliações, estrelas** nem elogios vazios ("trabalho excelente", "empresa de referência", "clínica renomada"). Use apenas contexto estável e verificado (nome, cidade, existência de site, observação concreta sobre a página atual).
+- **Assinatura**: No WhatsApp frio, preferir assinatura concisa e profissional: `[Nome Operador] | AutoCORA` (ex.: `Leonardo | AutoCORA`). A identidade completa (`Leonardo Rosa`, `AutoCORA | Landing pages e automação com IA`) permanece no e-mail e nos contratos.
 - **Tamanho**: ~45 a 85 palavras.
 - **Fluxo canonical**:
-  1. Primeiro contato no WhatsApp: saudação + contextualização real + aviso de que preparou uma primeira proposta funcional + **pedido de permissão para enviar o link**.
+  1. Primeiro contato no WhatsApp: saudação + contextualização factual e estável + aviso de que preparou uma primeira proposta funcional + **pedido de permissão para enviar o link**.
   2. Prospecto responde com autorização/interesse.
   3. Envio da mensagem com o link da proposta (`afterPermission`), explicando que é uma versão demonstrativa para refinamento conjunto.
   4. Conversa e alinhamento.
 - **Estrutura para Brasil (`pt-BR`)**:
-  - *Redesign (primeiro contato)*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês em [cidade]... Notei que no site atual [motivo]. Por conta disso, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para celular, para mostrar na prática a direção que imaginei. Posso te mandar o link para dar uma olhada? — [Autor]"
-  - *Novo Site (primeiro contato)*: "Olá, [nome]! Tudo bem? Vi o trabalho de vocês... Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, preparei uma primeira proposta funcional de como o site poderia ficar, já navegável e adaptada para celular. Posso te mandar o link para dar uma olhada? — [Autor]"
+  - *Redesign (primeiro contato)*: "Olá, [nome]! Tudo bem? Estive analisando o site atual de vocês ([site atual]) e [observação concreta]. Por conta disso, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para celular, para mostrar na prática a direção que imaginei. Posso te mandar o link para dar uma olhada? Leonardo | AutoCORA"
+  - *Novo Site (primeiro contato)*: "Olá, [nome]! Tudo bem? Notei que vocês ainda não contam com um site próprio oficial para centralizar informações e facilitar o agendamento de clientes em [cidade]. Por conta disso, preparei uma primeira proposta funcional de como o site poderia ficar, já navegável e adaptada para celular. Posso te mandar o link para dar uma olhada? Leonardo | AutoCORA"
   - *Mensagem após permissão*: "Claro. Fiz essa primeira versão principalmente para mostrar a direção visual e a organização do conteúdo na prática. Se fizer sentido para vocês, textos, fotos e detalhes finais podem ser ajustados em conjunto antes da publicação definitiva.\n\n[URL_PROPOSTA]"
 - **Estrutura para Portugal (`pt-PT`)**:
-  - *Redesign (primeiro contato)*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho em [cidade]... Notei que na página atual [motivo]. Por esse motivo, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para telemóvel, para mostrar na prática a direção que imaginei. Posso enviar-lhe o link para dar uma vista de olhos? — [Autor]"
-  - *Novo Site (primeiro contato)*: "Olá, [nome]! Tudo bem? Acompanho o vosso trabalho... Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, preparei uma primeira proposta funcional de como a página poderia ficar, já navegável e adaptada para telemóvel. Posso enviar-lhe o link para dar uma vista de olhos? — [Autor]"
+  - *Redesign (primeiro contato)*: "Olá, [nome]! Tudo bem? Estive a analisar a página atual ([página atual]) e [observação concreta]. Por esse motivo, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para telemóvel, para mostrar na prática a direção que imaginei. Posso enviar-lhe o link para dar uma vista de olhos? Leonardo | AutoCORA"
+  - *Novo Site (primeiro contato)*: "Olá, [nome]! Tudo bem? Reparei que ainda não dispõem de uma página web oficial própria para centralizar contactos e marcações diretas em [cidade]. Por esse motivo, preparei uma primeira proposta funcional de como a página poderia ficar, já navegável e adaptada para telemóvel. Posso enviar-lhe o link para dar uma vista de olhos? Leonardo | AutoCORA"
   - *Mensagem após permissão*: "Com certeza. Preparei esta primeira versão principalmente para mostrar a direção visual e a organização do conteúdo na prática. Se fizer sentido para vocês, textos, fotografias e detalhes finais podem ser ajustados em conjunto antes da publicação definitiva.\n\n[URL_PROPOSTA]"
 - **Restrições**: Sem emojis por padrão, sem formatação agressiva de marketing. **NUNCA enviar link no primeiro WhatsApp.** **NUNCA dizer "redesenhei seu site" para leads sem site.**
 
 ### B. E-mail / Gmail (Rapport, Prova e Respeito)
 - **Tamanho**: ~120 a 180 palavras.
 - **Assunto**: Pergunta pessoal ≤ 60 caracteres (ex.: `[Nome], uma proposta de site próprio para o vosso espaço` para PT, ou `[Nome], uma ideia de site próprio para o seu negócio` para BR).
-- **Assinatura**: Tratamento adequado (`Um abraço` para BR; `Com os melhores cumprimentos` para PT).
+- **Assinatura**: Para BR, usar `Atenciosamente,` ou `Um abraço,` (proibido `Com os melhores cumprimentos` para BR); para PT, usar `Com os melhores cumprimentos,`.
 - Depois do link, incluir naturalmente que a página é uma **primeira versão funcional para demonstração** e que, havendo interesse, a versão final será refinada em conjunto.
 
 ### HARD RULE — não transformar o primeiro contato em lista de features

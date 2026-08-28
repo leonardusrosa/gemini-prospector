@@ -183,24 +183,27 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
             "Identidade de outreach não configurada: assinatura.nome e assinatura.apresentacao são obrigatórios."
         )
 
+    # Assinatura concisa para WhatsApp frio (ex.: "Leonardo | AutoCORA")
+    primeiro_nome = autor.split()[0] if autor else ""
+    if "AutoCORA" in apresentacao or "AutoCORA" in autor:
+        wpp_sig = f"{primeiro_nome} | AutoCORA"
+    elif " | " in apresentacao:
+        wpp_sig = f"{primeiro_nome} | {apresentacao.split(' | ')[0].strip()}"
+    else:
+        wpp_sig = autor
+
     proposal_url = resolve_proposal_url(lead, config)
 
     saudacao = f"Olá, {nome_lead}! Tudo bem?"
 
     if is_pt:
         # European Portuguese (pt-PT)
-        contexto_prova = ""
-        if nota and avaliacoes:
-            contexto_prova = f"Acompanho o vosso trabalho de referência em {cidade or 'sua região'} (classificação {nota} no Google com {avaliacoes} avaliações)."
-        elif nicho:
-            contexto_prova = f"Acompanho o vosso trabalho de referência na área de {nicho}."
-
         if is_new_site:
             wpp_first_contact = (
                 f"{saudacao}\n\n"
-                f"{contexto_prova} Como reparei que ainda não dispõem de um site oficial próprio para centralizar contactos e marcações diretas, preparei uma primeira proposta funcional de como a página poderia ficar, já navegável e adaptada para telemóvel.\n\n"
+                f"Reparei que ainda não dispõem de uma página web oficial própria para centralizar contactos e marcações diretas em {cidade or 'sua região'}. Por esse motivo, preparei uma primeira proposta funcional de como a página poderia ficar, já navegável e adaptada para telemóvel.\n\n"
                 f"Posso enviar-lhe o link para dar uma vista de olhos?\n\n"
-                f"— {autor}"
+                f"{wpp_sig}"
             ).strip()
 
             wpp_after_permission = (
@@ -214,7 +217,7 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
             email_body_html = f"""<p>Olá, {nome_lead},</p>
 
-<p>{contexto_prova or 'Encontrei o vosso negócio enquanto pesquisava referências na vossa área.'}</p>
+<p>Encontrei o vosso negócio enquanto pesquisava referências em {cidade or 'sua região'}.</p>
 
 <p>Reparei que o negócio ainda não conta com uma página web oficial própria para centralizar informações, localização e facilitar marcações diretas de novos clientes.</p>
 
@@ -231,16 +234,16 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 {apresentacao}<br>
 {wpp_autor and f'WhatsApp: {wpp_autor}' or ''}</p>"""
         else:
-            obs_site = "Notei que a página atual tem potencial de melhoria na leitura no telemóvel e na rapidez de marcação."
+            obs_site = "notei que a página atual tem potencial de melhoria na leitura no telemóvel e na rapidez de marcação."
             if motivo:
-                obs_site = f"Notei que no site atual {motivo.lower()}."
+                obs_site = f"notei que no site atual {motivo.lower()}."
 
             wpp_first_contact = (
                 f"{saudacao}\n\n"
-                f"{contexto_prova} {obs_site}\n\n"
+                f"Estive a analisar a página atual de vocês e {obs_site}\n\n"
                 f"Por esse motivo, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para telemóvel, para mostrar na prática a direção que imaginei.\n\n"
                 f"Posso enviar-lhe o link para dar uma vista de olhos?\n\n"
-                f"— {autor}"
+                f"{wpp_sig}"
             ).strip()
 
             wpp_after_permission = (
@@ -253,8 +256,6 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
                 assunto = f"Uma nova ideia para {nome_lead[:35]}"
 
             email_body_html = f"""<p>Olá, {nome_lead},</p>
-
-<p>{contexto_prova or 'Encontrei o vosso negócio enquanto pesquisava referências na vossa área.'}</p>
 
 <p>Ao analisar a página atual ({site_antigo or 'do espaço'}), notei alguns pontos objetivos que podem estar a dificultar a conversão de novos clientes, especialmente na navegação via telemóvel e na rapidez de contacto.</p>
 
@@ -273,18 +274,12 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
     else:
         # Brazilian Portuguese (pt-BR)
-        contexto_prova = ""
-        if nota and avaliacoes:
-            contexto_prova = f"Vi o trabalho excelente de vocês em {cidade or 'sua região'} (nota {nota} no Google com {avaliacoes} avaliações)."
-        elif nicho:
-            contexto_prova = f"Acompanho o trabalho de referência de vocês na área de {nicho}."
-
         if is_new_site:
             wpp_first_contact = (
                 f"{saudacao}\n\n"
-                f"{contexto_prova} Como notei que vocês ainda não possuem um site próprio oficial para facilitar o contato e agendamento de clientes, preparei uma primeira proposta funcional de como o site poderia ficar, já navegável e adaptada para celular.\n\n"
+                f"Notei que vocês ainda não contam com um site próprio oficial para centralizar informações e facilitar o agendamento de clientes em {cidade or 'sua região'}. Por conta disso, preparei uma primeira proposta funcional de como o site poderia ficar, já navegável e adaptada para celular.\n\n"
                 f"Posso te mandar o link para dar uma olhada?\n\n"
-                f"— {autor}"
+                f"{wpp_sig}"
             ).strip()
 
             wpp_after_permission = (
@@ -298,7 +293,7 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
             email_body_html = f"""<p>Olá, {nome_lead},</p>
 
-<p>{contexto_prova or 'Encontrei o negócio de vocês enquanto pesquisava referências na sua área.'}</p>
+<p>Encontrei o negócio de vocês enquanto pesquisava referências em {cidade or 'sua região'}.</p>
 
 <p>Notei que o negócio ainda não conta com uma página web oficial própria para centralizar informações, localização e facilitar o agendamento direto de novos clientes.</p>
 
@@ -310,21 +305,21 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
 <p>A página fica disponível para você avaliar com calma no computador ou no celular. Se gostar da ideia, fico à disposição para conversarmos sem qualquer compromisso.</p>
 
-<p>Um abraço,<br>
+<p>Atenciosamente,<br>
 <b>{autor}</b><br>
 {apresentacao}<br>
 {wpp_autor and f'WhatsApp: {wpp_autor}' or ''}</p>"""
         else:
-            obs_site = "Notei que a página atual tem muito potencial de melhoria na leitura pelo celular e no agendamento direto."
+            obs_site = "notei que a página atual tem bastante oportunidade de melhoria na leitura pelo celular e no agendamento direto."
             if motivo:
-                obs_site = f"Notei que no site atual {motivo.lower()}."
+                obs_site = f"notei que no site atual {motivo.lower()}."
 
             wpp_first_contact = (
                 f"{saudacao}\n\n"
-                f"{contexto_prova} {obs_site}\n\n"
+                f"Estive analisando o site atual de vocês e {obs_site}\n\n"
                 f"Por conta disso, preparei uma primeira proposta de nova versão do site, já funcional e adaptada para celular, para mostrar na prática a direção que imaginei.\n\n"
                 f"Posso te mandar o link para dar uma olhada?\n\n"
-                f"— {autor}"
+                f"{wpp_sig}"
             ).strip()
 
             wpp_after_permission = (
@@ -338,8 +333,6 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
             email_body_html = f"""<p>Olá, {nome_lead},</p>
 
-<p>{contexto_prova or 'Encontrei o negócio de vocês enquanto pesquisava referências na sua área.'}</p>
-
 <p>Ao analisar a página atual ({site_antigo or 'do consultório'}), notei alguns pontos objetivos que podem estar dificultando a conversão de novos clientes, especialmente na navegação via celular e na rapidez de agendamento.</p>
 
 <p>Para mostrar uma possível direção na prática, montei uma primeira proposta de nova versão do site, já funcional, e coloquei no ar para você comparar o antes e depois:</p>
@@ -350,7 +343,7 @@ def generate_messages(lead: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
 
 <p>A página fica disponível para você avaliar com calma no computador ou no celular. Se gostar do conceito, fico à disposição para conversarmos sem qualquer compromisso.</p>
 
-<p>Um abraço,<br>
+<p>Atenciosamente,<br>
 <b>{autor}</b><br>
 {apresentacao}<br>
 {wpp_autor and f'WhatsApp: {wpp_autor}' or ''}</p>"""

@@ -67,16 +67,19 @@ O DOCX usa proteção `readOnly` + regiões editáveis (`permStart/permEnd`, gru
 
 Depois do fechamento comercial e revisão humana:
 
-1. gerar PDF e/ou DOCX privado;
-2. revisar nomes, documento, endereço, valor, forma de pagamento, prazo, hospedagem, domínio, editor e eventuais serviços adicionais;
-3. mostrar ao usuário o arquivo e a mensagem que serão enviados;
-4. aguardar aprovação explícita;
-5. enviar diretamente ao cliente como anexo pelo canal acordado, preferencialmente e-mail para documentos formais;
-6. registrar no CRM apenas após o envio efetivo, sem tornar o documento público.
+1. validar que os dados legais do prestador (nome, CPF/CNPJ, endereço, cidade/UF) estão preenchidos sem placeholders (bloqueio fail-closed para contratos reais; placeholders sintéticos permitidos apenas em dry-run);
+2. gerar PDF e/ou DOCX privado;
+3. revisar nomes, documento, endereço, valor, forma de pagamento, prazo, hospedagem, domínio, editor e eventuais serviços adicionais;
+4. mostrar ao usuário o arquivo e a mensagem que serão enviados;
+5. aguardar aprovação explícita;
+6. enviar diretamente ao cliente como anexo pelo canal acordado, preferencialmente e-mail para documentos formais;
+7. registrar no CRM apenas após o envio efetivo, sem tornar o documento público.
 
 Assunto sugerido para e-mail: `Contrato de prestação de serviço - [Nome do negócio]`.
 
 Corpo: agradecer a confiança, resumir brevemente escopo + valor + prazo, pedir revisão do documento anexo e orientar assinatura/aceite conforme a ferramenta escolhida. Fechar com a assinatura real do config.
+- Para **pt-BR**: fechar com `Atenciosamente,` ou `Um abraço,` (proibido usar `Com os melhores cumprimentos`).
+- Para **pt-PT**: fechar com `Com os melhores cumprimentos,`.
 
 ## Limites
 
@@ -84,4 +87,6 @@ Corpo: agradecer a confiança, resumir brevemente escopo + valor + prazo, pedir 
 - Não prometer validade jurídica nem substituir assinatura formal.
 - Nunca inventar cláusula financeira: tudo vem do banco/usuário.
 - Nunca inventar prazo de hospedagem gratuita, SLA, suporte ilimitado ou condição de domínio que o usuário não tenha confirmado.
+- Nunca inventar dados legais do prestador (nome, documento, endereço); falhar fechado se ausentes.
+- Não prometer "/admin", "CMS completo" ou "publicação 100% autônoma" se o Client CMS autenticado não estiver configurado para o projeto.
 - Nunca enviar contrato sem revisão e aprovação explícita do usuário.
