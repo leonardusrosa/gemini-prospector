@@ -115,6 +115,78 @@ def resolve_channels(lead: Dict[str, Any], config: Dict[str, Any], evo_status: O
     }
 
 
+def recommend_contract_delivery_channel(
+    lead: Dict[str, Any],
+    config: Dict[str, Any],
+    active_channel: Optional[str] = "whatsapp",
+    contract_pdf_path: Optional[str] = None,
+    evo_status: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Determina o canal recomendado para envio privado de contrato em PDF após acordo comercial.
+    Regra:
+      IF active conversation channel == WhatsApp AND Evolution document capability == supported:
+        recommended = WhatsApp
+      ELSE IF verified email available:
+        recommended = email
+      ELSE:
+        manual delivery required
+    """
+    ch_info = resolve_channels(lead, config, evo_status=evo_status)
+    slug = (lead.get("slug") or "cliente").strip()
+    country = ch_info.get("country", "BR")
+    is_pt = str(country).upper() == "PT"
+
+    wpp_number = ch_info.get("whatsappNumber")
+    masked_wpp = ch_info.get("whatsappMasked")
+    wpp_available = ch_info.get("whatsappAvailable", False)
+
+    # Capacidade de envio de documento suportada se EvolutionClient carregado e canal WhatsApp viável
+    evo_doc_supported = bool(EvolutionClient and (wpp_available or bool(wpp_number)))
+
+    email_available = ch_info.get("emailAvailable", False)
+    email_addr = ch_info.get("email")
+
+    caption_br = (
+        "Conforme combinamos, estou te enviando o contrato com o escopo, valor e prazo que alinhamos. "
+        "Dá uma conferida com calma e, se quiser ajustar algum dado ou ponto antes da assinatura, me avisa por aqui."
+    )
+    caption_pt = (
+        "Conforme combinado, envio em anexo o contrato com o âmbito, valor e prazo que alinhámos. "
+        "Pode analisar com calma e, caso pretenda ajustar algum dado antes da assinatura, disponha por aqui."
+    )
+    caption = caption_pt if is_pt else caption_br
+
+    filename = f"contrato-{slug}.pdf"
+
+    if (active_channel == "whatsapp" or active_channel is None) and evo_doc_supported and wpp_number:
+        recommended = "whatsapp"
+        reason = "WhatsApp ativo com suporte a envio direto de documento PDF via Evolution API."
+    elif email_available:
+        recommended = "email"
+        reason = "E-mail verificado disponível para entrega de anexo formal."
+    else:
+        recommended = "manual"
+        reason = "Nenhum canal automatizado com suporte a anexo disponível; entrega manual requerida."
+
+    return {
+        "recommendedChannel": recommended,
+        "reason": reason,
+        "channel": recommended,
+        "recipient": masked_wpp if recommended == "whatsapp" else (email_addr if recommended == "email" else "Manual"),
+        "whatsappNumber": wpp_number,
+        "whatsappMasked": masked_wpp,
+        "email": email_addr,
+        "attachment": filename,
+        "filePath": contract_pdf_path,
+        "caption": caption,
+        "country": country,
+        "requiresConfirmation": True,
+        "autoSend": False,
+        "documentCapability": "SUPPORTED" if evo_doc_supported else "UNSUPPORTED",
+    }
+
+
 SOCIAL_OR_DIRECTORY_DOMAINS = [
     "instagram.com", "facebook.com", "fb.com", "linktr.ee", "linktree.com",
     "wa.me", "api.whatsapp.com", "whatsapp.com", "google.com/maps", "maps.google.com",

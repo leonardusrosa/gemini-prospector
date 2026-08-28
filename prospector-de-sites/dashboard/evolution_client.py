@@ -6,6 +6,7 @@ Gerencia conectividade, autenticação por variável de ambiente e testes seguro
 NUNCA armazena ou expõe a API Key em logs, arquivos ou respostas da API local.
 """
 
+import base64
 import json
 import os
 import re
@@ -336,5 +337,144 @@ class EvolutionClient:
         return {
             "success": False,
             "instance": self.instance,
+            "error": full_err,
+        }
+
+    def build_document_payload(
+        self,
+        number: str,
+        file_path: str,
+        filename: Optional[str] = None,
+        caption: Optional[str] = None,
+        country: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Valida parâmetros e constrói o payload exato para envio de documento PDF,
+        sem realizar chamadas de rede.
+        """
+        clean_number, err = self.validate_phone_number(number, country=country)
+        if err:
+            raise ValueError(f"Telefone inválido para envio de documento: {err}")
+
+        if not file_path or not os.path.exists(file_path):
+            raise FileNotFoundError(f"Arquivo de contrato não encontrado: {file_path}")
+
+        if not os.path.isfile(file_path):
+            raise ValueError(f"O caminho especificado não é um arquivo: {file_path}")
+
+        size = os.path.getsize(file_path)
+        if size == 0:
+            raise ValueError("Arquivo de contrato vazio.")
+        if size > 50 * 1024 * 1024:
+            raise ValueError(f"Arquivo excede o limite de 50MB ({size} bytes).")
+
+        # Validação estrita de tipo PDF (extensão + magic bytes)
+        if not file_path.lower().endswith(".pdf"):
+            raise ValueError("Tipo de arquivo não permitido. Apenas arquivos com extensão .pdf são aceitos.")
+
+        with open(file_path, "rb") as f:
+            header = f.read(5)
+            if not header.startswith(b"%PDF-"):
+                raise ValueError("Conteúdo inválido. O arquivo não é um documento PDF válido.")
+            f.seek(0)
+            file_bytes = f.read()
+
+        b64_data = base64.b64encode(file_bytes).decode("utf-8")
+        doc_filename = filename or os.path.basename(file_path) or "contrato.pdf"
+
+        return {
+            "number": clean_number,
+            "mediatype": "document",
+            "mimetype": "application/pdf",
+            "caption": (caption or "").strip(),
+            "media": f"data:application/pdf;base64,{b64_data}",
+            "fileName": doc_filename,
+            "delay": 1200,
+        }
+
+    def send_document(
+        self,
+        number: str,
+        file_path: str,
+        filename: Optional[str] = None,
+        caption: Optional[str] = None,
+        confirmed: bool = False,
+        country: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Envia com segurança um documento PDF local via Evolution API (POST /message/sendMedia/:instance).
+        Exige confirmed=True para disparar a requisição real.
+        NUNCA armazena ou loga o conteúdo do arquivo, base64 ou chaves de API.
+        """
+        clean_number, phone_err = self.validate_phone_number(number, country=country)
+        masked_number = self.mask_phone_number(clean_number or number)
+        doc_filename = filename or (os.path.basename(file_path) if file_path else "contrato.pdf")
+
+        if not confirmed:
+            return {
+                "success": False,
+                "error": "Envio não confirmado. confirmed=True é obrigatório para disparar requisição.",
+                "numberNormalized": masked_number,
+                "fileName": doc_filename,
+                "dryRun": True,
+                "providerRequests": 0,
+            }
+
+        if not self.is_configured():
+            return {
+                "success": False,
+                "error": "Evolution API não está totalmente configurada (verifique Base URL, Instância e EVOLUTION_API_KEY).",
+                "numberNormalized": masked_number,
+                "fileName": doc_filename,
+            }
+
+        try:
+            payload = self.build_document_payload(
+                number=number,
+                file_path=file_path,
+                filename=filename,
+                caption=caption,
+                country=country,
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "numberNormalized": masked_number,
+                "fileName": doc_filename,
+            }
+
+        status, data, err_msg = self._make_request(
+            f"/message/sendMedia/{urllib.parse.quote(self.instance)}",
+            method="POST",
+            payload=payload,
+        )
+
+        if status in (200, 201) and isinstance(data, dict):
+            key_obj = data.get("key") if isinstance(data.get("key"), dict) else {}
+            msg_id = key_obj.get("id") or data.get("messageId") or data.get("id") or "enviado"
+            st_val = data.get("status") or "sent"
+
+            return {
+                "success": True,
+                "instance": self.instance,
+                "numberNormalized": masked_number,
+                "fileName": doc_filename,
+                "messageId": str(msg_id),
+                "status": str(st_val).lower(),
+            }
+
+        detail = ""
+        if isinstance(data, dict):
+            detail = data.get("message") or data.get("error") or ""
+            if isinstance(detail, list):
+                detail = ", ".join(str(x) for x in detail)
+
+        full_err = f"Falha HTTP {status}: {detail or err_msg or 'Erro desconhecido ao enviar documento'}"
+        return {
+            "success": False,
+            "instance": self.instance,
+            "numberNormalized": masked_number,
+            "fileName": doc_filename,
             "error": full_err,
         }
