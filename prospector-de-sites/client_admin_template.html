@@ -374,8 +374,8 @@
     document.getElementById('btn-save-draft').addEventListener('click', function() {
       var token = sessionStorage.getItem(tokenKey);
       try {
-        var doc = editorFrame.contentWindow.document;
-        var html = doc.documentElement.outerHTML;
+        var win = editorFrame.contentWindow;
+        var html = typeof win.cleanPublicDocument === 'function' ? win.cleanPublicDocument() : win.document.documentElement.outerHTML;
         fetch('/api/client-cms/draft', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
