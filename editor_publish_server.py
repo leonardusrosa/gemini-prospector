@@ -355,6 +355,16 @@ class PublishApp(SimpleHTTPRequestHandler):
                 "displayName": slug.replace("-", " ").title(),
             })
 
+        # Route 2.5: Client CMS Draft API (Load Draft)
+        if path == "/api/client-cms/draft":
+            slug = parse_qs(parsed.query).get("slug", [""])[0]
+            token = self._get_bearer_token()
+            ok, payload, err = self.config.auth_store.authorize_request(token, slug)
+            if not ok:
+                return self._json(401, {"success": False, "error": err})
+            draft_html = self.config.cms_service.load_draft(slug)
+            return self._json(200, {"success": True, "slug": slug, "hasDraft": draft_html is not None, "html": draft_html})
+
         # Route 3: Client CMS Audit API
         if path == "/api/client-cms/audit":
             slug = parse_qs(parsed.query).get("slug", [""])[0]
