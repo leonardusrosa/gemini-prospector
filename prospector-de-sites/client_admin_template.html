@@ -328,8 +328,8 @@
       loginView.style.display = 'none';
       workspaceView.style.display = 'flex';
       siteLabel.textContent = tenantInfo.displayName || slug;
-      // Load editor source into iframe with token in session
-      editorFrame.src = '/sites/' + encodeURIComponent(slug) + '/' + encodeURIComponent(slug) + '-editor.html';
+      var token = sessionStorage.getItem(tokenKey);
+      editorFrame.src = '/api/client-cms/editor-frame?slug=' + encodeURIComponent(slug) + '&token=' + encodeURIComponent(token);
     }
 
     loginForm.addEventListener('submit', function(e) {

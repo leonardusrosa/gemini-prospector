@@ -35,10 +35,12 @@ try:
     from client_cms_auth import TenantAuthStore
     from client_cms_audit import get_audit_history, log_audit_event
     from client_cms_service import ClientCmsService
+    from create_editor import EDITOR_LAYER, strip_existing_editor, tag_author_styles
 except ImportError:
     from .client_cms_auth import TenantAuthStore
     from .client_cms_audit import get_audit_history, log_audit_event
     from .client_cms_service import ClientCmsService
+    from .create_editor import EDITOR_LAYER, strip_existing_editor, tag_author_styles
 
 SCRIPT = pathlib.Path(__file__).resolve()
 if (SCRIPT.parent / "prospector-config.json").exists() or (SCRIPT.parent / "sites").exists():
@@ -339,6 +341,47 @@ class PublishApp(SimpleHTTPRequestHandler):
             if tpl_content:
                 return self._html(200, tpl_content)
             return self._json(404, {"error": "Admin template not found"})
+
+        # Route 1.5: Client Editor Frame endpoint (dynamic visual editor for tenant)
+        editor_frame_match = re.match(r"^/(?:api/client-cms/editor-frame|sites/([A-Za-z0-9._-]+)/[A-Za-z0-9._-]+-editor\.html)$", path)
+        if editor_frame_match or path == "/api/client-cms/editor-frame":
+            slug = parse_qs(parsed.query).get("slug", [""])[0]
+            if not slug and editor_frame_match and editor_frame_match.group(1):
+                slug = editor_frame_match.group(1)
+            token = self._get_bearer_token() or parse_qs(parsed.query).get("token", [""])[0]
+            
+            # Authorize request for slug
+            ok, payload, err = self.config.auth_store.authorize_request(token, slug)
+            if not ok:
+                return self._json(401, {"success": False, "error": err})
+
+            # Check draft first, then deploy repo HTML, then local sites HTML
+            draft_html = self.config.cms_service.load_draft(slug)
+            raw_html = None
+            if draft_html:
+                raw_html = draft_html
+            elif self.config.deploy_repo:
+                target = self.config.deploy_repo / self.config.base_path / slug / "index.html"
+                if target.exists():
+                    raw_html = target.read_text(encoding="utf-8")
+            if not raw_html:
+                local_site = self.config.root / "sites" / slug / f"{slug}.html"
+                if local_site.exists():
+                    raw_html = local_site.read_text(encoding="utf-8")
+
+            if not raw_html:
+                return self._json(404, {"error": f"Página do site para '{slug}' não encontrada."})
+
+            # Inject editor layer dynamically
+            clean_html = strip_existing_editor(raw_html)
+            clean_html = tag_author_styles(clean_html)
+            idx = clean_html.lower().rfind("</body>")
+            if idx != -1:
+                editor_page = clean_html[:idx] + EDITOR_LAYER + "\n" + clean_html[idx:]
+            else:
+                editor_page = clean_html + "\n" + EDITOR_LAYER
+
+            return self._html(200, editor_page)
 
         # Route 2: Client CMS Status API
         if path == "/api/client-cms/status":
