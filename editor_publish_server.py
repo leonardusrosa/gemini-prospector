@@ -432,13 +432,13 @@ class PublishApp(SimpleHTTPRequestHandler):
                 body = self._body()
                 slug = str(body.get("slug") or "").strip()
                 html = str(body.get("html") or "")
-                confirmed = bool(body.get("confirmed"))
-                if not confirmed:
-                    return self._json(400, {"success": False, "error": "Confirmação explícita é obrigatória."})
                 token = self._get_bearer_token()
                 ok, payload, err = self.config.auth_store.authorize_request(token, slug)
                 if not ok:
                     return self._json(401, {"success": False, "error": err})
+                confirmed = bool(body.get("confirmed"))
+                if not confirmed:
+                    return self._json(400, {"success": False, "error": "Confirmação explícita é obrigatória."})
                 res = self.config.cms_service.publish_content(
                     slug=slug,
                     html_content=html,
@@ -456,13 +456,13 @@ class PublishApp(SimpleHTTPRequestHandler):
             try:
                 body = self._body()
                 slug = str(body.get("slug") or "").strip()
-                confirmed = bool(body.get("confirmed"))
-                if not confirmed:
-                    return self._json(400, {"success": False, "error": "Confirmação explícita é obrigatória."})
                 token = self._get_bearer_token()
                 ok, payload, err = self.config.auth_store.authorize_request(token, slug)
                 if not ok:
                     return self._json(401, {"success": False, "error": err})
+                confirmed = bool(body.get("confirmed"))
+                if not confirmed:
+                    return self._json(400, {"success": False, "error": "Confirmação explícita é obrigatória."})
                 res = self.config.cms_service.rollback_content(
                     slug=slug,
                     actor=payload.get("actor", "tenant"),
