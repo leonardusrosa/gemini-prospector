@@ -98,11 +98,15 @@ def backup_version(root_dir: pathlib.Path, slug: str, source_path: pathlib.Path)
 def run_git(repo: pathlib.Path, args: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
     """Runs a git command inside the specified repository."""
     git_bin = shutil.which("git") or "git"
+    env = dict(os.environ)
+    if "HOME" not in env or not env["HOME"]:
+        env["HOME"] = "/home/ubuntu" if os.path.exists("/home/ubuntu") else str(pathlib.Path.home())
     return subprocess.run(
         [git_bin, "-C", str(repo), *args],
         text=True,
         capture_output=True,
         check=check,
+        env=env,
     )
 
 
@@ -130,7 +134,7 @@ class ClientCmsService:
         }
 
     def get_draft(self, slug: str) -> Optional[str]:
-        """Loads tenant draft if exists."""
+        """Retrieves an active draft for a tenant if present."""
         v_slug = validate_slug(slug)
         draft_file = self.root_dir / ".prospector-editor" / "drafts" / v_slug / f"{v_slug}.html"
         if draft_file.exists():
@@ -149,10 +153,7 @@ class ClientCmsService:
         remote: str = "origin",
         branch: str = "main",
     ) -> Dict[str, Any]:
-        """
-        Publishes tenant content atomically to Git deploy repository.
-        Creates backup, stages ONLY the tenant index.html, commits and pushes.
-        """
+        """Publishes validated HTML to the deploy repository, commits, and pushes to remote."""
         v_slug = validate_slug(slug)
         html_content = sanitize_html(html_content)
         validate_html(html_content)
@@ -196,7 +197,15 @@ class ClientCmsService:
 
         # Commit
         commit_msg = f"Client publish: {v_slug}"
-        run_git(self.deploy_repo, ["commit", "-m", commit_msg])
+        commit_res = run_git(self.deploy_repo, ["commit", "-m", commit_msg], check=False)
+        if commit_res.returncode != 0:
+            err_msg = (commit_res.stderr or commit_res.stdout or "Falha ao criar commit Git").strip()
+            log_audit_event(self.root_dir, v_slug, actor, "publish", status="commit_failed", details={"error": err_msg})
+            return {
+                "success": False,
+                "status": "commit_failed",
+                "error": err_msg,
+            }
         commit_sha = run_git(self.deploy_repo, ["rev-parse", "HEAD"]).stdout.strip()
 
         # Push
