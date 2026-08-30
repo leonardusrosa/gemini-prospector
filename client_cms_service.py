@@ -182,7 +182,15 @@ class ClientCmsService:
         atomic_write(target_path, html_content)
 
         # Stage only this tenant's index.html
-        run_git(self.deploy_repo, ["add", "--", rel_path.as_posix()])
+        add_res = run_git(self.deploy_repo, ["add", "--", rel_path.as_posix()], check=False)
+        if add_res.returncode != 0:
+            err_msg = (add_res.stderr or add_res.stdout or "Falha ao preparar arquivos no Git").strip()
+            log_audit_event(self.root_dir, v_slug, actor, "publish", status="stage_failed", details={"error": err_msg})
+            return {
+                "success": False,
+                "status": "stage_failed",
+                "error": err_msg,
+            }
 
         # Check if diff exists
         diff_check = run_git(self.deploy_repo, ["diff", "--cached", "--quiet", "--", rel_path.as_posix()], check=False)
