@@ -579,6 +579,8 @@ class PublishApp(SimpleHTTPRequestHandler):
                 code = 200 if res.get("success") else 502
                 return self._json(code, res)
             except Exception as exc:
+                traceback.print_exc()
+                sys.stdout.flush()
                 return self._json(500, {"success": False, "error": str(exc)})
 
         # Route D: Client CMS Rollback
@@ -602,6 +604,8 @@ class PublishApp(SimpleHTTPRequestHandler):
                 code = 200 if res.get("success") else 502
                 return self._json(code, res)
             except Exception as exc:
+                traceback.print_exc()
+                sys.stdout.flush()
                 return self._json(500, {"success": False, "error": str(exc)})
 
         # Legacy routes: /api/editor/draft and /api/editor/publish
