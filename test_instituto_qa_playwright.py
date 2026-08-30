@@ -88,7 +88,35 @@ async def run_qa():
         print("Mobile layout verified.")
 
         await browser.close()
-        print("[PASS] All QA checks passed successfully!")
+        print("[PASS] Local site QA checks passed successfully!")
+
+        # Live Vercel QA
+        live_browser = await p.chromium.launch(headless=True)
+        live_page = await live_browser.new_page(viewport={"width": 1440, "height": 900})
+        await live_page.goto("https://prospector-sites-beta.vercel.app/clientes/instituto-ferreira-odontologia-rio-claro/", wait_until="networkidle")
+        live_section = live_page.locator("#avaliacoes")
+        assert await live_section.is_visible()
+        live_title = await live_section.locator("h2.section-title").text_content()
+        assert live_title.strip() == "O que nossos pacientes dizem"
+        live_meta = await live_section.locator(".aggregate-meta").text_content()
+        assert live_meta.strip() == "36 avaliações"
+        assert "Google" not in live_meta
+
+        live_cards = live_section.locator(".review-card")
+        assert await live_cards.count() == 5
+        for i in range(5):
+            t = await live_cards.nth(i).evaluate("el => el.innerText")
+            assert "Google" not in t
+
+        live_mobile = await live_browser.new_page(viewport={"width": 390, "height": 844})
+        await live_mobile.goto("https://prospector-sites-beta.vercel.app/clientes/instituto-ferreira-odontologia-rio-claro/", wait_until="networkidle")
+        live_m_section = live_mobile.locator("#avaliacoes")
+        assert await live_m_section.is_visible()
+        live_drawer = live_mobile.locator("#mobileDrawer a[href='#avaliacoes']")
+        assert (await live_drawer.text_content()).strip() == "Avaliações"
+
+        await live_browser.close()
+        print("[PASS] Live Vercel Production QA passed successfully!")
 
 if __name__ == "__main__":
     asyncio.run(run_qa())
