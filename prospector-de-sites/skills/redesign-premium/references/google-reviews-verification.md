@@ -1,0 +1,210 @@
+# Google Reviews Verification Protocol
+
+Use este protocolo em TODO redesign/novo site quando existir um Google Business Profile / Google Maps plausível para o lead.
+
+Objetivo: eliminar leituras ambíguas, evitar dados stale do CRM e impedir que avaliações reais sejam silenciosamente omitidas por falha de coleta.
+
+## 1. Identidade do perfil antes de ler qualquer número
+
+Antes de aceitar nota, quantidade ou texto de review, confirme que a tela/painel pertence ao perfil correto.
+
+A evidência deve combinar, na medida em que estiver disponível:
+
+- nome exibido no Google
+- endereço/cidade
+- telefone/site oficial
+- URL canônica do Google Maps / Google Business Profile
+- `place_id`, `cid` ou outro identificador estável quando acessível
+
+Não misture dados de unidades, profissionais, clínicas homônimas ou perfis antigos.
+
+### Regra de identidade
+
+`rating`, `reviewCount` e os reviews selecionados DEVEM vir do mesmo perfil identificado.
+
+Se houver dúvida sobre qual perfil é o correto, marque `PROFILE_CONFLICT` e pare a coleta. Não use o CRM para desempatar automaticamente.
+
+## 2. Fonte atual vence cache
+
+Para página pública, a leitura do Google feita durante a pesquisa atual tem precedência sobre:
+
+- valores antigos do CRM
+- snippets de buscas antigas
+- screenshots anteriores
+- caches locais
+- dados salvos de outro passe
+
+O CRM pode ajudar a localizar o perfil, mas NÃO é fonte canônica de nota/quantidade para renderização pública.
+
+Sempre registre `collectedAt`.
+
+Se o usuário verificar explicitamente a leitura live do perfil correto, essa confirmação pode validar o aggregate atual. Ela não autoriza inventar ou reconstruir textos individuais de reviews.
+
+## 3. Leitura inequívoca do aggregate
+
+No mesmo perfil, capture explicitamente:
+
+- `aggregateRating`
+- `reviewCount`
+- nome do perfil
+- URL/identificador do perfil
+- timestamp da coleta
+
+Não derive `reviewCount` somando páginas, snippets ou resultados de busca.
+
+Não use um número de avaliações de um snippet e a nota de outro painel.
+
+Exemplo de evidência:
+
+```json
+{
+  "profileName": "Instituto Ferreira Odontologia e Harmonização Orofacial",
+  "profileUrl": "<google-maps-url>",
+  "placeIdOrCid": "<quando disponível>",
+  "aggregateRating": 5.0,
+  "reviewCount": 36,
+  "collectedAt": "2026-08-30T...",
+  "aggregateEvidence": "live-google-profile"
+}
+```
+
+## 4. Coleta obrigatória de reviews para o carrossel
+
+Se o perfil correto possui múltiplas avaliações textuais positivas, coletar no mínimo **3 reviews utilizáveis**, com alvo de **4 a 6** para o carrossel.
+
+Para cada review, preservar:
+
+- nome público do avaliador
+- estrelas daquele review
+- texto verbatim
+- data ou label temporal exatamente como o Google disponibiliza
+- vínculo com o mesmo perfil verificado
+
+Preferir reviews:
+
+- específicos e informativos
+- com texto suficiente para transmitir experiência real
+- relevantes ao serviço/experiência do negócio
+- sem depender de informação sensível desnecessária
+
+Não selecionar apenas reviews porque são curtos e convenientes.
+
+## 5. Ordem de tentativa de coleta
+
+Quando reviews existem, não omita o carrossel na primeira dificuldade técnica. Tente, nesta ordem:
+
+1. perfil Google Maps/GBP live no navegador e painel de avaliações;
+2. rota/visualização alternativa do mesmo perfil Google;
+3. outra forma de leitura live do MESMO perfil que preserve autoria, estrelas e texto;
+4. evidência fornecida pelo usuário, como screenshots/cópia do painel do Google, validada contra o mesmo perfil.
+
+Nunca substituir Google Reviews por depoimentos inventados, agregadores desconhecidos ou conteúdo de outro perfil.
+
+## 6. Estados de verificação
+
+### `VERIFIED_STRONG`
+
+Exige:
+
+- identidade inequívoca do perfil;
+- aggregate atual verificado;
+- pelo menos 3 reviews textuais positivos verificáveis do mesmo perfil.
+
+Resultado: **carrossel obrigatório**.
+
+### `VERIFIED_AGGREGATE_ONLY`
+
+Identidade + nota + quantidade estão confirmadas, mas ainda não há pelo menos 3 textos individuais verificáveis.
+
+Se o perfil possui múltiplas avaliações textuais visíveis, isto é um **bloqueador de coleta**, não justificativa para omitir silenciosamente o carrossel.
+
+Resultado: QA de Google Reviews NÃO pode ser marcado como concluído até resolver a coleta ou registrar uma limitação externa real e explícita para revisão humana.
+
+### `PROFILE_CONFLICT`
+
+Há conflito de identidade entre fontes/perfis.
+
+Resultado: não publicar aggregate nem reviews até resolver o perfil correto.
+
+### `NO_USABLE_REVIEWS`
+
+Perfil correto foi verificado, mas não há reviews textuais utilizáveis suficientes para carrossel.
+
+Resultado: não inventar slides. Uma ou duas avaliações reais podem aparecer em formato estático, se úteis.
+
+## 7. Conflitos entre números
+
+Exemplo:
+
+- CRM: 4,9 / 45
+- Google live no perfil correto: 5,0 / 36
+
+Não faça média, não escolha o maior e não preserve o CRM por conveniência.
+
+Se a identidade do perfil live estiver inequívoca, a leitura live atual é a fonte pública canônica. Registre o conflito internamente e use o valor live.
+
+## 8. Evidência local obrigatória
+
+Durante a pesquisa, salvar um artefato interno, fora do deploy público, por exemplo:
+
+`sites/[slug]/research/google-reviews-evidence.json`
+
+Estrutura recomendada:
+
+```json
+{
+  "status": "VERIFIED_STRONG",
+  "profileName": "...",
+  "profileUrl": "...",
+  "placeIdOrCid": "...",
+  "aggregateRating": 5.0,
+  "reviewCount": 36,
+  "collectedAt": "...",
+  "reviews": [
+    {
+      "author": "...",
+      "rating": 5,
+      "text": "...",
+      "dateLabel": "..."
+    }
+  ]
+}
+```
+
+Não copie screenshot/evidência privada desnecessária para o bundle público.
+
+## 9. Build gate
+
+Antes do design final, declarar:
+
+```text
+GOOGLE PROFILE IDENTIFIED: PASS/FAIL
+AGGREGATE CURRENTLY VERIFIED: PASS/FAIL
+AGGREGATE RATING: <valor>
+REVIEW COUNT: <valor>
+VERIFIED TEXT REVIEWS: <n>
+GOOGLE REVIEWS STATUS: VERIFIED_STRONG / VERIFIED_AGGREGATE_ONLY / PROFILE_CONFLICT / NO_USABLE_REVIEWS
+CAROUSEL REQUIRED: YES/NO
+```
+
+Se `VERIFIED_STRONG` e houver pelo menos 3 reviews:
+
+`CAROUSEL REQUIRED = YES`
+
+O site não passa o Site Core Rule QA sem o carrossel.
+
+## 10. Renderização
+
+Quando o carrossel for obrigatório:
+
+- usar os textos fiéis coletados;
+- não simular widget oficial do Google;
+- mostrar origem Google de forma factual;
+- aggregate `X,X` e `N avaliações` somente se o mesmo evidence record estiver atual/verificado;
+- estrelas individuais refletem o review individual;
+- truncamento deve ser fiel e não mudar o sentido;
+- responsivo, teclado, swipe/touch e reduced-motion conforme Website Core Rules.
+
+## 11. Não confundir prova social com cold outreach
+
+A confirmação de rating/review count para a página não significa que esses números devam ser colocados automaticamente no primeiro WhatsApp frio. As regras de outreach continuam independentes e podem proibir números stale ou desnecessários no cold contact.
