@@ -37,11 +37,33 @@ async def run_qa():
         assert meta.strip() == "36 avaliações"
         assert "Google" not in meta
 
-        # 3. Review Cards
+        # 3. Review Cards & Intrinsic Height Verification
         cards = section.locator(".review-card")
         card_count = await cards.count()
         print(f"Total review cards: {card_count}")
         assert card_count == 5
+
+        # Check track and slide alignment
+        track_align = await page.eval_on_selector(".reviews-track", "el => getComputedStyle(el).alignItems")
+        slide_align = await page.eval_on_selector(".review-slide", "el => getComputedStyle(el).alignSelf")
+        assert track_align == "flex-start", f"Track alignItems must be flex-start, got {track_align}"
+        assert slide_align == "flex-start", f"Slide alignSelf must be flex-start, got {slide_align}"
+
+        # Heights must be intrinsic: Kelly (long) > Milena (medium) > Rosilene (short)
+        h1 = await cards.nth(0).evaluate("el => el.getBoundingClientRect().height")
+        h2 = await cards.nth(1).evaluate("el => el.getBoundingClientRect().height")
+        h3 = await cards.nth(2).evaluate("el => el.getBoundingClientRect().height")
+        print(f"Card heights: Kelly={h1:.1f}px, Milena={h2:.1f}px, Rosilene={h3:.1f}px")
+        assert h1 > h2 > h3, f"Expected intrinsic heights h1({h1}) > h2({h2}) > h3({h3})"
+
+        # Gaps must be natural (no large artificial empty area)
+        for i in range(3):
+            gap = await cards.nth(i).evaluate("""el => {
+                const textEl = el.querySelector('.review-text');
+                const footerEl = el.querySelector('.review-footer');
+                return footerEl.getBoundingClientRect().top - textEl.getBoundingClientRect().bottom;
+            }""")
+            assert gap <= 40, f"Card {i+1} has artificial blank area: {gap:.1f}px"
 
         for i in range(card_count):
             card = cards.nth(i)
