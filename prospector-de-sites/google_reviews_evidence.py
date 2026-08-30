@@ -10,6 +10,7 @@ review carousel.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -131,6 +132,63 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
     return EvidenceResult(NO_USABLE_REVIEWS, False, [], warnings, len(verified_reviews))
 
 
+FORBIDDEN_VISIBLE_PATTERNS = [
+    r"\bGoogle\s+Reviews\b",
+    r"\bAvaliações\s+(?:no|do|de|da)?\s*Google\b",
+    r"\bAvaliações\s+Google\b",
+    r"\bO\s+que\s+dizem\s+no\s+Google\b",
+    r"\bGoogle\s+Meu\s+Negócio\b",
+    r"\bGoogle\s+Business\s+Profile\b",
+    r"\bVeja\s+nossas\s+avaliações\s+no\s+Google\b",
+]
+
+
+def extract_reviews_section(html: str) -> str:
+    """Extracts reviews section HTML if present."""
+    m = re.search(r'(<section\b[^>]*(?:reviews-section|id=["\']avaliacoes["\'])[^>]*>.*?</section>)', html, re.DOTALL | re.IGNORECASE)
+    if m:
+        return m.group(1)
+    return html
+
+
+def extract_visible_text(html_snippet: str) -> str:
+    """Extracts visible text while stripping comments, script, style, SVG and tag markup."""
+    # Strip HTML comments
+    s = re.sub(r'<!--.*?-->', ' ', html_snippet, flags=re.DOTALL)
+    # Strip scripts & styles
+    s = re.sub(r'<(?:script|style)\b[^>]*>.*?</(?:script|style)>', ' ', s, flags=re.DOTALL | re.IGNORECASE)
+    # Strip SVGs completely (provenance logos, icons, paths)
+    s = re.sub(r'<svg\b[^>]*>.*?</svg>', ' ', s, flags=re.DOTALL | re.IGNORECASE)
+    # Extract aria-labels that might contain branded copy
+    aria_matches = re.findall(r'aria-label=["\']([^"\']+)["\']', s, flags=re.IGNORECASE)
+    # Strip all HTML tags
+    clean_text = re.sub(r'<[^>]+>', ' ', s)
+    # Combine text and aria-labels
+    all_text = clean_text + ' ' + ' '.join(aria_matches)
+    return re.sub(r'\s+', ' ', all_text).strip()
+
+
+def validate_reviews_public_copy(html: str) -> List[str]:
+    """Validates that public visible review copy does not contain forbidden branded patterns."""
+    violations: List[str] = []
+    # 1. Check reviews section visible text
+    section = extract_reviews_section(html)
+    visible_section = extract_visible_text(section)
+    for pattern in FORBIDDEN_VISIBLE_PATTERNS:
+        if re.search(pattern, visible_section, re.IGNORECASE):
+            violations.append(f"Forbidden visible review copy matched pattern: {pattern}")
+
+    # 2. Check navigation links pointing to #avaliacoes
+    nav_links = re.findall(r'<a\b[^>]*href=["\']#avaliacoes["\'][^>]*>(.*?)</a>', html, flags=re.DOTALL | re.IGNORECASE)
+    for link_html in nav_links:
+        link_text = extract_visible_text(link_html)
+        for pattern in FORBIDDEN_VISIBLE_PATTERNS:
+            if re.search(pattern, link_text, re.IGNORECASE):
+                violations.append(f"Forbidden navigation label pointing to reviews: '{link_text}'")
+
+    return violations
+
+
 def load_and_validate(path: str | Path, minimum_reviews: int = 3) -> EvidenceResult:
     p = Path(path)
     if not p.is_file():
@@ -154,8 +212,9 @@ def qa_lines(result: EvidenceResult) -> List[str]:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Validate Prospector Google Reviews evidence JSON.")
+    parser = argparse.ArgumentParser(description="Validate Prospector Google Reviews evidence JSON and public HTML.")
     parser.add_argument("evidence")
+    parser.add_argument("--html", default="", help="Optional HTML file path to validate public copy neutrality.")
     parser.add_argument("--minimum-reviews", type=int, default=3)
     args = parser.parse_args()
 
@@ -167,4 +226,16 @@ if __name__ == "__main__":
     for error in result.errors:
         print(f"ERROR: {error}")
 
-    raise SystemExit(0 if (result.pass_for_carousel or result.status == NO_USABLE_REVIEWS) else 2)
+    html_ok = True
+    if args.html:
+        html_path = Path(args.html)
+        if html_path.is_file():
+            html_violations = validate_reviews_public_copy(html_path.read_text(encoding="utf-8"))
+            if html_violations:
+                html_ok = False
+                for v in html_violations:
+                    print(f"ERROR [PUBLIC_SOURCE_NEUTRALITY]: {v}")
+            else:
+                print("PUBLIC SOURCE NEUTRALITY: PASS")
+
+    raise SystemExit(0 if ((result.pass_for_carousel or result.status == NO_USABLE_REVIEWS) and html_ok) else 2)
