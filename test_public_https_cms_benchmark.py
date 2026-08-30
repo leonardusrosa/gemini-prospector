@@ -376,6 +376,41 @@ async def run_public_cms_validation():
         assert not token_after, "Session token must be deleted from sessionStorage after logout"
         print("  [PASS] Logout successfully invalidated local session and restored login card.")
 
+        # -------------------------------------------------------------
+        # Step 8: Strict 4-Location QA Artifact Hygiene Verification
+        # -------------------------------------------------------------
+        print("\n--- [Step 8] Strict 4-Location QA Artifact Hygiene Verification ---")
+        # 1. Draft Storage
+        _, _, _, draft_check = https_request(f"/api/client-cms/draft?slug={SLUG}", headers=auth_hdr)
+        assert TEMP_EDIT_TEXT not in (draft_check.get("html") or ""), f"QA text leaked in draft storage: {TEMP_EDIT_TEXT}"
+        print("  [PASS] 1. Draft storage confirmed clean of QA artifacts.")
+
+        # 2. Deploy Repo / Live Editor Frame
+        _, _, frame_check_html, _ = https_request(f"/api/client-cms/editor-frame?slug={SLUG}&source=live", headers=auth_hdr)
+        assert TEMP_EDIT_TEXT not in frame_check_html, f"QA text leaked in deploy repo HTML: {TEMP_EDIT_TEXT}"
+        print("  [PASS] 2. Deploy repo HTML confirmed clean of QA artifacts.")
+
+        # 3. Public Vercel
+        clean_req = urllib.request.Request(f"{PUBLIC_SITE_URL}?nocache={int(time.time())}", headers={"User-Agent": "Mozilla/5.0", "Cache-Control": "no-cache"})
+        with urllib.request.urlopen(clean_req, context=ctx, timeout=15) as resp:
+            clean_vercel_html = resp.read().decode("utf-8")
+        assert TEMP_EDIT_TEXT not in clean_vercel_html, f"QA text leaked in public Vercel: {TEMP_EDIT_TEXT}"
+        print("  [PASS] 3. Public Vercel HTML confirmed clean of QA artifacts.")
+
+        # 4. Admin Iframe (Fresh Session)
+        fresh_page = await browser.new_page(viewport={"width": 1440, "height": 900})
+        await fresh_page.goto(ADMIN_URL, wait_until="networkidle")
+        await fresh_page.fill("#cms-username", OPERATOR_USER)
+        await fresh_page.fill("#cms-password", OPERATOR_PASS)
+        await fresh_page.click("#cms-login-submit")
+        await fresh_page.wait_for_selector("#cms-workspace-view", state="visible", timeout=15000)
+        fresh_frame = fresh_page.frame_locator("#cms-editor-frame")
+        await fresh_frame.locator("h1.hero-headline").wait_for(state="visible", timeout=15000)
+        fresh_headline = await fresh_frame.locator("h1.hero-headline").inner_text()
+        assert TEMP_EDIT_TEXT not in fresh_headline, f"QA text leaked in fresh admin iframe: {fresh_headline}"
+        print(f"  [PASS] 4. Fresh admin iframe confirmed clean of QA artifacts (rendered '{fresh_headline.strip()}').")
+        await fresh_page.close()
+
         await browser.close()
 
     print("\n" + "=" * 70)
