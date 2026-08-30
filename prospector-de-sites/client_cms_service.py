@@ -34,7 +34,9 @@ def validate_slug(slug: str) -> str:
 
 
 def sanitize_html(html: str) -> str:
-    """Removes darkreader proxies and temporary runtime styles before saving/publishing."""
+    """Removes darkreader proxies, editor-only base tag, and temporary runtime styles before saving/publishing."""
+    html = re.sub(r'<base\b[^>]*\bdata-pe-ui="true"[^>]*>\s*', "", html, flags=re.IGNORECASE)
+    html = re.sub(r'<base\b[^>]*\bdata-pe-ui=\'[^\']*\'[^>]*>\s*', "", html, flags=re.IGNORECASE)
     html = re.sub(r'\s+data-darkreader-[a-zA-Z0-9\-_]+(="[^"]*"|=\'[^\']*\'|=[^\s>]+)?', "", html)
     html = re.sub(r'\s+data-darkreader-proxy-injected="true"', "", html)
     html = re.sub(r'\s+data-pe-author-style="[^"]*"', "", html)
@@ -113,6 +115,7 @@ class ClientCmsService:
     def save_draft(self, slug: str, html_content: str, actor: str) -> Dict[str, Any]:
         """Saves an isolated draft for a tenant."""
         v_slug = validate_slug(slug)
+        html_content = sanitize_html(html_content)
         validate_html(html_content)
 
         draft_file = self.root_dir / ".prospector-editor" / "drafts" / v_slug / f"{v_slug}.html"
@@ -151,6 +154,7 @@ class ClientCmsService:
         Creates backup, stages ONLY the tenant index.html, commits and pushes.
         """
         v_slug = validate_slug(slug)
+        html_content = sanitize_html(html_content)
         validate_html(html_content)
 
         if not self.deploy_repo or not self.deploy_repo.exists():
