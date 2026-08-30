@@ -343,11 +343,8 @@ class PublishApp(SimpleHTTPRequestHandler):
             return self._json(404, {"error": "Admin template not found"})
 
         # Route 1.5: Client Editor Frame endpoint (dynamic visual editor for tenant)
-        editor_frame_match = re.match(r"^/(?:api/client-cms/editor-frame|sites/([A-Za-z0-9._-]+)/[A-Za-z0-9._-]+-editor\.html)$", path)
-        if editor_frame_match or path == "/api/client-cms/editor-frame":
+        if path == "/api/client-cms/editor-frame":
             slug = parse_qs(parsed.query).get("slug", [""])[0]
-            if not slug and editor_frame_match and editor_frame_match.group(1):
-                slug = editor_frame_match.group(1)
             token = self._get_bearer_token() or parse_qs(parsed.query).get("token", [""])[0]
             
             # Authorize request for slug

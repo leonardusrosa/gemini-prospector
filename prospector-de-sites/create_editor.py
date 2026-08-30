@@ -383,8 +383,12 @@ function cleanDocument(){
       setTimeout(function(){try{window.ScrollTrigger.refresh()}catch(e){}},50);
     }
   }catch(e){}
-  return'<!DOCTYPE html>\n'+doc.outerHTML;
+  var html='<!DOCTYPE html>\n'+doc.outerHTML;
+  html=html.replace(/<!--\s*PROSPECTOR-(?:EDITOR|PUBLISH)-(?:START|END)\s*-->/gi,'');
+  return html;
 }
+window.cleanDocument = cleanDocument;
+window.cleanPublicDocument = cleanDocument;
 $('#pe-export').addEventListener('click',function(){
   var blob=new Blob([cleanDocument()],{type:'text/html;charset=utf-8'}),a=document.createElement('a');
   a.href=URL.createObjectURL(blob);a.download=(document.documentElement.getAttribute('data-pe-export-name')||'index.html');a.click();

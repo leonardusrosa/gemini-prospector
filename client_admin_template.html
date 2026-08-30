@@ -371,11 +371,17 @@
       showLogin('Você saiu do painel com sucesso.');
     });
 
+    function getCleanHtml() {
+      var win = editorFrame.contentWindow;
+      if (!win) return '';
+      var raw = typeof win.cleanPublicDocument === 'function' ? win.cleanPublicDocument() : (typeof win.cleanDocument === 'function' ? win.cleanDocument() : '<!DOCTYPE html>\n' + win.document.documentElement.outerHTML);
+      return raw.replace(/<!--\s*PROSPECTOR-(?:EDITOR|PUBLISH)-(?:START|END)\s*-->/gi, '');
+    }
+
     document.getElementById('btn-save-draft').addEventListener('click', function() {
       var token = sessionStorage.getItem(tokenKey);
       try {
-        var win = editorFrame.contentWindow;
-        var html = typeof win.cleanPublicDocument === 'function' ? win.cleanPublicDocument() : win.document.documentElement.outerHTML;
+        var html = getCleanHtml();
         fetch('/api/client-cms/draft', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -395,8 +401,7 @@
       if (!confirm('Deseja publicar as alterações diretamente no site no ar?')) return;
       var token = sessionStorage.getItem(tokenKey);
       try {
-        var win = editorFrame.contentWindow;
-        var html = typeof win.cleanPublicDocument === 'function' ? win.cleanPublicDocument() : win.document.documentElement.outerHTML;
+        var html = getCleanHtml();
         showToast('Publicando alterações...', 'success', 10000);
         fetch('/api/client-cms/publish', {
           method: 'POST',

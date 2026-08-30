@@ -14,20 +14,19 @@ PUBLISH_PATCHER = ROOT / "prospector-de-sites" / "editor_publish_patch.py"
 if not SCRIPT.exists():
     raise SystemExit(f"Editor generator not found: {SCRIPT}")
 
-# Resolve the editor output before running the canonical generator so we can apply
-# post-generation compatibility/features without changing the public source HTML.
-args = sys.argv[1:]
-source = Path(args[0]) if args else None
-output = None
-if source:
-    for i, arg in enumerate(args[1:], start=1):
-        if arg in {"--output", "-o"} and i + 1 < len(args):
-            output = Path(args[i + 1])
-            break
-    if output is None:
-        output = source if source.stem.endswith("-editor") else source.with_name(source.stem + "-editor" + source.suffix)
+def load_canonical_module():
+    spec = importlib.util.spec_from_file_location("canonical_create_editor", SCRIPT)
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"Could not load canonical editor generator: {SCRIPT}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
-runpy.run_path(str(SCRIPT), run_name="__main__")
+
+_canonical = load_canonical_module()
+EDITOR_LAYER = getattr(_canonical, "EDITOR_LAYER", "")
+strip_existing_editor = getattr(_canonical, "strip_existing_editor", lambda h: h)
+tag_author_styles = getattr(_canonical, "tag_author_styles", lambda h: h)
 
 
 def load_patch(path: Path, name: str):
@@ -39,12 +38,31 @@ def load_patch(path: Path, name: str):
     return module
 
 
-if output and output.exists() and BRAND_PATCHER.exists():
-    module = load_patch(BRAND_PATCHER, "prospector_editor_brand_patch")
-    module.patch_editor(output)
-    print(f"Logo/brand media editing enabled in: {output}")
+def main():
+    args = sys.argv[1:]
+    source = Path(args[0]) if args else None
+    output = None
+    if source:
+        for i, arg in enumerate(args[1:], start=1):
+            if arg in {"--output", "-o"} and i + 1 < len(args):
+                output = Path(args[i + 1])
+                break
+        if output is None:
+            output = source if source.stem.endswith("-editor") else source.with_name(source.stem + "-editor" + source.suffix)
 
-if output and output.exists() and source and PUBLISH_PATCHER.exists():
-    module = load_patch(PUBLISH_PATCHER, "prospector_editor_publish_patch")
-    module.patch_editor(output, source)
-    print(f"Draft/publish workflow enabled in: {output}")
+    runpy.run_path(str(SCRIPT), run_name="__main__")
+
+    if output and output.exists() and BRAND_PATCHER.exists():
+        module = load_patch(BRAND_PATCHER, "prospector_editor_brand_patch")
+        module.patch_editor(output)
+        print(f"Logo/brand media editing enabled in: {output}")
+
+    if output and output.exists() and source and PUBLISH_PATCHER.exists():
+        module = load_patch(PUBLISH_PATCHER, "prospector_editor_publish_patch")
+        module.patch_editor(output, source)
+        print(f"Draft/publish workflow enabled in: {output}")
+
+
+if __name__ == "__main__":
+    main()
+
