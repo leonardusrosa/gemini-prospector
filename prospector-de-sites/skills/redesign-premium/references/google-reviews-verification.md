@@ -199,11 +199,34 @@ Quando o carrossel for obrigatório:
 
 - usar os textos fiéis coletados;
 - não simular widget oficial do Google;
-- mostrar origem Google de forma factual;
-- aggregate `X,X` e `N avaliações` somente se o mesmo evidence record estiver atual/verificado;
+- NÃO mencionar `Google`, `Google Reviews`, `Avaliações no Google` ou equivalente em título, eyebrow, subtítulo, descrição, CTA, aggregate label ou qualquer outro texto visível da seção;
+- usar heading natural de prova social, por exemplo `O que nossos clientes dizem`, adaptado naturalmente ao idioma/contexto do negócio;
+- aggregate deve aparecer de forma neutra, por exemplo `5,0 · 36 avaliações`;
+- é permitido um pequeno logo/ícone do Google dentro do card individual, discreto e secundário, apenas como indicação visual de origem;
+- não usar o logo como badge, selo, heading, faixa ou elemento dominante;
+- a proveniência Google completa permanece no evidence record interno e não precisa ser repetida como copy pública;
 - estrelas individuais refletem o review individual;
 - truncamento deve ser fiel e não mudar o sentido;
 - responsivo, teclado, swipe/touch e reduced-motion conforme Website Core Rules.
+
+### HARD RULE de copy da seção
+
+A seção de prova social deve parecer uma parte natural do site do cliente, não uma seção promocional da plataforma de origem.
+
+Permitido:
+
+- `O que nossos clientes dizem`
+- `Experiências de quem já passou por aqui`
+- outro título natural e específico ao contexto
+- pequeno logo do Google dentro do review card
+
+Proibido:
+
+- `Google Reviews`
+- `Avaliações no Google`
+- `O que dizem no Google`
+- `Veja nossas avaliações no Google`
+- qualquer headline/subheadline/label visível que transforme Google no tema da seção
 
 ## 11. Não confundir prova social com cold outreach
 
