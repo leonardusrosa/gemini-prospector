@@ -178,9 +178,25 @@ def _run_git(repo: pathlib.Path, args: list[str], check: bool = True) -> subproc
     )
 
 
+def _get_git_version(root: pathlib.Path) -> str:
+    try:
+        res = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip()
+    except Exception:
+        pass
+    return "unknown"
+
+
 class PublishConfig:
     def __init__(self, args: argparse.Namespace):
         self.root = pathlib.Path(args.root).expanduser().resolve()
+        self.code_version = _get_git_version(self.root)
         cfg = _find_config(self.root)
         deploy = cfg.get("deploy", {}) if isinstance(cfg.get("deploy"), dict) else {}
 
@@ -266,6 +282,8 @@ class PublishApp(SimpleHTTPRequestHandler):
         self.send_header("X-Frame-Options", "SAMEORIGIN")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+        if getattr(self.config, "code_version", None):
+            self.send_header("X-Prospector-CMS-Version", self.config.code_version)
 
     def _json(self, code: int, obj: dict) -> None:
         data = json.dumps(obj, ensure_ascii=False).encode("utf-8")
@@ -395,13 +413,14 @@ class PublishApp(SimpleHTTPRequestHandler):
             token = self._get_bearer_token()
             ok, payload, err = self.config.auth_store.authorize_request(token, slug)
             if not ok:
-                return self._json(401, {"success": False, "authorized": False, "error": err})
+                return self._json(401, {"success": False, "authorized": False, "error": err, "codeVersion": self.config.code_version})
             return self._json(200, {
                 "success": True,
                 "authorized": True,
                 "slug": slug,
                 "actor": payload.get("actor"),
                 "displayName": slug.replace("-", " ").title(),
+                "codeVersion": self.config.code_version,
             })
 
         # Route 2.5: Client CMS Draft API (Load Draft)
