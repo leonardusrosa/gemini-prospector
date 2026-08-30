@@ -278,5 +278,9 @@ class ClientCmsService:
             log_audit_event(self.root_dir, v_slug, actor, "rollback", commit_sha=res.get("commit"), status="rolled_back", details={"restoredFrom": latest_backup.name})
             res["status"] = "rolled_back"
             res["restoredBackup"] = latest_backup.name
+            try:
+                latest_backup.unlink(missing_ok=True)
+            except Exception:
+                pass
 
         return res
