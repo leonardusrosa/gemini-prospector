@@ -87,6 +87,21 @@ Na UI pública da seção de avaliações:
 
 Esta regra é HARD RULE e vale para todos os sites futuros e revisões de sites existentes.
 
+## HARD RULE de layout dos review cards
+
+Review cards devem respeitar a altura natural do conteúdo. NÃO force todos os cards de uma linha/viewport a terem a altura do review mais longo.
+
+- cada card usa altura intrínseca/`auto` de acordo com seu texto e metadata;
+- proibido `height`, `min-height`, `align-stretch`, `height:100%` ou `justify-content:space-between` quando usados apenas para equalizar cards e criar grandes áreas vazias;
+- mantenha organização por largura consistente, grid/carrossel, gaps e alinhamento no topo, não por altura artificial;
+- o footer do review vem logo após o conteúdo, com espaçamento natural, e não deve ser empurrado para o fundo de um card esticado;
+- o conjunto deve ocupar bem a largura disponível em desktop/tablet/mobile, enquanto a altura de cada card continua independente;
+- o track/viewport do carrossel deve acomodar alturas variáveis sem clipping e, quando possível, adaptar a altura ao grupo/slide visível em vez de reservar uma altura fixa excessiva;
+- não truncar texto somente para deixar os cards iguais. Se houver necessidade real de compactação, use expansão acessível (`Ler mais`/equivalente) preservando o review verbatim completo;
+- layouts tipo masonry só são aceitáveis quando preservam ordem de leitura, teclado e acessibilidade. Não sacrifique sequência semântica para preencher espaço visual.
+
+No QA visual, grandes blocos vazios dentro de cards curtos causados pelo review mais longo = FAIL.
+
 ## Integridade
 
 - review entre aspas = texto fiel
