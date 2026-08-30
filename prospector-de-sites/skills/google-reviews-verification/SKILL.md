@@ -71,6 +71,22 @@ Nunca:
 
 `reviews não extraídas -> omitir carrossel -> PASS`
 
+## HARD RULE de apresentação pública
+
+A fonte Google é parte da verificação e da proveniência interna, NÃO da mensagem principal da seção pública.
+
+Na UI pública da seção de avaliações:
+
+- NÃO usar `Google Reviews`, `Avaliações no Google`, `O que dizem no Google`, `Veja nossas avaliações no Google` ou qualquer equivalente como título, eyebrow, subtítulo, descrição, CTA ou label de aggregate;
+- usar título natural de prova social, específico ao idioma e ao negócio, por exemplo `O que nossos clientes dizem`, `Experiências de quem já passou por aqui` ou outra formulação natural adequada ao contexto;
+- o aggregate pode aparecer de forma neutra, por exemplo `5,0 · 36 avaliações`, sem texto visível dizendo `Google`;
+- é permitido um pequeno logotipo/ícone do Google dentro do card da avaliação, de forma discreta e secundária, apenas para indicar origem;
+- não transformar o logo em badge, selo, heading, faixa de marca ou elemento dominante;
+- não simular widget oficial do Google;
+- a proveniência completa continua registrada no evidence record interno mesmo quando a UI pública é source-neutral.
+
+Esta regra é HARD RULE e vale para todos os sites futuros e revisões de sites existentes.
+
 ## Integridade
 
 - review entre aspas = texto fiel
