@@ -142,6 +142,57 @@ async def run_public_cms_validation():
         assert await page.is_visible("#btn-publish"), "Publish button visible"
         assert await page.is_visible("#btn-rollback"), "Rollback button visible"
 
+        # Give editor frame time to resolve network requests and render media
+        await page.wait_for_timeout(3000)
+
+        # -------------------------------------------------------------
+        # Step 2.1: Editor Frame Base URI and Asset Resolution Verification
+        # -------------------------------------------------------------
+        print("\n--- [Step 2.1] Editor Frame Base URI and Asset Resolution Verification ---")
+        editor_frame = None
+        for f in page.frames:
+            if f != page.main_frame:
+                editor_frame = f
+                break
+        assert editor_frame is not None, "Editor iframe content frame must be accessible"
+
+        base_html = await editor_frame.evaluate("() => { const b = document.querySelector('base'); return b ? b.outerHTML : null; }")
+        base_uri = await editor_frame.evaluate("() => document.baseURI")
+        print(f"  Live injected <base>: {base_html}")
+        print(f"  Live frame document.baseURI: {base_uri}")
+        expected_base_prefix = f"https://prospector-sites-beta.vercel.app/clientes/{SLUG}/"
+        assert base_html is not None and "data-pe-ui=\"true\"" in base_html, "Base tag with data-pe-ui must be injected in editor frame"
+        assert base_uri.startswith(expected_base_prefix), f"Frame baseURI ({base_uri}) must start with {expected_base_prefix}"
+
+        # Validate all 10 benchmark media assets inside frame
+        benchmark_images = [
+            ("logo.png", ".brand-logo, img[src*='logo.png']"),
+            ("hero-ferreira-mobile.webp", "img[src*='hero-ferreira-mobile']"),
+            ("recepcao.webp", "img[src*='recepcao']"),
+            ("cirurgico-raiox.webp", "img[src*='cirurgico-raiox']"),
+            ("odontopediatria.webp", "img[src*='odontopediatria']"),
+            ("consultorio.webp", "img[src*='consultorio']"),
+            ("esterilizacao.webp", "img[src*='esterilizacao']"),
+            ("fachada.webp", "img[src*='fachada']"),
+            ("dr-cassio.webp", "img[src*='dr-cassio']"),
+        ]
+
+        for filename, sel in benchmark_images:
+            img_info = await editor_frame.evaluate(f"""() => {{
+                const el = document.querySelector("{sel}");
+                if (!el) return null;
+                return {{
+                    srcAttr: el.getAttribute('src'),
+                    resolved: new URL(el.getAttribute('src'), document.baseURI).href,
+                    naturalWidth: el.naturalWidth,
+                    naturalHeight: el.naturalHeight
+                }};
+            }}""")
+            assert img_info is not None, f"Image matching '{sel}' ({filename}) not found in editor DOM"
+            assert img_info["resolved"].startswith(expected_base_prefix), f"Image '{filename}' resolved to wrong origin/path: {img_info['resolved']}"
+            assert img_info["naturalWidth"] > 0, f"Image '{filename}' failed to render (naturalWidth={img_info['naturalWidth']})"
+            print(f"  [PASS] Asset '{filename}': resolved='{img_info['resolved']}', naturalWidth={img_info['naturalWidth']}px")
+
         # Test Mobile Viewport 390x844
         mobile_context = await browser.new_context(viewport={"width": 390, "height": 844}, user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)")
         mobile_page = await mobile_context.new_page()
@@ -150,7 +201,18 @@ async def run_public_cms_validation():
         await mobile_page.fill("#cms-password", OPERATOR_PASS)
         await mobile_page.click("#cms-login-submit")
         await mobile_page.wait_for_selector("#cms-workspace-view", state="visible", timeout=10000)
-        print("  [PASS] Mobile 390x844 login & responsive toolbar verified.")
+        await mobile_page.wait_for_timeout(3000)
+
+        # Validate mobile editor frame media
+        m_frame = None
+        for f in mobile_page.frames:
+            if f != mobile_page.main_frame:
+                m_frame = f
+                break
+        assert m_frame is not None, "Mobile editor frame must be accessible"
+        m_logo_width = await m_frame.evaluate("() => { const el = document.querySelector('.brand-logo'); return el ? el.naturalWidth : 0; }")
+        assert m_logo_width > 0, f"Mobile logo failed to render (naturalWidth={m_logo_width})"
+        print("  [PASS] Mobile 390x844 login, responsive toolbar & editor media rendering verified.")
         await mobile_context.close()
 
         # -------------------------------------------------------------
@@ -210,7 +272,7 @@ async def run_public_cms_validation():
         print("  [PASS] Public live website confirmed untouched after draft save.")
 
         # -------------------------------------------------------------
-        # Step 5: Publish over Public HTTPS & Live Verification
+        # Step 5: Public HTTPS Publish to Git & Vercel Verification
         # -------------------------------------------------------------
         print("\n--- [Step 5] Public HTTPS Publish to Git & Vercel Verification ---")
         # Click Publicar no Ar
@@ -218,7 +280,7 @@ async def run_public_cms_validation():
 
         # Wait for publish completion
         print("  Waiting for backend Git commit & push to GitHub...")
-        await page.wait_for_selector("#cms-toast", state="visible", timeout=35000)
+        await page.wait_for_function("() => { const t = document.querySelector('#cms-toast'); return t && (t.innerText.includes('publicado no ar') || t.innerText.includes('sucesso!')); }", timeout=35000)
         toast_publish = await page.inner_text("#cms-toast")
         print(f"  Publish toast message: '{toast_publish}'")
         assert "sucesso" in toast_publish.lower() or "publicad" in toast_publish.lower(), f"Unexpected toast: {toast_publish}"
@@ -257,7 +319,7 @@ async def run_public_cms_validation():
         await page.click("#btn-rollback")
 
         print("  Waiting for rollback Git commit & push...")
-        await page.wait_for_selector("#cms-toast", state="visible", timeout=35000)
+        await page.wait_for_function("() => { const t = document.querySelector('#cms-toast'); return t && (t.innerText.includes('restaurada com sucesso') || t.innerText.includes('sucesso!')); }", timeout=35000)
         toast_rollback = await page.inner_text("#cms-toast")
         print(f"  Rollback toast message: '{toast_rollback}'")
         assert "sucesso" in toast_rollback.lower() or "restaurad" in toast_rollback.lower(), f"Unexpected toast: {toast_rollback}"

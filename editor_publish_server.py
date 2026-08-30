@@ -310,7 +310,18 @@ class PublishApp(SimpleHTTPRequestHandler):
             n = 0
         if n <= 0 or n > MAX_HTML_BYTES + 1024 * 1024:
             raise ValueError("Invalid request size")
-        raw = self.rfile.read(n).decode("utf-8")
+        
+        remaining = n
+        chunks = []
+        while remaining > 0:
+            chunk = self.rfile.read(min(remaining, 65536))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        
+        raw_bytes = b"".join(chunks)
+        raw = raw_bytes.decode("utf-8")
         obj = json.loads(raw)
         if not isinstance(obj, dict):
             raise ValueError("JSON object required")
