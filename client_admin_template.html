@@ -1001,6 +1001,7 @@
         if (d.success) {
           hideAlert();
           currentDraftState = 'none';
+          isLocalDirty = false;
           loadEditorFrame(token, 'live');
           updateStatusBar();
           showToast('Rascunho descartado com sucesso.', 'success');
