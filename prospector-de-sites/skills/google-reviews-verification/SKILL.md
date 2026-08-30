@@ -1,6 +1,6 @@
 ---
 name: google-reviews-verification
-description: HARD GATE para Google Reviews. Use em TODO site, redesign, novo conceito ou QA público criado pelo Prospector quando existir ou puder existir Google Business Profile/Google Maps do lead. Identifica inequivocamente o perfil, lê aggregate atual, coleta reviews textuais do mesmo perfil e torna o carrossel obrigatório quando houver 3+ reviews verificáveis. Nunca permita omissão silenciosa por falha de scraping/coleta.
+description: HARD GATE para Google Reviews. Use em TODO site, redesign, novo conceito ou QA público criado pelo Prospector quando existir ou puder existir Google Business Profile/Google Maps do lead. Identifica inequivocamente o perfil, lê aggregate atual, coleta reviews textuais do mesmo perfil e torna a seção de prova social obrigatória quando houver 3+ reviews verificáveis. Nunca permita omissão silenciosa por falha de scraping/coleta.
 ---
 
 # Google Reviews Verification
@@ -29,6 +29,8 @@ GOOGLE REVIEWS STATUS: VERIFIED_STRONG / VERIFIED_AGGREGATE_ONLY / PROFILE_CONFL
 CAROUSEL REQUIRED: YES/NO
 ```
 
+`CAROUSEL REQUIRED` é mantido por compatibilidade com o validator/gate existente. Na renderização, uma seção masonry acessível pode satisfazer essa exigência quando o conteúdo tiver alturas muito diferentes e masonry for a solução visual superior.
+
 ### VERIFIED_STRONG
 
 Perfil correto inequívoco + aggregate atual + pelo menos 3 reviews textuais positivos verificáveis do mesmo perfil.
@@ -37,7 +39,7 @@ Resultado obrigatório:
 
 `CAROUSEL REQUIRED: YES`
 
-O site NÃO pode passar QA nem deploy final sem o carrossel.
+O site NÃO pode passar QA nem deploy final sem uma apresentação pública das avaliações verificadas. A apresentação pode ser carrossel ou masonry conforme a regra de layout abaixo.
 
 ### VERIFIED_AGGREGATE_ONLY
 
@@ -69,7 +71,7 @@ Se o negócio possui múltiplas avaliações Google positivas visíveis e o sist
 
 Nunca:
 
-`reviews não extraídas -> omitir carrossel -> PASS`
+`reviews não extraídas -> omitir seção -> PASS`
 
 ## HARD RULE de apresentação pública
 
@@ -87,20 +89,67 @@ Na UI pública da seção de avaliações:
 
 Esta regra é HARD RULE e vale para todos os sites futuros e revisões de sites existentes.
 
-## HARD RULE de layout dos review cards
+## HARD RULE avançada de layout dos testimonial/review cards
 
-Review cards devem respeitar a altura natural do conteúdo. NÃO force todos os cards de uma linha/viewport a terem a altura do review mais longo.
+Quando os depoimentos possuem comprimentos significativamente diferentes, prefira **masonry/Pinterest-style grid de cards com alturas variadas** em vez de uma fileira rígida ou carrossel que deixe grandes vazios.
 
-- cada card usa altura intrínseca/`auto` de acordo com seu texto e metadata;
-- proibido `height`, `min-height`, `align-stretch`, `height:100%` ou `justify-content:space-between` quando usados apenas para equalizar cards e criar grandes áreas vazias;
-- mantenha organização por largura consistente, grid/carrossel, gaps e alinhamento no topo, não por altura artificial;
-- o footer do review vem logo após o conteúdo, com espaçamento natural, e não deve ser empurrado para o fundo de um card esticado;
-- o conjunto deve ocupar bem a largura disponível em desktop/tablet/mobile, enquanto a altura de cada card continua independente;
-- o track/viewport do carrossel deve acomodar alturas variáveis sem clipping e, quando possível, adaptar a altura ao grupo/slide visível em vez de reservar uma altura fixa excessiva;
-- não truncar texto somente para deixar os cards iguais. Se houver necessidade real de compactação, use expansão acessível (`Ler mais`/equivalente) preservando o review verbatim completo;
-- layouts tipo masonry só são aceitáveis quando preservam ordem de leitura, teclado e acessibilidade. Não sacrifique sequência semântica para preencher espaço visual.
+Princípio visual:
 
-No QA visual, grandes blocos vazios dentro de cards curtos causados pelo review mais longo = FAIL.
+`Create a testimonial section as a masonry/Pinterest-style grid of varied-height testimonial cards. Match the visual style, colors, typography, and overall aesthetic of the existing UI.`
+
+### Quando usar masonry
+
+Masonry é o padrão preferido quando qualquer uma destas condições aparecer no desktop/tablet:
+
+- diferença visual clara entre reviews curtos, médios e longos;
+- o maior card fica aproximadamente 35% ou mais alto que os menores;
+- uma linha/carrossel deixa grandes áreas vazias abaixo de cards curtos;
+- existem 4+ reviews e o conjunto se beneficia de ocupar verticalmente o espaço disponível.
+
+Se as alturas forem próximas e a navegação horizontal fizer sentido, carrossel continua aceitável.
+
+### Comportamento obrigatório do masonry
+
+- cada card mantém altura intrínseca/`auto` conforme conteúdo e metadata;
+- cards ocupam os espaços verticais disponíveis como uma composição Pinterest-style, sem criar buracos artificiais grandes;
+- largura/colunas consistentes por breakpoint, tipicamente 3 desktop, 2 tablet e 1 mobile;
+- gaps horizontais e verticais consistentes;
+- footer imediatamente após o review com espaçamento natural;
+- não truncar review para equalizar altura;
+- não usar `height:100%`, `min-height` fixa, `align-stretch` ou `justify-content:space-between` para equalização visual;
+- não posicionar cards manualmente com offsets frágeis;
+- layout deve recalcular corretamente em resize, carregamento de fontes e expansão `Ler mais` quando existir.
+
+### Ordem e acessibilidade
+
+A ordem DOM continua sendo a ordem canônica dos depoimentos.
+
+- teclado e leitor de tela seguem a ordem DOM;
+- não reordenar DOM somente para preencher melhor colunas;
+- preferir CSS Grid + medição/row-span ou outra implementação que preserve DOM order;
+- evitar `column-count` quando isso produzir uma ordem visual incompatível com a ordem de leitura;
+- mobile com 1 coluna deve seguir exatamente a ordem DOM;
+- se houver `Ler mais`, o conteúdo integral permanece acessível e o masonry recalcula a altura após expansão.
+
+### Carrossel vs masonry
+
+Não force um carousel só porque o gate legado se chama `CAROUSEL REQUIRED`.
+
+Para reviews de tamanhos muito variados:
+
+`VERIFIED_STRONG -> REVIEW DISPLAY REQUIRED -> MASONRY PREFERRED`
+
+Para reviews de tamanhos semelhantes ou quando houver necessidade real de browse horizontal:
+
+`VERIFIED_STRONG -> REVIEW DISPLAY REQUIRED -> CAROUSEL ALLOWED`
+
+No QA visual:
+
+- grandes blocos vazios dentro de cards curtos = FAIL;
+- grandes corredores vazios entre cards que masonry poderia preencher = FAIL quando há 4+ reviews variados;
+- ordem de leitura quebrada = FAIL;
+- overlap/clipping = FAIL;
+- masonry natural, responsivo, acessível e bem preenchido = PASS.
 
 ## Integridade
 
