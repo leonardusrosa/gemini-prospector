@@ -382,19 +382,20 @@ class PublishApp(SimpleHTTPRequestHandler):
             if not ok:
                 return self._json(401, {"success": False, "error": err})
 
-            # Check draft first, then deploy repo HTML, then local sites HTML
-            draft_html = self.config.cms_service.get_draft(slug)
+            # Parse requested source: 'live' (default) or 'draft'
+            source = parse_qs(parsed.query).get("source", ["live"])[0].lower()
             raw_html = None
-            if draft_html:
-                raw_html = draft_html
-            elif self.config.deploy_repo:
-                target = self.config.deploy_repo / self.config.base_path / slug / "index.html"
-                if target.exists():
-                    raw_html = target.read_text(encoding="utf-8")
+            resolved_source = "live"
+
+            if source == "draft":
+                draft_html = self.config.cms_service.get_draft(slug)
+                if draft_html:
+                    raw_html = draft_html
+                    resolved_source = "draft"
+
             if not raw_html:
-                local_site = self.config.root / "sites" / slug / f"{slug}.html"
-                if local_site.exists():
-                    raw_html = local_site.read_text(encoding="utf-8")
+                raw_html = self.config.cms_service.get_live_content(slug)
+                resolved_source = "live"
 
             if not raw_html:
                 return self._json(404, {"error": f"Página do site para '{slug}' não encontrada."})
@@ -432,6 +433,9 @@ class PublishApp(SimpleHTTPRequestHandler):
                     "codeVersion": self.config.code_version,
                     "repoHead": _get_git_version(self.config.root),
                 })
+            draft_info = self.config.cms_service.get_draft_info(slug)
+            live_hash = self.config.cms_service.get_live_hash(slug)
+            live_commit = self.config.cms_service.get_live_commit()
             return self._json(200, {
                 "success": True,
                 "authorized": True,
@@ -440,6 +444,13 @@ class PublishApp(SimpleHTTPRequestHandler):
                 "displayName": slug.replace("-", " ").title(),
                 "codeVersion": self.config.code_version,
                 "repoHead": _get_git_version(self.config.root),
+                "liveCommit": live_commit,
+                "liveContentHash": live_hash,
+                "hasDraft": draft_info.get("hasDraft", False),
+                "draftState": draft_info.get("draftState", "none"),
+                "draftSavedAt": draft_info.get("savedAt"),
+                "draftBaseContentHash": draft_info.get("baseContentHash"),
+                "draftContentHash": draft_info.get("draftContentHash"),
             })
 
         # Route 2.5: Client CMS Draft API (Load Draft)
@@ -450,7 +461,15 @@ class PublishApp(SimpleHTTPRequestHandler):
             if not ok:
                 return self._json(401, {"success": False, "error": err})
             draft_html = self.config.cms_service.get_draft(slug)
-            return self._json(200, {"success": True, "slug": slug, "hasDraft": draft_html is not None, "html": draft_html})
+            draft_info = self.config.cms_service.get_draft_info(slug)
+            return self._json(200, {
+                "success": True,
+                "slug": slug,
+                "hasDraft": draft_html is not None,
+                "draftState": draft_info.get("draftState", "none"),
+                "html": draft_html,
+                "meta": draft_info,
+            })
 
         # Route 3: Client CMS Audit API
         if path == "/api/client-cms/audit":
@@ -555,12 +574,37 @@ class PublishApp(SimpleHTTPRequestHandler):
                 body = self._body()
                 slug = str(body.get("slug") or "").strip()
                 html = str(body.get("html") or "")
+                base_hash = str(body.get("baseContentHash") or "").strip() or None
                 token = self._get_bearer_token()
                 ok, payload, err = self.config.auth_store.authorize_request(token, slug)
                 if not ok:
                     return self._json(401, {"success": False, "error": err})
-                res = self.config.cms_service.save_draft(slug, html, actor=payload.get("actor", "tenant"))
+                res = self.config.cms_service.save_draft(
+                    slug=slug,
+                    html_content=html,
+                    actor=payload.get("actor", "tenant"),
+                    base_content_hash=base_hash,
+                )
                 return self._json(200, res)
+            except Exception as exc:
+                return self._json(400, {"success": False, "error": str(exc)})
+
+        # Route B.2: Client CMS Draft Discard
+        if route == "/api/client-cms/draft/discard":
+            try:
+                body = self._body()
+                slug = str(body.get("slug") or "").strip()
+                reason = str(body.get("reason") or "user_discard").strip()
+                token = self._get_bearer_token()
+                ok, payload, err = self.config.auth_store.authorize_request(token, slug)
+                if not ok:
+                    return self._json(401, {"success": False, "error": err})
+                discarded = self.config.cms_service.discard_draft(
+                    slug=slug,
+                    actor=payload.get("actor", "tenant"),
+                    reason=reason,
+                )
+                return self._json(200, {"success": True, "discarded": discarded, "slug": slug})
             except Exception as exc:
                 return self._json(400, {"success": False, "error": str(exc)})
 

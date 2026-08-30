@@ -179,6 +179,53 @@
       font-weight: 700;
       color: #FFF;
     }
+    .cms-status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #9CA3AF;
+      padding-left: 8px;
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .cms-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4ADE80;
+    }
+    .cms-status-indicator.live .cms-status-dot { background: #4ADE80; }
+    .cms-status-indicator.live { color: #86EFAC; }
+    .cms-status-indicator.draft .cms-status-dot { background: #FBBF24; }
+    .cms-status-indicator.draft { color: #FDE68A; }
+    .cms-status-indicator.stale .cms-status-dot { background: #EF4444; }
+    .cms-status-indicator.stale { color: #FCA5A5; }
+    .cms-status-indicator.dirty .cms-status-dot { background: #60A5FA; }
+    .cms-status-indicator.dirty { color: #93C5FD; }
+
+    .cms-alert-bar {
+      background: #1E293B;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12.5px;
+      color: #F1F5F9;
+      z-index: 90;
+    }
+    .cms-alert-bar.warning {
+      background: #2D1A12;
+      border-bottom-color: rgba(245, 158, 11, 0.3);
+      color: #FDE68A;
+    }
+    .cms-alert-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .cms-header-actions {
       display: flex;
       align-items: center;
@@ -334,8 +381,13 @@
       <div class="cms-header-left">
         <span class="cms-brand-badge" style="margin:0;">CMS</span>
         <span id="cms-site-label" class="cms-site-title">Carregando...</span>
+        <div id="cms-status-indicator" class="cms-status-indicator live">
+          <span class="cms-status-dot"></span>
+          <span id="cms-status-text">Site publicado</span>
+        </div>
       </div>
       <div class="cms-header-actions">
+        <button type="button" id="btn-reload-live" class="cms-action-btn" title="Recarregar versão publicada no ar">Recarregar do site</button>
         <button type="button" id="btn-save-draft" class="cms-action-btn">Salvar Rascunho</button>
         <button type="button" id="btn-rollback" class="cms-action-btn danger">Restaurar Anterior</button>
         <button type="button" id="btn-publish" class="cms-action-btn primary">Publicar no Ar</button>
@@ -343,6 +395,14 @@
         <button type="button" id="btn-logout" class="cms-action-btn">Sair</button>
       </div>
     </header>
+    <div id="cms-alert-bar" class="cms-alert-bar warning" style="display: none;">
+      <span id="cms-alert-text">O site publicado foi atualizado depois deste rascunho.</span>
+      <div class="cms-alert-actions">
+        <button type="button" id="btn-alert-live" class="cms-action-btn">Abrir versão publicada</button>
+        <button type="button" id="btn-alert-draft" class="cms-action-btn">Revisar rascunho</button>
+        <button type="button" id="btn-alert-discard" class="cms-action-btn danger">Descartar rascunho</button>
+      </div>
+    </div>
     <iframe id="cms-editor-frame" title="Editor Visual"></iframe>
   </div>
 
@@ -403,8 +463,21 @@
     var changePassMsg = document.getElementById('change-pass-msg');
 
     var siteLabel = document.getElementById('cms-site-label');
+    var statusIndicator = document.getElementById('cms-status-indicator');
+    var statusText = document.getElementById('cms-status-text');
+    var alertBar = document.getElementById('cms-alert-bar');
+    var alertText = document.getElementById('cms-alert-text');
+    var btnAlertLive = document.getElementById('btn-alert-live');
+    var btnAlertDraft = document.getElementById('btn-alert-draft');
+    var btnAlertDiscard = document.getElementById('btn-alert-discard');
     var editorFrame = document.getElementById('cms-editor-frame');
     var toastEl = document.getElementById('cms-toast');
+
+    var currentSource = 'live';
+    var currentLiveHash = '';
+    var currentDraftState = 'none';
+    var currentDraftSavedAt = '';
+    var isLocalDirty = false;
 
     function getSlugFromUrl() {
       var parts = window.location.pathname.split('/').filter(Boolean);
@@ -420,6 +493,48 @@
       toastEl.className = type || 'success';
       toastEl.style.display = 'block';
       setTimeout(function() { toastEl.style.display = 'none'; }, duration || 4000);
+    }
+
+    function formatTime(isoStr) {
+      if (!isoStr) return '';
+      try {
+        var d = new Date(isoStr);
+        var hh = String(d.getHours()).padStart(2, '0');
+        var mm = String(d.getMinutes()).padStart(2, '0');
+        return hh + ':' + mm;
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function updateStatusBar() {
+      if (isLocalDirty) {
+        statusIndicator.className = 'cms-status-indicator dirty';
+        statusText.textContent = 'Alterações locais não salvas';
+      } else if (currentSource === 'draft') {
+        if (currentDraftState === 'stale') {
+          statusIndicator.className = 'cms-status-indicator stale';
+          statusText.textContent = 'Rascunho desatualizado';
+        } else {
+          statusIndicator.className = 'cms-status-indicator draft';
+          var t = formatTime(currentDraftSavedAt);
+          statusText.textContent = t ? 'Rascunho salvo às ' + t : 'Rascunho salvo';
+        }
+      } else {
+        statusIndicator.className = 'cms-status-indicator live';
+        statusText.textContent = 'Site publicado';
+      }
+    }
+
+    function showAlert(text, showDraftBtn, isWarning) {
+      alertText.textContent = text;
+      btnAlertDraft.style.display = showDraftBtn ? 'inline-block' : 'none';
+      alertBar.className = 'cms-alert-bar ' + (isWarning !== false ? 'warning' : '');
+      alertBar.style.display = 'flex';
+    }
+
+    function hideAlert() {
+      alertBar.style.display = 'none';
     }
 
     function checkResetToken() {
@@ -440,6 +555,7 @@
       workspaceView.style.display = 'none';
       loginView.style.display = 'flex';
       editorFrame.srcdoc = '';
+      hideAlert();
 
       if (msg) {
         loginMsg.textContent = msg;
@@ -471,8 +587,30 @@
       document.getElementById('reset-confirm-pass').value = '';
     }
 
-    function loadEditorFrame(token) {
-      fetch('/api/client-cms/editor-frame?slug=' + encodeURIComponent(slug), {
+    function attachDirtyTracker() {
+      try {
+        var doc = editorFrame.contentDocument || (editorFrame.contentWindow && editorFrame.contentWindow.document);
+        if (!doc) return;
+        var markDirty = function() {
+          if (!isLocalDirty) {
+            isLocalDirty = true;
+            updateStatusBar();
+          }
+        };
+        doc.addEventListener('input', markDirty, true);
+        doc.addEventListener('keyup', markDirty, true);
+        doc.addEventListener('paste', markDirty, true);
+        doc.addEventListener('change', markDirty, true);
+      } catch (e) {}
+    }
+
+    function loadEditorFrame(token, source) {
+      source = source || 'live';
+      currentSource = source;
+      isLocalDirty = false;
+      updateStatusBar();
+
+      fetch('/api/client-cms/editor-frame?slug=' + encodeURIComponent(slug) + '&source=' + encodeURIComponent(source), {
         headers: { 'Authorization': 'Bearer ' + token }
       })
       .then(function(r) {
@@ -481,10 +619,47 @@
       })
       .then(function(html) {
         editorFrame.srcdoc = html;
+        editorFrame.onload = function() {
+          attachDirtyTracker();
+        };
       })
       .catch(function(err) {
         showToast('Erro ao carregar editor: ' + err.message, 'error');
       });
+    }
+
+    function handleDraftNotification(data) {
+      currentDraftState = data.draftState || 'none';
+      currentDraftSavedAt = data.draftSavedAt || '';
+      if (data.draftState === 'stale') {
+        showAlert('O site publicado foi atualizado depois deste rascunho.', true, true);
+      } else if (data.draftState === 'current') {
+        showAlert('Existe um rascunho salvo (' + formatTime(data.draftSavedAt) + ') não publicado.', true, false);
+      } else {
+        hideAlert();
+      }
+      updateStatusBar();
+    }
+
+    function refreshStatus(token) {
+      token = token || sessionStorage.getItem(tokenKey);
+      if (!token) return;
+
+      fetch('/api/client-cms/status?slug=' + encodeURIComponent(slug), {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.success || !data.authorized) return;
+
+        // Detect external update
+        if (currentLiveHash && data.liveContentHash && data.liveContentHash !== currentLiveHash) {
+          showAlert('O site publicado foi atualizado em outra sessão ou deploy externo.', false, true);
+        }
+        currentLiveHash = data.liveContentHash || currentLiveHash;
+        handleDraftNotification(data);
+      })
+      .catch(function() {});
     }
 
     function showWorkspace(tenantInfo) {
@@ -493,8 +668,12 @@
       resetView.style.display = 'none';
       workspaceView.style.display = 'flex';
       siteLabel.textContent = tenantInfo.displayName || slug;
+      currentLiveHash = tenantInfo.liveContentHash || '';
+
       var token = sessionStorage.getItem(tokenKey);
-      loadEditorFrame(token);
+      // Explicit source rule: default after login is LIVE
+      loadEditorFrame(token, 'live');
+      handleDraftNotification(tenantInfo);
     }
 
     function checkSession() {
@@ -689,6 +868,18 @@
       return raw.replace(/<!--\s*PROSPECTOR-(?:EDITOR|PUBLISH)-(?:START|END)\s*-->/gi, '');
     }
 
+    // Action: Recarregar do site
+    document.getElementById('btn-reload-live').addEventListener('click', function() {
+      if (isLocalDirty || currentSource === 'draft') {
+        if (!confirm('Deseja descartar as alterações da tela e recarregar a versão publicada no ar?')) return;
+      }
+      var token = sessionStorage.getItem(tokenKey);
+      loadEditorFrame(token, 'live');
+      showToast('Versão publicada recarregada.', 'success', 3000);
+      refreshStatus(token);
+    });
+
+    // Action: Salvar Rascunho
     document.getElementById('btn-save-draft').addEventListener('click', function() {
       var token = sessionStorage.getItem(tokenKey);
       try {
@@ -696,18 +887,28 @@
         fetch('/api/client-cms/draft', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ slug: slug, html: html })
+          body: JSON.stringify({ slug: slug, html: html, baseContentHash: currentLiveHash })
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
-          if (d.success) showToast('Rascunho salvo com sucesso!', 'success');
-          else showToast(d.error || 'Erro ao salvar rascunho', 'error');
+          if (d.success) {
+            isLocalDirty = false;
+            currentSource = 'draft';
+            currentDraftState = 'current';
+            currentDraftSavedAt = d.savedAt || new Date().toISOString();
+            updateStatusBar();
+            hideAlert();
+            showToast('Rascunho salvo com sucesso!', 'success');
+          } else {
+            showToast(d.error || 'Erro ao salvar rascunho', 'error');
+          }
         });
       } catch (e) {
         showToast('Não foi possível capturar o rascunho.', 'error');
       }
     });
 
+    // Action: Publicar no Ar
     document.getElementById('btn-publish').addEventListener('click', function() {
       if (!confirm('Deseja publicar as alterações diretamente no site no ar?')) return;
       var token = sessionStorage.getItem(tokenKey);
@@ -722,6 +923,12 @@
         .then(function(r) { return r.json(); })
         .then(function(d) {
           if (d.success) {
+            isLocalDirty = false;
+            currentSource = 'live';
+            currentDraftState = 'none';
+            hideAlert();
+            loadEditorFrame(token, 'live');
+            refreshStatus(token);
             showToast('Site publicado no ar com sucesso! (Commit: ' + (d.commit || '').substring(0,7) + ')', 'success', 6000);
           } else {
             showToast(d.error || 'Falha ao publicar.', 'error', 6000);
@@ -732,6 +939,7 @@
       }
     });
 
+    // Action: Restaurar Anterior (Rollback)
     document.getElementById('btn-rollback').addEventListener('click', function() {
       if (!confirm('Tem certeza de que deseja restaurar a versão anterior publicada?')) return;
       var token = sessionStorage.getItem(tokenKey);
@@ -744,13 +952,55 @@
       .then(function(r) { return r.json(); })
       .then(function(d) {
         if (d.success) {
+          isLocalDirty = false;
+          currentSource = 'live';
+          currentDraftState = 'none';
+          hideAlert();
+          loadEditorFrame(token, 'live');
+          refreshStatus(token);
           showToast('Versão anterior restaurada com sucesso!', 'success', 6000);
-          setTimeout(function() { loadEditorFrame(token); }, 1500);
         } else {
           showToast(d.error || 'Falha ao restaurar versão anterior.', 'error', 6000);
         }
       });
     });
+
+    // Alert Actions
+    btnAlertLive.addEventListener('click', function() {
+      var token = sessionStorage.getItem(tokenKey);
+      loadEditorFrame(token, 'live');
+    });
+
+    btnAlertDraft.addEventListener('click', function() {
+      var token = sessionStorage.getItem(tokenKey);
+      loadEditorFrame(token, 'draft');
+    });
+
+    btnAlertDiscard.addEventListener('click', function() {
+      if (!confirm('Deseja realmente descartar este rascunho salvo?')) return;
+      var token = sessionStorage.getItem(tokenKey);
+      fetch('/api/client-cms/draft/discard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ slug: slug, reason: 'user_discard' })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          hideAlert();
+          currentDraftState = 'none';
+          loadEditorFrame(token, 'live');
+          updateStatusBar();
+          showToast('Rascunho descartado com sucesso.', 'success');
+        } else {
+          showToast(d.error || 'Falha ao descartar rascunho.', 'error');
+        }
+      });
+    });
+
+    // Window focus & interval checks for external deployments
+    window.addEventListener('focus', function() { refreshStatus(); });
+    setInterval(function() { refreshStatus(); }, 15000);
 
     checkSession();
   })();

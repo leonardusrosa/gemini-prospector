@@ -9,6 +9,7 @@ with strict path containment, Git staging isolation, and audit logging.
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import os
 import pathlib
@@ -116,34 +117,108 @@ class ClientCmsService:
         self.deploy_repo = deploy_repo.resolve() if deploy_repo else None
         self.base_path = base_path.strip("/\\")
 
-    def save_draft(self, slug: str, html_content: str, actor: str) -> Dict[str, Any]:
-        """Saves an isolated draft for a tenant."""
+    def get_live_file(self, slug: str) -> pathlib.Path:
+        v_slug = validate_slug(slug)
+        if self.deploy_repo and self.deploy_repo.exists():
+            rel = pathlib.PurePosixPath(self.base_path) / v_slug / "index.html"
+            return (self.deploy_repo / pathlib.Path(*rel.parts)).resolve()
+        return (self.root_dir / "sites" / v_slug / f"{v_slug}.html").resolve()
+
+    def get_live_content(self, slug: str) -> Optional[str]:
+        f = self.get_live_file(slug)
+        return f.read_text(encoding="utf-8") if f.exists() else None
+
+    def get_live_hash(self, slug: str) -> str:
+        content = self.get_live_content(slug)
+        return hashlib.sha256(content.encode("utf-8")).hexdigest() if content else ""
+
+    def get_live_commit(self) -> str:
+        if self.deploy_repo and self.deploy_repo.exists():
+            return run_git(self.deploy_repo, ["rev-parse", "HEAD"], check=False).stdout.strip()
+        return ""
+
+    def get_draft_meta_file(self, slug: str) -> pathlib.Path:
+        v_slug = validate_slug(slug)
+        return self.root_dir / ".prospector-editor" / "drafts" / v_slug / "meta.json"
+
+    def get_draft_file(self, slug: str) -> pathlib.Path:
+        v_slug = validate_slug(slug)
+        return self.root_dir / ".prospector-editor" / "drafts" / v_slug / f"{v_slug}.html"
+
+    def get_draft_info(self, slug: str) -> Dict[str, Any]:
+        v_slug = validate_slug(slug)
+        d_file = self.get_draft_file(v_slug)
+        m_file = self.get_draft_meta_file(v_slug)
+        if not d_file.exists():
+            return {"hasDraft": False, "draftState": "none"}
+        meta: Dict[str, Any] = {}
+        if m_file.exists():
+            try:
+                meta = json.loads(m_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        live_hash = self.get_live_hash(v_slug)
+        base_hash = meta.get("baseContentHash")
+        draft_state = "current" if base_hash and base_hash == live_hash else "stale"
+        return {
+            "hasDraft": True,
+            "draftState": draft_state,
+            "savedAt": meta.get("savedAt"),
+            "actor": meta.get("actor"),
+            "baseCommit": meta.get("baseCommit"),
+            "baseContentHash": base_hash,
+            "draftContentHash": meta.get("draftContentHash"),
+        }
+
+    def save_draft(self, slug: str, html_content: str, actor: str, base_content_hash: Optional[str] = None) -> Dict[str, Any]:
+        """Saves an isolated draft for a tenant with version metadata."""
         v_slug = validate_slug(slug)
         html_content = sanitize_html(html_content)
         validate_html(html_content)
 
-        draft_file = self.root_dir / ".prospector-editor" / "drafts" / v_slug / f"{v_slug}.html"
+        draft_file = self.get_draft_file(v_slug)
         atomic_write(draft_file, html_content)
-        log_audit_event(self.root_dir, v_slug, actor, "draft", status="success")
+
+        draft_hash = hashlib.sha256(html_content.encode("utf-8")).hexdigest()
+        base_hash = base_content_hash or self.get_live_hash(v_slug)
+        meta = {
+            "slug": v_slug,
+            "savedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "actor": actor,
+            "baseCommit": self.get_live_commit(),
+            "baseContentHash": base_hash,
+            "draftContentHash": draft_hash,
+        }
+        meta_file = self.get_draft_meta_file(v_slug)
+        atomic_write(meta_file, json.dumps(meta, indent=2))
+        log_audit_event(self.root_dir, v_slug, actor, "draft", status="success", details={"draftHash": draft_hash, "baseHash": base_hash})
 
         return {
             "success": True,
             "status": "draft_saved",
             "slug": v_slug,
-            "savedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "savedAt": meta["savedAt"],
+            "baseContentHash": base_hash,
+            "draftContentHash": draft_hash,
         }
 
     def get_draft(self, slug: str) -> Optional[str]:
         """Retrieves an active draft for a tenant if present."""
         v_slug = validate_slug(slug)
-        draft_file = self.root_dir / ".prospector-editor" / "drafts" / v_slug / f"{v_slug}.html"
+        draft_file = self.get_draft_file(v_slug)
         if draft_file.exists():
             return draft_file.read_text(encoding="utf-8")
         return None
 
-    def load_draft(self, slug: str) -> Optional[str]:
-        """Alias for get_draft."""
-        return self.get_draft(slug)
+    def discard_draft(self, slug: str, actor: str, reason: str = "user_discard") -> bool:
+        """Discards an active draft and its metadata."""
+        v_slug = validate_slug(slug)
+        draft_dir = self.root_dir / ".prospector-editor" / "drafts" / v_slug
+        if draft_dir.exists():
+            shutil.rmtree(draft_dir, ignore_errors=True)
+            log_audit_event(self.root_dir, v_slug, actor, "draft_discard", status="success", details={"reason": reason})
+            return True
+        return False
 
     def publish_content(
         self,
@@ -229,12 +304,7 @@ class ClientCmsService:
             }
 
         # Clean up draft after successful publish
-        draft_file = self.root_dir / ".prospector-editor" / "drafts" / v_slug / f"{v_slug}.html"
-        if draft_file.exists():
-            try:
-                draft_file.unlink()
-            except Exception:
-                pass
+        self.discard_draft(v_slug, actor, reason="published")
 
         log_audit_event(self.root_dir, v_slug, actor, "publish", commit_sha=commit_sha, status="published")
 
@@ -275,6 +345,7 @@ class ClientCmsService:
             branch=branch,
         )
         if res.get("success"):
+            self.discard_draft(v_slug, actor, reason="rollback")
             log_audit_event(self.root_dir, v_slug, actor, "rollback", commit_sha=res.get("commit"), status="rolled_back", details={"restoredFrom": latest_backup.name})
             res["status"] = "rolled_back"
             res["restoredBackup"] = latest_backup.name
