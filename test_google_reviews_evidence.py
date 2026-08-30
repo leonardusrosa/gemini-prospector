@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import importlib.util
 import pathlib
+import sys
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent
@@ -9,6 +10,7 @@ MODULE_PATH = ROOT / "prospector-de-sites" / "google_reviews_evidence.py"
 SPEC = importlib.util.spec_from_file_location("google_reviews_evidence", MODULE_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
+sys.modules["google_reviews_evidence"] = mod
 SPEC.loader.exec_module(mod)
 
 

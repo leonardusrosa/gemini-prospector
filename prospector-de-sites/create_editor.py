@@ -85,8 +85,8 @@ document.body.classList.add('pe-editing');
 function isUI(el){return!!(el&&el.closest&&el.closest(UI))}
 function clearSelection(){if(state.selected)state.selected.classList.remove('pe-selected');state.selected=null}
 function closePanel(){panel.classList.remove('pe-open');clearSelection()}
-function closestAction(target){return target&&target.closest?target.closest(ACTION_SELECTOR):null}
-function closestImage(target){return target&&target.closest?target.closest(IMAGE_SELECTOR):null}
+function closestAction(target){if(target&&target.closest&&target.closest('[data-pe-no-edit]'))return null;return target&&target.closest?target.closest(ACTION_SELECTOR):null}
+function closestImage(target){if(target&&target.closest&&target.closest('[data-pe-no-edit]'))return null;return target&&target.closest?target.closest(IMAGE_SELECTOR):null}
 
 function simpleLabelNode(el){
   if(!el)return null;
@@ -248,7 +248,7 @@ function applyImageTo(el,src,alt){
 }
 
 function bindText(el){
-  if(el.dataset.peBoundText||isUI(el)||el.closest('a,button,[role="button"]'))return;
+  if(el.dataset.peBoundText||isUI(el)||el.closest('a,button,[role="button"],[data-pe-no-edit]'))return;
   el.dataset.peBoundText='1';
   el.addEventListener('mouseenter',function(){if(state.mode==='edit'&&!el.isContentEditable)el.classList.add('pe-hover')});
   el.addEventListener('mouseleave',function(){el.classList.remove('pe-hover')});
