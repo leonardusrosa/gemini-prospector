@@ -68,9 +68,9 @@ Exemplo de evidência:
 }
 ```
 
-## 4. Coleta obrigatória de reviews para o carrossel
+## 4. Coleta obrigatória de reviews para prova social
 
-Se o perfil correto possui múltiplas avaliações textuais positivas, coletar no mínimo **3 reviews utilizáveis**, com alvo de **4 a 6** para o carrossel.
+Se o perfil correto possui múltiplas avaliações textuais positivas, coletar no mínimo **3 reviews utilizáveis**, com alvo de **4 a 6** para a seção pública.
 
 Para cada review, preservar:
 
@@ -91,7 +91,7 @@ Não selecionar apenas reviews porque são curtos e convenientes.
 
 ## 5. Ordem de tentativa de coleta
 
-Quando reviews existem, não omita o carrossel na primeira dificuldade técnica. Tente, nesta ordem:
+Quando reviews existem, não omita a seção na primeira dificuldade técnica. Tente, nesta ordem:
 
 1. perfil Google Maps/GBP live no navegador e painel de avaliações;
 2. rota/visualização alternativa do mesmo perfil Google;
@@ -110,13 +110,15 @@ Exige:
 - aggregate atual verificado;
 - pelo menos 3 reviews textuais positivos verificáveis do mesmo perfil.
 
-Resultado: **carrossel obrigatório**.
+Resultado: **seção de prova social obrigatória**.
+
+O gate legado pode continuar emitindo `CAROUSEL REQUIRED: YES`, mas a implementação visual pode ser masonry quando essa for a composição superior.
 
 ### `VERIFIED_AGGREGATE_ONLY`
 
 Identidade + nota + quantidade estão confirmadas, mas ainda não há pelo menos 3 textos individuais verificáveis.
 
-Se o perfil possui múltiplas avaliações textuais visíveis, isto é um **bloqueador de coleta**, não justificativa para omitir silenciosamente o carrossel.
+Se o perfil possui múltiplas avaliações textuais visíveis, isto é um **bloqueador de coleta**, não justificativa para omitir silenciosamente a seção.
 
 Resultado: QA de Google Reviews NÃO pode ser marcado como concluído até resolver a coleta ou registrar uma limitação externa real e explícita para revisão humana.
 
@@ -128,9 +130,9 @@ Resultado: não publicar aggregate nem reviews até resolver o perfil correto.
 
 ### `NO_USABLE_REVIEWS`
 
-Perfil correto foi verificado, mas não há reviews textuais utilizáveis suficientes para carrossel.
+Perfil correto foi verificado, mas não há reviews textuais utilizáveis suficientes para uma seção rica.
 
-Resultado: não inventar slides. Uma ou duas avaliações reais podem aparecer em formato estático, se úteis.
+Resultado: não inventar cards. Uma ou duas avaliações reais podem aparecer em formato estático, se úteis.
 
 ## 7. Conflitos entre números
 
@@ -191,11 +193,11 @@ Se `VERIFIED_STRONG` e houver pelo menos 3 reviews:
 
 `CAROUSEL REQUIRED = YES`
 
-O site não passa o Site Core Rule QA sem o carrossel.
+Interpretação atual: o site precisa renderizar a prova social verificada; `masonry` pode satisfazer o gate visual quando for melhor que um carousel.
 
 ## 10. Renderização
 
-Quando o carrossel for obrigatório:
+Quando a seção for obrigatória:
 
 - usar os textos fiéis coletados;
 - não simular widget oficial do Google;
@@ -207,7 +209,7 @@ Quando o carrossel for obrigatório:
 - a proveniência Google completa permanece no evidence record interno e não precisa ser repetida como copy pública;
 - estrelas individuais refletem o review individual;
 - truncamento deve ser fiel e não mudar o sentido;
-- responsivo, teclado, swipe/touch e reduced-motion conforme Website Core Rules.
+- responsivo, teclado, touch e reduced-motion conforme Website Core Rules.
 
 ### HARD RULE de copy da seção
 
@@ -228,53 +230,117 @@ Proibido:
 - `Veja nossas avaliações no Google`
 - qualquer headline/subheadline/label visível que transforme Google no tema da seção
 
-### HARD RULE de sizing/layout dos cards
+### HARD RULE avançada de sizing/layout: Masonry testimonial grid
 
-O conteúdo determina a altura de cada review card. Igualar alturas artificialmente para formar uma linha perfeita é proibido quando isso cria espaço vazio significativo.
+Para depoimentos de comprimentos variados, o padrão preferido é uma **masonry/Pinterest-style grid** de cards com alturas intrínsecas diferentes.
 
-Padrão esperado:
+Direção visual de referência:
 
-- largura consistente por breakpoint;
-- altura individual automática e baseada no conteúdo;
-- cards alinhados pelo topo;
-- gaps consistentes;
-- footer imediatamente após o review com espaçamento normal;
-- track/carrossel capaz de lidar com cards de alturas diferentes sem cortar conteúdo;
-- ocupação eficiente da largura disponível, sem obrigar cards curtos a preencher a altura do maior.
+> Create a testimonial section as a masonry/Pinterest-style grid of varied-height testimonial cards. Match the visual style, colors, typography, and overall aesthetic of the existing UI.
 
-Evite padrões como:
+A referência descreve composição, não autoriza copiar estilos genéricos que conflitem com o site. O masonry deve parecer nativo ao design existente.
+
+#### Gatilhos para usar masonry
+
+Prefira masonry quando:
+
+- houver 4 ou mais reviews com comprimentos variados;
+- o maior card ficar cerca de 35% ou mais alto que o menor/mediano;
+- a disposição em linha/carrossel criar corredores de espaço vazio relevantes;
+- o conjunto puder usar melhor a área disponível encaixando cards curtos sob cards mais altos.
+
+Se houver apenas 3 reviews ou alturas muito semelhantes, uma grid simples pode ser suficiente. Carousel deve ser usado apenas quando a navegação horizontal tiver valor real, não como padrão automático.
+
+#### Estrutura visual esperada
+
+- desktop: normalmente 3 colunas;
+- tablet: normalmente 2 colunas;
+- mobile: 1 coluna;
+- cada card: `height:auto`;
+- largura consistente dentro de cada breakpoint;
+- gap visual consistente;
+- cards seguintes sobem para ocupar espaço abaixo de cards curtos, formando o efeito masonry;
+- sem alinhamento obrigatório por linhas horizontais;
+- aggregate/heading continuam fora do masonry e alinhados ao sistema visual da página.
+
+#### Implementação técnica preferida
+
+Preserve a ordem DOM e implemente masonry com uma estratégia que não destrua a leitura semântica.
+
+Preferência:
+
+1. CSS Grid como base;
+2. row sizing pequeno (`grid-auto-rows`) + cálculo de `grid-row-end: span N` medido por card, ou outra implementação equivalente;
+3. `ResizeObserver` para recalcular spans quando fontes, viewport ou `Ler mais` alterarem altura;
+4. fallback natural para grid/1 coluna se JavaScript falhar.
+
+Evite `column-count` para testimonials quando a ordem visual por colunas divergir da ordem DOM e confundir teclado/leitor de tela.
+
+Não usar posicionamento absoluto manual por coordenadas salvo implementação de layout comprovadamente acessível e resiliente.
+
+#### Card anatomy
+
+Cada card mantém:
+
+- estrelas verificadas;
+- texto integral ou expansão acessível;
+- nome;
+- data/label quando verificada;
+- pequeno marcador de proveniência permitido;
+- footer imediatamente após o conteúdo.
+
+Não usar:
 
 ```css
-.review-slide { display: flex; }
-.review-card {
-  height: 100%;
-  justify-content: space-between;
-}
+height: 100%;
+min-height: <valor para igualar>;
+justify-content: space-between;
+align-stretch;
 ```
 
-quando o efeito for esticar cards curtos até a altura do review mais longo.
+quando o objetivo for fazer todos os cards parecerem da mesma altura.
 
-Prefira conceitualmente:
+#### Ordem e interação
 
-```css
-.reviews-track { align-items: flex-start; }
-.review-slide { align-self: flex-start; }
-.review-card { height: auto; }
-.review-footer { margin-top: 20px; }
-```
+- DOM order = source of truth;
+- tab order = DOM order;
+- leitor de tela = DOM order;
+- mobile em 1 coluna = DOM order literal;
+- não reordenar depoimentos dinamicamente apenas para produzir encaixe visual melhor;
+- se houver `Ler mais`, foco permanece previsível e o card expande no lugar;
+- masonry recalcula sem overlap, clipping ou salto destrutivo de foco.
 
-A implementação concreta pode variar, desde que preserve o princípio.
+#### QA visual obrigatório
 
-Não use `min-height` fixa para harmonizar depoimentos de comprimentos diferentes. Não corte reviews apenas por estética. Se um review excepcionalmente longo precisar de compactação, use um controle acessível de expansão e mantenha o conteúdo integral disponível.
+FAIL se houver:
 
-Em layouts mais livres/masonry, preserve a ordem DOM e a navegação por teclado. Preencher espaço visual nunca vence a ordem de leitura e a acessibilidade.
+- grandes blocos vazios dentro de cards;
+- grandes corredores vazios que uma composição masonry deveria preencher;
+- cards sobrepostos ou cortados;
+- ordem visual/teclado incoerente;
+- layout quebrando após resize ou expansão;
+- masonry com aparência genérica que não combina com o UI existente.
 
-QA visual obrigatório:
+PASS quando:
 
-- espaço vazio artificial grande DENTRO de card curto: FAIL;
-- card cortado/overflow: FAIL;
-- largura/gaps desorganizados: FAIL;
-- alturas naturais diferentes, visualmente organizadas: PASS.
+- alturas variadas parecem intencionais;
+- o espaço vertical é utilizado eficientemente;
+- cards curtos encaixam naturalmente sob cards de outras colunas;
+- largura/gaps permanecem organizados;
+- a hierarquia e estética continuam pertencendo ao site do cliente;
+- desktop/tablet/mobile mantêm boa leitura e acessibilidade.
+
+### Compatibilidade com gate legado
+
+Até o validator ser renomeado, trate:
+
+`CAROUSEL REQUIRED: YES`
+
+como:
+
+`VERIFIED REVIEW DISPLAY REQUIRED: YES`
+
+A escolha final entre masonry, grid e carousel é uma decisão de UI orientada pelo conteúdo e pelas regras acima.
 
 ## 11. Não confundir prova social com cold outreach
 
