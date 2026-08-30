@@ -228,6 +228,54 @@ Proibido:
 - `Veja nossas avaliações no Google`
 - qualquer headline/subheadline/label visível que transforme Google no tema da seção
 
+### HARD RULE de sizing/layout dos cards
+
+O conteúdo determina a altura de cada review card. Igualar alturas artificialmente para formar uma linha perfeita é proibido quando isso cria espaço vazio significativo.
+
+Padrão esperado:
+
+- largura consistente por breakpoint;
+- altura individual automática e baseada no conteúdo;
+- cards alinhados pelo topo;
+- gaps consistentes;
+- footer imediatamente após o review com espaçamento normal;
+- track/carrossel capaz de lidar com cards de alturas diferentes sem cortar conteúdo;
+- ocupação eficiente da largura disponível, sem obrigar cards curtos a preencher a altura do maior.
+
+Evite padrões como:
+
+```css
+.review-slide { display: flex; }
+.review-card {
+  height: 100%;
+  justify-content: space-between;
+}
+```
+
+quando o efeito for esticar cards curtos até a altura do review mais longo.
+
+Prefira conceitualmente:
+
+```css
+.reviews-track { align-items: flex-start; }
+.review-slide { align-self: flex-start; }
+.review-card { height: auto; }
+.review-footer { margin-top: 20px; }
+```
+
+A implementação concreta pode variar, desde que preserve o princípio.
+
+Não use `min-height` fixa para harmonizar depoimentos de comprimentos diferentes. Não corte reviews apenas por estética. Se um review excepcionalmente longo precisar de compactação, use um controle acessível de expansão e mantenha o conteúdo integral disponível.
+
+Em layouts mais livres/masonry, preserve a ordem DOM e a navegação por teclado. Preencher espaço visual nunca vence a ordem de leitura e a acessibilidade.
+
+QA visual obrigatório:
+
+- espaço vazio artificial grande DENTRO de card curto: FAIL;
+- card cortado/overflow: FAIL;
+- largura/gaps desorganizados: FAIL;
+- alturas naturais diferentes, visualmente organizadas: PASS.
+
 ## 11. Não confundir prova social com cold outreach
 
 A confirmação de rating/review count para a página não significa que esses números devam ser colocados automaticamente no primeiro WhatsApp frio. As regras de outreach continuam independentes e podem proibir números stale ou desnecessários no cold contact.
