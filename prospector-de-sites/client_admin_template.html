@@ -601,18 +601,6 @@
         doc.addEventListener('keyup', markDirty, true);
         doc.addEventListener('paste', markDirty, true);
         doc.addEventListener('change', markDirty, true);
-
-        if (window.MutationObserver && doc.body) {
-          var observer = new MutationObserver(function(mutations) {
-            var isMeaningful = mutations.some(function(m) {
-              var t = m.target;
-              if (t && t.nodeType === 3) t = t.parentElement;
-              return t && (!t.closest || !t.closest('#pe-hud, [data-pe-ui], .pe-overlay'));
-            });
-            if (isMeaningful) markDirty();
-          });
-          observer.observe(doc.body, { childList: true, subtree: true, characterData: true });
-        }
       } catch (e) {}
     }
 
