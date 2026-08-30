@@ -28,6 +28,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import traceback
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
@@ -576,7 +577,7 @@ class PublishApp(SimpleHTTPRequestHandler):
                     remote=self.config.remote,
                     branch=self.config.branch,
                 )
-                code = 200 if res.get("success") else 502
+                code = 200 if res.get("success") else 400
                 return self._json(code, res)
             except Exception as exc:
                 traceback.print_exc()
@@ -601,7 +602,7 @@ class PublishApp(SimpleHTTPRequestHandler):
                     remote=self.config.remote,
                     branch=self.config.branch,
                 )
-                code = 200 if res.get("success") else 502
+                code = 200 if res.get("success") else 400
                 return self._json(code, res)
             except Exception as exc:
                 traceback.print_exc()

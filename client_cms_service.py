@@ -171,10 +171,8 @@ class ClientCmsService:
         if curr_branch and curr_branch != branch:
             raise RuntimeError(f"Repositório de deploy no branch incorreto: '{curr_branch}' (esperado '{branch}').")
 
-        # Git preflight 2: check for existing uncommitted / staged changes in other files
-        staged_before = run_git(self.deploy_repo, ["diff", "--cached", "--name-only"], check=False).stdout.strip()
-        if staged_before:
-            raise RuntimeError("O repositório de deploy contém alterações pendentes em staging.")
+        # Git preflight 2: reset any leftover staging in deploy repo before atomic publish
+        run_git(self.deploy_repo, ["reset", "HEAD"], check=False)
 
         # Backup current file before overwrite
         backup_path = backup_version(self.root_dir, v_slug, target_path)
