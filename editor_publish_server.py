@@ -709,6 +709,7 @@ class PublishApp(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         # Keep useful local logs without leaking Authorization headers/body.
         sys.stdout.write("[%s] %s\n" % (self.log_date_time_string(), fmt % args))
+        sys.stdout.flush()
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -241,7 +241,11 @@ async def run_public_cms_validation():
         # -------------------------------------------------------------
         print("\n--- [Step 4] Save & Verify Draft over Public HTTPS ---")
         # Handle confirm dialogs automatically
-        page.on("dialog", lambda dialog: asyncio.create_task(dialog.accept()))
+        async def handle_dialog(dialog):
+            print(f"  [Dialog] {dialog.type}: '{dialog.message}' -> accepting")
+            await dialog.accept()
+
+        page.on("dialog", handle_dialog)
 
         frame = page.frame_locator("#cms-editor-frame")
         # Wait for editor content to load inside iframe
@@ -297,12 +301,16 @@ async def run_public_cms_validation():
         assert latest_event.get("action") == "publish", "Expected action 'publish'"
 
         # Wait and verify Vercel live update
-        print("  Polling public Vercel website for published changes (up to 45s)...")
+        print("  Polling public Vercel website for published changes (up to 75s)...")
         published_visible = False
-        for attempt in range(15):
+        for attempt in range(25):
             await asyncio.sleep(3)
             try:
-                with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+                poll_req = urllib.request.Request(
+                    f"{PUBLIC_SITE_URL}?cb={int(time.time()*1000)}",
+                    headers={"User-Agent": "Mozilla/5.0", "Cache-Control": "no-cache", "Pragma": "no-cache"}
+                )
+                with urllib.request.urlopen(poll_req, context=ctx, timeout=30) as resp:
                     live_html = resp.read().decode("utf-8")
                     if TEMP_EDIT_TEXT in live_html:
                         published_visible = True
@@ -327,19 +335,25 @@ async def run_public_cms_validation():
 
         # Check audit trail for rollback
         code, _, _, audit_json = https_request(f"/api/client-cms/audit?slug={SLUG}", headers=auth_hdr)
+        assert code == 200, f"Audit request failed: {code}"
         history = audit_json.get("history", [])
+        assert len(history) > 0, "Audit history must have records"
         rollback_event = history[-1]
         rollback_sha = rollback_event.get("commitSha")
         print(f"  Rollback audit event: action={rollback_event.get('action')}, actor={rollback_event.get('actor')}, commitSha={rollback_sha}")
         assert rollback_event.get("action") == "rollback", "Expected action 'rollback'"
 
         # Wait and verify Vercel restored baseline
-        print("  Polling public Vercel website for baseline restoration (up to 45s)...")
+        print("  Polling public Vercel website for baseline restoration (up to 75s)...")
         restored_clean = False
-        for attempt in range(15):
+        for attempt in range(25):
             await asyncio.sleep(3)
             try:
-                with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+                poll_req = urllib.request.Request(
+                    f"{PUBLIC_SITE_URL}?cb={int(time.time()*1000)}",
+                    headers={"User-Agent": "Mozilla/5.0", "Cache-Control": "no-cache", "Pragma": "no-cache"}
+                )
+                with urllib.request.urlopen(poll_req, context=ctx, timeout=30) as resp:
                     restored_html = resp.read().decode("utf-8")
                     if TEMP_EDIT_TEXT not in restored_html and "Instituto Ferreira" in restored_html:
                         restored_clean = True

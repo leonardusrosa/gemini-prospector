@@ -198,7 +198,7 @@ class ClientCmsService:
 
         # Commit
         commit_msg = f"Client publish: {v_slug}"
-        run_git(self.deploy_repo, ["commit", "-m", commit_msg, "--", rel_path.as_posix()])
+        run_git(self.deploy_repo, ["commit", "-m", commit_msg])
         commit_sha = run_git(self.deploy_repo, ["rev-parse", "HEAD"]).stdout.strip()
 
         # Push
