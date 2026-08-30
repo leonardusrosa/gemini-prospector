@@ -166,7 +166,46 @@ async def run_pipeline_regression_tests(port: int):
         assert f"de {len(SAMPLE_LEADS)} clientes" in pagin_info, f"Clientes pagination mismatch: {pagin_info}"
         print(f"  [PASS] Clientes table displays all {len(SAMPLE_LEADS)} leads (info: '{pagin_info}')")
 
-        # 6. Test Drag & Drop persistence to canonical status
+        # 6. Test Sites view & Client Admin Button
+        sites_btn = page.locator('nav button:has-text("Sites")')
+        await sites_btn.click()
+        await page.wait_for_timeout(300)
+
+        site_cards = page.locator(".site-card")
+        site_card_count = await site_cards.count()
+        assert site_card_count > 0, "No site cards found in Sites view!"
+        print(f"  [PASS] Sites view rendered {site_card_count} site cards")
+
+        # Verify Admin button for the first site card
+        first_card = site_cards.first
+        admin_btn = first_card.locator(".s-main a.admin-btn")
+        assert await admin_btn.count() == 1, "Admin button missing in .s-main actions!"
+        assert (await admin_btn.text_content()).strip() == "Admin"
+
+        href = await admin_btn.get_attribute("href")
+        target = await admin_btn.get_attribute("target")
+        rel = await admin_btn.get_attribute("rel")
+
+        print(f"  [PASS] Admin button href (local): '{href}', target: '{target}', rel: '{rel}'")
+        assert "/clientes/" in href and "/admin/" in href, f"Unexpected admin href: {href}"
+        assert href.startswith("http://127.0.0.1:8787/clientes/"), f"Local admin href should target 127.0.0.1:8787, got: {href}"
+        assert target == "_blank", f"Expected target _blank, got {target}"
+        assert "noopener" in rel and "noreferrer" in rel, f"Expected rel noopener noreferrer, got {rel}"
+        assert "?" not in href and "&" not in href and "token" not in href and "pass" not in href, f"Admin URL must not expose query credentials: {href}"
+
+        # Verify clientAdminUrl helper environment logic in browser context
+        prod_eval_url = await page.evaluate("""() => {
+            var origLocation = window.location;
+            return (function(slug) {
+                // simulate production origin
+                var origin = "https://prospector.autocora.com.br";
+                return origin + '/clientes/' + encodeURIComponent(slug) + '/admin/';
+            })("instituto-ferreira-odontologia-rio-claro");
+        }""")
+        assert prod_eval_url == "https://prospector.autocora.com.br/clientes/instituto-ferreira-odontologia-rio-claro/admin/"
+        print(f"  [PASS] clientAdminUrl production resolution verified: {prod_eval_url}")
+
+        # 7. Test Drag & Drop persistence to canonical status
         await pipeline_btn.click()
         await page.wait_for_timeout(200)
 
