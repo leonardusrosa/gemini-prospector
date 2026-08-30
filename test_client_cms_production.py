@@ -188,6 +188,113 @@ class TestClientCmsSecurityAndPublish(unittest.TestCase):
             validate_html(bad_html)
         self.assertIn("Artefatos de runtime do editor não podem ser publicados", str(ctx.exception))
 
+    def test_i_media_base_tag_sanitization(self):
+        """Test I: Editor-only base tag is stripped cleanly before draft and publish."""
+        editor_html = (
+            '<!DOCTYPE html><html><head><base data-pe-ui="true" href="https://prospector-sites-beta.vercel.app/clientes/instituto-ferreira-odontologia-rio-claro/">'
+            '<title>Test</title></head><body><h1>Content</h1></body></html>'
+        )
+        cleaned = sanitize_html(editor_html)
+        self.assertNotIn("data-pe-ui", cleaned)
+        self.assertNotIn("<base", cleaned)
+
+        # Saving draft with base tag must sanitize it and pass validation
+        res = self.cms_service.save_draft(self.slug, editor_html, actor="admin_instituto")
+        self.assertTrue(res["success"])
+        draft = self.cms_service.get_draft(self.slug)
+        self.assertNotIn("<base", draft)
+
+    def test_j_password_recovery_token_flow(self):
+        """Test J: Password reset token generation, single-use, expiration, and confirmation."""
+        # 1. Configure recovery email
+        self.auth_store.set_recovery_email(self.slug, "financeiro@instituto.com.br")
+
+        # 2. Request reset
+        msg = self.auth_store.request_password_reset(self.slug, "admin_instituto")
+        self.assertIn("Se os dados corresponderem", msg)
+
+        # Check mock outbox
+        self.assertEqual(len(self.auth_store.mail_service.mock_outbox), 1)
+        outbox_entry = self.auth_store.mail_service.mock_outbox[0]
+        self.assertEqual(outbox_entry["to"], "financeiro@instituto.com.br")
+        reset_url = outbox_entry["resetUrl"]
+        self.assertIn("#token=", reset_url)
+        raw_token = reset_url.split("#token=")[1]
+
+        # Verify token is stored only as SHA-256 hash in storage
+        tokens_data = self.auth_store._load_tokens()
+        self.assertIn(self.slug, tokens_data)
+        saved_hash = tokens_data[self.slug][-1]["tokenHash"]
+        self.assertNotEqual(saved_hash, raw_token)
+
+        # 3. Confirm password reset with new password
+        ok, err = self.auth_store.confirm_password_reset(self.slug, raw_token, "NovaSenhaUltraSegura2026!")
+        self.assertTrue(ok)
+        self.assertIsNone(err)
+
+        # 4. Old password must be rejected
+        ok_old, _, _ = self.auth_store.authenticate(self.slug, "admin_instituto", "SenhaForte123!")
+        self.assertFalse(ok_old)
+
+        # 5. New password must authenticate
+        ok_new, new_token, _ = self.auth_store.authenticate(self.slug, "admin_instituto", "NovaSenhaUltraSegura2026!")
+        self.assertTrue(ok_new)
+        self.assertTrue(bool(new_token))
+
+        # 6. Reusing same token must fail (single-use)
+        ok_reuse, err_reuse = self.auth_store.confirm_password_reset(self.slug, raw_token, "OutraSenha123!")
+        self.assertFalse(ok_reuse)
+        self.assertIn("já foi utilizado", err_reuse)
+
+    def test_k_session_invalidation_on_password_change(self):
+        """Test K: Existing sessions are immediately invalidated when password/credentialVersion changes."""
+        # 1. Login and obtain initial session token
+        ok, initial_token, _ = self.auth_store.authenticate(self.slug, "admin_instituto", "SenhaForte123!")
+        self.assertTrue(ok)
+
+        # Session is valid
+        auth_ok, _, _ = self.auth_store.authorize_request(initial_token, self.slug)
+        self.assertTrue(auth_ok)
+
+        # 2. Authenticated password change
+        change_ok, _ = self.auth_store.change_password(self.slug, "SenhaForte123!", "NovaSenhaAlterada2026!", actor="admin_instituto")
+        self.assertTrue(change_ok)
+
+        # 3. Prior session token must now be REJECTED
+        old_auth_ok, _, err_msg = self.auth_store.authorize_request(initial_token, self.slug)
+        self.assertFalse(old_auth_ok)
+        self.assertIn("Sessão invalidada", err_msg)
+
+    def test_l_authenticated_change_password(self):
+        """Test L: Change password requires correct current password and valid length."""
+        # Wrong current password
+        bad_cur, err = self.auth_store.change_password(self.slug, "SenhaErrada", "NovaSenhaValida123!", actor="admin_instituto")
+        self.assertFalse(bad_cur)
+        self.assertIn("incorreta", err)
+
+        # Too short new password
+        short_pwd, err_short = self.auth_store.change_password(self.slug, "SenhaForte123!", "curta", actor="admin_instituto")
+        self.assertFalse(short_pwd)
+        self.assertIn("8 caracteres", err_short)
+
+    def test_m_operator_force_reset_fallback(self):
+        """Test M: Operator CLI fallback generates new password and increments version."""
+        user, temp_pwd = self.auth_store.force_reset_password(self.slug)
+        self.assertEqual(user, "admin_instituto")
+        self.assertTrue(len(temp_pwd) >= 12)
+
+        # Login with operator-generated password
+        ok, token, _ = self.auth_store.authenticate(self.slug, user, temp_pwd)
+        self.assertTrue(ok)
+
+    def test_n_forgot_password_anti_enumeration(self):
+        """Test N: Reset request returns identical message for existing vs nonexistent accounts."""
+        msg1 = self.auth_store.request_password_reset(self.slug, "admin_instituto")
+        msg2 = self.auth_store.request_password_reset(self.slug, "usuario_fantasma_inexistente")
+        msg3 = self.auth_store.request_password_reset("slug-fantasma-inexistente", "admin")
+        self.assertEqual(msg1, msg2)
+        self.assertEqual(msg2, msg3)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

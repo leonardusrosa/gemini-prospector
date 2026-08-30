@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel Administrativo | AutoCORA Client CMS</title>
   <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,7 +20,6 @@
       --accent-hover: #15803D;
       --accent-light: rgba(22, 163, 74, 0.15);
       --danger: #EF4444;
-      --danger-hover: #DC2626;
       --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
     }
@@ -32,15 +32,14 @@
       display: flex;
       flex-direction: column;
     }
-    /* Login State */
-    #cms-login-view {
+    .cms-auth-view {
       display: flex;
       align-items: center;
       justify-content: center;
       flex: 1;
       padding: 24px;
     }
-    .cms-login-card {
+    .cms-card {
       width: 100%;
       max-width: 420px;
       background: var(--card-bg);
@@ -63,13 +62,13 @@
       text-transform: uppercase;
       margin-bottom: 16px;
     }
-    .cms-login-card h1 {
+    .cms-card h1 {
       font-size: 22px;
       font-weight: 700;
       margin-bottom: 8px;
       color: #FFF;
     }
-    .cms-login-card p {
+    .cms-card p {
       font-size: 13px;
       color: var(--ink-muted);
       margin-bottom: 24px;
@@ -116,15 +115,41 @@
     .cms-btn:hover { background: var(--accent-hover); }
     .cms-btn:active { transform: scale(0.99); }
     .cms-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .cms-error-msg {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #FCA5A5;
+    .cms-btn-secondary {
+      background: #1F2937;
+      color: var(--ink);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      margin-top: 10px;
+    }
+    .cms-btn-secondary:hover { background: #374151; }
+    .cms-links-row {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .cms-link {
+      color: #4ADE80;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .cms-link:hover { text-decoration: underline; }
+    .cms-msg {
       padding: 10px 12px;
       border-radius: 8px;
       font-size: 12px;
       margin-bottom: 16px;
       display: none;
+      line-height: 1.4;
+    }
+    .cms-msg.error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #FCA5A5;
+    }
+    .cms-msg.success {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #86EFAC;
     }
     /* Workspace State */
     #cms-workspace-view {
@@ -178,9 +203,7 @@
       color: #FFF;
     }
     .cms-action-btn.primary:hover { background: var(--accent-hover); }
-    .cms-action-btn.danger {
-      color: #F87171;
-    }
+    .cms-action-btn.danger { color: #F87171; }
     .cms-action-btn.danger:hover {
       background: rgba(239, 68, 68, 0.15);
       border-color: rgba(239, 68, 68, 0.4);
@@ -190,6 +213,27 @@
       width: 100%;
       border: none;
       background: #FFF;
+    }
+    /* Modal */
+    .cms-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      padding: 16px;
+    }
+    .cms-modal {
+      width: 100%;
+      max-width: 400px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
     }
     #cms-toast {
       position: fixed;
@@ -204,27 +248,25 @@
       border: 1px solid rgba(255, 255, 255, 0.12);
       display: none;
       z-index: 1000;
-      animation: fadeIn 0.2s ease;
     }
     #cms-toast.success { border-color: #4ADE80; color: #86EFAC; }
     #cms-toast.error { border-color: #EF4444; color: #FCA5A5; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 768px) {
-      .cms-header-actions .cms-action-btn:not(.primary):not(#btn-logout) { display: none; }
+      .cms-header-actions .cms-action-btn:not(.primary):not(#btn-logout):not(#btn-open-change-pass) { display: none; }
       #cms-header-bar { padding: 0 12px; }
-      .cms-login-card { padding: 28px 20px; }
+      .cms-card { padding: 28px 20px; }
     }
   </style>
 </head>
 <body>
   <!-- View 1: Login -->
-  <div id="cms-login-view">
-    <div class="cms-login-card">
+  <div id="cms-login-view" class="cms-auth-view">
+    <div class="cms-card">
       <div class="cms-brand-badge">AutoCORA Client CMS</div>
-      <h1 id="login-heading">Painel de Conteúdo</h1>
+      <h1>Painel de Conteúdo</h1>
       <p>Gerencie textos, imagens, WhatsApp e contatos com facilidade e segurança.</p>
       
-      <div id="login-error" class="cms-error-msg"></div>
+      <div id="login-error" class="cms-msg error"></div>
 
       <form id="cms-login-form">
         <div class="cms-form-group">
@@ -237,10 +279,56 @@
         </div>
         <button type="submit" id="cms-login-submit" class="cms-btn">Acessar Painel</button>
       </form>
+      <div class="cms-links-row">
+        <a id="link-show-recovery" class="cms-link">Esqueci minha senha</a>
+      </div>
     </div>
   </div>
 
-  <!-- View 2: Workspace / Editor -->
+  <!-- View 2: Password Recovery (Forgot Password) -->
+  <div id="cms-recovery-view" class="cms-auth-view" style="display: none;">
+    <div class="cms-card">
+      <div class="cms-brand-badge">Recuperação de Acesso</div>
+      <h1>Redefinir Senha</h1>
+      <p>Informe seu usuário ou e-mail de recuperação cadastrado para receber o link seguro de redefinição.</p>
+      
+      <div id="recovery-msg" class="cms-msg"></div>
+
+      <form id="cms-recovery-form">
+        <div class="cms-form-group">
+          <label for="recovery-identifier">Usuário ou E-mail</label>
+          <input type="text" id="recovery-identifier" required placeholder="Ex: usuario ou email@exemplo.com">
+        </div>
+        <button type="submit" id="recovery-submit" class="cms-btn">Enviar Instruções</button>
+        <button type="button" id="link-recovery-back" class="cms-btn cms-btn-secondary">Voltar ao Login</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- View 3: Reset Password (Confirm Token) -->
+  <div id="cms-reset-view" class="cms-auth-view" style="display: none;">
+    <div class="cms-card">
+      <div class="cms-brand-badge">Nova Senha</div>
+      <h1>Definir Nova Senha</h1>
+      <p>Crie uma nova senha de acesso segura para sua conta.</p>
+      
+      <div id="reset-msg" class="cms-msg"></div>
+
+      <form id="cms-reset-form">
+        <div class="cms-form-group">
+          <label for="reset-new-pass">Nova Senha (mínimo 8 caracteres)</label>
+          <input type="password" id="reset-new-pass" required minlength="8" placeholder="••••••••">
+        </div>
+        <div class="cms-form-group">
+          <label for="reset-confirm-pass">Confirmar Nova Senha</label>
+          <input type="password" id="reset-confirm-pass" required minlength="8" placeholder="••••••••">
+        </div>
+        <button type="submit" id="reset-submit" class="cms-btn">Salvar Nova Senha</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- View 4: Workspace / Editor -->
   <div id="cms-workspace-view">
     <header id="cms-header-bar">
       <div class="cms-header-left">
@@ -251,10 +339,38 @@
         <button type="button" id="btn-save-draft" class="cms-action-btn">Salvar Rascunho</button>
         <button type="button" id="btn-rollback" class="cms-action-btn danger">Restaurar Anterior</button>
         <button type="button" id="btn-publish" class="cms-action-btn primary">Publicar no Ar</button>
+        <button type="button" id="btn-open-change-pass" class="cms-action-btn">Alterar Senha</button>
         <button type="button" id="btn-logout" class="cms-action-btn">Sair</button>
       </div>
     </header>
     <iframe id="cms-editor-frame" title="Editor Visual"></iframe>
+  </div>
+
+  <!-- Modal: Authenticated Change Password -->
+  <div id="cms-change-pass-modal" class="cms-modal-backdrop">
+    <div class="cms-modal">
+      <h2 style="font-size:18px; margin-bottom:8px;">Alterar Senha de Acesso</h2>
+      <p style="font-size:13px; color:var(--ink-muted); margin-bottom:18px;">Informe a senha atual e defina uma nova senha segura.</p>
+      <div id="change-pass-msg" class="cms-msg"></div>
+      <form id="cms-change-pass-form">
+        <div class="cms-form-group">
+          <label for="change-curr-pass">Senha Atual</label>
+          <input type="password" id="change-curr-pass" required placeholder="••••••••">
+        </div>
+        <div class="cms-form-group">
+          <label for="change-new-pass">Nova Senha (mínimo 8 caracteres)</label>
+          <input type="password" id="change-new-pass" required minlength="8" placeholder="••••••••">
+        </div>
+        <div class="cms-form-group">
+          <label for="change-confirm-pass">Confirmar Nova Senha</label>
+          <input type="password" id="change-confirm-pass" required minlength="8" placeholder="••••••••">
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button type="submit" id="change-pass-submit" class="cms-btn">Atualizar Senha</button>
+          <button type="button" id="btn-cancel-change-pass" class="cms-btn cms-btn-secondary" style="margin-top:0;">Cancelar</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="cms-toast"></div>
@@ -264,11 +380,28 @@
     'use strict';
     var slug = getSlugFromUrl();
     var tokenKey = 'autocora_cms_token:' + slug;
+
     var loginView = document.getElementById('cms-login-view');
+    var recoveryView = document.getElementById('cms-recovery-view');
+    var resetView = document.getElementById('cms-reset-view');
     var workspaceView = document.getElementById('cms-workspace-view');
+
     var loginForm = document.getElementById('cms-login-form');
-    var loginError = document.getElementById('login-error');
-    var submitBtn = document.getElementById('cms-login-submit');
+    var loginMsg = document.getElementById('login-error');
+    var loginSubmit = document.getElementById('cms-login-submit');
+
+    var recoveryForm = document.getElementById('cms-recovery-form');
+    var recoveryMsg = document.getElementById('recovery-msg');
+    var recoverySubmit = document.getElementById('recovery-submit');
+
+    var resetForm = document.getElementById('cms-reset-form');
+    var resetMsg = document.getElementById('reset-msg');
+    var resetSubmit = document.getElementById('reset-submit');
+
+    var changePassModal = document.getElementById('cms-change-pass-modal');
+    var changePassForm = document.getElementById('cms-change-pass-form');
+    var changePassMsg = document.getElementById('change-pass-msg');
+
     var siteLabel = document.getElementById('cms-site-label');
     var editorFrame = document.getElementById('cms-editor-frame');
     var toastEl = document.getElementById('cms-toast');
@@ -289,7 +422,84 @@
       setTimeout(function() { toastEl.style.display = 'none'; }, duration || 4000);
     }
 
+    function checkResetToken() {
+      var hash = window.location.hash || '';
+      var search = window.location.search || '';
+      var m = hash.match(/(?:#token=|#reset_token=|token=)([^&]+)/i) || search.match(/(?:[?&]token=|[?&]reset_token=)([^&]+)/i);
+      if (m && m[1]) {
+        showResetView(decodeURIComponent(m[1]));
+        return true;
+      }
+      return false;
+    }
+    window.addEventListener('hashchange', checkResetToken);
+
+    function showLogin(msg, isSuccess) {
+      recoveryView.style.display = 'none';
+      resetView.style.display = 'none';
+      workspaceView.style.display = 'none';
+      loginView.style.display = 'flex';
+      editorFrame.srcdoc = '';
+
+      if (msg) {
+        loginMsg.textContent = msg;
+        loginMsg.className = 'cms-msg ' + (isSuccess ? 'success' : 'error');
+        loginMsg.style.display = 'block';
+      } else {
+        loginMsg.style.display = 'none';
+      }
+    }
+
+    function showRecovery() {
+      loginView.style.display = 'none';
+      resetView.style.display = 'none';
+      workspaceView.style.display = 'none';
+      recoveryView.style.display = 'flex';
+      recoveryMsg.style.display = 'none';
+      document.getElementById('recovery-identifier').value = '';
+    }
+
+    var activeResetToken = '';
+    function showResetView(token) {
+      activeResetToken = token;
+      loginView.style.display = 'none';
+      recoveryView.style.display = 'none';
+      workspaceView.style.display = 'none';
+      resetView.style.display = 'flex';
+      resetMsg.style.display = 'none';
+      document.getElementById('reset-new-pass').value = '';
+      document.getElementById('reset-confirm-pass').value = '';
+    }
+
+    function loadEditorFrame(token) {
+      fetch('/api/client-cms/editor-frame?slug=' + encodeURIComponent(slug), {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(function(r) {
+        if (!r.ok) throw new Error('Falha ao autenticar frame do editor (' + r.status + ')');
+        return r.text();
+      })
+      .then(function(html) {
+        editorFrame.srcdoc = html;
+      })
+      .catch(function(err) {
+        showToast('Erro ao carregar editor: ' + err.message, 'error');
+      });
+    }
+
+    function showWorkspace(tenantInfo) {
+      loginView.style.display = 'none';
+      recoveryView.style.display = 'none';
+      resetView.style.display = 'none';
+      workspaceView.style.display = 'flex';
+      siteLabel.textContent = tenantInfo.displayName || slug;
+      var token = sessionStorage.getItem(tokenKey);
+      loadEditorFrame(token);
+    }
+
     function checkSession() {
+      if (checkResetToken()) return;
+
       var token = sessionStorage.getItem(tokenKey);
       if (!token) {
         showLogin();
@@ -312,31 +522,12 @@
       });
     }
 
-    function showLogin(err) {
-      workspaceView.style.display = 'none';
-      loginView.style.display = 'flex';
-      editorFrame.src = 'about:blank';
-      if (err) {
-        loginError.textContent = err;
-        loginError.style.display = 'block';
-      } else {
-        loginError.style.display = 'none';
-      }
-    }
-
-    function showWorkspace(tenantInfo) {
-      loginView.style.display = 'none';
-      workspaceView.style.display = 'flex';
-      siteLabel.textContent = tenantInfo.displayName || slug;
-      var token = sessionStorage.getItem(tokenKey);
-      editorFrame.src = '/api/client-cms/editor-frame?slug=' + encodeURIComponent(slug) + '&token=' + encodeURIComponent(token);
-    }
-
+    // Login Form Submit
     loginForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      loginError.style.display = 'none';
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Autenticando...';
+      loginMsg.style.display = 'none';
+      loginSubmit.disabled = true;
+      loginSubmit.textContent = 'Autenticando...';
 
       var user = document.getElementById('cms-username').value.trim();
       var pass = document.getElementById('cms-password').value;
@@ -348,27 +539,147 @@
       })
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Acessar Painel';
+        loginSubmit.disabled = false;
+        loginSubmit.textContent = 'Acessar Painel';
         if (data.success && data.token) {
           sessionStorage.setItem(tokenKey, data.token);
           checkSession();
         } else {
-          loginError.textContent = data.error || 'Credenciais inválidas.';
-          loginError.style.display = 'block';
+          showLogin(data.error || 'Credenciais inválidas.');
         }
       })
-      .catch(function(err) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Acessar Painel';
-        loginError.textContent = 'Falha na conexão com o servidor de autenticação.';
-        loginError.style.display = 'block';
+      .catch(function() {
+        loginSubmit.disabled = false;
+        loginSubmit.textContent = 'Acessar Painel';
+        showLogin('Falha na conexão com o servidor de autenticação.');
       });
     });
 
+    // Forgot Password Link & Form
+    document.getElementById('link-show-recovery').addEventListener('click', showRecovery);
+    document.getElementById('link-recovery-back').addEventListener('click', function() { showLogin(); });
+
+    recoveryForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      recoverySubmit.disabled = true;
+      recoverySubmit.textContent = 'Enviando...';
+      var ident = document.getElementById('recovery-identifier').value.trim();
+
+      fetch('/api/client-cms/password-reset/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: slug, identifier: ident })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        recoverySubmit.disabled = false;
+        recoverySubmit.textContent = 'Enviar Instruções';
+        recoveryMsg.textContent = data.message || 'Se os dados corresponderem a uma conta ativa, as instruções de redefinição foram enviadas.';
+        recoveryMsg.className = 'cms-msg success';
+        recoveryMsg.style.display = 'block';
+      })
+      .catch(function() {
+        recoverySubmit.disabled = false;
+        recoverySubmit.textContent = 'Enviar Instruções';
+        recoveryMsg.textContent = 'Se os dados corresponderem a uma conta ativa, as instruções de redefinição foram enviadas.';
+        recoveryMsg.className = 'cms-msg success';
+        recoveryMsg.style.display = 'block';
+      });
+    });
+
+    // Reset Password Form Submit
+    resetForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var p1 = document.getElementById('reset-new-pass').value;
+      var p2 = document.getElementById('reset-confirm-pass').value;
+      if (p1 !== p2) {
+        resetMsg.textContent = 'As senhas informadas não coincidem.';
+        resetMsg.className = 'cms-msg error';
+        resetMsg.style.display = 'block';
+        return;
+      }
+      resetSubmit.disabled = true;
+      resetSubmit.textContent = 'Salvando...';
+
+      fetch('/api/client-cms/password-reset/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: slug, token: activeResetToken, newPassword: p1 })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        resetSubmit.disabled = false;
+        resetSubmit.textContent = 'Salvar Nova Senha';
+        if (data.success) {
+          history.replaceState(null, '', window.location.pathname);
+          showLogin('Senha redefinida com sucesso! Faça login com sua nova senha.', true);
+        } else {
+          resetMsg.textContent = data.error || 'Falha ao redefinir senha.';
+          resetMsg.className = 'cms-msg error';
+          resetMsg.style.display = 'block';
+        }
+      })
+      .catch(function() {
+        resetSubmit.disabled = false;
+        resetSubmit.textContent = 'Salvar Nova Senha';
+        resetMsg.textContent = 'Erro ao processar redefinição.';
+        resetMsg.className = 'cms-msg error';
+        resetMsg.style.display = 'block';
+      });
+    });
+
+    // Change Password Modal & Action
+    document.getElementById('btn-open-change-pass').addEventListener('click', function() {
+      changePassMsg.style.display = 'none';
+      document.getElementById('change-curr-pass').value = '';
+      document.getElementById('change-new-pass').value = '';
+      document.getElementById('change-confirm-pass').value = '';
+      changePassModal.style.display = 'flex';
+    });
+    document.getElementById('btn-cancel-change-pass').addEventListener('click', function() {
+      changePassModal.style.display = 'none';
+    });
+
+    changePassForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var curr = document.getElementById('change-curr-pass').value;
+      var p1 = document.getElementById('change-new-pass').value;
+      var p2 = document.getElementById('change-confirm-pass').value;
+      if (p1 !== p2) {
+        changePassMsg.textContent = 'As novas senhas informadas não coincidem.';
+        changePassMsg.className = 'cms-msg error';
+        changePassMsg.style.display = 'block';
+        return;
+      }
+      var token = sessionStorage.getItem(tokenKey);
+      fetch('/api/client-cms/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ slug: slug, currentPassword: curr, newPassword: p1 })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          changePassModal.style.display = 'none';
+          sessionStorage.removeItem(tokenKey);
+          showLogin('Senha alterada com sucesso! Faça login novamente com a nova senha.', true);
+        } else {
+          changePassMsg.textContent = data.error || 'Falha ao alterar senha.';
+          changePassMsg.className = 'cms-msg error';
+          changePassMsg.style.display = 'block';
+        }
+      })
+      .catch(function() {
+        changePassMsg.textContent = 'Erro ao processar alteração de senha.';
+        changePassMsg.className = 'cms-msg error';
+        changePassMsg.style.display = 'block';
+      });
+    });
+
+    // Logout
     document.getElementById('btn-logout').addEventListener('click', function() {
       sessionStorage.removeItem(tokenKey);
-      showLogin('Você saiu do painel com sucesso.');
+      showLogin('Você saiu do painel com sucesso.', true);
     });
 
     function getCleanHtml() {
@@ -434,7 +745,7 @@
       .then(function(d) {
         if (d.success) {
           showToast('Versão anterior restaurada com sucesso!', 'success', 6000);
-          setTimeout(function() { editorFrame.src = editorFrame.src; }, 1500);
+          setTimeout(function() { loadEditorFrame(token); }, 1500);
         } else {
           showToast(d.error || 'Falha ao restaurar versão anterior.', 'error', 6000);
         }

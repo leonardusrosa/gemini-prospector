@@ -264,7 +264,7 @@ class PublishApp(SimpleHTTPRequestHandler):
     def _send_security_headers(self) -> None:
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "SAMEORIGIN")
-        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
 
     def _json(self, code: int, obj: dict) -> None:
@@ -324,8 +324,8 @@ class PublishApp(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        # Route 1: Client Admin SPA UI (/clientes/<slug>/admin/ or /sites/<slug>/admin)
-        admin_match = re.match(r"^/(?:clientes|sites)/([A-Za-z0-9._-]+)/admin(?:/|/index\.html)?$", path)
+        # Route 1: Client Admin SPA UI (/clientes/<slug>/admin/ or /clientes/<slug>/admin/reset/)
+        admin_match = re.match(r"^/(?:clientes|sites)/([A-Za-z0-9._-]+)/admin(?:/|/reset/?|/index\.html)?$", path)
         if admin_match:
             slug = admin_match.group(1)
             tpl_candidates = [
@@ -372,6 +372,15 @@ class PublishApp(SimpleHTTPRequestHandler):
             # Inject editor layer dynamically
             clean_html = strip_existing_editor(raw_html)
             clean_html = tag_author_styles(clean_html)
+
+            # Inject editor-only base tag to correctly resolve relative assets against public client site root
+            base_url = f"https://prospector-sites-beta.vercel.app/{self.config.base_path}/{slug}/"
+            base_tag = f'<base data-pe-ui="true" href="{base_url}">'
+            if "<head" in clean_html.lower():
+                clean_html = re.sub(r'(<head\b[^>]*>)', r'\1\n  ' + base_tag, clean_html, count=1, flags=re.IGNORECASE)
+            else:
+                clean_html = base_tag + "\n" + clean_html
+
             idx = clean_html.lower().rfind("</body>")
             if idx != -1:
                 editor_page = clean_html[:idx] + EDITOR_LAYER + "\n" + clean_html[idx:]
@@ -415,6 +424,13 @@ class PublishApp(SimpleHTTPRequestHandler):
             history = get_audit_history(self.config.data_dir, slug)
             return self._json(200, {"success": True, "slug": slug, "history": history})
 
+        # Route 3.5: Client CMS Mail Status API
+        if path == "/api/client-cms/mail-status":
+            return self._json(200, {
+                "success": True,
+                "configured": self.config.auth_store.mail_service.is_configured(),
+            })
+
         # Route 4: Legacy editor status
         if path == "/api/editor/status":
             try:
@@ -448,6 +464,50 @@ class PublishApp(SimpleHTTPRequestHandler):
                     return self._json(200, {"success": True, "token": token_or_err, "slug": slug})
                 code = 429 if err_code == "RATE_LIMITED" else 401
                 return self._json(code, {"success": False, "error": token_or_err, "code": err_code})
+            except Exception as exc:
+                return self._json(400, {"success": False, "error": str(exc)})
+
+        # Route A.2: Client CMS Password Reset Request (Forgot Password)
+        if route == "/api/client-cms/password-reset/request":
+            try:
+                body = self._body()
+                slug = str(body.get("slug") or "").strip()
+                ident = str(body.get("identifier") or "").strip()
+                client_ip = self._client_ip()
+                msg = self.config.auth_store.request_password_reset(slug, ident, client_ip=client_ip)
+                return self._json(200, {"success": True, "message": msg})
+            except Exception:
+                return self._json(200, {"success": True, "message": "Se os dados corresponderem a uma conta ativa, as instruções de redefinição foram enviadas."})
+
+        # Route A.3: Client CMS Password Reset Confirm
+        if route == "/api/client-cms/password-reset/confirm":
+            try:
+                body = self._body()
+                slug = str(body.get("slug") or "").strip()
+                tok = str(body.get("token") or "").strip()
+                new_pass = str(body.get("newPassword") or "")
+                ok, err = self.config.auth_store.confirm_password_reset(slug, tok, new_pass)
+                if ok:
+                    return self._json(200, {"success": True, "message": "Senha redefinida com sucesso."})
+                return self._json(400, {"success": False, "error": err or "Falha ao redefinir senha."})
+            except Exception as exc:
+                return self._json(400, {"success": False, "error": str(exc)})
+
+        # Route A.4: Client CMS Authenticated Change Password
+        if route == "/api/client-cms/change-password":
+            try:
+                body = self._body()
+                slug = str(body.get("slug") or "").strip()
+                curr_pass = str(body.get("currentPassword") or "")
+                new_pass = str(body.get("newPassword") or "")
+                token = self._get_bearer_token()
+                ok, payload, err = self.config.auth_store.authorize_request(token, slug)
+                if not ok:
+                    return self._json(401, {"success": False, "error": err})
+                ok, err = self.config.auth_store.change_password(slug, curr_pass, new_pass, actor=payload.get("actor", "tenant"))
+                if ok:
+                    return self._json(200, {"success": True, "message": "Senha alterada com sucesso."})
+                return self._json(400, {"success": False, "error": err or "Falha ao alterar senha."})
             except Exception as exc:
                 return self._json(400, {"success": False, "error": str(exc)})
 
