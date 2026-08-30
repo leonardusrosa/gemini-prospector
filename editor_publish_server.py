@@ -425,7 +425,13 @@ class PublishApp(SimpleHTTPRequestHandler):
             token = self._get_bearer_token()
             ok, payload, err = self.config.auth_store.authorize_request(token, slug)
             if not ok:
-                return self._json(401, {"success": False, "authorized": False, "error": err, "codeVersion": self.config.code_version})
+                return self._json(401, {
+                    "success": False,
+                    "authorized": False,
+                    "error": err,
+                    "codeVersion": self.config.code_version,
+                    "repoHead": _get_git_version(self.config.root),
+                })
             return self._json(200, {
                 "success": True,
                 "authorized": True,
@@ -433,6 +439,7 @@ class PublishApp(SimpleHTTPRequestHandler):
                 "actor": payload.get("actor"),
                 "displayName": slug.replace("-", " ").title(),
                 "codeVersion": self.config.code_version,
+                "repoHead": _get_git_version(self.config.root),
             })
 
         # Route 2.5: Client CMS Draft API (Load Draft)
