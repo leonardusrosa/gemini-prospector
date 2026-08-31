@@ -1,4 +1,14 @@
-from prospector_de_sites_import import load_fixed_controls_review
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
+
+
+def load_fixed_controls_review():
+    module_path = Path(__file__).resolve().parents[1] / "fixed_conversion_controls_review.py"
+    spec = spec_from_file_location("fixed_conversion_controls_review", module_path)
+    assert spec and spec.loader
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_assistant_and_floating_whatsapp_is_blocked():
