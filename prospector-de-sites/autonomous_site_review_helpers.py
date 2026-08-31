@@ -52,6 +52,16 @@ HERO_IMAGE_PATTERN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
+REVIEWS_SECTION_PATTERN = re.compile(
+    r"<section\b[^>]*(?:data-role\s*=\s*['\"]reviews['\"]|id\s*=\s*['\"]avaliacoes['\"])[^>]*>(.*?)</section>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+REVIEWS_TAG_PATTERN = re.compile(
+    r"<section\b[^>]*(?:data-role\s*=\s*['\"]reviews['\"]|id\s*=\s*['\"]avaliacoes['\"])[^>]*>",
+    re.IGNORECASE | re.DOTALL,
+)
+
 
 class Review:
     def __init__(self) -> None:

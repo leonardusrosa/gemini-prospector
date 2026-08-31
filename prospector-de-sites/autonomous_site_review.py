@@ -35,6 +35,8 @@ try:
         HERO_IMAGE_PATTERN,
         HERO_SECTION_PATTERN,
         INSTAGRAM_ACTIVE_PATTERN,
+        REVIEWS_SECTION_PATTERN,
+        REVIEWS_TAG_PATTERN,
         WA_LINK_PATTERN,
     )
 except ImportError:
@@ -55,6 +57,8 @@ except ImportError:
         HERO_IMAGE_PATTERN,
         HERO_SECTION_PATTERN,
         INSTAGRAM_ACTIVE_PATTERN,
+        REVIEWS_SECTION_PATTERN,
+        REVIEWS_TAG_PATTERN,
         WA_LINK_PATTERN,
     )
 
@@ -95,7 +99,7 @@ def check_hero_visual(manifest: dict, html: str, design_read: str, review: Revie
         hero_image_tag = image_match.group(0) if image_match else None
 
     review.check("hero_image_present", hero_image_tag is not None, "Hero requires <img data-role=\"hero-image\">")
-    if not hero_image_tag:
+    if not hero_image_tag or not hero_section:
         return
 
     src = (extract_attr(hero_image_tag, "src") or "").strip()
@@ -143,6 +147,17 @@ def check_hero_visual(manifest: dict, html: str, design_read: str, review: Revie
         review.check("hero_template_no_actual_expert", not rep_expert, "Template placeholder cannot claim representsActualExpert=true")
         review.check("hero_template_no_actual_business", not rep_business, "Template placeholder cannot claim representsActualBusiness=true")
         review.check("hero_template_illustrative_context", image_context == "illustrative", "Template requires data-image-context=\"illustrative\"")
+
+        hero_tag_match = re.search(r"<section\b[^>]*data-role\s*=\s*['\"]hero['\"][^>]*>", html, re.IGNORECASE)
+        hero_tag_str = hero_tag_match.group(0) if hero_tag_match else ""
+        layout_mode = extract_attr(hero_tag_str, "data-hero-layout")
+        review.check("hero_template_layout_mode", layout_mode == "full-bleed-background", "Hero template requires data-hero-layout=\"full-bleed-background\"")
+
+        has_picture = bool(re.search(r"<picture\b", hero_section.group(1), re.IGNORECASE))
+        review.check("hero_template_picture_present", has_picture, "Hero template requires <picture> wrapper for responsive assets")
+
+        has_mobile_source = bool(re.search(r"<source\b[^>]*media\s*=\s*['\"][^'\"]*max-width[^'\"]*['\"][^>]*srcset\s*=", hero_section.group(1), re.IGNORECASE))
+        review.check("hero_template_mobile_source_present", has_mobile_source, "Hero template requires mobile <source media=\"(max-width: ...)\">")
 
         cat_path, cat_data = find_canonical_template_manifest(base_dir)
         review.check("hero_template_catalog_exists", cat_data is not None, f"Canonical hero-expert catalog not found (checked {cat_path})")
@@ -201,6 +216,83 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
             re.search(r"data-role=['\"]reviews['\"]|data-role=['\"]testimonials['\"]|id=['\"]avaliacoes['\"]|class=['\"][^'\"]*(?:review|testimonial|avaliacao|depoimento)", html, re.IGNORECASE)
         )
         review.check("google_reviews_html_rendered", has_reviews_html, f"State {state} requires rendered review section in HTML")
+
+        tag_match = REVIEWS_TAG_PATTERN.search(html)
+        section_match = REVIEWS_SECTION_PATTERN.search(html)
+        tag_str = tag_match.group(0) if tag_match else ""
+        section_inner = section_match.group(1) if section_match else ""
+
+        if state in {"VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE"}:
+            review_mode = extract_attr(tag_str, "data-review-mode")
+            review.check("google_reviews_mode_aggregate", review_mode == "aggregate-only", "Aggregate-only review section requires data-review-mode=\"aggregate-only\"")
+
+            rating_attr = extract_attr(tag_str, "data-review-rating")
+            expected_rating = gr_cfg.get("aggregateRating")
+            rating_ok = False
+            if rating_attr is not None and expected_rating is not None:
+                try:
+                    rating_ok = abs(float(str(rating_attr).replace(",", ".")) - float(str(expected_rating).replace(",", "."))) < 0.01
+                except ValueError:
+                    rating_ok = False
+            review.check("google_reviews_rating_hook", rating_ok, f"data-review-rating={rating_attr!r} must match evidence rating {expected_rating!r}")
+
+            count_attr = extract_attr(tag_str, "data-review-count")
+            expected_count = gr_cfg.get("ratingCount")
+            if expected_count is None:
+                expected_count = gr_cfg.get("reviewCount")
+            count_ok = False
+            if count_attr is not None and expected_count is not None:
+                try:
+                    count_ok = int(count_attr) == int(expected_count)
+                except ValueError:
+                    count_ok = False
+            review.check("google_reviews_count_hook", count_ok, f"data-review-count={count_attr!r} must match evidence count {expected_count!r}")
+
+            has_fake_cards = bool(re.search(r"data-role=['\"]review-card['\"]|<blockquote\b", section_inner, re.IGNORECASE))
+            review.check("google_reviews_no_fake_cards", not has_fake_cards, "Aggregate-only state cannot contain testimonial cards or blockquotes")
+
+            has_unsupported_patient = bool(re.search(r"\b(?:paciente|pacientes|atendido|atendidos|pessoa que realizou tratamento)\b", section_inner, re.IGNORECASE))
+            review.check("google_reviews_no_unsupported_patient_attribution", not has_unsupported_patient, "Review section cannot infer patient/client attribution without verified review text evidence")
+        elif state == "VERIFIED_STRONG":
+            review_mode = extract_attr(tag_str, "data-review-mode")
+            review.check("google_reviews_mode_text", review_mode == "text-reviews", "VERIFIED_STRONG reviews require data-review-mode=\"text-reviews\"")
+            has_cards = bool(re.search(r"data-role=['\"]review-card['\"]", section_inner, re.IGNORECASE))
+            review.check("google_reviews_cards_present", has_cards, "VERIFIED_STRONG state requires verified review cards with data-role=\"review-card\"")
+
+
+def check_factual_traceability(manifest: dict, design_read: str, html: str, review: Review) -> None:
+    verified_services_cfg = manifest.get("factualServices") or manifest.get("verifiedServices")
+    if verified_services_cfg is None:
+        factual_evidence = section(manifest, "factualEvidence")
+        verified_services_cfg = factual_evidence.get("verifiedServices")
+
+    # Extract claims from design_read
+    claimed_services = []
+    for line in design_read.splitlines():
+        if re.search(r"factual verified services|serviços verificados", line, re.IGNORECASE):
+            claimed_services.append(line)
+
+    unsupported_terms = [
+        "invisalign",
+        "alinhador",
+        "ortopedia facial",
+        "interceptativa",
+        "contenção",
+        "adultos e crianças",
+    ]
+
+    if verified_services_cfg is not None and isinstance(verified_services_cfg, list):
+        norm_verified = " ".join(str(s).lower() for s in verified_services_cfg)
+        for term in unsupported_terms:
+            for claim_line in claimed_services:
+                if term in claim_line.lower() and term not in norm_verified:
+                    review.check(
+                        "factual_traceability_verified_services",
+                        False,
+                        f"design-read claims verified service '{term}' not traced to factual evidence inventory",
+                    )
+                    return
+    review.check("factual_traceability_verified_services", True, "All claimed verified services trace to factual evidence inventory")
 
 
 def check_motion_and_map(manifest: dict, html: str, design_read: str, review: Review) -> None:
@@ -297,6 +389,7 @@ def main() -> int:
     check_gpt_taste(manifest, design_read, review)
     check_hero_visual(manifest, html, design_read, review, base_dir=base_dir)
     check_google_reviews(manifest, html, design_read, review)
+    check_factual_traceability(manifest, design_read, html, review)
     check_motion_and_map(manifest, html, design_read, review)
     check_socials_and_extras(manifest, html, review)
 

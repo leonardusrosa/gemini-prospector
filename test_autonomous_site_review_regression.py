@@ -314,7 +314,11 @@ def test_valid_dentistry_female_template_passes():
         "desktopAssetRequired": True,
         "mobileAssetRequired": True,
     }
-    code, payload = run_case(manifest=manifest)
+    html = PASS_HTML.replace(
+        '<section data-role="hero">',
+        '<section data-role="hero" data-hero-layout="full-bleed-background"><picture><source media="(max-width: 767px)" srcset="assets/mobile.webp">',
+    ).replace('</section>', '</picture></section>', 1)
+    code, payload = run_case(html=html, manifest=manifest)
     assert code == 0
     assert payload["autonomousReviewPass"] is True
 
@@ -332,7 +336,11 @@ def test_valid_dentistry_male_template_passes():
         "desktopAssetRequired": True,
         "mobileAssetRequired": True,
     }
-    code, payload = run_case(manifest=manifest)
+    html = PASS_HTML.replace(
+        '<section data-role="hero">',
+        '<section data-role="hero" data-hero-layout="full-bleed-background"><picture><source media="(max-width: 767px)" srcset="assets/mobile.webp">',
+    ).replace('</section>', '</picture></section>', 1)
+    code, payload = run_case(html=html, manifest=manifest)
     assert code == 0
     assert payload["autonomousReviewPass"] is True
 
@@ -373,7 +381,7 @@ def test_google_reviews_verified_strong_with_rendered_section_passes():
         "reviewSectionRequired": True,
         "reviewSectionRendered": True,
     }
-    html = PASS_HTML.replace('</body>', '<section data-role="reviews"><div class="review">Excelente atendimento</div></section></body>')
+    html = PASS_HTML.replace('</body>', '<section data-role="reviews" data-review-mode="text-reviews"><div data-role="review-card">Excelente atendimento</div></section></body>')
     code, payload = run_case(html=html, manifest=manifest)
     assert code == 0
     assert payload["autonomousReviewPass"] is True
@@ -408,7 +416,7 @@ def test_google_reviews_aggregate_only_with_rating_count_1_with_section_passes()
         "reviewSectionRequired": True,
         "reviewSectionRendered": True,
     }
-    html = PASS_HTML.replace('</body>', '<section data-role="reviews"><h2>Avaliações de pacientes</h2><div class="aggregate">5,0 de 5</div><div>1 avaliação</div></section></body>')
+    html = PASS_HTML.replace('</body>', '<section data-role="reviews" data-review-mode="aggregate-only" data-review-rating="5.0" data-review-count="1"><h2>Avaliações</h2><div class="aggregate">5,0 de 5</div><div>1 avaliação</div></section></body>')
     code, payload = run_case(html=html, manifest=manifest)
     assert code == 0
     assert payload["autonomousReviewPass"] is True
@@ -507,6 +515,81 @@ def test_missing_reduced_motion_is_blocked():
     code, payload = run_case(html=html)
     assert code == 1
     assert "reduced_motion_css" in failed_keys(payload)
+
+
+def test_hero_template_in_card_without_full_bleed_layout_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "dentistry-female",
+        "sourceType": "generated-template",
+        "representsActualBusiness": False,
+        "representsActualExpert": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    # HTML uses right-side card without data-hero-layout="full-bleed-background"
+    html = PASS_HTML.replace(
+        '<section data-role="hero">',
+        '<section data-role="hero"><div class="hero-grid"><div class="hero-card"><img data-role="hero-image" data-image-context="illustrative" src="assets/hero.webp" alt="Consultorio"></div></div>',
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "hero_template_layout_mode" in failed_keys(payload)
+
+
+def test_google_reviews_aggregate_only_with_patient_attribution_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "verifiedGoogleProfile": True,
+        "state": "VERIFIED_AGGREGATE_ONLY",
+        "aggregateRating": 5.0,
+        "ratingCount": 1,
+        "usableTextReviews": 0,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+    }
+    # Section has unsupported patient attribution
+    html = PASS_HTML.replace(
+        '</body>',
+        '<section data-role="reviews" data-review-mode="aggregate-only" data-review-rating="5.0" data-review-count="1"><div class="aggregate">5,0 de 5</div><div>Avaliação pública registrada por paciente</div></section></body>',
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "google_reviews_no_unsupported_patient_attribution" in failed_keys(payload)
+
+
+def test_google_reviews_aggregate_only_with_fake_cards_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "verifiedGoogleProfile": True,
+        "state": "VERIFIED_AGGREGATE_ONLY",
+        "aggregateRating": 5.0,
+        "ratingCount": 1,
+        "usableTextReviews": 0,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+    }
+    html = PASS_HTML.replace(
+        '</body>',
+        '<section data-role="reviews" data-review-mode="aggregate-only" data-review-rating="5.0" data-review-count="1"><div data-role="review-card">Fake Review</div></section></body>',
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "google_reviews_no_fake_cards" in failed_keys(payload)
+
+
+def test_factual_traceability_unsupported_service_in_design_read_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["factualServices"] = ["avaliação ortodôntica", "manutenção de aparelho fixo"]
+    code, payload = run_case(
+        design_transform=lambda d, s: d + "\n- **Factual Verified Services**: Alinhadores transparentes / Invisalign Doctor, ortopedia facial\n",
+        manifest=manifest,
+    )
+    assert code == 1
+    assert "factual_traceability_verified_services" in failed_keys(payload)
 
 
 if __name__ == "__main__":

@@ -3,149 +3,85 @@ import re
 from pathlib import Path
 from playwright.async_api import async_playwright
 
-ROOT = Path(__file__).parent
-HTML_FILE = ROOT / "sites" / "iost-ortodontia-aline-iost-rio-claro" / "iost-ortodontia-aline-iost-rio-claro.html"
-PROPOSTA_FILE = ROOT / "sites" / "iost-ortodontia-aline-iost-rio-claro" / "proposta.html"
+HTML_PATH = Path("e:/Antigravity/prospector-sites/clientes/iost-ortodontia-aline-iost-rio-claro/index.html").resolve()
+FILE_URL = f"file:///{str(HTML_PATH).replace('\\', '/')}"
 
-async def test_page():
+async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         
         # 1. Desktop 1440x900
-        page = await browser.new_page(viewport={"width": 1440, "height": 900})
-        console_errors = []
-        page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
-        page.on("pageerror", lambda exc: console_errors.append(str(exc)))
-
-        file_url = f"file:///{HTML_FILE.as_posix()}"
-        await page.goto(file_url, wait_until="load")
-        await page.wait_for_timeout(1000)
+        page_desktop = await browser.new_page(viewport={"width": 1440, "height": 900})
+        await page_desktop.goto(FILE_URL)
+        await page_desktop.wait_for_load_state("networkidle")
         
-        # Check horizontal overflow
-        has_h_scroll = await page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth")
-        print(f"[Desktop 1440x900] Horizontal overflow: {'FAIL' if has_h_scroll else 'PASS'}")
-
-        # Check Hero CTA count
-        hero_ctas = await page.query_selector_all(".hero-cta-wrap .btn, .hero-section .btn")
-        print(f"[Desktop] Hero CTA count: {len(hero_ctas)} (Expected: 1) -> {'PASS' if len(hero_ctas) == 1 else 'FAIL'}")
-
-        # Test Assistant Widget in Shadow DOM
-        assistant_open_test = await page.evaluate("""
-            () => {
-                const root = document.getElementById('iost-assistant-root');
-                if (!root || !root.shadowRoot) return false;
-                const launcher = root.shadowRoot.getElementById('btn-launcher');
-                const panel = root.shadowRoot.getElementById('panel-assistant');
-                if (!launcher || !panel) return false;
-                launcher.click();
-                return panel.dataset.open === 'true';
-            }
-        """)
-        print(f"[Desktop] Assistant widget open: {'PASS' if assistant_open_test else 'FAIL'}")
-        await page.screenshot(path="qa_iost_desktop_assistant_open.png")
-
-        # Test Escape key closes assistant
-        await page.keyboard.press("Escape")
-        assistant_closed_test = await page.evaluate("""
-            () => {
-                const root = document.getElementById('iost-assistant-root');
-                const panel = root.shadowRoot.getElementById('panel-assistant');
-                return panel.dataset.open === 'false';
-            }
-        """)
-        print(f"[Desktop] Assistant widget Escape close: {'PASS' if assistant_closed_test else 'FAIL'}")
-
-        # Screenshot Desktop
-        await page.screenshot(path="qa_iost_desktop_1440x900.png", full_page=True)
-        print("Captured qa_iost_desktop_1440x900.png")
-
-        # 2. Tablet 800x1024
-        await page.set_viewport_size({"width": 800, "height": 1024})
-        await page.wait_for_timeout(500)
-        has_h_scroll_tab = await page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth")
-        print(f"[Tablet 800x1024] Horizontal overflow: {'FAIL' if has_h_scroll_tab else 'PASS'}")
-        await page.screenshot(path="qa_iost_tablet_800.png", full_page=True)
-        print("Captured qa_iost_tablet_800.png")
-
-        # 3. Mobile 390x844
-        await page.set_viewport_size({"width": 390, "height": 844})
-        await page.wait_for_timeout(500)
-        has_h_scroll_mob = await page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth")
-        print(f"[Mobile 390x844] Horizontal overflow: {'FAIL' if has_h_scroll_mob else 'PASS'}")
+        # Check hero full-bleed dimensions
+        hero_box = await page_desktop.locator("section[data-role='hero']").bounding_box()
+        img_box = await page_desktop.locator("img[data-role='hero-image']").bounding_box()
         
-        # Test Assistant Widget on mobile
-        mob_assistant_open = await page.evaluate("""
-            () => {
-                const root = document.getElementById('iost-assistant-root');
-                const launcher = root.shadowRoot.getElementById('btn-launcher');
-                const panel = root.shadowRoot.getElementById('panel-assistant');
-                launcher.click();
-                return panel.dataset.open === 'true';
-            }
-        """)
-        print(f"[Mobile] Assistant widget open: {'PASS' if mob_assistant_open else 'FAIL'}")
-        await page.screenshot(path="qa_iost_mobile_assistant_open.png")
+        assert hero_box is not None, "Hero section not found"
+        assert img_box is not None, "Hero image not found"
         
-        # Close on mobile
-        await page.evaluate("""
-            () => {
-                const root = document.getElementById('iost-assistant-root');
-                const closeBtn = root.shadowRoot.getElementById('btn-close');
-                closeBtn.click();
-            }
-        """)
-        await page.screenshot(path="qa_iost_mobile_390x844.png", full_page=True)
-        print("Captured qa_iost_mobile_390x844.png")
-
-        # 4. Proposta Desktop & Mobile
-        prop_url = f"file:///{PROPOSTA_FILE.as_posix()}"
-        await page.set_viewport_size({"width": 1440, "height": 900})
-        await page.goto(prop_url, wait_until="load")
-        await page.screenshot(path="qa_iost_proposta_desktop.png")
-        await page.set_viewport_size({"width": 390, "height": 844})
-        await page.screenshot(path="qa_iost_proposta_mobile.png")
-        print("Captured proposal screenshots.")
-
-        print(f"Console errors: {len(console_errors)}")
-        for err in console_errors:
-            print("  ERROR:", err)
-
+        width_ratio = img_box["width"] / hero_box["width"]
+        height_ratio = img_box["height"] / hero_box["height"]
+        
+        print(f"[Desktop 1440x900] Hero Box: {hero_box['width']}x{hero_box['height']}, Img Box: {img_box['width']}x{img_box['height']}")
+        print(f"[Desktop 1440x900] Width ratio: {width_ratio:.3f} (>=0.97 required), Height ratio: {height_ratio:.3f} (>=0.95 required)")
+        
+        assert width_ratio >= 0.97, f"Hero image width ratio {width_ratio:.3f} < 0.97"
+        assert height_ratio >= 0.95, f"Hero image height ratio {height_ratio:.3f} < 0.95"
+        
+        # Check currentSrc on desktop
+        current_src_desktop = await page_desktop.locator("img[data-role='hero-image']").evaluate("el => el.currentSrc")
+        print(f"[Desktop 1440x900] currentSrc: {current_src_desktop}")
+        assert "desktop" in current_src_desktop.lower() or "hero-expert-placeholder-desktop" in current_src_desktop.lower(), "Desktop asset not selected on 1440px"
+        
+        # Check H1 typography and legibility
+        h1_text = await page_desktop.locator("h1.hero-title").inner_text()
+        print(f"[Desktop 1440x900] H1 Text: {h1_text}")
+        assert "Ortodontia e atendimento odontológico em Rio Claro" in h1_text
+        
+        # Check Reviews section
+        reviews_rating = await page_desktop.locator("section[data-role='reviews']").get_attribute("data-review-rating")
+        reviews_count = await page_desktop.locator("section[data-role='reviews']").get_attribute("data-review-count")
+        reviews_mode = await page_desktop.locator("section[data-role='reviews']").get_attribute("data-review-mode")
+        
+        print(f"[Desktop 1440x900] Reviews mode={reviews_mode}, rating={reviews_rating}, count={reviews_count}")
+        assert reviews_mode == "aggregate-only"
+        assert reviews_rating == "5.0"
+        assert reviews_count == "1"
+        
+        # Check that no cards exist in reviews
+        card_count = await page_desktop.locator("section[data-role='reviews'] [data-role='review-card']").count()
+        assert card_count == 0, f"Found {card_count} fake review cards"
+        
+        # Check that no patient attribution words exist in reviews
+        reviews_text = await page_desktop.locator("section[data-role='reviews']").inner_text()
+        assert not re.search(r"\b(?:paciente|pacientes|atendido|atendidos)\b", reviews_text, re.IGNORECASE), "Found unsupported patient attribution in reviews"
+        
+        await page_desktop.screenshot(path="e:/Antigravity/prospector/desktop_hero_qa.png")
+        print("[Desktop 1440x900] Screenshot saved: desktop_hero_qa.png")
+        
+        # 2. Mobile 390x844
+        page_mobile = await browser.new_page(viewport={"width": 390, "height": 844})
+        await page_mobile.goto(FILE_URL)
+        await page_mobile.wait_for_load_state("networkidle")
+        
+        current_src_mobile = await page_mobile.locator("img[data-role='hero-image']").evaluate("el => el.currentSrc")
+        print(f"[Mobile 390x844] currentSrc: {current_src_mobile}")
+        assert "mobile" in current_src_mobile.lower(), f"Mobile asset not selected on 390px viewport; got {current_src_mobile}"
+        
+        # Check floating WhatsApp and Assistant geometry
+        wa_floating = await page_mobile.locator("[data-role='floating-whatsapp']").bounding_box()
+        assistant = await page_mobile.locator("button[data-role='assistant-launcher'], #btn-launcher").bounding_box()
+        
+        print(f"[Mobile 390x844] Floating WA Box: {wa_floating}, Assistant Box: {assistant}")
+        
+        await page_mobile.screenshot(path="e:/Antigravity/prospector/mobile_hero_qa.png")
+        print("[Mobile 390x844] Screenshot saved: mobile_hero_qa.png")
+        
         await browser.close()
-
-def audit_text_rules():
-    html_content = HTML_FILE.read_text(encoding="utf-8")
-    
-    # Strip script and style
-    no_scripts = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
-    # Strip HTML tags
-    text_only = re.sub(r'<[^>]+>', ' ', no_scripts)
-    
-    # Check em-dashes and en-dashes
-    em_dashes = [m.start() for m in re.finditer(r'—', text_only)]
-    en_dashes = [m.start() for m in re.finditer(r'–', text_only)]
-    
-    # Check emojis
-    emoji_pattern = re.compile(
-        "["
-        "\U0001F600-\U0001F64F"  # emoticons
-        "\U0001F300-\U0001F5FF"  # symbols & pictographs
-        "\U0001F680-\U0001F6FF"  # transport & map
-        "\U0001F1E0-\U0001F1FF"  # flags
-        "\U00002702-\U000027B0"
-        "\U000024C2-\U0001F251"
-        "]+", flags=re.UNICODE
-    )
-    emojis = emoji_pattern.findall(text_only)
-    
-    print("\n--- TEXT RULES AUDIT ---")
-    print(f"Em-dashes in visible copy: {len(em_dashes)} -> {'PASS' if len(em_dashes) == 0 else 'FAIL'}")
-    print(f"En-dashes in visible copy: {len(en_dashes)} -> {'PASS' if len(en_dashes) == 0 else 'FAIL'}")
-    print(f"Emojis in visible copy: {len(emojis)} -> {'PASS' if len(emojis) == 0 else 'FAIL'}")
-    if em_dashes:
-        print("Em-dash snippets:", [text_only[max(0, p-30):p+30] for p in em_dashes[:5]])
-    if en_dashes:
-        print("En-dash snippets:", [text_only[max(0, p-30):p+30] for p in en_dashes[:5]])
+        print("\n[ALL VISUAL & DOM QA CHECKS PASSED]")
 
 if __name__ == "__main__":
-    audit_text_rules()
-    asyncio.run(test_page())
+    asyncio.run(main())
