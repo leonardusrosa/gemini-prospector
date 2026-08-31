@@ -119,6 +119,52 @@ async def review_viewport(browser, url: str, manifest: dict[str, Any], name: str
     h1 = page.locator("h1")
     review.check(f"{name}_h1_visible", await h1.count() > 0 and await h1.first.is_visible(), "Primary heading must be visible", name)
 
+    # Hero visual requirement.
+    hero_cfg = cfg(manifest, "heroVisual")
+    if hero_cfg.get("required", True):
+        hero = page.locator('[data-role="hero"]')
+        hero_exists = await hero.count() > 0
+        review.check(f"{name}_hero_hook", hero_exists, "Hero must expose data-role=hero", name)
+
+        hero_image = hero.locator('img[data-role="hero-image"]') if hero_exists else page.locator('img[data-role="hero-image"]')
+        image_exists = await hero_image.count() > 0
+        image_visible = image_exists and await hero_image.first.is_visible()
+        review.check(
+            f"{name}_hero_image_visible",
+            image_visible,
+            "Every hero needs a visible relevant img[data-role=hero-image], even without an expert photo",
+            name,
+        )
+        if image_visible:
+            box = await hero_image.first.bounding_box()
+            min_width = 180 if name == "mobile" else 220
+            min_height = 110 if name == "mobile" else 140
+            geometry_ok = bool(box and box["width"] >= min_width and box["height"] >= min_height)
+            review.check(
+                f"{name}_hero_image_geometry",
+                geometry_ok,
+                f"hero image box={box}, minimum={min_width}x{min_height}",
+                name,
+            )
+            src = (await hero_image.first.get_attribute("src") or "").strip()
+            alt = (await hero_image.first.get_attribute("alt") or "").strip()
+            loading = (await hero_image.first.get_attribute("loading") or "").strip().lower()
+            review.check(f"{name}_hero_image_src", bool(src), f"src={src!r}", name)
+            review.check(f"{name}_hero_image_alt", bool(alt), f"alt={alt!r}", name)
+            review.check(f"{name}_hero_image_not_lazy", loading != "lazy", f"loading={loading!r}", name)
+
+            source_type = str(hero_cfg.get("sourceType") or "").strip().lower()
+            represents_actual = bool(hero_cfg.get("representsActualBusiness", False))
+            disclosure_required = bool(hero_cfg.get("illustrativeDisclosureRequired", True))
+            if source_type in {"stock", "generated"} and not represents_actual and disclosure_required:
+                image_context = (await hero_image.first.get_attribute("data-image-context") or "").strip().lower()
+                review.check(
+                    f"{name}_hero_image_illustrative_context",
+                    image_context == "illustrative",
+                    f"data-image-context={image_context!r}",
+                    name,
+                )
+
     # Embedded map requirement.
     address_cfg = cfg(manifest, "address")
     if address_cfg.get("verified") and address_cfg.get("public", True) and address_cfg.get("mapEmbedRequired", True):
@@ -265,6 +311,13 @@ async def review_no_js(browser, url: str, manifest: dict[str, Any], review: Revi
     body_text = (await page.locator("body").inner_text()).strip()
     review.check("no_js_http", bool(response and response.ok), f"HTTP={response.status if response else 'none'}", "no-js")
     review.check("no_js_primary_content", h1_visible and len(body_text) > 100, f"h1={h1_visible}, body chars={len(body_text)}", "no-js")
+
+    hero_cfg = cfg(manifest, "heroVisual")
+    if hero_cfg.get("required", True):
+        hero_image = page.locator('[data-role="hero"] img[data-role="hero-image"]')
+        hero_image_visible = await hero_image.count() > 0 and await hero_image.first.is_visible()
+        review.check("no_js_hero_image_visible", hero_image_visible, "Hero image must remain visible without JavaScript", "no-js")
+
     await context.close()
 
 
