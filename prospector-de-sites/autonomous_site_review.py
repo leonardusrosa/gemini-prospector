@@ -251,8 +251,9 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
             has_fake_cards = bool(re.search(r"data-role=['\"]review-card['\"]|<blockquote\b", section_inner, re.IGNORECASE))
             review.check("google_reviews_no_fake_cards", not has_fake_cards, "Aggregate-only state cannot contain testimonial cards or blockquotes")
 
-            has_unsupported_patient = bool(re.search(r"\b(?:paciente|pacientes|atendido|atendidos|pessoa que realizou tratamento)\b", section_inner, re.IGNORECASE))
-            review.check("google_reviews_no_unsupported_patient_attribution", not has_unsupported_patient, "Review section cannot infer patient/client attribution without verified review text evidence")
+            text_only = re.sub(r"<[^>]+>", " ", section_inner)
+            has_fake_quotes = bool(re.search(r"[\"“][^\"”\n]{15,}[\"”]", text_only))
+            review.check("google_reviews_no_fabricated_text", not has_fake_quotes, "Aggregate-only state cannot contain fabricated review quotes or reviewer authors")
         elif state == "VERIFIED_STRONG":
             review_mode = extract_attr(tag_str, "data-review-mode")
             review.check("google_reviews_mode_text", review_mode == "text-reviews", "VERIFIED_STRONG reviews require data-review-mode=\"text-reviews\"")

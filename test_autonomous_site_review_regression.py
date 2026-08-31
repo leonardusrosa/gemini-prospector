@@ -538,7 +538,7 @@ def test_hero_template_in_card_without_full_bleed_layout_is_blocked():
     assert "hero_template_layout_mode" in failed_keys(payload)
 
 
-def test_google_reviews_aggregate_only_with_patient_attribution_is_blocked():
+def test_google_reviews_aggregate_only_with_fabricated_quotes_is_blocked():
     manifest = json.loads(json.dumps(BASE_MANIFEST))
     manifest["googleReviews"] = {
         "checked": True,
@@ -550,14 +550,14 @@ def test_google_reviews_aggregate_only_with_patient_attribution_is_blocked():
         "reviewSectionRequired": True,
         "reviewSectionRendered": True,
     }
-    # Section has unsupported patient attribution
+    # Section has fabricated quotation text
     html = PASS_HTML.replace(
         '</body>',
-        '<section data-role="reviews" data-review-mode="aggregate-only" data-review-rating="5.0" data-review-count="1"><div class="aggregate">5,0 de 5</div><div>Avaliação pública registrada por paciente</div></section></body>',
+        '<section data-role="reviews" data-review-mode="aggregate-only" data-review-rating="5.0" data-review-count="1"><div class="aggregate">5,0 de 5</div><p>“Atendimento maravilhoso, a melhor dentista de Rio Claro!”</p></section></body>',
     )
     code, payload = run_case(html=html, manifest=manifest)
     assert code == 1
-    assert "google_reviews_no_unsupported_patient_attribution" in failed_keys(payload)
+    assert "google_reviews_no_fabricated_text" in failed_keys(payload)
 
 
 def test_google_reviews_aggregate_only_with_fake_cards_is_blocked():
