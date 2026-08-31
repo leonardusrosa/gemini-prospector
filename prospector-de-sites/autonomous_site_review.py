@@ -60,6 +60,16 @@ INSTAGRAM_ACTIVE_PATTERN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
+HERO_SECTION_PATTERN = re.compile(
+    r"<section\b[^>]*data-role\s*=\s*['\"]hero['\"][^>]*>(.*?)</section>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+HERO_IMAGE_PATTERN = re.compile(
+    r"<img\b[^>]*data-role\s*=\s*['\"]hero-image['\"][^>]*>",
+    re.IGNORECASE | re.DOTALL,
+)
+
 
 class Review:
     def __init__(self) -> None:
@@ -146,6 +156,13 @@ def social_tag(html: str, name: str) -> str | None:
     return match.group(0) if match else None
 
 
+def extract_attr(tag: str | None, name: str) -> str | None:
+    if not tag:
+        return None
+    match = re.search(rf"\b{re.escape(name)}\s*=\s*['\"]([^'\"]*)['\"]", tag, re.IGNORECASE)
+    return match.group(1) if match else None
+
+
 def disabled_social_tag_is_safe(tag: str | None) -> tuple[bool, str]:
     if not tag:
         return False, "control not found"
@@ -196,6 +213,61 @@ def main() -> int:
                     "gpt_taste_sha_matches",
                     actual_sha == gpt_sha,
                     "Recorded GPT_TASTE_SHA256 must match the exact current skill file that was read",
+                )
+
+    # ---------------- hero visual ----------------
+    hero_cfg = section(manifest, "heroVisual")
+    if hero_cfg.get("required", True):
+        hero_section = HERO_SECTION_PATTERN.search(html)
+        review.check(
+            "hero_section_hook",
+            hero_section is not None,
+            "Hero visual review requires a <section data-role=\"hero\"> wrapper",
+        )
+
+        hero_image_tag = None
+        if hero_section:
+            image_match = HERO_IMAGE_PATTERN.search(hero_section.group(1))
+            hero_image_tag = image_match.group(0) if image_match else None
+
+        review.check(
+            "hero_image_present",
+            hero_image_tag is not None,
+            "Every site hero requires a relevant <img data-role=\"hero-image\">, even when no expert photo exists",
+        )
+
+        if hero_image_tag:
+            src = (extract_attr(hero_image_tag, "src") or "").strip()
+            alt = (extract_attr(hero_image_tag, "alt") or "").strip()
+            loading = (extract_attr(hero_image_tag, "loading") or "").strip().lower()
+            image_context = (extract_attr(hero_image_tag, "data-image-context") or "").strip().lower()
+
+            review.check("hero_image_src", bool(src), "Hero image src must be non-empty")
+            review.check("hero_image_alt", bool(alt), "Hero image alt must be non-empty and factual")
+            review.check("hero_image_not_lazy", loading != "lazy", "Critical hero image must not use loading=lazy")
+
+            kind = str(hero_cfg.get("kind") or "").strip().lower()
+            source_type = str(hero_cfg.get("sourceType") or "").strip().lower()
+            represents_actual = bool(hero_cfg.get("representsActualBusiness", False))
+            disclosure_required = bool(hero_cfg.get("illustrativeDisclosureRequired", True))
+            valid_kinds = {"expert", "facility", "contextual", "product", "other"}
+            valid_sources = {"first_party", "user_provided", "stock", "generated"}
+
+            review.check("hero_image_kind_manifest", kind in valid_kinds, f"heroVisual.kind must be one of {sorted(valid_kinds)}; found {kind!r}")
+            review.check("hero_image_source_manifest", source_type in valid_sources, f"heroVisual.sourceType must be one of {sorted(valid_sources)}; found {source_type!r}")
+
+            misleading_generated = source_type in {"stock", "generated"} and represents_actual
+            review.check(
+                "hero_image_no_false_business_representation",
+                not misleading_generated,
+                "Stock/generated hero imagery cannot be declared as a factual representation of the lead's real facility/person/result",
+            )
+
+            if source_type in {"stock", "generated"} and not represents_actual and disclosure_required:
+                review.check(
+                    "hero_image_illustrative_context",
+                    image_context == "illustrative",
+                    "Stock/generated contextual hero must expose data-image-context=\"illustrative\" when it does not depict the real business",
                 )
 
     # ---------------- design dials / motion ----------------
