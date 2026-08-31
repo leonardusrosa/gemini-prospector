@@ -91,6 +91,131 @@ class Review:
         return 1 if self.failed else 0
 
 
+def _direct_maps_url(value: Any) -> bool:
+    return isinstance(value, str) and bool(re.search(r"google\.[^/]+/maps", value, re.IGNORECASE))
+
+
+def _parse_review_count(value: Any) -> int | None:
+    if not isinstance(value, str):
+        return None
+    match = re.search(r"([0-9][0-9\s.,]*)\s*(?:avalia(?:ção|ções)|reviews?|ratings?)\b", value, re.IGNORECASE)
+    if not match:
+        return None
+    digits = re.sub(r"\D", "", match.group(1))
+    return int(digits) if digits else None
+
+
+def _parse_rating(value: Any) -> float | None:
+    if not isinstance(value, str):
+        return None
+    match = re.search(r"([0-5](?:[.,][0-9]+)?)", value)
+    if not match:
+        return None
+    try:
+        return float(match.group(1).replace(",", "."))
+    except ValueError:
+        return None
+
+
+def _same_place_google_review_count(gr: dict[str, Any]) -> int:
+    reviews = gr.get("reviews")
+    if not isinstance(reviews, list):
+        return 0
+    place_id = str(gr.get("placeId") or gr.get("placeIdOrCid") or "").strip()
+    cid = str(gr.get("cid") or "").strip()
+    accepted = {x for x in {place_id, cid, f"cid:{cid}" if cid else ""} if x}
+    count = 0
+    for item in reviews:
+        if not isinstance(item, dict):
+            continue
+        if item.get("verified") is not True:
+            continue
+        if str(item.get("source") or "").strip().lower() != "google_maps":
+            continue
+        if str(item.get("placeIdOrCid") or "").strip() not in accepted:
+            continue
+        if not str(item.get("author") or "").strip() or not str(item.get("text") or "").strip():
+            continue
+        count += 1
+    return count
+
+
+def _apply_review_integrity_guard(data: dict[str, Any]) -> None:
+    """Fail closed before autonomous QA can reinterpret incomplete Google evidence.
+
+    This guard deliberately runs inside load_json(), before site-specific review logic.
+    It prevents a secondary platform review from upgrading an incomplete Google Maps
+    collection to VERIFIED_STRONG and requires two direct count observations.
+    Legacy synthetic fixtures without sourceSurface=direct_google_maps are left alone.
+    """
+    gr = data.get("googleReviews")
+    if not isinstance(gr, dict):
+        return
+    if str(gr.get("sourceSurface") or "").strip().lower() != "direct_google_maps":
+        return
+
+    errors: list[str] = []
+    state = str(gr.get("state") or "").strip().upper()
+    count = gr.get("ratingCount")
+    if count is None:
+        count = gr.get("reviewCount")
+    usable = gr.get("usableTextReviews", 0)
+    usable = usable if isinstance(usable, int) and usable >= 0 else 0
+
+    if not isinstance(count, int) or count < 0:
+        errors.append("ratingCount/reviewCount must be a non-negative integer")
+    if not str(gr.get("placeId") or gr.get("placeIdOrCid") or "").strip():
+        errors.append("direct Google Maps evidence requires a place ID")
+
+    if isinstance(count, int) and count > 0:
+        allowed_methods = {"playwright_direct_maps", "browser_direct_maps", "manual_direct_maps"}
+        if str(gr.get("collectionMethod") or "").strip().lower() not in allowed_methods:
+            errors.append("direct Google Maps evidence requires an allowed collectionMethod")
+        if gr.get("profileHeaderObserved") is not True:
+            errors.append("profileHeaderObserved=true is required")
+        if gr.get("reviewsPanelOpened") is not True:
+            errors.append("reviewsPanelOpened=true is required")
+        if gr.get("textReviewCollectionAttempted") is not True:
+            errors.append("textReviewCollectionAttempted=true is required")
+
+        header = gr.get("aggregateObservation")
+        if not isinstance(header, dict):
+            errors.append("aggregateObservation is required")
+        else:
+            header_count = _parse_review_count(header.get("countText"))
+            header_rating = _parse_rating(header.get("ratingText"))
+            if not _direct_maps_url(header.get("surfaceUrl")):
+                errors.append("aggregateObservation.surfaceUrl must be direct Google Maps")
+            if header_count != count:
+                errors.append(f"aggregateObservation count must match ratingCount={count}")
+            rating = gr.get("aggregateRating")
+            if not isinstance(rating, (int, float)) or header_rating is None or abs(header_rating - float(rating)) >= 0.01:
+                errors.append("aggregateObservation rating must match aggregateRating")
+
+        panel = gr.get("reviewsPanelObservation")
+        if not isinstance(panel, dict):
+            errors.append("reviewsPanelObservation is required")
+        else:
+            panel_count = _parse_review_count(panel.get("countText"))
+            if not _direct_maps_url(panel.get("surfaceUrl")):
+                errors.append("reviewsPanelObservation.surfaceUrl must be direct Google Maps")
+            if panel_count != count:
+                errors.append(f"reviewsPanelObservation count must match ratingCount={count}")
+
+    if state == "VERIFIED_STRONG" and usable < 3:
+        errors.append(f"VERIFIED_STRONG requires >=3 verified Google text reviews, found {usable}")
+    if isinstance(count, int) and count >= 3 and usable < 3:
+        errors.append(f"direct Maps reports {count} ratings/reviews but only {usable} Google text reviews were captured")
+    if state == "VERIFIED_AGGREGATE_ONLY" and isinstance(count, int) and count >= 3:
+        errors.append("VERIFIED_AGGREGATE_ONLY is forbidden when direct Maps reports >=3 ratings/reviews")
+    if state == "VERIFIED_STRONG" and _same_place_google_review_count(gr) < 3:
+        errors.append("VERIFIED_STRONG requires >=3 same-place googleReviews.reviews evidence records")
+
+    if errors:
+        gr["state"] = "COLLECTION_INCOMPLETE"
+        gr["_integrityErrors"] = errors
+
+
 def load_json(path: Path) -> dict[str, Any]:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -100,6 +225,7 @@ def load_json(path: Path) -> dict[str, Any]:
         raise SystemExit(f"Invalid manifest JSON {path}: {exc}")
     if not isinstance(data, dict):
         raise SystemExit("Manifest root must be a JSON object")
+    _apply_review_integrity_guard(data)
     return data
 
 
