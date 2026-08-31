@@ -3,9 +3,9 @@
 """Regression coverage for the autonomous site-review gate.
 
 Each failure case mirrors a class of omission that previously escaped an agent's
-self-reported Core QA pass: no gpt-taste evidence, motionless page, map
-placeholder, omitted social affordance, navigable fake social, missing floating
-WhatsApp, and missing assistant collision hooks.
+self-reported Core QA pass: no gpt-taste evidence, missing hero imagery,
+motionless page, map placeholder, omitted social affordance, navigable fake
+social, missing floating WhatsApp, and missing assistant collision hooks.
 """
 
 from __future__ import annotations
@@ -26,6 +26,13 @@ BASE_MANIFEST = {
     "siteMode": "new_site_concept",
     "preview": True,
     "gptTaste": {"required": True, "skillSha256Required": True},
+    "heroVisual": {
+        "required": True,
+        "kind": "contextual",
+        "sourceType": "generated",
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+    },
     "motion": {
         "required": True,
         "minimumRevealGroups": 2,
@@ -50,7 +57,7 @@ PASS_HTML = r'''<!doctype html>
 <style>@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}</style>
 </head><body>
 <header data-role="site-header">Header</header>
-<section data-role="hero"><h1>Site teste</h1><a href="https://wa.me/5511999999999">Agendar</a></section>
+<section data-role="hero"><h1>Site teste</h1><a href="https://wa.me/5511999999999">Agendar</a><img data-role="hero-image" data-image-context="illustrative" src="/hero.webp" alt="Imagem ilustrativa de consultório" width="1200" height="800"></section>
 <section data-motion="reveal">A</section>
 <section data-motion="reveal">B</section>
 <span data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</span>
@@ -141,6 +148,43 @@ def test_stale_or_fake_gpt_taste_hash_is_blocked():
     )
     assert code == 1
     assert "gpt_taste_sha_matches" in failed_keys(payload)
+
+
+def test_missing_hero_image_is_blocked():
+    html = PASS_HTML.replace('<img data-role="hero-image" data-image-context="illustrative" src="/hero.webp" alt="Imagem ilustrativa de consultório" width="1200" height="800">', "")
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "hero_image_present" in failed_keys(payload)
+
+
+def test_hero_image_outside_hero_is_blocked():
+    hero_image = '<img data-role="hero-image" data-image-context="illustrative" src="/hero.webp" alt="Imagem ilustrativa de consultório" width="1200" height="800">'
+    html = PASS_HTML.replace(hero_image, "").replace("</body>", hero_image + "</body>")
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "hero_image_present" in failed_keys(payload)
+
+
+def test_generated_hero_cannot_claim_real_business_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"]["representsActualBusiness"] = True
+    code, payload = run_case(manifest=manifest)
+    assert code == 1
+    assert "hero_image_no_false_business_representation" in failed_keys(payload)
+
+
+def test_generated_hero_requires_illustrative_context_hook():
+    html = PASS_HTML.replace(' data-image-context="illustrative"', "")
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "hero_image_illustrative_context" in failed_keys(payload)
+
+
+def test_lazy_loaded_hero_is_blocked():
+    html = PASS_HTML.replace('src="/hero.webp"', 'src="/hero.webp" loading="lazy"')
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "hero_image_not_lazy" in failed_keys(payload)
 
 
 def test_motionless_page_is_blocked():
