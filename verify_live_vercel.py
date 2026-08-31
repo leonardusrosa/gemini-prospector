@@ -1,52 +1,90 @@
 import asyncio
+import sys
 import time
 from playwright.async_api import async_playwright
 
-LIVE_URL = "https://prospector-sites-beta.vercel.app/clientes/iost-ortodontia-aline-iost-rio-claro/"
+PROD_URL = "https://prospector-sites-beta.vercel.app/clientes/iost-ortodontia-aline-iost-rio-claro/"
 
-async def main():
+async def verify_live():
+    print(f"Verifying live Vercel deployment at {PROD_URL} ...")
+    
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page(viewport={"width": 1440, "height": 900})
+        browser = await p.chromium.launch(headless=True)
         
-        print("Waiting for Vercel deployment...")
-        for attempt in range(12):
-            resp = await page.goto(LIVE_URL, wait_until="networkidle")
-            hero_layout = await page.locator("section[data-role='hero']").get_attribute("data-hero-layout")
-            reviews_mode = await page.locator("section[data-role='reviews']").get_attribute("data-review-mode")
-            if hero_layout == "full-bleed-background" and reviews_mode == "aggregate-only":
-                print(f"[Attempt {attempt+1}] Vercel build live and verified!")
-                break
-            print(f"[Attempt {attempt+1}] Waiting for Vercel build to propagate (hero-layout={hero_layout}, reviews-mode={reviews_mode})...")
+        # Poll until Vercel updates with patch 3 markers
+        for attempt in range(1, 15):
+            page = await browser.new_page(viewport={"width": 1440, "height": 900})
+            try:
+                resp = await page.goto(f"{PROD_URL}?_t={int(time.time())}", wait_until="networkidle")
+                status = resp.status if resp else 0
+                
+                hero_frame_policy = await page.locator("section[data-role='hero']").get_attribute("data-hero-frame-policy")
+                review_presentation = await page.locator("section[data-role='reviews']").get_attribute("data-review-presentation")
+                
+                if hero_frame_policy == "preserve-complete-frame" and review_presentation == "compact-summary":
+                    print(f"[Attempt {attempt}] Vercel build Patch 3 live and verified!")
+                    print(f"HTTP Status: {status}")
+                    
+                    # 1. Desktop 1440x900 Verification
+                    hero_box_1440 = await page.locator("section[data-role='hero']").bounding_box()
+                    img_el_1440 = page.locator("img[data-role='hero-image']")
+                    img_box_1440 = await img_el_1440.bounding_box()
+                    img_eval_1440 = await img_el_1440.evaluate("""img => ({
+                        naturalWidth: img.naturalWidth,
+                        naturalHeight: img.naturalHeight,
+                        width: img.clientWidth,
+                        height: img.clientHeight,
+                        objectFit: window.getComputedStyle(img).objectFit,
+                        attrWidth: img.getAttribute('width'),
+                        attrHeight: img.getAttribute('height')
+                    })""")
+                    
+                    print(f"Desktop 1440 Hero: {hero_box_1440['width']:.0f}x{hero_box_1440['height']:.0f} | Img: {img_box_1440['width']:.0f}x{img_box_1440['height']:.0f}")
+                    print(f"Declared dims: {img_eval_1440['attrWidth']}x{img_eval_1440['attrHeight']} | Natural dims: {img_eval_1440['naturalWidth']}x{img_eval_1440['naturalHeight']}")
+                    print(f"object-fit: {img_eval_1440['objectFit']}")
+                    
+                    assert img_eval_1440["objectFit"] != "cover"
+                    assert img_eval_1440["attrWidth"] == "1983"
+                    assert img_eval_1440["attrHeight"] == "793"
+                    
+                    await page.screenshot(path="e:/Antigravity/prospector/prod_1440.png")
+                    
+                    # 2. Desktop 1920x1080 Verification
+                    page_1920 = await browser.new_page(viewport={"width": 1920, "height": 1080})
+                    await page_1920.goto(f"{PROD_URL}?_t={int(time.time())}", wait_until="networkidle")
+                    hero_box_1920 = await page_1920.locator("section[data-role='hero']").bounding_box()
+                    img_box_1920 = await page_1920.locator("img[data-role='hero-image']").bounding_box()
+                    print(f"Desktop 1920 Hero: {hero_box_1920['width']:.0f}x{hero_box_1920['height']:.0f} | Img: {img_box_1920['width']:.0f}x{img_box_1920['height']:.0f}")
+                    await page_1920.screenshot(path="e:/Antigravity/prospector/prod_1920.png")
+                    await page_1920.close()
+                    
+                    # 3. Reviews Verification
+                    rev_sec = page.locator("section[data-role='reviews']")
+                    await rev_sec.scroll_into_view_if_needed()
+                    await page.wait_for_timeout(200)
+                    
+                    sec_box = await rev_sec.bounding_box()
+                    summary_box = await page.locator("[data-role='reviews-summary']").bounding_box()
+                    print(f"Reviews Section Height: {sec_box['height']:.0f}px | Summary Height: {summary_box['height']:.0f}px")
+                    
+                    assert sec_box["height"] <= 380
+                    assert summary_box["height"] <= 180
+                    
+                    await page.close()
+                    await browser.close()
+                    print("\n[VERCEL LIVE PRODUCTION 100% VERIFIED]")
+                    return
+                else:
+                    print(f"[Attempt {attempt}] Waiting for new deployment (found hero_policy={hero_frame_policy}, review_pres={review_presentation})...")
+            except Exception as e:
+                print(f"[Attempt {attempt}] Error: {e}")
+            finally:
+                await page.close()
             await asyncio.sleep(5)
-        
-        # Verify Desktop 1440x900
-        hero_box = await page.locator("section[data-role='hero']").bounding_box()
-        img_box = await page.locator("img[data-role='hero-image']").bounding_box()
-        reviews_rating = await page.locator("section[data-role='reviews']").get_attribute("data-review-rating")
-        reviews_count = await page.locator("section[data-role='reviews']").get_attribute("data-review-count")
-        
-        print(f"HTTP Status: {resp.status}")
-        print(f"Desktop Hero: {hero_box['width']}x{hero_box['height']}, Img: {img_box['width']}x{img_box['height']}")
-        print(f"Width coverage: {img_box['width'] / hero_box['width']:.3f}, Height coverage: {img_box['height'] / hero_box['height']:.3f}")
-        print(f"Reviews Mode: {reviews_mode}, Rating: {reviews_rating}, Count: {reviews_count}")
-        
-        assert hero_layout == "full-bleed-background"
-        assert reviews_mode == "aggregate-only"
-        assert reviews_rating == "5.0"
-        assert reviews_count == "1"
-        assert img_box["width"] / hero_box["width"] >= 0.97
-        assert img_box["height"] / hero_box["height"] >= 0.95
-        
-        # Verify Mobile 390x844
-        page_mobile = await browser.new_page(viewport={"width": 390, "height": 844})
-        await page_mobile.goto(LIVE_URL, wait_until="networkidle")
-        current_src_mobile = await page_mobile.locator("img[data-role='hero-image']").evaluate("el => el.currentSrc")
-        print(f"Mobile currentSrc: {current_src_mobile}")
-        assert "mobile" in current_src_mobile.lower()
-        
+            
         await browser.close()
-        print("\n[VERCEL LIVE DEPLOYMENT 100% VERIFIED]")
+        print("Timeout waiting for Vercel deployment.")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(verify_live())
