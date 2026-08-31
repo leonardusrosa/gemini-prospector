@@ -240,6 +240,18 @@ class PublishConfig:
                 "Refusing protected/non-local editor publishing without authentication store or PROSPECTOR_EDITOR_CLIENTS."
             )
 
+        # Support WhatsApp configuration
+        raw_support = os.environ.get("PROSPECTOR_CMS_SUPPORT_WHATSAPP", "").strip()
+        support_digits = re.sub(r"\D", "", raw_support)
+        if 8 <= len(support_digits) <= 15:
+            self.support_whatsapp = support_digits
+            self.support_base_url = f"https://wa.me/{support_digits}"
+            self.support_enabled = True
+        else:
+            self.support_whatsapp = None
+            self.support_base_url = None
+            self.support_enabled = False
+
     def authorize(self, headers, slug: str) -> bool:
         auth = headers.get("Authorization", "")
         token = auth[7:].strip() if auth.lower().startswith("bearer ") else headers.get("X-Prospector-Editor-Token", "").strip()
@@ -436,6 +448,13 @@ class PublishApp(SimpleHTTPRequestHandler):
             draft_info = self.config.cms_service.get_draft_info(slug)
             live_hash = self.config.cms_service.get_live_hash(slug)
             live_commit = self.config.cms_service.get_live_commit()
+
+            support_info = {
+                "enabled": self.config.support_enabled,
+            }
+            if self.config.support_enabled and self.config.support_base_url:
+                support_info["whatsappBaseUrl"] = self.config.support_base_url
+
             return self._json(200, {
                 "success": True,
                 "authorized": True,
@@ -451,6 +470,7 @@ class PublishApp(SimpleHTTPRequestHandler):
                 "draftSavedAt": draft_info.get("savedAt"),
                 "draftBaseContentHash": draft_info.get("baseContentHash"),
                 "draftContentHash": draft_info.get("draftContentHash"),
+                "support": support_info,
             })
 
         # Route 2.5: Client CMS Draft API (Load Draft)
