@@ -24,5 +24,8 @@ jobs:
       - name: Production QA credential hygiene
         run: python prospector-de-sites/repo_secret_hygiene.py
 
+      - name: Google Maps review evidence regressions
+        run: python test_google_reviews_evidence.py
+
       - name: Autonomous site-review regressions
         run: python test_autonomous_site_review_regression.py
