@@ -1,6 +1,6 @@
 ---
 name: autonomous-site-review
-description: HARD GATE obrigatorio depois de criar ou alterar qualquer site/conceito/redesign do Prospector e antes de Screenshot Review, deploy, proposta ou outreach. Deve detectar autonomamente omissoes de gpt-taste, motion/scroll behavior, WhatsApp, Instagram mock/real, mapa incorporado, colisao de floating UI, reduced motion, no-JS fallback, factualidade e regressões visuais. Nunca marque um site como Core QA PASS sem executar esta skill.
+description: HARD GATE obrigatorio depois de criar ou alterar qualquer site/conceito/redesign do Prospector e antes de Screenshot Review, deploy, proposta ou outreach. Deve detectar autonomamente omissoes de gpt-taste, hero visual, motion/scroll behavior, WhatsApp, Instagram mock/real, mapa incorporado, colisao de floating UI, reduced motion, no-JS fallback, factualidade e regressões visuais. Nunca marque um site como Core QA PASS sem executar esta skill.
 ---
 
 # Autonomous Site Review
@@ -13,7 +13,8 @@ Use sempre em conjunto com:
 
 1. `../website-core-rules/SKILL.md`
 2. `../redesign-premium/SKILL.md`
-3. `gpt-taste` instalado no ambiente
+3. `../hero-visual-rule/SKILL.md`
+4. `gpt-taste` instalado no ambiente
 
 O review não substitui essas skills. Ele verifica se elas realmente apareceram no resultado final.
 
@@ -41,7 +42,41 @@ Se a skill mudar, o agente deve reler e registrar o novo hash.
 
 `scroll-behavior: smooth` não conta como Motion & Behavior Pass.
 
-## 2. HARD GATE: motion e comportamento
+## 2. HARD GATE: hero visual obrigatório
+
+Todo site/conceito/redesign deve ter uma imagem relevante no hero, inclusive quando não existir foto utilizável do expert.
+
+Ordem padrão:
+
+1. foto real verificada do expert;
+2. foto first-party verificável do local/equipe/produto/contexto;
+3. imagem fornecida pelo usuário;
+4. imagem contextual stock/gerada apropriada ao negócio, sem fingir que retrata instalações, pessoas ou resultados reais do lead.
+
+Exemplo: clínica odontológica sem foto utilizável da profissional ainda deve usar uma imagem contextual coerente, como consultório/sala odontológica, em vez de hero apenas tipográfico ou card abstrato.
+
+Novos sites devem usar:
+
+```html
+<section data-role="hero">
+  ...
+  <img data-role="hero-image" src="..." alt="..." width="..." height="...">
+</section>
+```
+
+Regras:
+
+- `[data-role="hero-image"]` deve existir dentro de `[data-role="hero"]`;
+- `src` e `alt` não podem ser vazios;
+- hero image crítica não usa `loading="lazy"`;
+- stock/gerada que não retrate o negócio real deve usar `data-image-context="illustrative"` e alt honesto;
+- stock/gerada nunca pode ser declarada no manifesto como representação factual do negócio real;
+- ausência de foto do expert não é justificativa para ausência de imagem;
+- exceção a hero com imagem somente quando o usuário pedir explicitamente e a exceção estiver documentada.
+
+A regra completa está em `../hero-visual-rule/SKILL.md`.
+
+## 3. HARD GATE: motion e comportamento
 
 Sites de prospecção/redesign devem ter `Motion > 0` por padrão. Exceções só com motivo explícito no `design-read.md`.
 
@@ -66,7 +101,7 @@ Para facilitar QA determinístico, novos sites devem usar hooks semânticos invi
 
 Esses atributos não são copy pública nem ornamentação.
 
-## 3. HARD GATE: WhatsApp
+## 4. HARD GATE: WhatsApp
 
 Quando houver WhatsApp/telefone verificado e apropriado para contato:
 
@@ -80,7 +115,7 @@ O floating CTA deve usar `data-role="floating-whatsapp"` nos novos sites para QA
 
 Em mockup comercial onde WhatsApp ainda não tiver destino verificável, represente a affordance somente quando o manifesto pedir `mockAffordanceRequired`, usando `data-social="whatsapp"`, `aria-disabled="true"` e **sem atributo `href`**.
 
-## 4. HARD GATE: Instagram/social em mockups comerciais
+## 5. HARD GATE: Instagram/social em mockups comerciais
 
 Para conceitos/noindex de prospecção, represente a UI de Instagram mesmo quando o perfil ainda não estiver verificado.
 
@@ -104,7 +139,7 @@ Nunca fabricar `instagram.com/<handle>`.
 
 Na entrega final do cliente, nenhum destino fake pode permanecer ativo.
 
-## 5. HARD GATE: mapa
+## 6. HARD GATE: mapa
 
 Se existir endereço físico público e VERIFICADO do negócio, a seção de localização deve, por padrão, incluir mapa incorporado real.
 
@@ -125,7 +160,7 @@ Um card com pin + endereço + botão, sem preview incorporado, NÃO satisfaz o g
 
 Só omita iframe quando endereço for privado, o operador pedir ou houver bloqueio técnico documentado.
 
-## 6. HARD GATE: floating UI e assistant
+## 7. HARD GATE: floating UI e assistant
 
 Quando coexistirem assistant, WhatsApp, cookie bar ou outros controles fixos:
 
@@ -136,7 +171,7 @@ Quando coexistirem assistant, WhatsApp, cookie bar ou outros controles fixos:
 
 O launcher do assistant deve usar `data-role="assistant-launcher"` quando a implementação permitir, para permitir geometry QA determinístico.
 
-## 7. Review em duas camadas
+## 8. Review em duas camadas
 
 ### Camada A: determinística/estática
 
@@ -163,12 +198,13 @@ python prospector-de-sites/autonomous_site_review_browser.py \
 
 Se Playwright não estiver disponível, não marque Browser Review PASS. Instale/use o ambiente de QA apropriado ou reporte o bloqueio.
 
-## 8. Manifesto obrigatório por site
+## 9. Manifesto obrigatório por site
 
 Crie `sites/[slug]/review-manifest.json` usando o exemplo em `references/review-manifest.example.json`.
 
 O manifesto registra fatos de QA, não fatos comerciais inventados. Exemplos:
 
+- hero visual obrigatório, tipo da imagem, origem e se representa fato real do lead;
 - endereço verificado: true/false;
 - WhatsApp verificado e número esperado;
 - Instagram: `verified`, `unverified`, `not_applicable`;
@@ -176,9 +212,9 @@ O manifesto registra fatos de QA, não fatos comerciais inventados. Exemplos:
 - motion esperado: true/false;
 - preview/noindex: true/false.
 
-Nunca marque `verified=true` apenas para fazer o teste passar.
+Nunca marque `verified=true` ou `representsActualBusiness=true` apenas para fazer o teste passar.
 
-## 9. Review adversarial obrigatório
+## 10. Review adversarial obrigatório
 
 Depois do primeiro PASS, faça uma segunda revisão com postura adversarial:
 
@@ -187,6 +223,10 @@ Depois do primeiro PASS, faça uma segunda revisão com postura adversarial:
 Inspecione especialmente:
 
 - gpt-taste apenas citado, mas não usado/arquivo atual não comprovado;
+- hero sem imagem porque não havia foto do expert;
+- hero usando imagem irrelevante/decorativa em vez de contexto do negócio;
+- stock/gerada apresentada como se fosse o consultório/equipe real;
+- hero image com lazy loading, alt falso ou crop ruim;
 - `Motion > 0` no design-read mas página imóvel;
 - mapa substituído por placeholder;
 - Instagram omitido porque não havia URL real;
@@ -199,7 +239,7 @@ Inspecione especialmente:
 - console/network 404 silencioso;
 - claims reintroduzidos depois do factual hardening.
 
-## 10. Proibição de autoaprovação por checklist textual
+## 11. Proibição de autoaprovação por checklist textual
 
 Um relatório escrito pelo próprio agente não é evidência suficiente.
 
@@ -208,6 +248,7 @@ Um relatório escrito pelo próprio agente não é evidência suficiente.
 - inspeção do HTML/DOM;
 - execução do validator;
 - hash do gpt-taste atual validado;
+- hero image presente e semanticamente revisada;
 - browser QA;
 - screenshots/geometry quando aplicável;
 - network/console checks;
@@ -215,7 +256,7 @@ Um relatório escrito pelo próprio agente não é evidência suficiente.
 
 Se o agente apenas disser “PASS” sem executar, o estado é `NOT VERIFIED`.
 
-## 11. Gate final
+## 12. Gate final
 
 Use este bloco na saída:
 
@@ -226,6 +267,9 @@ GPT_TASTE_SHA_MATCH: PASS/FAIL
 STATIC REVIEW: PASS/FAIL
 BROWSER REVIEW: PASS/FAIL
 ADVERSARIAL REVIEW: PASS/FAIL
+HERO IMAGE: PASS/FAIL
+HERO IMAGE SEMANTICS: PASS/FAIL
+HERO IMAGE FACTUALITY: PASS/FAIL
 MOTION: PASS/FAIL
 WHATSAPP: PASS/FAIL/N/A
 INSTAGRAM UI: PASS/FAIL/N/A
