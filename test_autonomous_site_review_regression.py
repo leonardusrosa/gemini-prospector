@@ -38,6 +38,7 @@ BASE_MANIFEST = {
     "googleReviews": {
         "checked": True,
         "state": "NO_USABLE_REVIEWS",
+        "usableTextReviews": 0,
         "reviewSectionRequired": False,
         "reviewSectionRendered": False,
     },
@@ -45,7 +46,7 @@ BASE_MANIFEST = {
         "required": True,
         "minimumRevealGroups": 2,
         "headerScrollStateRequired": True,
-        "floatingCtaSyncRequired": True,
+        "floatingCtaSyncRequired": False,
     },
     "factualEvidence": {
         "verifiedServices": [
@@ -56,7 +57,7 @@ BASE_MANIFEST = {
     "whatsapp": {
         "verified": True,
         "number": "5511999999999",
-        "floatingRequired": True,
+        "floatingRequired": False,
         "contactActionRequired": True,
     },
     "instagram": {"state": "unverified", "mockAffordanceRequired": True},
@@ -75,7 +76,6 @@ PASS_HTML = r'''<!doctype html>
 <section data-motion="reveal">B</section>
 <span data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</span>
 <a href="https://wa.me/5511999999999">Contato WhatsApp</a>
-<a href="https://wa.me/5511999999999" data-role="floating-whatsapp">WhatsApp</a>
 <button data-role="assistant-launcher">Assistente</button>
 <iframe src="https://maps.google.com/maps?q=Rua+1&z=16&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>
 <script>
@@ -94,8 +94,9 @@ def make_design(skill_path: Path, *, include_read=True, sha_override: str | None
         [
             f"GPT_TASTE_PATH: {skill_path}",
             f"GPT_TASTE_SHA256: {sha}",
-            f"GOOGLE_REVIEWS_CHECK: PASS",
+            "GOOGLE_REVIEWS_CHECK: PASS",
             f"GOOGLE_REVIEWS_STATE: {gr_state}",
+            "SECONDARY_REVIEW_SEARCH: PASS",
             "- **Factual Verified Services**: Atendimento clínico geral",
             "Design Variance: 5",
             "Motion: 3",
@@ -384,10 +385,19 @@ def test_google_reviews_verified_strong_with_rendered_section_passes():
     manifest["googleReviews"] = {
         "checked": True,
         "state": "VERIFIED_STRONG",
+        "usableTextReviews": 1,
         "reviewSectionRequired": True,
         "reviewSectionRendered": True,
+        "reviews": [
+            {
+                "id": "gr-1",
+                "author": "Carlos",
+                "text": "Excelente atendimento",
+                "verified": True,
+            }
+        ],
     }
-    html = PASS_HTML.replace('</body>', '<section data-role="reviews" data-review-mode="text-reviews"><div data-role="review-card">Excelente atendimento</div></section></body>')
+    html = PASS_HTML.replace('</body>', '<section data-role="reviews" data-review-mode="text-reviews"><div data-role="review-card" data-review-evidence-id="gr-1"><p>Excelente atendimento</p><span>Carlos</span></div></section></body>')
     code, payload = run_case(html=html, manifest=manifest)
     assert code == 0
     assert payload["autonomousReviewPass"] is True
@@ -493,11 +503,11 @@ def test_fake_instagram_destination_is_blocked():
 
 
 def test_missing_floating_whatsapp_is_blocked():
-    html = PASS_HTML.replace(
-        '<a href="https://wa.me/5511999999999" data-role="floating-whatsapp">WhatsApp</a>',
-        '<a href="https://wa.me/5511999999999">WhatsApp</a>',
-    )
-    code, payload = run_case(html=html)
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["assistant"]["present"] = False
+    manifest["whatsapp"]["floatingRequired"] = True
+    html = PASS_HTML.replace('<button data-role="assistant-launcher">Assistente</button>', '')
+    code, payload = run_case(html=html, manifest=manifest)
     assert code == 1
     assert "floating_whatsapp_hook" in failed_keys(payload)
 
@@ -689,6 +699,95 @@ def test_factual_traceability_generic_allowlist_blocks_unsupported_service():
     )
     assert code == 1
     assert "factual_traceability_verified_services" in failed_keys(payload)
+
+
+def test_direct_maps_count_overrides_stale_cached_count():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "sourceSurface": "direct_google_maps",
+        "placeId": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+        "cid": "8080486820542360312",
+        "verifiedGoogleProfile": True,
+        "state": "VERIFIED_STRONG",
+        "aggregateRating": 5.0,
+        "ratingCount": 12,
+        "usableTextReviews": 0,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+    }
+    # HTML erroneously still has old count 1
+    html = PASS_HTML.replace(
+        '</body>',
+        '<section data-role="reviews" data-review-mode="aggregate-only" data-review-presentation="compact-summary" data-review-rating="5.0" data-review-count="1"><div data-role="reviews-summary">5,0 · 1 avaliação</div></section></body>',
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "google_reviews_count_hook" in failed_keys(payload)
+
+
+def test_banned_stale_count_text_fails_when_count_differs():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "sourceSurface": "direct_google_maps",
+        "verifiedGoogleProfile": True,
+        "state": "VERIFIED_STRONG",
+        "aggregateRating": 5.0,
+        "ratingCount": 12,
+        "usableTextReviews": 0,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+    }
+    # HTML has data-review-count="12" but text still says "1 avaliação"
+    html = PASS_HTML.replace(
+        '</body>',
+        '<section data-role="reviews" data-review-mode="aggregate-only" data-review-presentation="compact-summary" data-review-rating="5.0" data-review-count="12"><div data-role="reviews-summary">5,0 · 1 avaliação</div></section></body>',
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "google_reviews_no_stale_count_text" in failed_keys(payload)
+
+
+def test_multi_source_verified_text_review_allows_card_when_google_is_aggregate_only():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "verifiedGoogleProfile": True,
+        "state": "VERIFIED_STRONG",
+        "aggregateRating": 5.0,
+        "ratingCount": 12,
+        "usableTextReviews": 0,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+    }
+    manifest["reviewEvidence"] = {
+        "checked": True,
+        "sources": [
+            {
+                "platform": "doctoralia",
+                "profileIdentityMatched": True,
+                "profileUrl": "https://www.doctoralia.com.br/aline-iost/ortodontista/rio-claro",
+                "reviews": [
+                    {
+                        "id": "doctoralia-daniel-2022-05-04",
+                        "author": "Daniel",
+                        "date": "2022-05-04",
+                        "text": "Excelente profissional. Cuidadosa, pontual. Faz um trabalho de muita qualidade.",
+                        "verification": "verified_opinion",
+                        "verified": True,
+                    }
+                ],
+            }
+        ],
+    }
+    # HTML with verified text card
+    html = PASS_HTML.replace(
+        '</body>',
+        '<section data-role="reviews" data-review-mode="verified-text" data-review-rating="5.0" data-review-count="12"><div class="container"><article data-role="review-card" data-review-evidence-id="doctoralia-daniel-2022-05-04"><p>Excelente profissional. Cuidadosa, pontual. Faz um trabalho de muita qualidade.</p><span>Daniel</span></article></div></section></body>',
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 0, f"Expected PASS but got failure: {payload}"
 
 
 if __name__ == "__main__":

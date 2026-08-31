@@ -210,6 +210,11 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
     dr_check = bool(re.search(r"(?im)^\s*GOOGLE_REVIEWS_CHECK\s*:\s*PASS\s*$", design_read))
     review.check("google_reviews_design_read_check", dr_check, "design-read must record GOOGLE_REVIEWS_CHECK: PASS")
 
+    usable_google_text = int(gr_cfg.get("usableTextReviews", 0) or 0)
+    if usable_google_text < 3:
+        sec_search = bool(re.search(r"(?im)^\s*SECONDARY_REVIEW_SEARCH\s*:\s*PASS\s*$", design_read))
+        review.check("secondary_review_search_check", sec_search, "When Google usable text reviews < 3, design-read must record SECONDARY_REVIEW_SEARCH: PASS")
+
     rating_count = gr_cfg.get("ratingCount")
     if rating_count is None:
         rating_count = gr_cfg.get("reviewCount")
@@ -220,14 +225,31 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
     section_required = bool(gr_cfg.get("reviewSectionRequired", False))
     section_rendered = bool(gr_cfg.get("reviewSectionRendered", False))
 
+    # Build inventory of verified text reviews from reviewEvidence and googleReviews
+    verified_reviews_inventory: dict[str, dict] = {}
+    review_evidence_cfg = section(manifest, "reviewEvidence")
+    for source in review_evidence_cfg.get("sources", []):
+        for r in source.get("reviews", []):
+            r_id = r.get("id")
+            if r_id and r.get("verified"):
+                verified_reviews_inventory[r_id] = r
+
+    for r in gr_cfg.get("reviews", []):
+        r_id = r.get("id")
+        if r_id and r.get("verified"):
+            verified_reviews_inventory[r_id] = r
+
+    total_verified_texts = len(verified_reviews_inventory)
+
     requires_section = (
-        state in {"VERIFIED_STRONG", "VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE"}
+        total_verified_texts > 0
+        or state in {"VERIFIED_STRONG", "VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE"}
         or (verified_profile and has_ratings and state != "PROFILE_CONFLICT")
     )
 
     if requires_section:
-        review.check("google_reviews_section_required", section_required, f"State {state} with ratings requires reviewSectionRequired=true")
-        review.check("google_reviews_section_rendered", section_rendered, f"State {state} with ratings requires reviewSectionRendered=true")
+        review.check("google_reviews_section_required", section_required, f"State {state} with ratings/evidence requires reviewSectionRequired=true")
+        review.check("google_reviews_section_rendered", section_rendered, f"State {state} with ratings/evidence requires reviewSectionRendered=true")
         has_reviews_html = bool(
             re.search(r"data-role=['\"]reviews['\"]|data-role=['\"]testimonials['\"]|id=['\"]avaliacoes['\"]|class=['\"][^'\"]*(?:review|testimonial|avaliacao|depoimento)", html, re.IGNORECASE)
         )
@@ -238,7 +260,82 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
         tag_str = tag_match.group(0) if tag_match else ""
         section_inner = section_match.group(1) if section_match else ""
 
-        if state in {"VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE"}:
+        # Rating and Count attributes
+        rating_attr = extract_attr(tag_str, "data-review-rating")
+        expected_rating = gr_cfg.get("aggregateRating")
+        if expected_rating is not None:
+            rating_ok = False
+            if rating_attr is not None:
+                try:
+                    rating_ok = abs(float(str(rating_attr).replace(",", ".")) - float(str(expected_rating).replace(",", "."))) < 0.01
+                except ValueError:
+                    rating_ok = False
+            review.check("google_reviews_rating_hook", rating_ok, f"data-review-rating={rating_attr!r} must match evidence rating {expected_rating!r}")
+
+        count_attr = extract_attr(tag_str, "data-review-count")
+        expected_count = gr_cfg.get("ratingCount")
+        if expected_count is None:
+            expected_count = gr_cfg.get("reviewCount")
+        if expected_count is not None:
+            count_ok = False
+            if count_attr is not None:
+                try:
+                    count_ok = int(count_attr) == int(expected_count)
+                except ValueError:
+                    count_ok = False
+            review.check("google_reviews_count_hook", count_ok, f"data-review-count={count_attr!r} must match evidence count {expected_count!r}")
+
+        # Ban stale "1 avaliação" if expected_count != 1
+        text_only = re.sub(r"<[^>]+>", " ", section_inner)
+        if expected_count is not None and int(expected_count) != 1:
+            has_stale_1 = bool(re.search(r"\b1\s+avalia[cç][aã]o\b", text_only, re.IGNORECASE))
+            review.check("google_reviews_no_stale_count_text", not has_stale_1, f"Review section cannot display '1 avaliação' when ratingCount is {expected_count}")
+
+        if total_verified_texts >= 1:
+            # Text Review / Multi-source mode
+            review_mode = extract_attr(tag_str, "data-review-mode")
+            review.check(
+                "google_reviews_mode_text",
+                review_mode in {"verified-text", "multi-source", "text-reviews"},
+                f"Verified text reviews present ({total_verified_texts}) require data-review-mode in ['verified-text', 'multi-source', 'text-reviews']",
+            )
+
+            # Find review cards
+            card_matches = list(re.finditer(r"<(?P<tag>article|div)\b(?P<attrs>[^>]*)data-role=['\"]review-card['\"](?P<rest>[^>]*)>(?P<content>.*?)</(?P=tag)>", section_inner, re.DOTALL | re.IGNORECASE))
+            review.check("google_reviews_cards_present", len(card_matches) > 0, "Verified text reviews required review cards with data-role=\"review-card\"")
+
+            for card in card_matches:
+                full_card_tag = card.group("attrs") + " " + card.group("rest")
+                card_content = card.group("content")
+                ev_id = extract_attr(full_card_tag, "data-review-evidence-id")
+                
+                review.check(
+                    "review_card_evidence_id_valid",
+                    bool(ev_id and ev_id in verified_reviews_inventory),
+                    f"Review card data-review-evidence-id={ev_id!r} must exist in verified reviewEvidence inventory",
+                )
+
+                if ev_id and ev_id in verified_reviews_inventory:
+                    ev_item = verified_reviews_inventory[ev_id]
+                    ev_author = ev_item.get("author", "").strip().lower()
+                    ev_text = ev_item.get("text", "").strip()
+                    card_plain_text = re.sub(r"<[^>]+>", " ", card_content).strip()
+
+                    review.check(
+                        "review_card_author_match",
+                        ev_author in card_plain_text.lower(),
+                        f"Review card {ev_id} must contain author '{ev_item.get('author')}'",
+                    )
+                    
+                    # Check that the text or significant portion matches exactly
+                    ev_text_clean = " ".join(ev_text.split()[:8])
+                    review.check(
+                        "review_card_text_match",
+                        ev_text_clean.lower() in card_plain_text.lower(),
+                        f"Review card {ev_id} text must match evidence snippet '{ev_text_clean}'",
+                    )
+        else:
+            # Aggregate-only mode
             review_mode = extract_attr(tag_str, "data-review-mode")
             review.check("google_reviews_mode_aggregate", review_mode == "aggregate-only", "Aggregate-only review section requires data-review-mode=\"aggregate-only\"")
 
@@ -248,39 +345,11 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
             has_summary_hook = bool(re.search(r"data-role=['\"]reviews-summary['\"]", section_inner, re.IGNORECASE))
             review.check("google_reviews_summary_hook", has_summary_hook, "Aggregate-only review section requires [data-role=\"reviews-summary\"] element")
 
-            rating_attr = extract_attr(tag_str, "data-review-rating")
-            expected_rating = gr_cfg.get("aggregateRating")
-            rating_ok = False
-            if rating_attr is not None and expected_rating is not None:
-                try:
-                    rating_ok = abs(float(str(rating_attr).replace(",", ".")) - float(str(expected_rating).replace(",", "."))) < 0.01
-                except ValueError:
-                    rating_ok = False
-            review.check("google_reviews_rating_hook", rating_ok, f"data-review-rating={rating_attr!r} must match evidence rating {expected_rating!r}")
-
-            count_attr = extract_attr(tag_str, "data-review-count")
-            expected_count = gr_cfg.get("ratingCount")
-            if expected_count is None:
-                expected_count = gr_cfg.get("reviewCount")
-            count_ok = False
-            if count_attr is not None and expected_count is not None:
-                try:
-                    count_ok = int(count_attr) == int(expected_count)
-                except ValueError:
-                    count_ok = False
-            review.check("google_reviews_count_hook", count_ok, f"data-review-count={count_attr!r} must match evidence count {expected_count!r}")
-
             has_fake_cards = bool(re.search(r"data-role=['\"]review-card['\"]|<blockquote\b", section_inner, re.IGNORECASE))
             review.check("google_reviews_no_fake_cards", not has_fake_cards, "Aggregate-only state cannot contain testimonial cards or blockquotes")
 
-            text_only = re.sub(r"<[^>]+>", " ", section_inner)
             has_fake_quotes = bool(re.search(r"[\"“][^\"”\n]{15,}[\"”]", text_only))
             review.check("google_reviews_no_fabricated_text", not has_fake_quotes, "Aggregate-only state cannot contain fabricated review quotes or reviewer authors")
-        elif state == "VERIFIED_STRONG":
-            review_mode = extract_attr(tag_str, "data-review-mode")
-            review.check("google_reviews_mode_text", review_mode == "text-reviews", "VERIFIED_STRONG reviews require data-review-mode=\"text-reviews\"")
-            has_cards = bool(re.search(r"data-role=['\"]review-card['\"]", section_inner, re.IGNORECASE))
-            review.check("google_reviews_cards_present", has_cards, "VERIFIED_STRONG state requires verified review cards with data-role=\"review-card\"")
 
 
 def check_factual_traceability(manifest: dict, design_read: str, html: str, review: Review) -> None:
