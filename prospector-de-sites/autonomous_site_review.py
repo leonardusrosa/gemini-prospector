@@ -19,6 +19,7 @@ Exit 1 = one or more blocking findings.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -43,13 +44,19 @@ WA_LINK_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+SOCIAL_TAG_PATTERNS = {
+    "instagram": re.compile(
+        r"<[^>]+data-social\s*=\s*['\"]instagram['\"][^>]*>",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    "whatsapp": re.compile(
+        r"<[^>]+data-social\s*=\s*['\"]whatsapp['\"][^>]*>",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
 INSTAGRAM_ACTIVE_PATTERN = re.compile(
     r"<a\b[^>]*data-social\s*=\s*['\"]instagram['\"][^>]*href\s*=\s*['\"]https?://(?:www\.)?instagram\.com/[^'\"]+['\"][^>]*>",
-    re.IGNORECASE | re.DOTALL,
-)
-
-INSTAGRAM_ANY_PATTERN = re.compile(
-    r"<[^>]+data-social\s*=\s*['\"]instagram['\"][^>]*>",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -129,6 +136,27 @@ def normalize_digits(value: Any) -> str:
     return re.sub(r"\D+", "", str(value or ""))
 
 
+def extract_design_value(design_read: str, key: str) -> str | None:
+    match = re.search(rf"(?im)^\s*{re.escape(key)}\s*:\s*(.+?)\s*$", design_read)
+    return match.group(1).strip() if match else None
+
+
+def social_tag(html: str, name: str) -> str | None:
+    match = SOCIAL_TAG_PATTERNS[name].search(html)
+    return match.group(0) if match else None
+
+
+def disabled_social_tag_is_safe(tag: str | None) -> tuple[bool, str]:
+    if not tag:
+        return False, "control not found"
+    aria_disabled = bool(re.search(r"aria-disabled\s*=\s*['\"]true['\"]", tag, re.IGNORECASE))
+    href = re.search(r"\bhref\s*=\s*['\"]([^'\"]*)['\"]", tag, re.IGNORECASE)
+    # Disabled mock controls must not navigate anywhere, including # or javascript:void(0).
+    safe_href = href is None
+    detail = f"aria-disabled={aria_disabled}, href={href.group(1)!r}" if href else f"aria-disabled={aria_disabled}, href=ABSENT"
+    return aria_disabled and safe_href, detail
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Prospector deterministic autonomous site review")
     parser.add_argument("--html", required=True)
@@ -149,10 +177,26 @@ def main() -> int:
     gpt_cfg = section(manifest, "gptTaste")
     if gpt_cfg.get("required", True):
         gpt_pass = bool(re.search(r"(?im)^\s*GPT_TASTE_READ\s*:\s*PASS\s*$", design_read))
-        gpt_path = re.search(r"(?im)^\s*GPT_TASTE_PATH\s*:\s*(.+?)\s*$", design_read)
-        path_ok = bool(gpt_path and gpt_path.group(1).strip() and "<" not in gpt_path.group(1))
+        gpt_path_raw = extract_design_value(design_read, "GPT_TASTE_PATH")
+        path_ok = bool(gpt_path_raw and "<" not in gpt_path_raw and ">" not in gpt_path_raw)
         review.check("gpt_taste_read", gpt_pass, "design-read must contain GPT_TASTE_READ: PASS")
         review.check("gpt_taste_path", path_ok, "design-read must record the real gpt-taste SKILL.md path")
+
+        if gpt_cfg.get("skillSha256Required", True) and path_ok:
+            gpt_sha = (extract_design_value(design_read, "GPT_TASTE_SHA256") or "").lower()
+            sha_format_ok = bool(re.fullmatch(r"[0-9a-f]{64}", gpt_sha))
+            review.check("gpt_taste_sha_format", sha_format_ok, "design-read must contain GPT_TASTE_SHA256 with 64 lowercase/uppercase hex chars")
+
+            actual_path = Path(str(gpt_path_raw)).expanduser()
+            actual_exists = actual_path.is_file()
+            review.check("gpt_taste_skill_exists", actual_exists, f"Recorded gpt-taste skill must exist locally: {actual_path}")
+            if actual_exists and sha_format_ok:
+                actual_sha = hashlib.sha256(actual_path.read_bytes()).hexdigest()
+                review.check(
+                    "gpt_taste_sha_matches",
+                    actual_sha == gpt_sha,
+                    "Recorded GPT_TASTE_SHA256 must match the exact current skill file that was read",
+                )
 
     # ---------------- design dials / motion ----------------
     motion_cfg = section(manifest, "motion")
@@ -242,6 +286,12 @@ def main() -> int:
                 floating,
                 "Floating WhatsApp is required and must expose data-role=\"floating-whatsapp\"",
             )
+    elif wa_cfg.get("mockAffordanceRequired", False):
+        tag = social_tag(html, "whatsapp")
+        review.check("whatsapp_mock_present", bool(tag), "Unverified WhatsApp still requires a disabled mockup affordance when requested")
+        if tag:
+            safe, detail = disabled_social_tag_is_safe(tag)
+            review.check("whatsapp_mock_disabled_no_navigation", safe, detail)
 
     # ---------------- Instagram ----------------
     instagram_cfg = section(manifest, "instagram")
@@ -257,18 +307,19 @@ def main() -> int:
                 "Instagram href must match the verified profile URL",
             )
     elif instagram_state == "unverified" and instagram_cfg.get("mockAffordanceRequired", True):
-        control = INSTAGRAM_ANY_PATTERN.search(html)
+        tag = social_tag(html, "instagram")
         review.check(
             "instagram_mock_present",
-            bool(control),
+            bool(tag),
             "Unverified Instagram still requires a visible mockup affordance with data-social=instagram",
         )
-        if control:
-            tag = control.group(0)
-            disabled = bool(re.search(r"aria-disabled\s*=\s*['\"]true['\"]", tag, re.IGNORECASE))
-            review.check("instagram_mock_disabled", disabled, "Unverified Instagram control must be aria-disabled=true")
-            fake_href = bool(re.search(r"href\s*=\s*['\"]https?://(?:www\.)?instagram\.com/", tag, re.IGNORECASE))
-            review.check("instagram_no_fake_href", not fake_href, "Unverified Instagram must not navigate to a fabricated profile")
+        if tag:
+            safe, detail = disabled_social_tag_is_safe(tag)
+            review.check(
+                "instagram_mock_disabled_no_navigation",
+                safe,
+                "Unverified Instagram control must be aria-disabled=true and have NO href at all. " + detail,
+            )
 
     # ---------------- assistant/floating collision hooks ----------------
     assistant_cfg = section(manifest, "assistant")
@@ -295,15 +346,6 @@ def main() -> int:
         not bool(re.search(r">\s*Online\s*<|>\s*Estamos online\s*<", html, re.IGNORECASE)),
         "Do not simulate a human/online state",
     )
-
-    # Visible mockup hrefs must not be '#'/javascript pseudo-navigation on Instagram.
-    if instagram_state == "unverified":
-        fake_instagram_anywhere = bool(re.search(r"href\s*=\s*['\"]https?://(?:www\.)?instagram\.com/", html, re.IGNORECASE))
-        review.check(
-            "no_unverified_instagram_destination",
-            not fake_instagram_anywhere,
-            "No Instagram destination may be invented while profile state is unverified",
-        )
 
     return review.emit()
 
