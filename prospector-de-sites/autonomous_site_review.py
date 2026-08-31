@@ -372,6 +372,9 @@ def check_motion_and_map(manifest: dict, html: str, design_read: str, review: Re
 
 
 def check_socials_and_extras(manifest: dict, html: str, review: Review) -> None:
+    assistant_cfg = section(manifest, "assistant")
+    assistant_present = bool(assistant_cfg.get("present") or re.search(r"data-role\s*=\s*['\"]assistant-launcher['\"]", html, re.IGNORECASE))
+
     wa_cfg = section(manifest, "whatsapp")
     if wa_cfg.get("verified"):
         expected = normalize_digits(wa_cfg.get("number"))
@@ -383,8 +386,12 @@ def check_socials_and_extras(manifest: dict, html: str, review: Review) -> None:
         review.check("whatsapp_no_wrong_numbers", not wrong, "Unexpected WhatsApp: " + (", ".join(wrong) if wrong else "none"))
         if wa_cfg.get("contactActionRequired", True):
             review.check("whatsapp_multiple_conversion_points", len(matches) >= 2, f"Expected >=2 wa.me links, found {len(matches)}")
-        if wa_cfg.get("floatingRequired", True):
-            review.check("floating_whatsapp_hook", bool(re.search(r"data-role\s*=\s*['\"]floating-whatsapp['\"]", html, re.IGNORECASE)), "Floating WhatsApp required")
+
+        has_floating_wpp = bool(re.search(r"data-role\s*=\s*['\"]floating-whatsapp['\"]", html, re.IGNORECASE))
+        if assistant_present:
+            review.check("fixed_conversion_control_exclusivity", not has_floating_wpp, "Assistant is present, so floating WhatsApp is forbidden")
+        elif wa_cfg.get("floatingRequired", True):
+            review.check("floating_whatsapp_hook", has_floating_wpp, "Floating WhatsApp required when no assistant is present")
     elif wa_cfg.get("mockAffordanceRequired", False):
         tag = social_tag(html, "whatsapp")
         review.check("whatsapp_mock_present", bool(tag), "Unverified WhatsApp requires mockup affordance")
@@ -406,12 +413,9 @@ def check_socials_and_extras(manifest: dict, html: str, review: Review) -> None:
             safe, detail = disabled_social_tag_is_safe(tag)
             review.check("instagram_mock_disabled_no_navigation", safe, "Unverified Instagram must be disabled. " + detail)
 
-    assistant_cfg = section(manifest, "assistant")
-    if assistant_cfg.get("present") and assistant_cfg.get("collisionCheckRequired", True):
+    if assistant_cfg.get("present"):
         launcher = bool(re.search(r"data-role\s*=\s*['\"]assistant-launcher['\"]", html, re.IGNORECASE))
-        floating = bool(re.search(r"data-role\s*=\s*['\"]floating-whatsapp['\"]", html, re.IGNORECASE))
         review.check("assistant_launcher_hook", launcher, "Assistant requires data-role=assistant-launcher")
-        review.check("assistant_whatsapp_geometry_hooks", launcher and floating, "Assistant + WhatsApp need geometry hooks")
 
     if manifest.get("preview") is True:
         noindex = bool(re.search(r"<meta\b[^>]*name\s*=\s*['\"]robots['\"][^>]*content\s*=\s*['\"][^'\"]*noindex[^'\"]*nofollow[^'\"]*['\"]", html, re.IGNORECASE | re.DOTALL))
