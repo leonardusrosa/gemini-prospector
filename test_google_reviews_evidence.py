@@ -16,6 +16,7 @@ SPEC.loader.exec_module(mod)
 
 class GoogleReviewsEvidenceTest(unittest.TestCase):
     def base(self, count=36, rating=5.0):
+        count_text = f"{count} avaliações" if count != 1 else "1 avaliação"
         return {
             "profileName": "Negócio Teste",
             "profileUrl": "https://www.google.com/maps/place/teste",
@@ -30,9 +31,13 @@ class GoogleReviewsEvidenceTest(unittest.TestCase):
             "textReviewCollectionAttempted": count > 0,
             "aggregateObservation": {
                 "ratingText": str(rating).replace(".", ","),
-                "countText": f"{count} avaliações" if count != 1 else "1 avaliação",
+                "countText": count_text,
                 "surfaceUrl": "https://www.google.com/maps/place/teste",
             },
+            "reviewsPanelObservation": {
+                "countText": count_text,
+                "surfaceUrl": "https://www.google.com/maps/place/teste",
+            } if count > 0 else None,
             "reviews": [],
         }
 
@@ -84,6 +89,21 @@ class GoogleReviewsEvidenceTest(unittest.TestCase):
         self.assertEqual(result.status, mod.PROFILE_CONFLICT)
         self.assertFalse(result.pass_for_publish)
         self.assertTrue(any("does not match direct Maps header" in x for x in result.errors))
+
+    def test_reviews_panel_count_must_independently_match(self):
+        data = self.base(count=1)
+        data["reviewsPanelObservation"]["countText"] = "12 avaliações"
+        result = mod.validate_evidence(data)
+        self.assertEqual(result.status, mod.PROFILE_CONFLICT)
+        self.assertFalse(result.pass_for_publish)
+        self.assertTrue(any("opened reviews-panel" in x for x in result.errors))
+
+    def test_missing_reviews_panel_observation_blocks_positive_count(self):
+        data = self.base(count=12)
+        data["reviewsPanelObservation"] = None
+        result = mod.validate_evidence(data)
+        self.assertEqual(result.status, mod.PROFILE_CONFLICT)
+        self.assertFalse(result.pass_for_publish)
 
     def test_newer_operator_direct_maps_observation_forces_recollection(self):
         data = self.base(count=1)
