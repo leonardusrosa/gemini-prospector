@@ -16,13 +16,38 @@ import urllib.parse
 import urllib.request
 from playwright.async_api import async_playwright
 
+import os
+import pathlib
+
 BASE_HTTPS_URL = "https://prospector.autocora.com.br"
 SLUG = "autocora-cms-qa"
 ADMIN_URL = f"{BASE_HTTPS_URL}/clientes/{SLUG}/admin/"
 PUBLIC_SITE_URL = f"https://prospector-sites-beta.vercel.app/clientes/{SLUG}/"
-OPERATOR_USER = "admin_autocora_qa"
-OPERATOR_PASS = "REDACTED_TEST_SECRET"
 QA_TEXT = "QA CMS SYNTHETIC TEST TEMPORÁRIO"
+
+
+def require_env(name: str) -> str:
+    """Reads credential strictly from env vars or private chmod 600 env files. Fails closed if missing."""
+    val = os.environ.get(name)
+    if val:
+        return val.strip()
+
+    # Fallback to private local/system env file (ignored by Git)
+    for p in [pathlib.Path(".env.test.local"), pathlib.Path("/etc/prospector-cms-test.env"), pathlib.Path.home() / ".prospector-cms-test.env"]:
+        if p.exists():
+            try:
+                for line in p.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if line.startswith(f"{name}="):
+                        return line.split("=", 1)[1].strip()
+            except Exception:
+                pass
+
+    raise RuntimeError(f"Required private test credential missing: {name}")
+
+
+OPERATOR_USER = require_env("PROSPECTOR_QA_CMS_USERNAME")
+OPERATOR_PASS = require_env("PROSPECTOR_QA_CMS_PASSWORD")
 
 
 def https_request(path: str, method: str = "GET", data: dict = None, headers: dict = None):
@@ -67,7 +92,7 @@ async def run_live_draft_awareness_suite():
     })
     assert status == 200 and auth_res.get("success"), f"Auth failed: {auth_res}"
     token = auth_res["token"]
-    print(f"[PASS] Authenticated successfully with token: {token[:12]}...")
+    print("  [PASS] Authentication succeeded.")
 
     # Preflight cleanup: Ensure starting state has no leftover draft
     https_request("/api/client-cms/draft/discard", method="POST", data={"slug": SLUG, "reason": "preflight"}, headers={"Authorization": f"Bearer {token}"})

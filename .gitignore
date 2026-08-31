@@ -22,3 +22,9 @@ sites/
 
 # Private contractual artifacts and synthetic dry-runs
 private/contracts/
+
+# Private environment files & test secrets
+.env*
+*.env
+*.key
+*.pem

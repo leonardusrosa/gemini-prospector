@@ -16,13 +16,38 @@ import urllib.parse
 import urllib.request
 from playwright.async_api import async_playwright
 
+import os
+import pathlib
+
 BASE_HTTPS_URL = "https://prospector.autocora.com.br"
 SYNTHETIC_SLUG = "autocora-cms-qa"
 ADMIN_URL = f"{BASE_HTTPS_URL}/clientes/{SYNTHETIC_SLUG}/admin/"
 PUBLIC_SITE_URL = f"https://prospector-sites-beta.vercel.app/clientes/{SYNTHETIC_SLUG}/"
-SYNTHETIC_USER = "admin_autocora_qa"
-SYNTHETIC_PASS = "REDACTED_TEST_SECRET"
 QA_MUTATION_TEXT = "QA CMS E2E TEST SYNTHETIC MUTATION"
+
+
+def require_env(name: str) -> str:
+    """Reads credential strictly from env vars or private chmod 600 env files. Fails closed if missing."""
+    val = os.environ.get(name)
+    if val:
+        return val.strip()
+
+    # Fallback to private local/system env file (ignored by Git)
+    for p in [pathlib.Path(".env.test.local"), pathlib.Path("/etc/prospector-cms-test.env"), pathlib.Path.home() / ".prospector-cms-test.env"]:
+        if p.exists():
+            try:
+                for line in p.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if line.startswith(f"{name}="):
+                        return line.split("=", 1)[1].strip()
+            except Exception:
+                pass
+
+    raise RuntimeError(f"Required private test credential missing: {name}")
+
+
+SYNTHETIC_USER = require_env("PROSPECTOR_QA_CMS_USERNAME")
+SYNTHETIC_PASS = require_env("PROSPECTOR_QA_CMS_PASSWORD")
 
 
 class HardTeardownFailure(Exception):
@@ -91,7 +116,7 @@ async def run_synthetic_cms_e2e():
     assert status == 200 and auth_res.get("success"), f"Synthetic auth failed: {auth_res}"
     token = auth_res["token"]
     auth_hdr = {"Authorization": f"Bearer {token}"}
-    print(f"  [PASS] Synthetic tenant authenticated successfully. Token: {token[:16]}...")
+    print("  [PASS] Authentication succeeded.")
 
     # Preflight cleanup
     https_request("/api/client-cms/draft/discard", method="POST", data={"slug": SYNTHETIC_SLUG, "reason": "preflight"}, headers=auth_hdr)

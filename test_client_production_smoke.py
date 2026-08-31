@@ -21,12 +21,37 @@ import urllib.parse
 import urllib.request
 from playwright.async_api import async_playwright
 
+import os
+import pathlib
+
 BASE_HTTPS_URL = "https://prospector.autocora.com.br"
 CLIENT_SLUG = "instituto-ferreira-odontologia-rio-claro"
 ADMIN_URL = f"{BASE_HTTPS_URL}/clientes/{CLIENT_SLUG}/admin/"
 PUBLIC_SITE_URL = f"https://prospector-sites-beta.vercel.app/clientes/{CLIENT_SLUG}/"
-CLIENT_USER = "admin_instituto_qa"
-CLIENT_PASS = "REDACTED_TEST_SECRET"
+
+
+def require_env(name: str) -> str:
+    """Reads credential strictly from env vars or private chmod 600 env files. Fails closed if missing."""
+    val = os.environ.get(name)
+    if val:
+        return val.strip()
+
+    # Fallback to private local/system env file (ignored by Git)
+    for p in [pathlib.Path(".env.test.local"), pathlib.Path("/etc/prospector-cms-test.env"), pathlib.Path.home() / ".prospector-cms-test.env"]:
+        if p.exists():
+            try:
+                for line in p.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if line.startswith(f"{name}="):
+                        return line.split("=", 1)[1].strip()
+            except Exception:
+                pass
+
+    raise RuntimeError(f"Required private test credential missing: {name}")
+
+
+CLIENT_USER = require_env("PROSPECTOR_SMOKE_INSTITUTO_USERNAME")
+CLIENT_PASS = require_env("PROSPECTOR_SMOKE_INSTITUTO_PASSWORD")
 
 FORBIDDEN_QA_MARKERS = [
     "QA CMS",
@@ -133,7 +158,7 @@ async def run_client_production_smoke():
     assert code == 200 and auth_res.get("success"), f"Valid authentication failed: {auth_res}"
     token = auth_res["token"]
     auth_hdr = {"Authorization": f"Bearer {token}"}
-    print(f"  [PASS] Valid login authenticated successfully. Token: {token[:16]}...")
+    print("  [PASS] Authentication succeeded.")
 
     # Step 4: Status API & Source State Verification
     print("\n--- [Step 4] Status API & Source State Verification ---")

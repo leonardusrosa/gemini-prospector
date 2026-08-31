@@ -19,14 +19,15 @@ import os
 import pathlib
 import subprocess
 import time
+import secrets
 from playwright.async_api import async_playwright
 
 from client_cms_auth import TenantAuthStore
 from client_cms_audit import get_audit_history
 
-ROOT = pathlib.Path(__file__).resolve().parent
-SLUG = "instituto-ferreira-odontologia-rio-claro"
+ROOT = pathlib.Path(__file__).parent.resolve()
 DEPLOY_REPO = pathlib.Path(r"E:\Antigravity\prospector-sites")
+SLUG = "autocora-cms-qa"
 INDEX_PATH = DEPLOY_REPO / "clientes" / SLUG / "index.html"
 BASE_URL = "http://127.0.0.1:8787"
 
@@ -42,13 +43,16 @@ async def run_benchmark():
     baseline_hash = hashlib.sha256(baseline_bytes).hexdigest()
     print(f"[BASELINE] Size: {len(baseline_bytes)} bytes | SHA256: {baseline_hash}")
 
+    # Generate ephemeral runtime password
+    ephemeral_pass = secrets.token_urlsafe(32)
+
     # Register test tenant credentials
     auth_store = TenantAuthStore(root_dir=ROOT)
     auth_store.register_tenant(
         slug=SLUG,
-        username="admin_instituto_qa",
-        password="REDACTED_TEST_SECRET",
-        display_name="Instituto Ferreira Odontologia",
+        username="admin_autocora_qa",
+        password=ephemeral_pass,
+        display_name="AutoCORA Synthetic QA Tenant",
     )
     print("[SETUP] Registered operator test credentials in auth store")
 
@@ -88,7 +92,7 @@ async def run_benchmark():
             # ----------------------------------------------------
             # 2. Test Invalid Login Feedback & Rate Limiting
             # ----------------------------------------------------
-            await page.fill("#cms-username", "admin_instituto_qa")
+            await page.fill("#cms-username", "admin_autocora_qa")
             await page.fill("#cms-password", "WrongPassword123")
             await page.click("#cms-login-submit")
             await page.wait_for_selector("#login-error", state="visible", timeout=3000)
@@ -99,7 +103,7 @@ async def run_benchmark():
             # ----------------------------------------------------
             # 3. Test Valid Login and Session Initialization
             # ----------------------------------------------------
-            await page.fill("#cms-password", "REDACTED_TEST_SECRET")
+            await page.fill("#cms-password", ephemeral_pass)
             await page.click("#cms-login-submit")
             await page.wait_for_selector("#cms-workspace-view", state="visible", timeout=5000)
             assert await workspace_view.is_visible(), "Workspace should be visible after successful login"
