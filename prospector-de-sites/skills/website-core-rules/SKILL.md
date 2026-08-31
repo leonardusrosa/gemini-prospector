@@ -411,6 +411,26 @@ Hero CTA buttons mobile: EXACTLY 1
 Repeated CTA wording across distinct sections: NONE or JUSTIFIED
 CTA wording matches context and destination: PASS
 
+LOCATION & MAP PREVIEW
+Verified customer-facing physical address: YES/NO
+If YES, embedded Google Maps iframe present: PASS (FAIL if missing without explicit user override)
+Map iframe has responsive height, loading=lazy, meaningful title: PASS
+External Google Maps link retained: PASS
+
+SOCIAL & CONTACT AFFORDANCES
+WhatsApp affordance present when verified: PASS
+WhatsApp destination matches verified record exactly: PASS
+Instagram affordance present in UI: PASS
+If Instagram unverified, rendered as mockup-only/disabled (no fake URL/profile): PASS
+Fake social URLs/destinations: NONE
+
+MOTION & BEHAVIOR
+Motion pass completed (default > 0 for prospect concepts): PASS
+Header scroll state transition: PASS
+At least 2 section reveal groups: PASS
+prefers-reduced-motion respected: PASS
+Content fully visible if JS disabled: PASS
+
 ACCESSIBILITY
 html lang: PASS
 Content image alt text truthful: PASS

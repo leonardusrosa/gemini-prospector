@@ -14,14 +14,19 @@ A arquitetura de saída continua estática: `sites/[slug]/[slug].html`, CSS inli
 
 ---
 
-## Regra Fundamental: Website Core Rules Obrigatórias
+## Regra Fundamental: Website Core Rules & gpt-taste Obrigatórias
 
-Antes de qualquer design, construção, revisão ou QA de site, leia e obedeça `../website-core-rules/SKILL.md`.
-Ela tem precedência absoluta sobre escolhas estéticas de `gpt-taste`, `design-taste-frontend`, templates ou referências visuais:
+Antes de qualquer design, construção, revisão ou QA de site, leia e obedeça `../website-core-rules/SKILL.md` e `~/.gemini/config/skills/gpt-taste/SKILL.md`.
+Elas têm precedência absoluta sobre hábitos de LLM e templates pré-concebidos:
 
+- **HARD GATE gpt-taste:** Leia o arquivo atual de `gpt-taste/SKILL.md`. Não confie em memória. O QA final FALHA se `GPT_TASTE_READ != PASS`.
+- **Design Read Obrigatório:** Crie/atualize `sites/[slug]/design-read.md` registrando a leitura de `gpt-taste`, `Design Variance`, `Motion`, `Density` e as decisões visuais antes de escrever código.
 - **SEM tags, pills, chips ou badges decorativos** (proibido metadata-first capsule UI em hero, cards ou qualquer seção).
 - **SEM emoji na UI pública** (use ícones reais em SVG/vetor).
 - **SEM travessões em copy pública (`—` ou `–`)** (reescreva a pontuação de forma natural com vírgulas, pontos ou quebras).
+- **MAPA EMBED OBRIGATÓRIO:** Se o negócio possui endereço físico verificado para atendimento, a seção de localização DEVE conter iframe do Google Maps responsivo (sem API key). `VERIFIED ADDRESS + NO EMBED => FAIL`.
+- **WHATSAPP & SOCIALS:** WhatsApp sempre presente quando verificado (CTA hero, CTA contato, floating CTA sincronizado). Instagram deve ser representado no mockup: se verificado -> link ativo; se não verificado -> disabled/mockup (`aria-disabled="true"`, `tabindex="-1"`, sem inventar link/usuário).
+- **MOTION & BEHAVIOR:** Conceitos premium não podem ser estáticos (default `Motion > 0`). Exige transição de header no scroll, reveals de seção em pelo menos 2 grupos, suporte a `prefers-reduced-motion` e fallback no-JS.
 - O QA final de qualquer site deve obrigatoriamente executar o **Site Core Rule QA**.
 
 ---
