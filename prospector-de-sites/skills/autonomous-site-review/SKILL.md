@@ -1,195 +1,197 @@
 ---
 name: autonomous-site-review
-description: HARD GATE obrigatorio depois de criar ou alterar qualquer site/conceito/redesign do Prospector e antes de Screenshot Review, deploy, proposta ou outreach. Deve detectar autonomamente omissoes de gpt-taste, hero visual, motion/scroll behavior, WhatsApp, Instagram mock/real, mapa incorporado, colisao de floating UI, reduced motion, no-JS fallback, factualidade e regressões visuais. Nunca marque um site como Core QA PASS sem executar esta skill.
+description: Mandatory fail-closed quality gate after creating or changing any Prospector site, concept, or redesign and before screenshot approval, deploy, proposal, or outreach. It must independently detect missing gpt-taste usage, hero visual defects, motion/scroll omissions, WhatsApp/social/map issues, fixed-control conflicts, reduced-motion/no-JS failures, factual regressions, and visual regressions.
 ---
 
 # Autonomous Site Review
 
-Esta skill é uma barreira de qualidade, não uma revisão opcional. Ela existe para impedir que um agente produza uma página tecnicamente válida, mas incompleta em experiência, conversão ou requisitos permanentes.
+This skill is a hard quality barrier, not an optional checklist. A site cannot be marked Core QA PASS merely because the implementing agent reports that it passed.
 
-## Regra de precedência
+## Repository policy and precedence
 
-Use sempre em conjunto com:
+Read and obey, in order:
 
-1. `../website-core-rules/SKILL.md`
-2. `../redesign-premium/SKILL.md`
-3. `../hero-visual-rule/SKILL.md`
-4. `gpt-taste` instalado no ambiente
+1. `../repository-policy/SKILL.md`
+2. `../website-core-rules/SKILL.md`
+3. `../redesign-premium/SKILL.md`
+4. `../hero-visual-rule/SKILL.md`
+5. the current installed `gpt-taste/SKILL.md`
 
-O review não substitui essas skills. Ele verifica se elas realmente apareceram no resultado final.
+All new or materially modified repository rules, gate descriptions, regression names/comments, and agent-facing rule documentation must be written in English. Client-facing copy remains in the target market language.
 
-## 1. HARD GATE: gpt-taste foi realmente usado
+## 1. HARD GATE: prove current gpt-taste usage
 
-Para qualquer criação, redesign ou rework visual:
+Before any visual creation, redesign, or rework:
 
-- leia o `SKILL.md` ATUAL do `gpt-taste` antes de codificar;
-- não trabalhe de memória;
-- registre o caminho lido, SHA-256 do arquivo e a decisão visual em `sites/[slug]/design-read.md`;
-- o arquivo deve conter, no mínimo:
+- read the current `gpt-taste/SKILL.md` from disk;
+- do not work from memory;
+- record its real path and SHA-256 in `sites/[slug]/design-read.md`;
+- record the current design dials.
+
+Minimum evidence:
 
 ```text
 GPT_TASTE_READ: PASS
-GPT_TASTE_PATH: <caminho real lido>
-GPT_TASTE_SHA256: <sha256 do SKILL.md lido>
+GPT_TASTE_PATH: <real path>
+GPT_TASTE_SHA256: <sha256 of the file read>
 Design Variance: <0-10>
 Motion: <0-10>
 Density: <0-10>
 ```
 
-O validator abre o caminho registrado e compara o hash. Portanto, escrever apenas `GPT_TASTE_READ: PASS` sem ter o arquivo atual disponível não satisfaz o gate.
+The validator must compare the recorded hash with the current file. A textual `PASS` alone is insufficient.
 
-Se a skill mudar, o agente deve reler e registrar o novo hash.
+`scroll-behavior: smooth` does not count as a Motion & Behavior Pass.
 
-`scroll-behavior: smooth` não conta como Motion & Behavior Pass.
+## 2. HARD GATE: meaningful hero visual
 
-## 2. HARD GATE: hero visual obrigatório
+Every first-version site, concept, and redesign requires a meaningful hero image unless the operator explicitly requests a text-only exception.
 
-Todo site/conceito/redesign deve ter uma imagem relevante no hero, inclusive quando não existir foto utilizável do expert.
+Selection order:
 
-Ordem padrão:
+1. verified real expert photo;
+2. verified first-party business/context image;
+3. user-provided image;
+4. canonical niche expert-placeholder template;
+5. honest contextual illustrative image.
 
-1. foto real verificada do expert;
-2. foto first-party verificável do local/equipe/produto/contexto;
-3. imagem fornecida pelo usuário;
-4. imagem contextual stock/gerada apropriada ao negócio, sem fingir que retrata instalações, pessoas ou resultados reais do lead.
-
-Exemplo: clínica odontológica sem foto utilizável da profissional ainda deve usar uma imagem contextual coerente, como consultório/sala odontológica, em vez de hero apenas tipográfico ou card abstrato.
-
-Novos sites devem usar:
+Required structural hook:
 
 ```html
 <section data-role="hero">
-  ...
-  <img data-role="hero-image" src="..." alt="..." width="..." height="...">
+  <img data-role="hero-image" ...>
 </section>
 ```
 
-Regras:
+Rules:
 
-- `[data-role="hero-image"]` deve existir dentro de `[data-role="hero"]`;
-- `src` e `alt` não podem ser vazios;
-- hero image crítica não usa `loading="lazy"`;
-- stock/gerada que não retrate o negócio real deve usar `data-image-context="illustrative"` e alt honesto;
-- stock/gerada nunca pode ser declarada no manifesto como representação factual do negócio real;
-- ausência de foto do expert não é justificativa para ausência de imagem;
-- exceção a hero com imagem somente quando o usuário pedir explicitamente e a exceção estiver documentada.
+- non-empty factual `src` and `alt`;
+- critical hero image is not lazy-loaded;
+- illustrative/stock/generated imagery uses honest provenance and must not pretend to show the real expert or facility;
+- canonical expert-placeholder templates must follow the current hero-template manifest and frame policy;
+- missing expert photography is never a reason to omit the hero visual.
 
-A regra completa está em `../hero-visual-rule/SKILL.md`.
+## 3. HARD GATE: motion and behavior
 
-## 3. HARD GATE: motion e comportamento
+Prospect/redesign sites default to `Motion > 0` unless an explicit documented exception exists.
 
-Sites de prospecção/redesign devem ter `Motion > 0` por padrão. Exceções só com motivo explícito no `design-read.md`.
+Verify actual behavior:
 
-O review exige evidência real de comportamento, de forma coerente com o negócio:
+- header state changes on scroll when appropriate;
+- short hero entry/reveal when motion is enabled;
+- at least two meaningful reveal/behavior groups when the page has enough content;
+- functional microinteractions;
+- no-JS content remains visible;
+- `prefers-reduced-motion` is respected;
+- no scroll-jacking, gratuitous loops, or ornamental motion overload.
 
-- estado do header ao rolar a página;
-- hero entry/reveal curto quando Motion > 0;
-- pelo menos dois grupos/áreas com reveal ou comportamento de entrada quando a página tiver conteúdo suficiente;
-- microinterações funcionais;
-- conteúdo permanece legível sem JavaScript;
-- `prefers-reduced-motion` respeitado;
-- sem scroll-jacking, loops gratuitos ou animação ornamental excessiva.
-
-Para facilitar QA determinístico, novos sites devem usar hooks semânticos invisíveis ao usuário:
+Recommended QA hooks:
 
 ```html
 <header data-role="site-header">...</header>
 <section data-role="hero">...</section>
 <div data-motion="reveal">...</div>
+```
+
+## 4. HARD GATE: WhatsApp conversion points
+
+When verified WhatsApp is an appropriate contact channel:
+
+- keep a functional primary CTA;
+- keep a functional contact-area action;
+- use only the verified destination;
+- never invent a second number or alternate destination.
+
+### Assistant absent
+
+If no persistent assistant exists, a synchronized floating WhatsApp action is required by default after the primary hero CTA leaves the viewport:
+
+```html
 <a data-role="floating-whatsapp" ...>...</a>
 ```
 
-Esses atributos não são copy pública nem ornamentação.
+Do not show the floating WhatsApp while the hero CTA is already visible.
 
-## 4. HARD GATE: WhatsApp
+### Assistant present: fixed-control exclusivity
 
-Quando houver WhatsApp/telefone verificado e apropriado para contato:
+If an AI assistant launcher is present, the assistant becomes the ONLY persistent fixed bottom conversion launcher.
 
-- CTA primário funcional;
-- ação funcional na área de contato;
-- floating WhatsApp depois que o CTA principal do hero deixa a viewport, salvo exceção de UX documentada;
-- número/destino deve ser o verificado;
-- não mostrar floating CTA competindo com o CTA do hero ao mesmo tempo.
-
-O floating CTA deve usar `data-role="floating-whatsapp"` nos novos sites para QA automatizado.
-
-Em mockup comercial onde WhatsApp ainda não tiver destino verificável, represente a affordance somente quando o manifesto pedir `mockAffordanceRequired`, usando `data-social="whatsapp"`, `aria-disabled="true"` e **sem atributo `href`**.
-
-## 5. HARD GATE: Instagram/social em mockups comerciais
-
-Para conceitos/noindex de prospecção, represente a UI de Instagram mesmo quando o perfil ainda não estiver verificado.
-
-### Perfil verificado
-
-- link real ativo;
-- `data-social="instagram"`;
-- destino verificado.
-
-### Perfil não verificado
-
-- affordance visual presente;
-- `data-social="instagram"`;
-- `aria-disabled="true"`;
-- **nenhum atributo `href`**, nem `#`, nem `javascript:void(0)`;
-- sem URL inventada;
-- sem username inventado;
-- não navegável (`tabindex="-1"` ou equivalente).
-
-Nunca fabricar `instagram.com/<handle>`.
-
-Na entrega final do cliente, nenhum destino fake pode permanecer ativo.
-
-## 6. HARD GATE: mapa
-
-Se existir endereço físico público e VERIFICADO do negócio, a seção de localização deve, por padrão, incluir mapa incorporado real.
-
-Aceitável:
+Required:
 
 ```html
-<iframe
-  src="https://maps.google.com/maps?q=<ENDERECO>&z=16&output=embed"
-  loading="lazy"
-  referrerpolicy="no-referrer-when-downgrade"
-  title="Mapa de localização ..."
-></iframe>
+<div data-role="assistant-launcher">...</div>
 ```
 
-Também mantenha uma ação externa `Abrir no Google Maps`/equivalente quando útil.
+Forbidden on the same page:
 
-Um card com pin + endereço + botão, sem preview incorporado, NÃO satisfaz o gate.
+```html
+<a data-role="floating-whatsapp">...</a>
+```
 
-Só omita iframe quando endereço for privado, o operador pedir ou houver bloqueio técnico documentado.
+WhatsApp must still remain available through normal page CTAs and through assistant escalation/handoff. The rule removes only the competing fixed floating WhatsApp launcher.
 
-## 7. HARD GATE: floating UI e assistant
+Deterministic outcomes:
 
-Quando coexistirem assistant, WhatsApp, cookie bar ou outros controles fixos:
+- assistant + floating WhatsApp => BLOCK
+- assistant + normal WhatsApp CTAs + no floating WhatsApp => PASS
+- no assistant + verified WhatsApp + missing required floating WhatsApp => BLOCK
 
-- eles não podem se sobrepor;
-- não podem esconder CTA ou conteúdo essencial;
-- validar 1440x900, 800x1024 e 390x844;
-- no mobile, evitar empilhar múltiplos controles grandes sobre o conteúdo.
+Cookie/privacy controls may coexist only when functionally required and must not become competing conversion launchers.
 
-O launcher do assistant deve usar `data-role="assistant-launcher"` quando a implementação permitir, para permitir geometry QA determinístico.
+## 5. HARD GATE: Instagram/social affordance in prospect mockups
 
-## 8. HARD GATE: Google Reviews e prova social
+For noindex prospect concepts, represent Instagram UI even when an official profile is not verified.
 
-Para conceitos de primeira versão e redesigns:
-- O check de Google Reviews é obrigatório (`google_reviews_checked: true`);
-- Deve registrar `GOOGLE_REVIEWS_CHECK: PASS` e o estado correspondente no `design-read.md`;
-- Estados canônicos:
-  - `VERIFIED_STRONG`: aggregate verificado + textos verificados (>= 3). Seção de reviews é **OBRIGATÓRIA** (`reviewSectionRequired: true`, `reviewSectionRendered: true`).
-  - `VERIFIED_AGGREGATE_ONLY`: aggregate verificado existe mas sem textos suficientes. Seção de reviews é **OBRIGATÓRIA** (`reviewSectionRequired: true`, `reviewSectionRendered: true`) em formato aggregate-only (sem cards falsos).
-  - `NO_USABLE_REVIEWS` com `ratingCount > 0`: seção é **OBRIGATÓRIA** (`reviewSectionRequired: true`, `reviewSectionRendered: true`) em formato aggregate-only.
-  - `NO_USABLE_REVIEWS` com `ratingCount == 0` e 0 textos: seção pode ser omitida, registrando estado explícito.
-  - `PROFILE_CONFLICT`: **BLOQUEIA** o gate (`google_reviews_no_conflict` FAIL).
+Verified profile:
 
-NUNCA omita a seção quando o perfil verificado possuir >= 1 avaliação pública.
+- active real link;
+- `data-social="instagram"`;
+- verified destination only.
 
-## 9. Review em duas camadas
+Unverified profile:
 
-### Camada A: determinística/estática
+- visual affordance present;
+- `data-social="instagram"`;
+- `aria-disabled="true"`;
+- no `href`, including no `#` and no `javascript:void(0)`;
+- no invented URL or handle;
+- non-navigable (`tabindex="-1"` or equivalent).
 
-Execute:
+## 6. HARD GATE: embedded map
+
+A verified public customer-facing physical address requires an embedded map preview by default.
+
+A decorative location card without an embedded map does not satisfy the gate.
+
+A map may be omitted only for a private/non-public address, an explicit operator decision, or a documented technical restriction.
+
+## 7. HARD GATE: Google Reviews evidence and rendering
+
+Every first-version local-business concept must explicitly check the correct Google Business Profile.
+
+Canonical states:
+
+- `VERIFIED_STRONG`: verified aggregate plus enough verified text reviews; review section required with only verified review text.
+- `VERIFIED_AGGREGATE_ONLY`: verified aggregate exists but text evidence is insufficient; compact aggregate-only section required, with no testimonial cards or invented reviewer language.
+- `NO_USABLE_REVIEWS` with verified `ratingCount > 0`: aggregate-only section required.
+- verified profile with exactly 0 ratings/reviews: section may be omitted, but the state must be recorded.
+- `PROFILE_CONFLICT`: BLOCK.
+
+Evidence values must flow into DOM hooks rather than being manually retyped without verification.
+
+Never infer that a public reviewer is a patient/client unless verified text evidence supports that statement.
+
+## 8. HARD GATE: factual traceability
+
+Public claims, verified-service lists, design-read claims, and assistant knowledge must derive from a verified factual allowlist/evidence inventory.
+
+Do not rely on a blacklist of previously observed hallucinations. A new unsupported service or claim must fail even if its wording has never appeared before.
+
+## 9. Two-layer review
+
+### Layer A: deterministic/static
+
+Run:
 
 ```bash
 python prospector-de-sites/autonomous_site_review.py \
@@ -198,11 +200,11 @@ python prospector-de-sites/autonomous_site_review.py \
   --manifest sites/[slug]/review-manifest.json
 ```
 
-Ela deve falhar (exit code != 0) quando requisitos estruturais obrigatórios estiverem ausentes.
+Exit code must be non-zero for missing structural requirements.
 
-### Camada B: browser/visual
+### Layer B: browser/visual
 
-Execute depois com site local ou URL pública:
+Run:
 
 ```bash
 python prospector-de-sites/autonomous_site_review_browser.py \
@@ -210,69 +212,75 @@ python prospector-de-sites/autonomous_site_review_browser.py \
   --manifest sites/[slug]/review-manifest.json
 ```
 
-Se Playwright não estiver disponível, não marque Browser Review PASS. Instale/use o ambiente de QA apropriado ou reporte o bloqueio.
+If Playwright/browser QA was not actually executed, Browser Review is `NOT VERIFIED`, never PASS.
 
-## 9. Manifesto obrigatório por site
+Test at least:
 
-Crie `sites/[slug]/review-manifest.json` usando o exemplo em `references/review-manifest.example.json`.
+- desktop 1440x900;
+- tablet 800x1024;
+- mobile 390x844;
+- any additional viewport required by the current hero frame policy.
 
-O manifesto registra fatos de QA, não fatos comerciais inventados. Exemplos:
+## 10. Required review manifest
 
-- hero visual obrigatório, tipo da imagem, origem e se representa fato real do lead;
-- endereço verificado: true/false;
-- WhatsApp verificado e número esperado;
-- Instagram: `verified`, `unverified`, `not_applicable`;
-- assistant presente: true/false;
-- motion esperado: true/false;
-- preview/noindex: true/false.
+Create `sites/[slug]/review-manifest.json` from the canonical example.
 
-Nunca marque `verified=true` ou `representsActualBusiness=true` apenas para fazer o teste passar.
+The manifest records QA/evidence state, not convenient values chosen to make tests pass. Relevant sections include:
 
-## 10. Review adversarial obrigatório
+- hero visual and provenance;
+- address/map state;
+- verified WhatsApp destination;
+- Instagram state;
+- assistant presence;
+- fixed conversion-control policy;
+- motion expectations;
+- Google Reviews evidence;
+- factual evidence/verified claims;
+- preview/noindex state.
 
-Depois do primeiro PASS, faça uma segunda revisão com postura adversarial:
+## 11. Mandatory adversarial review
 
-> "Se eu fosse o revisor tentando REPROVAR esta página, quais requisitos o agente poderia ter esquecido apesar de o site parecer bonito?"
+After the first PASS, perform a second review whose purpose is to fail the page.
 
-Inspecione especialmente:
+Ask:
 
-- gpt-taste apenas citado, mas não usado/arquivo atual não comprovado;
-- hero sem imagem porque não havia foto do expert;
-- hero usando imagem irrelevante/decorativa em vez de contexto do negócio;
-- stock/gerada apresentada como se fosse o consultório/equipe real;
-- hero image com lazy loading, alt falso ou crop ruim;
-- `Motion > 0` no design-read mas página imóvel;
-- mapa substituído por placeholder;
-- Instagram omitido porque não havia URL real;
-- social mock desabilitado mas ainda com `href`, `#` ou `javascript:void(0)`;
-- WhatsApp apenas no hero, sem floating/contact;
-- floating WhatsApp colidindo com assistant;
-- reduced motion declarado no CSS, mas comportamento ainda animado;
-- no-JS deixando conteúdo invisível;
-- CTA/fato removido em desktop mas quebrado no mobile;
-- console/network 404 silencioso;
-- claims reintroduzidos depois do factual hardening.
+> If I were trying to reject this page, what permanent requirement could the implementing agent have skipped while still producing something that looks plausible?
 
-## 11. Proibição de autoaprovação por checklist textual
+Inspect especially:
 
-Um relatório escrito pelo próprio agente não é evidência suficiente.
+- stale or fake gpt-taste proof;
+- missing/incorrect hero image or crop/frame behavior;
+- generated/stock imagery presented as the real person/facility;
+- motion declared but not implemented;
+- missing embedded map;
+- missing/false Instagram state;
+- wrong WhatsApp destination;
+- assistant and floating WhatsApp both present;
+- fixed controls covering content on mobile;
+- reduced-motion/no-JS failures;
+- Google review numbers/copy not matching evidence;
+- fabricated reviewer/patient attribution;
+- unsupported factual claims reintroduced after hardening;
+- console/network failures.
 
-`PASS` requer observação verificável:
+## 12. No self-approval by written checklist
 
-- inspeção do HTML/DOM;
-- execução do validator;
-- hash do gpt-taste atual validado;
-- hero image presente e semanticamente revisada;
+A report written by the implementing agent is not sufficient evidence.
+
+PASS requires observable proof such as:
+
+- DOM/HTML inspection;
+- deterministic validator execution;
+- current gpt-taste hash verification;
+- factual evidence traceability;
 - browser QA;
-- screenshots/geometry quando aplicável;
-- network/console checks;
-- fonte factual quando o item depender de verdade do negócio.
+- geometry/screenshot checks where relevant;
+- console/network checks;
+- deploy gate execution.
 
-Se o agente apenas disser “PASS” sem executar, o estado é `NOT VERIFIED`.
+## 13. Final gate report
 
-## 12. Gate final
-
-Use este bloco na saída:
+Use this output block:
 
 ```text
 AUTONOMOUS SITE REVIEW
@@ -282,22 +290,23 @@ STATIC REVIEW: PASS/FAIL
 BROWSER REVIEW: PASS/FAIL
 ADVERSARIAL REVIEW: PASS/FAIL
 HERO IMAGE: PASS/FAIL
-HERO IMAGE SEMANTICS: PASS/FAIL
-HERO IMAGE FACTUALITY: PASS/FAIL
+HERO FRAME/CROP: PASS/FAIL/N/A
 MOTION: PASS/FAIL
 WHATSAPP: PASS/FAIL/N/A
+ASSISTANT: PASS/FAIL/N/A
+FIXED CONTROL EXCLUSIVITY: PASS/FAIL/N/A
 INSTAGRAM UI: PASS/FAIL/N/A
 MAP EMBED: PASS/FAIL/N/A
-FLOATING UI COLLISION: PASS/FAIL/N/A
+GOOGLE REVIEWS: PASS/FAIL/N/A
+FACTUAL TRACEABILITY: PASS/FAIL
 REDUCED MOTION: PASS/FAIL
 NO-JS: PASS/FAIL
 DESKTOP: PASS/FAIL
 TABLET: PASS/FAIL
 MOBILE: PASS/FAIL
 CONSOLE/NETWORK: PASS/FAIL
-FACTUAL REGRESSION: PASS/FAIL
 
 AUTONOMOUS_REVIEW_PASS: YES/NO
 ```
 
-Deploy/proposta/outreach só podem avançar quando `AUTONOMOUS_REVIEW_PASS: YES`.
+Deploy, proposal, or outreach may proceed only when `AUTONOMOUS_REVIEW_PASS: YES`.
