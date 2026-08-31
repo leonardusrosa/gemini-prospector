@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """Deterministic validator for Google Reviews evidence used by Prospector sites.
 
-This module does not fetch Google. It validates that a collector/browser pass has
-captured enough same-profile evidence to safely render aggregate rating and a
-review carousel.
+The validator is intentionally fail-closed. Aggregate rating/count must come from
+an explicitly observed direct Google Maps place profile, not from cached snippets,
+CRM state, search summaries, or the number of captured text reviews.
 """
 
 from __future__ import annotations
@@ -14,13 +14,22 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 VERIFIED_STRONG = "VERIFIED_STRONG"
 VERIFIED_AGGREGATE_ONLY = "VERIFIED_AGGREGATE_ONLY"
+COLLECTION_INCOMPLETE = "COLLECTION_INCOMPLETE"
 PROFILE_CONFLICT = "PROFILE_CONFLICT"
 NO_USABLE_REVIEWS = "NO_USABLE_REVIEWS"
+
+PASSING_STATUSES = {VERIFIED_STRONG, VERIFIED_AGGREGATE_ONLY, NO_USABLE_REVIEWS}
+DIRECT_SOURCE_SURFACE = "direct_google_maps"
+DIRECT_COLLECTION_METHODS = {
+    "playwright_direct_maps",
+    "browser_direct_maps",
+    "manual_direct_maps",
+}
 
 
 @dataclass
@@ -35,19 +44,124 @@ class EvidenceResult:
     def pass_for_carousel(self) -> bool:
         return self.status == VERIFIED_STRONG and self.carousel_required and not self.errors
 
+    @property
+    def pass_for_publish(self) -> bool:
+        return self.status in PASSING_STATUSES and not self.errors
+
 
 def _nonempty(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
-def _valid_timestamp(value: Any) -> bool:
+def _parse_timestamp(value: Any) -> datetime | None:
     if not _nonempty(value):
-        return False
+        return None
     try:
-        datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-        return True
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except ValueError:
-        return False
+        return None
+
+
+def _parse_count_label(value: Any) -> int | None:
+    if not _nonempty(value):
+        return None
+    text = str(value).strip().casefold()
+    match = re.search(r"([0-9][0-9\s.,]*)\s*(?:avalia(?:ção|ções)|reviews?|ratings?)\b", text)
+    if not match:
+        return None
+    digits = re.sub(r"\D", "", match.group(1))
+    return int(digits) if digits else None
+
+
+def _parse_rating_label(value: Any) -> float | None:
+    if not _nonempty(value):
+        return None
+    match = re.search(r"([0-5](?:[.,][0-9]+)?)", str(value))
+    if not match:
+        return None
+    try:
+        return float(match.group(1).replace(",", "."))
+    except ValueError:
+        return None
+
+
+def _validate_direct_maps_provenance(data: Dict[str, Any], errors: List[str]) -> None:
+    source_surface = str(data.get("sourceSurface") or "").strip().lower()
+    collection_method = str(data.get("collectionMethod") or "").strip().lower()
+    header_observed = data.get("profileHeaderObserved") is True
+    reviews_panel_opened = data.get("reviewsPanelOpened") is True
+    text_collection_attempted = data.get("textReviewCollectionAttempted") is True
+    count = data.get("reviewCount")
+    rating = data.get("aggregateRating")
+    observation = data.get("aggregateObservation")
+
+    if source_surface != DIRECT_SOURCE_SURFACE:
+        errors.append("sourceSurface must be 'direct_google_maps'; cached/search/CRM surfaces are not publishable evidence.")
+    if collection_method not in DIRECT_COLLECTION_METHODS:
+        errors.append(f"collectionMethod must be one of {sorted(DIRECT_COLLECTION_METHODS)}.")
+    if not header_observed:
+        errors.append("profileHeaderObserved=true is required; aggregate values must be read from the live Maps place header.")
+    if isinstance(count, int) and count > 0 and not reviews_panel_opened:
+        errors.append("reviewsPanelOpened=true is required when the profile reports ratings/reviews.")
+    if isinstance(count, int) and count > 0 and not text_collection_attempted:
+        errors.append("textReviewCollectionAttempted=true is required when the profile reports ratings/reviews.")
+
+    if not isinstance(observation, dict):
+        errors.append("aggregateObservation object is required to preserve the exact live Maps header observation.")
+        return
+
+    raw_rating = observation.get("ratingText")
+    raw_count = observation.get("countText")
+    surface_url = observation.get("surfaceUrl")
+    observed_rating = _parse_rating_label(raw_rating)
+    observed_count = _parse_count_label(raw_count)
+
+    if not _nonempty(surface_url) or "google." not in str(surface_url).lower() or "/maps" not in str(surface_url).lower():
+        errors.append("aggregateObservation.surfaceUrl must be the direct Google Maps place URL used for this collection pass.")
+    if observed_rating is None:
+        errors.append("aggregateObservation.ratingText must contain the visible aggregate rating from the Maps header.")
+    elif isinstance(rating, (int, float)) and abs(observed_rating - float(rating)) >= 0.01:
+        errors.append(f"aggregateRating={rating!r} does not match direct Maps header ratingText={raw_rating!r}.")
+    if observed_count is None:
+        errors.append("aggregateObservation.countText must contain the visible rating/review count from the Maps header.")
+    elif isinstance(count, int) and observed_count != count:
+        errors.append(f"reviewCount={count!r} does not match direct Maps header countText={raw_count!r} ({observed_count}).")
+
+
+def _validate_operator_observation(data: Dict[str, Any], errors: List[str]) -> None:
+    """A newer operator-supplied direct Maps observation forces recollection on conflict."""
+    operator = data.get("operatorObservation")
+    if not isinstance(operator, dict):
+        return
+
+    if str(operator.get("sourceSurface") or "").strip().lower() != DIRECT_SOURCE_SURFACE:
+        errors.append("operatorObservation must identify sourceSurface='direct_google_maps'.")
+        return
+
+    observed_at = _parse_timestamp(operator.get("observedAt"))
+    collected_at = _parse_timestamp(data.get("collectedAt"))
+    if observed_at is None:
+        errors.append("operatorObservation.observedAt must be an ISO-8601 timestamp.")
+        return
+
+    # A newer/equal direct observation is authoritative for conflict detection.
+    if collected_at is not None and observed_at < collected_at:
+        return
+
+    op_count = operator.get("reviewCount")
+    op_rating = operator.get("aggregateRating")
+    count = data.get("reviewCount")
+    rating = data.get("aggregateRating")
+    if isinstance(op_count, int) and isinstance(count, int) and op_count != count:
+        errors.append(
+            f"Newer direct Maps operator observation reports reviewCount={op_count}, but active evidence says {count}. "
+            "Mark active evidence stale and recollect before PASS."
+        )
+    if isinstance(op_rating, (int, float)) and isinstance(rating, (int, float)) and abs(float(op_rating) - float(rating)) >= 0.01:
+        errors.append(
+            f"Newer direct Maps operator observation reports aggregateRating={op_rating}, but active evidence says {rating}. "
+            "Mark active evidence stale and recollect before PASS."
+        )
 
 
 def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> EvidenceResult:
@@ -71,17 +185,20 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
 
     if not _nonempty(profile_name):
         errors.append("profileName is required.")
-    if not (_nonempty(profile_url) or _nonempty(place_id)):
-        errors.append("profileUrl or placeIdOrCid is required to anchor profile identity.")
+    if not (_nonempty(profile_url) and _nonempty(place_id)):
+        errors.append("Both profileUrl and placeIdOrCid are required to anchor the exact Maps profile.")
     if not isinstance(rating, (int, float)) or not (0 <= float(rating) <= 5):
         errors.append("aggregateRating must be a number between 0 and 5.")
     if not isinstance(count, int) or count < 0:
         errors.append("reviewCount must be a non-negative integer.")
-    if not _valid_timestamp(collected_at):
-        errors.append("collectedAt must be an ISO-8601 timestamp from the current collection pass.")
+    if _parse_timestamp(collected_at) is None:
+        errors.append("collectedAt must be an ISO-8601 timestamp from the current direct Maps collection pass.")
     if not isinstance(reviews, list):
         errors.append("reviews must be an array.")
         reviews = []
+
+    _validate_direct_maps_provenance(data, errors)
+    _validate_operator_observation(data, errors)
 
     verified_reviews: List[Dict[str, Any]] = []
     fingerprints = set()
@@ -94,6 +211,8 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
         review_rating = review.get("rating")
         text = review.get("text")
         date_label = review.get("dateLabel")
+        source = str(review.get("source") or "").strip().lower()
+        review_place_id = str(review.get("placeIdOrCid") or "").strip()
 
         missing = []
         if not _nonempty(author):
@@ -104,6 +223,10 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
             missing.append("text")
         if not _nonempty(date_label):
             missing.append("dateLabel")
+        if source != "google_maps":
+            missing.append("source=google_maps")
+        if not review_place_id or review_place_id != str(place_id or "").strip():
+            missing.append("matching placeIdOrCid")
 
         if missing:
             warnings.append(f"reviews[{index}] ignored: missing/invalid {', '.join(missing)}.")
@@ -122,17 +245,18 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
     if len(verified_reviews) >= minimum_reviews:
         return EvidenceResult(VERIFIED_STRONG, True, [], warnings, len(verified_reviews))
 
+    if isinstance(count, int) and count >= minimum_reviews:
+        errors.append(
+            f"Direct Maps profile reports {count} reviews/ratings, but only {len(verified_reviews)} verified text reviews were captured. "
+            "Collection is incomplete: keep opening/scrolling the live reviews panel or request human evidence. Aggregate-only PASS is forbidden."
+        )
+        return EvidenceResult(COLLECTION_INCOMPLETE, False, errors, warnings, len(verified_reviews))
+
     if isinstance(count, int) and count > 0:
-        if count >= minimum_reviews:
-            warnings.append(
-                f"Google profile reports {count} reviews, but only {len(verified_reviews)} verified text reviews were captured. "
-                "Do not silently omit the carousel; continue collection or request human evidence."
-            )
-        else:
-            warnings.append(
-                f"Google profile reports {count} rating(s), with {len(verified_reviews)} verified text reviews. "
-                "Render aggregate-only section without fabricated review text."
-            )
+        warnings.append(
+            f"Direct Maps profile reports {count} rating(s), with {len(verified_reviews)} verified text review(s). "
+            "Render the verified aggregate truthfully and never fabricate missing review text."
+        )
         return EvidenceResult(VERIFIED_AGGREGATE_ONLY, False, [], warnings, len(verified_reviews))
 
     return EvidenceResult(NO_USABLE_REVIEWS, False, [], warnings, len(verified_reviews))
@@ -146,52 +270,38 @@ FORBIDDEN_VISIBLE_PATTERNS = [
     r"\bGoogle\s+Meu\s+Negócio\b",
     r"\bGoogle\s+Business\s+Profile\b",
     r"\bVeja\s+nossas\s+avaliações\s+no\s+Google\b",
+    r"\b[0-9]+\s+avalia(?:ção|ções)\s+Google\b",
 ]
 
 
 def extract_reviews_section(html: str) -> str:
-    """Extracts reviews section HTML if present."""
     m = re.search(r'(<section\b[^>]*(?:reviews-section|id=["\']avaliacoes["\'])[^>]*>.*?</section>)', html, re.DOTALL | re.IGNORECASE)
-    if m:
-        return m.group(1)
-    return html
+    return m.group(1) if m else html
 
 
 def extract_visible_text(html_snippet: str) -> str:
-    """Extracts visible text while stripping comments, script, style, SVG and tag markup."""
-    # Strip HTML comments
     s = re.sub(r'<!--.*?-->', ' ', html_snippet, flags=re.DOTALL)
-    # Strip scripts & styles
     s = re.sub(r'<(?:script|style)\b[^>]*>.*?</(?:script|style)>', ' ', s, flags=re.DOTALL | re.IGNORECASE)
-    # Strip SVGs completely (provenance logos, icons, paths)
     s = re.sub(r'<svg\b[^>]*>.*?</svg>', ' ', s, flags=re.DOTALL | re.IGNORECASE)
-    # Extract aria-labels that might contain branded copy
     aria_matches = re.findall(r'aria-label=["\']([^"\']+)["\']', s, flags=re.IGNORECASE)
-    # Strip all HTML tags
     clean_text = re.sub(r'<[^>]+>', ' ', s)
-    # Combine text and aria-labels
-    all_text = clean_text + ' ' + ' '.join(aria_matches)
-    return re.sub(r'\s+', ' ', all_text).strip()
+    return re.sub(r'\s+', ' ', clean_text + ' ' + ' '.join(aria_matches)).strip()
 
 
 def validate_reviews_public_copy(html: str) -> List[str]:
-    """Validates that public visible review copy does not contain forbidden branded patterns."""
     violations: List[str] = []
-    # 1. Check reviews section visible text
     section = extract_reviews_section(html)
     visible_section = extract_visible_text(section)
     for pattern in FORBIDDEN_VISIBLE_PATTERNS:
         if re.search(pattern, visible_section, re.IGNORECASE):
             violations.append(f"Forbidden visible review copy matched pattern: {pattern}")
 
-    # 2. Check navigation links pointing to #avaliacoes
     nav_links = re.findall(r'<a\b[^>]*href=["\']#avaliacoes["\'][^>]*>(.*?)</a>', html, flags=re.DOTALL | re.IGNORECASE)
     for link_html in nav_links:
         link_text = extract_visible_text(link_html)
         for pattern in FORBIDDEN_VISIBLE_PATTERNS:
             if re.search(pattern, link_text, re.IGNORECASE):
                 violations.append(f"Forbidden navigation label pointing to reviews: '{link_text}'")
-
     return violations
 
 
@@ -210,15 +320,15 @@ def qa_lines(result: EvidenceResult) -> List[str]:
     return [
         f"GOOGLE REVIEWS STATUS: {result.status}",
         f"VERIFIED TEXT REVIEWS: {result.verified_review_count}",
-        f"CAROUSEL REQUIRED: {'YES' if result.carousel_required else 'NO'}",
-        f"GOOGLE REVIEWS QA: {'PASS' if (result.pass_for_carousel or result.status in {NO_USABLE_REVIEWS, VERIFIED_AGGREGATE_ONLY}) and not result.errors else 'BLOCKED'}",
+        f"REVIEW DISPLAY REQUIRED: {'YES' if result.status == VERIFIED_STRONG else 'NO/CONDITIONAL'}",
+        f"GOOGLE REVIEWS QA: {'PASS' if result.pass_for_publish else 'BLOCKED'}",
     ]
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Validate Prospector Google Reviews evidence JSON and public HTML.")
+    parser = argparse.ArgumentParser(description="Validate direct Google Maps review evidence and public review copy.")
     parser.add_argument("evidence")
     parser.add_argument("--html", default="", help="Optional HTML file path to validate public copy neutrality.")
     parser.add_argument("--minimum-reviews", type=int, default=3)
@@ -239,9 +349,9 @@ if __name__ == "__main__":
             html_violations = validate_reviews_public_copy(html_path.read_text(encoding="utf-8"))
             if html_violations:
                 html_ok = False
-                for v in html_violations:
-                    print(f"ERROR [PUBLIC_SOURCE_NEUTRALITY]: {v}")
+                for violation in html_violations:
+                    print(f"ERROR [PUBLIC_SOURCE_NEUTRALITY]: {violation}")
             else:
                 print("PUBLIC SOURCE NEUTRALITY: PASS")
 
-    raise SystemExit(0 if (result.status in {VERIFIED_STRONG, VERIFIED_AGGREGATE_ONLY, NO_USABLE_REVIEWS} and not result.errors and html_ok) else 2)
+    raise SystemExit(0 if result.pass_for_publish and html_ok else 2)
