@@ -85,6 +85,10 @@ def _parse_rating_label(value: Any) -> float | None:
         return None
 
 
+def _direct_maps_url(value: Any) -> bool:
+    return _nonempty(value) and "google." in str(value).lower() and "/maps" in str(value).lower()
+
+
 def _validate_direct_maps_provenance(data: Dict[str, Any], errors: List[str]) -> None:
     source_surface = str(data.get("sourceSurface") or "").strip().lower()
     collection_method = str(data.get("collectionMethod") or "").strip().lower()
@@ -94,6 +98,7 @@ def _validate_direct_maps_provenance(data: Dict[str, Any], errors: List[str]) ->
     count = data.get("reviewCount")
     rating = data.get("aggregateRating")
     observation = data.get("aggregateObservation")
+    panel_observation = data.get("reviewsPanelObservation")
 
     if source_surface != DIRECT_SOURCE_SURFACE:
         errors.append("sourceSurface must be 'direct_google_maps'; cached/search/CRM surfaces are not publishable evidence.")
@@ -108,24 +113,42 @@ def _validate_direct_maps_provenance(data: Dict[str, Any], errors: List[str]) ->
 
     if not isinstance(observation, dict):
         errors.append("aggregateObservation object is required to preserve the exact live Maps header observation.")
-        return
+    else:
+        raw_rating = observation.get("ratingText")
+        raw_count = observation.get("countText")
+        surface_url = observation.get("surfaceUrl")
+        observed_rating = _parse_rating_label(raw_rating)
+        observed_count = _parse_count_label(raw_count)
 
-    raw_rating = observation.get("ratingText")
-    raw_count = observation.get("countText")
-    surface_url = observation.get("surfaceUrl")
-    observed_rating = _parse_rating_label(raw_rating)
-    observed_count = _parse_count_label(raw_count)
+        if not _direct_maps_url(surface_url):
+            errors.append("aggregateObservation.surfaceUrl must be the direct Google Maps place URL used for this collection pass.")
+        if observed_rating is None:
+            errors.append("aggregateObservation.ratingText must contain the visible aggregate rating from the Maps header.")
+        elif isinstance(rating, (int, float)) and abs(observed_rating - float(rating)) >= 0.01:
+            errors.append(f"aggregateRating={rating!r} does not match direct Maps header ratingText={raw_rating!r}.")
+        if observed_count is None:
+            errors.append("aggregateObservation.countText must contain the visible rating/review count from the Maps header.")
+        elif isinstance(count, int) and observed_count != count:
+            errors.append(f"reviewCount={count!r} does not match direct Maps header countText={raw_count!r} ({observed_count}).")
 
-    if not _nonempty(surface_url) or "google." not in str(surface_url).lower() or "/maps" not in str(surface_url).lower():
-        errors.append("aggregateObservation.surfaceUrl must be the direct Google Maps place URL used for this collection pass.")
-    if observed_rating is None:
-        errors.append("aggregateObservation.ratingText must contain the visible aggregate rating from the Maps header.")
-    elif isinstance(rating, (int, float)) and abs(observed_rating - float(rating)) >= 0.01:
-        errors.append(f"aggregateRating={rating!r} does not match direct Maps header ratingText={raw_rating!r}.")
-    if observed_count is None:
-        errors.append("aggregateObservation.countText must contain the visible rating/review count from the Maps header.")
-    elif isinstance(count, int) and observed_count != count:
-        errors.append(f"reviewCount={count!r} does not match direct Maps header countText={raw_count!r} ({observed_count}).")
+    # Independent second count observation from the opened reviews panel. This is
+    # required specifically to catch selectors that accidentally capture an
+    # individual review element or a stale search-summary count.
+    if isinstance(count, int) and count > 0:
+        if not isinstance(panel_observation, dict):
+            errors.append("reviewsPanelObservation object is required when reviewCount > 0.")
+        else:
+            panel_count_text = panel_observation.get("countText")
+            panel_url = panel_observation.get("surfaceUrl")
+            panel_count = _parse_count_label(panel_count_text)
+            if not _direct_maps_url(panel_url):
+                errors.append("reviewsPanelObservation.surfaceUrl must be the same direct Google Maps place surface.")
+            if panel_count is None:
+                errors.append("reviewsPanelObservation.countText must preserve the count visible in the opened reviews panel.")
+            elif panel_count != count:
+                errors.append(
+                    f"reviewCount={count!r} does not match opened reviews-panel countText={panel_count_text!r} ({panel_count})."
+                )
 
 
 def _validate_operator_observation(data: Dict[str, Any], errors: List[str]) -> None:
@@ -143,8 +166,6 @@ def _validate_operator_observation(data: Dict[str, Any], errors: List[str]) -> N
     if observed_at is None:
         errors.append("operatorObservation.observedAt must be an ISO-8601 timestamp.")
         return
-
-    # A newer/equal direct observation is authoritative for conflict detection.
     if collected_at is not None and observed_at < collected_at:
         return
 
