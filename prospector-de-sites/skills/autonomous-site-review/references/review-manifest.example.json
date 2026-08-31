@@ -9,10 +9,20 @@
   },
   "heroVisual": {
     "required": true,
-    "kind": "contextual",
-    "sourceType": "generated",
+    "kind": "expert-placeholder",
+    "templateId": "dentistry-female",
+    "sourceType": "generated-template",
+    "representsActualExpert": false,
     "representsActualBusiness": false,
-    "illustrativeDisclosureRequired": true
+    "illustrativeDisclosureRequired": true,
+    "desktopAssetRequired": true,
+    "mobileAssetRequired": true
+  },
+  "googleReviews": {
+    "checked": true,
+    "state": "VERIFIED_STRONG",
+    "reviewSectionRequired": true,
+    "reviewSectionRendered": true
   },
   "motion": {
     "required": true,

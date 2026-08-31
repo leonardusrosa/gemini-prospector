@@ -59,7 +59,17 @@ Available Real Assets
 
 Hero Mode
 Hero Composition
+HERO_VISUAL_SOURCE: real-expert | canonical-template | contextual-illustrative
+HERO_TEMPLATE_ID: [e.g. dentistry-female or null]
+HERO_TEMPLATE_DESKTOP: [e.g. templates/hero-expert/dentistry/female/desktop-ultrawide.webp]
+HERO_TEMPLATE_MOBILE: [e.g. templates/hero-expert/dentistry/female/mobile.webp]
+HERO_REPRESENTS_ACTUAL_EXPERT: false
+HERO_REPRESENTS_ACTUAL_BUSINESS: false
 Creative Intervention Scope
+
+GOOGLE_REVIEWS_CHECK: PASS
+GOOGLE_REVIEWS_STATE: VERIFIED_STRONG | VERIFIED_AGGREGATE_ONLY | NO_USABLE_REVIEWS | PROFILE_CONFLICT
+REVIEW_SECTION_REQUIRED: YES | NO
 
 Creative Direction
 Layout Variance

@@ -5,7 +5,8 @@
 Each failure case mirrors a class of omission that previously escaped an agent's
 self-reported Core QA pass: no gpt-taste evidence, missing hero imagery,
 motionless page, map placeholder, omitted social affordance, navigable fake
-social, missing floating WhatsApp, and missing assistant collision hooks.
+social, missing floating WhatsApp, missing assistant collision hooks,
+invalid hero templates, and omitted Google Reviews.
 """
 
 from __future__ import annotations
@@ -31,7 +32,14 @@ BASE_MANIFEST = {
         "kind": "contextual",
         "sourceType": "generated",
         "representsActualBusiness": False,
+        "representsActualExpert": False,
         "illustrativeDisclosureRequired": True,
+    },
+    "googleReviews": {
+        "checked": True,
+        "state": "NO_USABLE_REVIEWS",
+        "reviewSectionRequired": False,
+        "reviewSectionRendered": False,
     },
     "motion": {
         "required": True,
@@ -72,7 +80,7 @@ window.addEventListener('scroll',()=>document.querySelector('header').classList.
 </body></html>'''
 
 
-def make_design(skill_path: Path, *, include_read=True, sha_override: str | None = None) -> str:
+def make_design(skill_path: Path, *, include_read=True, sha_override: str | None = None, gr_state="NO_USABLE_REVIEWS") -> str:
     sha = sha_override or hashlib.sha256(skill_path.read_bytes()).hexdigest()
     lines = []
     if include_read:
@@ -81,6 +89,8 @@ def make_design(skill_path: Path, *, include_read=True, sha_override: str | None
         [
             f"GPT_TASTE_PATH: {skill_path}",
             f"GPT_TASTE_SHA256: {sha}",
+            f"GOOGLE_REVIEWS_CHECK: PASS",
+            f"GOOGLE_REVIEWS_STATE: {gr_state}",
             "Design Variance: 5",
             "Motion: 3",
             "Density: 4",
@@ -89,7 +99,7 @@ def make_design(skill_path: Path, *, include_read=True, sha_override: str | None
     return "\n".join(lines) + "\n"
 
 
-def run_case(html: str = PASS_HTML, design_transform=None, manifest=None):
+def run_case(html: str = PASS_HTML, design_transform=None, manifest=None, custom_setup=None):
     manifest = manifest or BASE_MANIFEST
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp)
@@ -98,9 +108,15 @@ def run_case(html: str = PASS_HTML, design_transform=None, manifest=None):
         manifest_path = p / "review-manifest.json"
         skill_path = p / "gpt-taste-SKILL.md"
         skill_path.write_text("# Synthetic current gpt-taste skill\nrule: use deliberate composition\n", encoding="utf-8")
-        design = make_design(skill_path)
+        
+        gr_state = manifest.get("googleReviews", {}).get("state", "NO_USABLE_REVIEWS")
+        design = make_design(skill_path, gr_state=gr_state)
         if design_transform:
             design = design_transform(design, skill_path)
+            
+        if custom_setup:
+            custom_setup(p)
+
         html_path.write_text(html, encoding="utf-8")
         design_path.write_text(design, encoding="utf-8")
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
@@ -186,6 +202,184 @@ def test_lazy_loaded_hero_is_blocked():
     assert code == 1
     assert "hero_image_not_lazy" in failed_keys(payload)
 
+
+# --- Template Specific Regressions ---
+
+def test_nonexistent_template_id_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "nonexistent-niche-template",
+        "sourceType": "generated-template",
+        "representsActualExpert": False,
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    code, payload = run_case(manifest=manifest)
+    assert code == 1
+    assert "hero_template_id_in_catalog" in failed_keys(payload)
+
+
+def test_template_claims_actual_expert_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "dentistry-female",
+        "sourceType": "generated-template",
+        "representsActualExpert": True,
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    code, payload = run_case(manifest=manifest)
+    assert code == 1
+    assert "hero_template_no_actual_expert" in failed_keys(payload)
+
+
+def test_template_claims_actual_business_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "dentistry-male",
+        "sourceType": "generated-template",
+        "representsActualExpert": False,
+        "representsActualBusiness": True,
+        "illustrativeDisclosureRequired": True,
+    }
+    code, payload = run_case(manifest=manifest)
+    assert code == 1
+    assert "hero_template_no_actual_business" in failed_keys(payload)
+
+
+def test_template_missing_illustrative_context_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "dentistry-female",
+        "sourceType": "generated-template",
+        "representsActualExpert": False,
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    html = PASS_HTML.replace(' data-image-context="illustrative"', "")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "hero_template_illustrative_context" in failed_keys(payload)
+
+
+def test_template_missing_file_on_disk_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "broken-template",
+        "sourceType": "generated-template",
+        "representsActualExpert": False,
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    def setup_broken_catalog(p: Path):
+        tpl_dir = p / "templates" / "hero-expert"
+        tpl_dir.mkdir(parents=True)
+        cat = {
+            "schemaVersion": 1,
+            "templates": [
+                {
+                    "id": "broken-template",
+                    "desktop": "missing/desktop.webp",
+                    "mobile": "missing/mobile.webp"
+                }
+            ]
+        }
+        (tpl_dir / "manifest.json").write_text(json.dumps(cat), encoding="utf-8")
+        
+    code, payload = run_case(manifest=manifest, custom_setup=setup_broken_catalog)
+    assert code == 1
+    assert "hero_template_desktop_file_exists" in failed_keys(payload)
+
+
+def test_valid_dentistry_female_template_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "dentistry-female",
+        "sourceType": "generated-template",
+        "representsActualExpert": False,
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+        "desktopAssetRequired": True,
+        "mobileAssetRequired": True,
+    }
+    code, payload = run_case(manifest=manifest)
+    assert code == 0
+    assert payload["autonomousReviewPass"] is True
+
+
+def test_valid_dentistry_male_template_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "dentistry-male",
+        "sourceType": "generated-template",
+        "representsActualExpert": False,
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+        "desktopAssetRequired": True,
+        "mobileAssetRequired": True,
+    }
+    code, payload = run_case(manifest=manifest)
+    assert code == 0
+    assert payload["autonomousReviewPass"] is True
+
+
+# --- Google Reviews Regressions ---
+
+def test_google_reviews_profile_conflict_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "state": "PROFILE_CONFLICT",
+        "reviewSectionRequired": False,
+        "reviewSectionRendered": False,
+    }
+    code, payload = run_case(manifest=manifest)
+    assert code == 1
+    assert "google_reviews_no_conflict" in failed_keys(payload)
+
+
+def test_google_reviews_verified_strong_without_rendered_section_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "state": "VERIFIED_STRONG",
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": False,
+    }
+    code, payload = run_case(manifest=manifest)
+    assert code == 1
+    assert "google_reviews_section_rendered" in failed_keys(payload)
+
+
+def test_google_reviews_verified_strong_with_rendered_section_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "state": "VERIFIED_STRONG",
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+    }
+    html = PASS_HTML.replace('</body>', '<section data-role="reviews"><div class="review">Excelente atendimento</div></section></body>')
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 0
+    assert payload["autonomousReviewPass"] is True
+
+
+# --- General Regressions ---
 
 def test_motionless_page_is_blocked():
     html = PASS_HTML.replace("const obs = new IntersectionObserver(()=>{});", "")

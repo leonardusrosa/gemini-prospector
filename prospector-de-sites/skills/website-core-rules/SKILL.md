@@ -411,6 +411,21 @@ Hero CTA buttons mobile: EXACTLY 1
 Repeated CTA wording across distinct sections: NONE or JUSTIFIED
 CTA wording matches context and destination: PASS
 
+HERO VISUAL & EXPERT TEMPLATE
+Hero visual present in first version (no text-only/gradient-only hero): PASS
+Hero visual source: REAL_EXPERT | CANONICAL_TEMPLATE | CONTEXTUAL_ILLUSTRATIVE
+If template: templateId valid in canonical manifest: PASS
+If template: representsActualExpert=false, representsActualBusiness=false: PASS
+If template: data-image-context="illustrative" on element: PASS
+Desktop ultrawide asset present and truthful: PASS
+Mobile asset present and truthful: PASS
+
+GOOGLE REVIEWS PROOF
+Google reviews check completed in first version: PASS
+Google reviews state: VERIFIED_STRONG | VERIFIED_AGGREGATE_ONLY | NO_USABLE_REVIEWS | PROFILE_CONFLICT
+Review section required: YES / NO
+Review section rendered: YES / NO
+
 LOCATION & MAP PREVIEW
 Verified customer-facing physical address: YES/NO
 If YES, embedded Google Maps iframe present: PASS (FAIL if missing without explicit user override)

@@ -2,176 +2,259 @@
 # -*- coding: utf-8 -*-
 """Deterministic pre-browser review for Prospector public websites.
 
-This checker intentionally focuses on requirements that agents have historically
-claimed as PASS without actually implementing them. It is not a substitute for
-browser QA or factual research.
-
 Usage:
     python prospector-de-sites/autonomous_site_review.py \
         --html sites/<slug>/<slug>.html \
         --design-read sites/<slug>/design-read.md \
         --manifest sites/<slug>/review-manifest.json
-
-Exit 0 = deterministic gate passed.
-Exit 1 = one or more blocking findings.
 """
 
 from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import re
 import sys
 from pathlib import Path
-from typing import Any
+
+try:
+    from autonomous_site_review_helpers import (
+        Review,
+        contains_real_motion,
+        disabled_social_tag_is_safe,
+        extract_attr,
+        extract_design_value,
+        extract_motion_score,
+        find_canonical_template_manifest,
+        first_map_iframe,
+        load_json,
+        normalize_digits,
+        read_text,
+        section,
+        social_tag,
+        HERO_IMAGE_PATTERN,
+        HERO_SECTION_PATTERN,
+        INSTAGRAM_ACTIVE_PATTERN,
+        WA_LINK_PATTERN,
+    )
+except ImportError:
+    from .autonomous_site_review_helpers import (
+        Review,
+        contains_real_motion,
+        disabled_social_tag_is_safe,
+        extract_attr,
+        extract_design_value,
+        extract_motion_score,
+        find_canonical_template_manifest,
+        first_map_iframe,
+        load_json,
+        normalize_digits,
+        read_text,
+        section,
+        social_tag,
+        HERO_IMAGE_PATTERN,
+        HERO_SECTION_PATTERN,
+        INSTAGRAM_ACTIVE_PATTERN,
+        WA_LINK_PATTERN,
+    )
 
 
-MOTION_CODE_PATTERNS = [
-    r"IntersectionObserver",
-    r"ScrollTrigger",
-    r"\bgsap\.",
-    r"addEventListener\(\s*['\"]scroll['\"]",
-]
+def check_gpt_taste(manifest: dict, design_read: str, review: Review) -> None:
+    gpt_cfg = section(manifest, "gptTaste")
+    if not gpt_cfg.get("required", True):
+        return
+    gpt_pass = bool(re.search(r"(?im)^\s*GPT_TASTE_READ\s*:\s*PASS\s*$", design_read))
+    gpt_path_raw = extract_design_value(design_read, "GPT_TASTE_PATH")
+    path_ok = bool(gpt_path_raw and "<" not in gpt_path_raw and ">" not in gpt_path_raw)
+    review.check("gpt_taste_read", gpt_pass, "design-read must contain GPT_TASTE_READ: PASS")
+    review.check("gpt_taste_path", path_ok, "design-read must record the real gpt-taste SKILL.md path")
 
-MAP_EMBED_PATTERN = re.compile(
-    r"<iframe\b[^>]*\bsrc\s*=\s*['\"][^'\"]*(?:maps\.google\.|google\.com/maps)[^'\"]*(?:output=embed|embed)[^'\"]*['\"][^>]*>",
-    re.IGNORECASE | re.DOTALL,
-)
-
-WA_LINK_PATTERN = re.compile(
-    r"href\s*=\s*['\"]https://wa\.me/([0-9]+)(?:\?[^'\"]*)?['\"]",
-    re.IGNORECASE,
-)
-
-SOCIAL_TAG_PATTERNS = {
-    "instagram": re.compile(
-        r"<[^>]+data-social\s*=\s*['\"]instagram['\"][^>]*>",
-        re.IGNORECASE | re.DOTALL,
-    ),
-    "whatsapp": re.compile(
-        r"<[^>]+data-social\s*=\s*['\"]whatsapp['\"][^>]*>",
-        re.IGNORECASE | re.DOTALL,
-    ),
-}
-
-INSTAGRAM_ACTIVE_PATTERN = re.compile(
-    r"<a\b[^>]*data-social\s*=\s*['\"]instagram['\"][^>]*href\s*=\s*['\"]https?://(?:www\.)?instagram\.com/[^'\"]+['\"][^>]*>",
-    re.IGNORECASE | re.DOTALL,
-)
-
-HERO_SECTION_PATTERN = re.compile(
-    r"<section\b[^>]*data-role\s*=\s*['\"]hero['\"][^>]*>(.*?)</section>",
-    re.IGNORECASE | re.DOTALL,
-)
-
-HERO_IMAGE_PATTERN = re.compile(
-    r"<img\b[^>]*data-role\s*=\s*['\"]hero-image['\"][^>]*>",
-    re.IGNORECASE | re.DOTALL,
-)
+    if gpt_cfg.get("skillSha256Required", True) and path_ok:
+        gpt_sha = (extract_design_value(design_read, "GPT_TASTE_SHA256") or "").lower()
+        sha_format_ok = bool(re.fullmatch(r"[0-9a-f]{64}", gpt_sha))
+        review.check("gpt_taste_sha_format", sha_format_ok, "design-read must contain GPT_TASTE_SHA256 64-char hex")
+        actual_path = Path(str(gpt_path_raw)).expanduser()
+        actual_exists = actual_path.is_file()
+        review.check("gpt_taste_skill_exists", actual_exists, f"Recorded gpt-taste skill must exist: {actual_path}")
+        if actual_exists and sha_format_ok:
+            actual_sha = hashlib.sha256(actual_path.read_bytes()).hexdigest()
+            review.check("gpt_taste_sha_matches", actual_sha == gpt_sha, "Recorded GPT_TASTE_SHA256 must match current file")
 
 
-class Review:
-    def __init__(self) -> None:
-        self.checks: list[dict[str, Any]] = []
+def check_hero_visual(manifest: dict, html: str, design_read: str, review: Review, base_dir: Path | None = None) -> None:
+    hero_cfg = section(manifest, "heroVisual")
+    if not hero_cfg.get("required", True):
+        return
 
-    def check(self, key: str, ok: bool, detail: str, blocking: bool = True) -> None:
-        self.checks.append(
-            {
-                "key": key,
-                "status": "PASS" if ok else "FAIL",
-                "blocking": bool(blocking),
-                "detail": detail,
-            }
+    hero_section = HERO_SECTION_PATTERN.search(html)
+    review.check("hero_section_hook", hero_section is not None, "Hero requires <section data-role=\"hero\">")
+
+    hero_image_tag = None
+    if hero_section:
+        image_match = HERO_IMAGE_PATTERN.search(hero_section.group(1))
+        hero_image_tag = image_match.group(0) if image_match else None
+
+    review.check("hero_image_present", hero_image_tag is not None, "Hero requires <img data-role=\"hero-image\">")
+    if not hero_image_tag:
+        return
+
+    src = (extract_attr(hero_image_tag, "src") or "").strip()
+    alt = (extract_attr(hero_image_tag, "alt") or "").strip()
+    loading = (extract_attr(hero_image_tag, "loading") or "").strip().lower()
+    image_context = (extract_attr(hero_image_tag, "data-image-context") or "").strip().lower()
+
+    review.check("hero_image_src", bool(src), "Hero image src must be non-empty")
+    review.check("hero_image_alt", bool(alt), "Hero image alt must be non-empty and factual")
+    review.check("hero_image_not_lazy", loading != "lazy", "Critical hero image must not use loading=lazy")
+
+    kind = str(hero_cfg.get("kind") or "").strip().lower()
+    source_type = str(hero_cfg.get("sourceType") or "").strip().lower()
+    rep_business = bool(hero_cfg.get("representsActualBusiness", False))
+    rep_expert = bool(hero_cfg.get("representsActualExpert", False))
+    disclosure_required = bool(hero_cfg.get("illustrativeDisclosureRequired", True))
+
+    valid_kinds = {"expert", "expert-placeholder", "facility", "contextual", "product", "other"}
+    valid_sources = {"first_party", "user_provided", "stock", "generated", "generated-template"}
+    review.check("hero_image_kind_manifest", kind in valid_kinds, f"heroVisual.kind must be in {sorted(valid_kinds)}")
+    review.check("hero_image_source_manifest", source_type in valid_sources, f"heroVisual.sourceType must be in {sorted(valid_sources)}")
+
+    if source_type in {"stock", "generated", "generated-template"}:
+        review.check(
+            "hero_image_no_false_business_representation",
+            not rep_business,
+            "Template/stock/generated hero imagery cannot claim representsActualBusiness=true",
         )
+        review.check(
+            "hero_image_no_false_expert_representation",
+            not rep_expert,
+            "Template/stock/generated hero imagery cannot claim representsActualExpert=true",
+        )
+        if disclosure_required and not rep_business:
+            review.check(
+                "hero_image_illustrative_context",
+                image_context == "illustrative",
+                "Illustrative hero requires data-image-context=\"illustrative\"",
+            )
 
-    @property
-    def failed(self) -> list[dict[str, Any]]:
-        return [item for item in self.checks if item["status"] == "FAIL" and item["blocking"]]
+    if kind == "expert-placeholder":
+        template_id = str(hero_cfg.get("templateId") or "").strip()
+        review.check("hero_template_id_present", bool(template_id), "kind=expert-placeholder requires templateId")
+        review.check("hero_template_source_type", source_type == "generated-template", "kind=expert-placeholder requires sourceType=generated-template")
+        review.check("hero_template_no_actual_expert", not rep_expert, "Template placeholder cannot claim representsActualExpert=true")
+        review.check("hero_template_no_actual_business", not rep_business, "Template placeholder cannot claim representsActualBusiness=true")
+        review.check("hero_template_illustrative_context", image_context == "illustrative", "Template requires data-image-context=\"illustrative\"")
 
-    def emit(self) -> int:
-        payload = {
-            "autonomousReviewPass": not bool(self.failed),
-            "blockingFailures": len(self.failed),
-            "checks": self.checks,
-        }
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
-        return 1 if self.failed else 0
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        raise SystemExit(f"Manifest not found: {path}")
-    except json.JSONDecodeError as exc:
-        raise SystemExit(f"Invalid manifest JSON {path}: {exc}")
-    if not isinstance(data, dict):
-        raise SystemExit("Manifest root must be a JSON object")
-    return data
-
-
-def read_text(path: Path, label: str) -> str:
-    try:
-        return path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        raise SystemExit(f"{label} not found: {path}")
-
-
-def section(manifest: dict[str, Any], key: str) -> dict[str, Any]:
-    value = manifest.get(key, {})
-    return value if isinstance(value, dict) else {}
+        cat_path, cat_data = find_canonical_template_manifest(base_dir)
+        review.check("hero_template_catalog_exists", cat_data is not None, f"Canonical hero-expert catalog not found (checked {cat_path})")
+        if cat_data and template_id:
+            templates_list = cat_data.get("templates", [])
+            matched = [t for t in templates_list if t.get("id") == template_id]
+            review.check("hero_template_id_in_catalog", bool(matched), f"templateId '{template_id}' not found in canonical manifest")
+            if matched and cat_path:
+                t_entry = matched[0]
+                t_root = cat_path.parent
+                d_file = t_root / t_entry.get("desktop", "")
+                m_file = t_root / t_entry.get("mobile", "")
+                review.check("hero_template_desktop_file_exists", d_file.is_file(), f"Desktop template file missing: {d_file}")
+                review.check("hero_template_mobile_file_exists", m_file.is_file(), f"Mobile template file missing: {m_file}")
 
 
-def contains_real_motion(html: str) -> bool:
-    return any(re.search(pattern, html, re.IGNORECASE) for pattern in MOTION_CODE_PATTERNS)
+def check_google_reviews(manifest: dict, html: str, design_read: str, review: Review) -> None:
+    gr_cfg = section(manifest, "googleReviews")
+    if not gr_cfg:
+        return
+    checked = bool(gr_cfg.get("checked", False))
+    review.check("google_reviews_checked", checked, "Google reviews check must be performed for first-version concepts")
+    state = str(gr_cfg.get("state") or "").upper().strip()
+    valid_states = {"VERIFIED_STRONG", "VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS", "PROFILE_CONFLICT"}
+    review.check("google_reviews_state_valid", state in valid_states, f"googleReviews.state must be in {sorted(valid_states)}")
+    review.check("google_reviews_no_conflict", state != "PROFILE_CONFLICT", "PROFILE_CONFLICT blocks Core QA PASS")
+
+    dr_check = bool(re.search(r"(?im)^\s*GOOGLE_REVIEWS_CHECK\s*:\s*PASS\s*$", design_read))
+    review.check("google_reviews_design_read_check", dr_check, "design-read must record GOOGLE_REVIEWS_CHECK: PASS")
+
+    if state == "VERIFIED_STRONG":
+        req = bool(gr_cfg.get("reviewSectionRequired", True))
+        rend = bool(gr_cfg.get("reviewSectionRendered", True))
+        review.check("google_reviews_section_required", req, "VERIFIED_STRONG requires reviewSectionRequired=true")
+        review.check("google_reviews_section_rendered", rend, "VERIFIED_STRONG requires reviewSectionRendered=true")
+        has_reviews_html = bool(
+            re.search(r"data-role=['\"]reviews['\"]|data-role=['\"]testimonials['\"]|class=['\"][^'\"]*(?:review|testimonial|avaliacao|depoimento)", html, re.IGNORECASE)
+        )
+        review.check("google_reviews_html_rendered", has_reviews_html, "VERIFIED_STRONG requires rendered review section in HTML")
 
 
-def extract_motion_score(design_read: str) -> int | None:
-    match = re.search(r"(?im)^\s*Motion\s*:\s*(\d{1,2})(?:\s*/\s*10)?\s*$", design_read)
-    if not match:
-        return None
-    try:
-        return int(match.group(1))
-    except ValueError:
-        return None
+def check_motion_and_map(manifest: dict, html: str, design_read: str, review: Review) -> None:
+    motion_cfg = section(manifest, "motion")
+    if bool(motion_cfg.get("required", True)):
+        motion_score = extract_motion_score(design_read)
+        review.check("motion_score", motion_score is not None and motion_score > 0, f"Motion dial must be > 0; found {motion_score!r}")
+        review.check("motion_runtime", contains_real_motion(html), "Page needs real scroll/reveal behavior")
+        review.check("reduced_motion_css", "prefers-reduced-motion" in html, "prefers-reduced-motion handling required")
+        min_reveals = int(motion_cfg.get("minimumRevealGroups", 2) or 0)
+        if min_reveals > 0:
+            count = len(re.findall(r"data-motion\s*=\s*['\"]reveal['\"]", html, re.IGNORECASE))
+            review.check("motion_reveal_hooks", count >= min_reveals, f"Expected >={min_reveals} reveal groups; found {count}")
+        if motion_cfg.get("headerScrollStateRequired", False):
+            review.check("header_scroll_hook", bool(re.search(r"data-role\s*=\s*['\"]site-header['\"]", html, re.IGNORECASE)), "Header needs data-role=site-header")
+
+    address_cfg = section(manifest, "address")
+    if bool(address_cfg.get("verified") and address_cfg.get("public", True) and address_cfg.get("mapEmbedRequired", True)):
+        iframe = first_map_iframe(html)
+        review.check("map_embed", iframe is not None, "Verified public address requires embedded Google Maps")
+        if iframe:
+            review.check("map_lazy", "loading=\"lazy\"" in iframe.lower() or "loading='lazy'" in iframe.lower(), "Map iframe should lazy-load")
+            review.check("map_title", bool(re.search(r"\btitle\s*=", iframe, re.IGNORECASE)), "Map iframe requires title")
+            review.check("map_referrerpolicy", "referrerpolicy=" in iframe.lower(), "Map iframe requires referrerpolicy")
 
 
-def first_map_iframe(html: str) -> str | None:
-    match = MAP_EMBED_PATTERN.search(html)
-    return match.group(0) if match else None
+def check_socials_and_extras(manifest: dict, html: str, review: Review) -> None:
+    wa_cfg = section(manifest, "whatsapp")
+    if wa_cfg.get("verified"):
+        expected = normalize_digits(wa_cfg.get("number"))
+        links = WA_LINK_PATTERN.findall(html)
+        normalized = [normalize_digits(item) for item in links]
+        matches = [item for item in normalized if item == expected] if expected else normalized
+        review.check("whatsapp_verified_destination", bool(matches), f"Expected wa.me link to {expected or '[configured]'}")
+        wrong = sorted({item for item in normalized if expected and item != expected})
+        review.check("whatsapp_no_wrong_numbers", not wrong, "Unexpected WhatsApp: " + (", ".join(wrong) if wrong else "none"))
+        if wa_cfg.get("contactActionRequired", True):
+            review.check("whatsapp_multiple_conversion_points", len(matches) >= 2, f"Expected >=2 wa.me links, found {len(matches)}")
+        if wa_cfg.get("floatingRequired", True):
+            review.check("floating_whatsapp_hook", bool(re.search(r"data-role\s*=\s*['\"]floating-whatsapp['\"]", html, re.IGNORECASE)), "Floating WhatsApp required")
+    elif wa_cfg.get("mockAffordanceRequired", False):
+        tag = social_tag(html, "whatsapp")
+        review.check("whatsapp_mock_present", bool(tag), "Unverified WhatsApp requires mockup affordance")
+        if tag:
+            safe, detail = disabled_social_tag_is_safe(tag)
+            review.check("whatsapp_mock_disabled_no_navigation", safe, detail)
 
+    ig_cfg = section(manifest, "instagram")
+    ig_state = str(ig_cfg.get("state") or "not_applicable").strip().lower()
+    if ig_state == "verified":
+        review.check("instagram_active", bool(INSTAGRAM_ACTIVE_PATTERN.search(html)), "Verified Instagram requires active link")
+        expected_url = str(ig_cfg.get("expectedUrl") or "").strip().rstrip("/").lower()
+        if expected_url:
+            review.check("instagram_verified_url", expected_url in html.lower(), "Instagram href must match verified profile")
+    elif ig_state == "unverified" and ig_cfg.get("mockAffordanceRequired", True):
+        tag = social_tag(html, "instagram")
+        review.check("instagram_mock_present", bool(tag), "Unverified Instagram requires visible mockup affordance")
+        if tag:
+            safe, detail = disabled_social_tag_is_safe(tag)
+            review.check("instagram_mock_disabled_no_navigation", safe, "Unverified Instagram must be disabled. " + detail)
 
-def normalize_digits(value: Any) -> str:
-    return re.sub(r"\D+", "", str(value or ""))
+    assistant_cfg = section(manifest, "assistant")
+    if assistant_cfg.get("present") and assistant_cfg.get("collisionCheckRequired", True):
+        launcher = bool(re.search(r"data-role\s*=\s*['\"]assistant-launcher['\"]", html, re.IGNORECASE))
+        floating = bool(re.search(r"data-role\s*=\s*['\"]floating-whatsapp['\"]", html, re.IGNORECASE))
+        review.check("assistant_launcher_hook", launcher, "Assistant requires data-role=assistant-launcher")
+        review.check("assistant_whatsapp_geometry_hooks", launcher and floating, "Assistant + WhatsApp need geometry hooks")
 
+    if manifest.get("preview") is True:
+        noindex = bool(re.search(r"<meta\b[^>]*name\s*=\s*['\"]robots['\"][^>]*content\s*=\s*['\"][^'\"]*noindex[^'\"]*nofollow[^'\"]*['\"]", html, re.IGNORECASE | re.DOTALL))
+        review.check("preview_noindex", noindex, "Preview must be noindex,nofollow")
 
-def extract_design_value(design_read: str, key: str) -> str | None:
-    match = re.search(rf"(?im)^\s*{re.escape(key)}\s*:\s*(.+?)\s*$", design_read)
-    return match.group(1).strip() if match else None
-
-
-def social_tag(html: str, name: str) -> str | None:
-    match = SOCIAL_TAG_PATTERNS[name].search(html)
-    return match.group(0) if match else None
-
-
-def extract_attr(tag: str | None, name: str) -> str | None:
-    if not tag:
-        return None
-    match = re.search(rf"\b{re.escape(name)}\s*=\s*['\"]([^'\"]*)['\"]", tag, re.IGNORECASE)
-    return match.group(1) if match else None
-
-
-def disabled_social_tag_is_safe(tag: str | None) -> tuple[bool, str]:
-    if not tag:
-        return False, "control not found"
-    aria_disabled = bool(re.search(r"aria-disabled\s*=\s*['\"]true['\"]", tag, re.IGNORECASE))
-    href = re.search(r"\bhref\s*=\s*['\"]([^'\"]*)['\"]", tag, re.IGNORECASE)
-    # Disabled mock controls must not navigate anywhere, including # or javascript:void(0).
-    safe_href = href is None
-    detail = f"aria-disabled={aria_disabled}, href={href.group(1)!r}" if href else f"aria-disabled={aria_disabled}, href=ABSENT"
-    return aria_disabled and safe_href, detail
+    review.check("fake_online_state", not bool(re.search(r">\s*Online\s*<|>\s*Estamos online\s*<", html, re.IGNORECASE)), "Do not simulate human/online state")
 
 
 def main() -> int:
@@ -190,234 +273,13 @@ def main() -> int:
     manifest = load_json(manifest_path)
     review = Review()
 
-    # ---------------- gpt-taste ----------------
-    gpt_cfg = section(manifest, "gptTaste")
-    if gpt_cfg.get("required", True):
-        gpt_pass = bool(re.search(r"(?im)^\s*GPT_TASTE_READ\s*:\s*PASS\s*$", design_read))
-        gpt_path_raw = extract_design_value(design_read, "GPT_TASTE_PATH")
-        path_ok = bool(gpt_path_raw and "<" not in gpt_path_raw and ">" not in gpt_path_raw)
-        review.check("gpt_taste_read", gpt_pass, "design-read must contain GPT_TASTE_READ: PASS")
-        review.check("gpt_taste_path", path_ok, "design-read must record the real gpt-taste SKILL.md path")
+    base_dir = manifest_path.parent
 
-        if gpt_cfg.get("skillSha256Required", True) and path_ok:
-            gpt_sha = (extract_design_value(design_read, "GPT_TASTE_SHA256") or "").lower()
-            sha_format_ok = bool(re.fullmatch(r"[0-9a-f]{64}", gpt_sha))
-            review.check("gpt_taste_sha_format", sha_format_ok, "design-read must contain GPT_TASTE_SHA256 with 64 lowercase/uppercase hex chars")
-
-            actual_path = Path(str(gpt_path_raw)).expanduser()
-            actual_exists = actual_path.is_file()
-            review.check("gpt_taste_skill_exists", actual_exists, f"Recorded gpt-taste skill must exist locally: {actual_path}")
-            if actual_exists and sha_format_ok:
-                actual_sha = hashlib.sha256(actual_path.read_bytes()).hexdigest()
-                review.check(
-                    "gpt_taste_sha_matches",
-                    actual_sha == gpt_sha,
-                    "Recorded GPT_TASTE_SHA256 must match the exact current skill file that was read",
-                )
-
-    # ---------------- hero visual ----------------
-    hero_cfg = section(manifest, "heroVisual")
-    if hero_cfg.get("required", True):
-        hero_section = HERO_SECTION_PATTERN.search(html)
-        review.check(
-            "hero_section_hook",
-            hero_section is not None,
-            "Hero visual review requires a <section data-role=\"hero\"> wrapper",
-        )
-
-        hero_image_tag = None
-        if hero_section:
-            image_match = HERO_IMAGE_PATTERN.search(hero_section.group(1))
-            hero_image_tag = image_match.group(0) if image_match else None
-
-        review.check(
-            "hero_image_present",
-            hero_image_tag is not None,
-            "Every site hero requires a relevant <img data-role=\"hero-image\">, even when no expert photo exists",
-        )
-
-        if hero_image_tag:
-            src = (extract_attr(hero_image_tag, "src") or "").strip()
-            alt = (extract_attr(hero_image_tag, "alt") or "").strip()
-            loading = (extract_attr(hero_image_tag, "loading") or "").strip().lower()
-            image_context = (extract_attr(hero_image_tag, "data-image-context") or "").strip().lower()
-
-            review.check("hero_image_src", bool(src), "Hero image src must be non-empty")
-            review.check("hero_image_alt", bool(alt), "Hero image alt must be non-empty and factual")
-            review.check("hero_image_not_lazy", loading != "lazy", "Critical hero image must not use loading=lazy")
-
-            kind = str(hero_cfg.get("kind") or "").strip().lower()
-            source_type = str(hero_cfg.get("sourceType") or "").strip().lower()
-            represents_actual = bool(hero_cfg.get("representsActualBusiness", False))
-            disclosure_required = bool(hero_cfg.get("illustrativeDisclosureRequired", True))
-            valid_kinds = {"expert", "facility", "contextual", "product", "other"}
-            valid_sources = {"first_party", "user_provided", "stock", "generated"}
-
-            review.check("hero_image_kind_manifest", kind in valid_kinds, f"heroVisual.kind must be one of {sorted(valid_kinds)}; found {kind!r}")
-            review.check("hero_image_source_manifest", source_type in valid_sources, f"heroVisual.sourceType must be one of {sorted(valid_sources)}; found {source_type!r}")
-
-            misleading_generated = source_type in {"stock", "generated"} and represents_actual
-            review.check(
-                "hero_image_no_false_business_representation",
-                not misleading_generated,
-                "Stock/generated hero imagery cannot be declared as a factual representation of the lead's real facility/person/result",
-            )
-
-            if source_type in {"stock", "generated"} and not represents_actual and disclosure_required:
-                review.check(
-                    "hero_image_illustrative_context",
-                    image_context == "illustrative",
-                    "Stock/generated contextual hero must expose data-image-context=\"illustrative\" when it does not depict the real business",
-                )
-
-    # ---------------- design dials / motion ----------------
-    motion_cfg = section(manifest, "motion")
-    motion_required = bool(motion_cfg.get("required", True))
-    motion_score = extract_motion_score(design_read)
-    if motion_required:
-        review.check(
-            "motion_score",
-            motion_score is not None and motion_score > 0,
-            f"Motion dial must be > 0 for this site; found {motion_score!r}",
-        )
-        review.check(
-            "motion_runtime",
-            contains_real_motion(html),
-            "Page needs real scroll/reveal behavior; smooth scrolling alone is insufficient",
-        )
-        review.check(
-            "reduced_motion_css",
-            "prefers-reduced-motion" in html,
-            "prefers-reduced-motion handling is required",
-        )
-
-        min_reveals = int(motion_cfg.get("minimumRevealGroups", 2) or 0)
-        if min_reveals > 0:
-            reveal_count = len(re.findall(r"data-motion\s*=\s*['\"]reveal['\"]", html, re.IGNORECASE))
-            review.check(
-                "motion_reveal_hooks",
-                reveal_count >= min_reveals,
-                f"Expected at least {min_reveals} data-motion=\"reveal\" groups; found {reveal_count}",
-            )
-
-        if motion_cfg.get("headerScrollStateRequired", False):
-            has_header_hook = bool(re.search(r"data-role\s*=\s*['\"]site-header['\"]", html, re.IGNORECASE))
-            review.check(
-                "header_scroll_hook",
-                has_header_hook,
-                "Scroll-aware header must expose data-role=\"site-header\" for deterministic browser QA",
-            )
-
-    # ---------------- map ----------------
-    address_cfg = section(manifest, "address")
-    map_required = bool(
-        address_cfg.get("verified")
-        and address_cfg.get("public", True)
-        and address_cfg.get("mapEmbedRequired", True)
-    )
-    if map_required:
-        iframe = first_map_iframe(html)
-        review.check("map_embed", iframe is not None, "Verified public address requires an embedded Google Maps preview")
-        if iframe:
-            review.check("map_lazy", "loading=\"lazy\"" in iframe.lower() or "loading='lazy'" in iframe.lower(), "Map iframe should lazy-load")
-            review.check("map_title", bool(re.search(r"\btitle\s*=", iframe, re.IGNORECASE)), "Map iframe requires a meaningful title")
-            review.check(
-                "map_referrerpolicy",
-                "referrerpolicy=" in iframe.lower(),
-                "Map iframe should declare referrerpolicy",
-            )
-
-    # ---------------- WhatsApp ----------------
-    wa_cfg = section(manifest, "whatsapp")
-    if wa_cfg.get("verified"):
-        expected = normalize_digits(wa_cfg.get("number"))
-        links = WA_LINK_PATTERN.findall(html)
-        normalized = [normalize_digits(item) for item in links]
-        matches = [item for item in normalized if item == expected] if expected else normalized
-        review.check(
-            "whatsapp_verified_destination",
-            bool(matches),
-            f"Expected at least one wa.me link to verified number {expected or '[configured]'}",
-        )
-        wrong = sorted({item for item in normalized if expected and item != expected})
-        review.check(
-            "whatsapp_no_wrong_numbers",
-            not wrong,
-            "Unexpected WhatsApp destinations found: " + (", ".join(wrong) if wrong else "none"),
-        )
-        if wa_cfg.get("contactActionRequired", True):
-            review.check(
-                "whatsapp_multiple_conversion_points",
-                len(matches) >= 2,
-                f"Expected WhatsApp in primary/contact flow, found {len(matches)} verified wa.me links",
-            )
-        if wa_cfg.get("floatingRequired", True):
-            floating = bool(re.search(r"data-role\s*=\s*['\"]floating-whatsapp['\"]", html, re.IGNORECASE))
-            review.check(
-                "floating_whatsapp_hook",
-                floating,
-                "Floating WhatsApp is required and must expose data-role=\"floating-whatsapp\"",
-            )
-    elif wa_cfg.get("mockAffordanceRequired", False):
-        tag = social_tag(html, "whatsapp")
-        review.check("whatsapp_mock_present", bool(tag), "Unverified WhatsApp still requires a disabled mockup affordance when requested")
-        if tag:
-            safe, detail = disabled_social_tag_is_safe(tag)
-            review.check("whatsapp_mock_disabled_no_navigation", safe, detail)
-
-    # ---------------- Instagram ----------------
-    instagram_cfg = section(manifest, "instagram")
-    instagram_state = str(instagram_cfg.get("state") or "not_applicable").strip().lower()
-    if instagram_state == "verified":
-        active_match = INSTAGRAM_ACTIVE_PATTERN.search(html)
-        review.check("instagram_active", bool(active_match), "Verified Instagram requires active data-social=instagram link")
-        expected_url = str(instagram_cfg.get("expectedUrl") or "").strip().rstrip("/").lower()
-        if expected_url:
-            review.check(
-                "instagram_verified_url",
-                expected_url in html.lower(),
-                "Instagram href must match the verified profile URL",
-            )
-    elif instagram_state == "unverified" and instagram_cfg.get("mockAffordanceRequired", True):
-        tag = social_tag(html, "instagram")
-        review.check(
-            "instagram_mock_present",
-            bool(tag),
-            "Unverified Instagram still requires a visible mockup affordance with data-social=instagram",
-        )
-        if tag:
-            safe, detail = disabled_social_tag_is_safe(tag)
-            review.check(
-                "instagram_mock_disabled_no_navigation",
-                safe,
-                "Unverified Instagram control must be aria-disabled=true and have NO href at all. " + detail,
-            )
-
-    # ---------------- assistant/floating collision hooks ----------------
-    assistant_cfg = section(manifest, "assistant")
-    if assistant_cfg.get("present") and assistant_cfg.get("collisionCheckRequired", True):
-        launcher = bool(re.search(r"data-role\s*=\s*['\"]assistant-launcher['\"]", html, re.IGNORECASE))
-        floating = bool(re.search(r"data-role\s*=\s*['\"]floating-whatsapp['\"]", html, re.IGNORECASE))
-        review.check("assistant_launcher_hook", launcher, "Assistant must expose data-role=\"assistant-launcher\" for collision QA")
-        review.check("assistant_whatsapp_geometry_hooks", launcher and floating, "Assistant + floating WhatsApp need deterministic geometry hooks")
-
-    # ---------------- preview/indexing ----------------
-    if manifest.get("preview") is True:
-        noindex = bool(
-            re.search(
-                r"<meta\b[^>]*name\s*=\s*['\"]robots['\"][^>]*content\s*=\s*['\"][^'\"]*noindex[^'\"]*nofollow[^'\"]*['\"]",
-                html,
-                re.IGNORECASE | re.DOTALL,
-            )
-        )
-        review.check("preview_noindex", noindex, "Prospecting preview must be noindex,nofollow")
-
-    # ---------------- common failure smells ----------------
-    review.check(
-        "fake_online_state",
-        not bool(re.search(r">\s*Online\s*<|>\s*Estamos online\s*<", html, re.IGNORECASE)),
-        "Do not simulate a human/online state",
-    )
+    check_gpt_taste(manifest, design_read, review)
+    check_hero_visual(manifest, html, design_read, review, base_dir=base_dir)
+    check_google_reviews(manifest, html, design_read, review)
+    check_motion_and_map(manifest, html, design_read, review)
+    check_socials_and_extras(manifest, html, review)
 
     return review.emit()
 
