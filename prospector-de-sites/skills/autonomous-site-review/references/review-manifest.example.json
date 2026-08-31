@@ -4,7 +4,8 @@
   "siteMode": "new_site_concept",
   "preview": true,
   "gptTaste": {
-    "required": true
+    "required": true,
+    "skillSha256Required": true
   },
   "motion": {
     "required": true,
@@ -21,7 +22,8 @@
     "verified": true,
     "number": "5511999999999",
     "floatingRequired": true,
-    "contactActionRequired": true
+    "contactActionRequired": true,
+    "mockAffordanceRequired": false
   },
   "instagram": {
     "state": "unverified",
