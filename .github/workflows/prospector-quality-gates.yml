@@ -1,0 +1,28 @@
+name: Prospector quality gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-quality-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Production QA credential hygiene
+        run: python prospector-de-sites/repo_secret_hygiene.py
+
+      - name: Autonomous site-review regressions
+        run: python test_autonomous_site_review_regression.py
