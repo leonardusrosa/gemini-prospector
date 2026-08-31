@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Regression coverage for the autonomous site-review gate.
+
+Each failure case mirrors a class of omission that previously escaped an agent's
+self-reported Core QA pass: no gpt-taste evidence, motionless page, map
+placeholder, omitted Instagram mock, missing floating WhatsApp, and missing
+assistant collision hooks.
+"""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+REVIEWER = ROOT / "prospector-de-sites" / "autonomous_site_review.py"
+
+BASE_MANIFEST = {
+    "schemaVersion": 1,
+    "slug": "synthetic-review-fixture",
+    "siteMode": "new_site_concept",
+    "preview": True,
+    "gptTaste": {"required": True},
+    "motion": {
+        "required": True,
+        "minimumRevealGroups": 2,
+        "headerScrollStateRequired": True,
+        "floatingCtaSyncRequired": True,
+    },
+    "address": {"verified": True, "public": True, "mapEmbedRequired": True},
+    "whatsapp": {
+        "verified": True,
+        "number": "5511999999999",
+        "floatingRequired": True,
+        "contactActionRequired": True,
+    },
+    "instagram": {"state": "unverified", "mockAffordanceRequired": True},
+    "assistant": {"present": True, "collisionCheckRequired": True},
+    "qa": {"noJsRequired": True, "reducedMotionRequired": True},
+}
+
+PASS_DESIGN = """GPT_TASTE_READ: PASS
+GPT_TASTE_PATH: /home/test/.gemini/config/skills/gpt-taste/SKILL.md
+Design Variance: 5
+Motion: 3
+Density: 4
+"""
+
+PASS_HTML = r'''<!doctype html>
+<html lang="pt-BR"><head>
+<meta name="robots" content="noindex, nofollow">
+<style>@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}</style>
+</head><body>
+<header data-role="site-header">Header</header>
+<section data-role="hero"><h1>Site teste</h1><a href="https://wa.me/5511999999999">Agendar</a></section>
+<section data-motion="reveal">A</section>
+<section data-motion="reveal">B</section>
+<a data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</a>
+<a href="https://wa.me/5511999999999">Contato WhatsApp</a>
+<a href="https://wa.me/5511999999999" data-role="floating-whatsapp">WhatsApp</a>
+<button data-role="assistant-launcher">Assistente</button>
+<iframe src="https://maps.google.com/maps?q=Rua+1&z=16&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>
+<script>
+const obs = new IntersectionObserver(()=>{});
+window.addEventListener('scroll',()=>document.querySelector('header').classList.toggle('scrolled',scrollY>10));
+</script>
+</body></html>'''
+
+
+def run_case(html: str = PASS_HTML, design: str = PASS_DESIGN, manifest=None):
+    manifest = manifest or BASE_MANIFEST
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp)
+        html_path = p / "index.html"
+        design_path = p / "design-read.md"
+        manifest_path = p / "review-manifest.json"
+        html_path.write_text(html, encoding="utf-8")
+        design_path.write_text(design, encoding="utf-8")
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(REVIEWER),
+                "--html",
+                str(html_path),
+                "--design-read",
+                str(design_path),
+                "--manifest",
+                str(manifest_path),
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        payload = json.loads(proc.stdout)
+        return proc.returncode, payload
+
+
+def failed_keys(payload):
+    return {item["key"] for item in payload["checks"] if item["status"] == "FAIL"}
+
+
+def test_clean_fixture_passes():
+    code, payload = run_case()
+    assert code == 0
+    assert payload["autonomousReviewPass"] is True
+
+
+def test_missing_gpt_taste_is_blocked():
+    design = PASS_DESIGN.replace("GPT_TASTE_READ: PASS\n", "")
+    code, payload = run_case(design=design)
+    assert code == 1
+    assert "gpt_taste_read" in failed_keys(payload)
+
+
+def test_motionless_page_is_blocked():
+    html = PASS_HTML.replace("const obs = new IntersectionObserver(()=>{});", "")
+    html = html.replace("window.addEventListener('scroll',()=>document.querySelector('header').classList.toggle('scrolled',scrollY>10));", "")
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "motion_runtime" in failed_keys(payload)
+
+
+def test_map_placeholder_without_iframe_is_blocked():
+    html = PASS_HTML.replace(
+        '<iframe src="https://maps.google.com/maps?q=Rua+1&z=16&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa de localização"></iframe>',
+        '<div class="map-placeholder">Mapa</div>',
+    )
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "map_embed" in failed_keys(payload)
+
+
+def test_missing_instagram_mock_is_blocked():
+    html = PASS_HTML.replace('<a data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</a>', "")
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "instagram_mock_present" in failed_keys(payload)
+
+
+def test_fake_instagram_destination_is_blocked():
+    html = PASS_HTML.replace(
+        '<a data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</a>',
+        '<a data-social="instagram" aria-disabled="true" href="https://instagram.com/fake-handle">Instagram</a>',
+    )
+    code, payload = run_case(html=html)
+    assert code == 1
+    keys = failed_keys(payload)
+    assert "instagram_no_fake_href" in keys or "no_unverified_instagram_destination" in keys
+
+
+def test_missing_floating_whatsapp_is_blocked():
+    html = PASS_HTML.replace(
+        '<a href="https://wa.me/5511999999999" data-role="floating-whatsapp">WhatsApp</a>',
+        '<a href="https://wa.me/5511999999999">WhatsApp</a>',
+    )
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "floating_whatsapp_hook" in failed_keys(payload)
+
+
+def test_assistant_without_collision_hook_is_blocked():
+    html = PASS_HTML.replace('data-role="assistant-launcher"', 'class="assistant-launcher"')
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "assistant_launcher_hook" in failed_keys(payload)
+
+
+def test_wrong_whatsapp_number_is_blocked():
+    html = PASS_HTML.replace("5511999999999", "5511888888888")
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "whatsapp_verified_destination" in failed_keys(payload)
+
+
+def test_missing_reduced_motion_is_blocked():
+    html = PASS_HTML.replace("@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}", "")
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "reduced_motion_css" in failed_keys(payload)
+
+
+if __name__ == "__main__":
+    tests = [name for name in globals() if name.startswith("test_")]
+    for name in sorted(tests):
+        globals()[name]()
+        print(f"[PASS] {name}")
+    print(f"\n{len(tests)}/{len(tests)} autonomous site-review regression cases passed")
