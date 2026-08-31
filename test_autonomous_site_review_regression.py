@@ -4,12 +4,13 @@
 
 Each failure case mirrors a class of omission that previously escaped an agent's
 self-reported Core QA pass: no gpt-taste evidence, motionless page, map
-placeholder, omitted Instagram mock, missing floating WhatsApp, and missing
-assistant collision hooks.
+placeholder, omitted social affordance, navigable fake social, missing floating
+WhatsApp, and missing assistant collision hooks.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -24,7 +25,7 @@ BASE_MANIFEST = {
     "slug": "synthetic-review-fixture",
     "siteMode": "new_site_concept",
     "preview": True,
-    "gptTaste": {"required": True},
+    "gptTaste": {"required": True, "skillSha256Required": True},
     "motion": {
         "required": True,
         "minimumRevealGroups": 2,
@@ -43,13 +44,6 @@ BASE_MANIFEST = {
     "qa": {"noJsRequired": True, "reducedMotionRequired": True},
 }
 
-PASS_DESIGN = """GPT_TASTE_READ: PASS
-GPT_TASTE_PATH: /home/test/.gemini/config/skills/gpt-taste/SKILL.md
-Design Variance: 5
-Motion: 3
-Density: 4
-"""
-
 PASS_HTML = r'''<!doctype html>
 <html lang="pt-BR"><head>
 <meta name="robots" content="noindex, nofollow">
@@ -59,7 +53,7 @@ PASS_HTML = r'''<!doctype html>
 <section data-role="hero"><h1>Site teste</h1><a href="https://wa.me/5511999999999">Agendar</a></section>
 <section data-motion="reveal">A</section>
 <section data-motion="reveal">B</section>
-<a data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</a>
+<span data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</span>
 <a href="https://wa.me/5511999999999">Contato WhatsApp</a>
 <a href="https://wa.me/5511999999999" data-role="floating-whatsapp">WhatsApp</a>
 <button data-role="assistant-launcher">Assistente</button>
@@ -71,13 +65,35 @@ window.addEventListener('scroll',()=>document.querySelector('header').classList.
 </body></html>'''
 
 
-def run_case(html: str = PASS_HTML, design: str = PASS_DESIGN, manifest=None):
+def make_design(skill_path: Path, *, include_read=True, sha_override: str | None = None) -> str:
+    sha = sha_override or hashlib.sha256(skill_path.read_bytes()).hexdigest()
+    lines = []
+    if include_read:
+        lines.append("GPT_TASTE_READ: PASS")
+    lines.extend(
+        [
+            f"GPT_TASTE_PATH: {skill_path}",
+            f"GPT_TASTE_SHA256: {sha}",
+            "Design Variance: 5",
+            "Motion: 3",
+            "Density: 4",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def run_case(html: str = PASS_HTML, design_transform=None, manifest=None):
     manifest = manifest or BASE_MANIFEST
     with tempfile.TemporaryDirectory() as tmp:
         p = Path(tmp)
         html_path = p / "index.html"
         design_path = p / "design-read.md"
         manifest_path = p / "review-manifest.json"
+        skill_path = p / "gpt-taste-SKILL.md"
+        skill_path.write_text("# Synthetic current gpt-taste skill\nrule: use deliberate composition\n", encoding="utf-8")
+        design = make_design(skill_path)
+        if design_transform:
+            design = design_transform(design, skill_path)
         html_path.write_text(html, encoding="utf-8")
         design_path.write_text(design, encoding="utf-8")
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
@@ -111,10 +127,20 @@ def test_clean_fixture_passes():
 
 
 def test_missing_gpt_taste_is_blocked():
-    design = PASS_DESIGN.replace("GPT_TASTE_READ: PASS\n", "")
-    code, payload = run_case(design=design)
+    code, payload = run_case(design_transform=lambda d, _: d.replace("GPT_TASTE_READ: PASS\n", ""))
     assert code == 1
     assert "gpt_taste_read" in failed_keys(payload)
+
+
+def test_stale_or_fake_gpt_taste_hash_is_blocked():
+    code, payload = run_case(
+        design_transform=lambda d, _: d.replace(
+            next(line for line in d.splitlines() if line.startswith("GPT_TASTE_SHA256:")),
+            "GPT_TASTE_SHA256: " + ("0" * 64),
+        )
+    )
+    assert code == 1
+    assert "gpt_taste_sha_matches" in failed_keys(payload)
 
 
 def test_motionless_page_is_blocked():
@@ -136,21 +162,30 @@ def test_map_placeholder_without_iframe_is_blocked():
 
 
 def test_missing_instagram_mock_is_blocked():
-    html = PASS_HTML.replace('<a data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</a>', "")
+    html = PASS_HTML.replace('<span data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</span>', "")
     code, payload = run_case(html=html)
     assert code == 1
     assert "instagram_mock_present" in failed_keys(payload)
 
 
+def test_disabled_instagram_with_javascript_href_is_blocked():
+    html = PASS_HTML.replace(
+        '<span data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</span>',
+        '<a data-social="instagram" aria-disabled="true" tabindex="-1" href="javascript:void(0)">Instagram</a>',
+    )
+    code, payload = run_case(html=html)
+    assert code == 1
+    assert "instagram_mock_disabled_no_navigation" in failed_keys(payload)
+
+
 def test_fake_instagram_destination_is_blocked():
     html = PASS_HTML.replace(
-        '<a data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</a>',
+        '<span data-social="instagram" aria-disabled="true" tabindex="-1">Instagram</span>',
         '<a data-social="instagram" aria-disabled="true" href="https://instagram.com/fake-handle">Instagram</a>',
     )
     code, payload = run_case(html=html)
     assert code == 1
-    keys = failed_keys(payload)
-    assert "instagram_no_fake_href" in keys or "no_unverified_instagram_destination" in keys
+    assert "instagram_mock_disabled_no_navigation" in failed_keys(payload)
 
 
 def test_missing_floating_whatsapp_is_blocked():
