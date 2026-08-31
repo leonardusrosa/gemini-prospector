@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "templates": [
+    {
+      "id": "dentistry-female",
+      "niche": "dentistry",
+      "gender": "female",
+      "desktop": "dentistry/female/desktop-ultrawide.webp",
+      "mobile": "dentistry/female/mobile.webp",
+      "kind": "expert-placeholder",
+      "sourceType": "generated-template",
+      "representsActualBusiness": false,
+      "representsActualExpert": false,
+      "containsPhotoPlaceholder": true,
+      "placeholderText": "SUA FOTO AQUI"
+    },
+    {
+      "id": "dentistry-male",
+      "niche": "dentistry",
+      "gender": "male",
+      "desktop": "dentistry/male/desktop-ultrawide.webp",
+      "mobile": "dentistry/male/mobile.webp",
+      "kind": "expert-placeholder",
+      "sourceType": "generated-template",
+      "representsActualBusiness": false,
+      "representsActualExpert": false,
+      "containsPhotoPlaceholder": true,
+      "placeholderText": "SUA FOTO AQUI"
+    }
+  ]
+}
