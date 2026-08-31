@@ -171,7 +171,21 @@ Quando coexistirem assistant, WhatsApp, cookie bar ou outros controles fixos:
 
 O launcher do assistant deve usar `data-role="assistant-launcher"` quando a implementação permitir, para permitir geometry QA determinístico.
 
-## 8. Review em duas camadas
+## 8. HARD GATE: Google Reviews e prova social
+
+Para conceitos de primeira versão e redesigns:
+- O check de Google Reviews é obrigatório (`google_reviews_checked: true`);
+- Deve registrar `GOOGLE_REVIEWS_CHECK: PASS` e o estado correspondente no `design-read.md`;
+- Estados canônicos:
+  - `VERIFIED_STRONG`: aggregate verificado + textos verificados (>= 3). Seção de reviews é **OBRIGATÓRIA** (`reviewSectionRequired: true`, `reviewSectionRendered: true`).
+  - `VERIFIED_AGGREGATE_ONLY`: aggregate verificado existe mas sem textos suficientes. Seção de reviews é **OBRIGATÓRIA** (`reviewSectionRequired: true`, `reviewSectionRendered: true`) em formato aggregate-only (sem cards falsos).
+  - `NO_USABLE_REVIEWS` com `ratingCount > 0`: seção é **OBRIGATÓRIA** (`reviewSectionRequired: true`, `reviewSectionRendered: true`) em formato aggregate-only.
+  - `NO_USABLE_REVIEWS` com `ratingCount == 0` e 0 textos: seção pode ser omitida, registrando estado explícito.
+  - `PROFILE_CONFLICT`: **BLOQUEIA** o gate (`google_reviews_no_conflict` FAIL).
+
+NUNCA omita a seção quando o perfil verificado possuir >= 1 avaliação pública.
+
+## 9. Review em duas camadas
 
 ### Camada A: determinística/estática
 

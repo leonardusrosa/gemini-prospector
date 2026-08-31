@@ -166,22 +166,41 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
     checked = bool(gr_cfg.get("checked", False))
     review.check("google_reviews_checked", checked, "Google reviews check must be performed for first-version concepts")
     state = str(gr_cfg.get("state") or "").upper().strip()
-    valid_states = {"VERIFIED_STRONG", "VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS", "PROFILE_CONFLICT"}
+    valid_states = {
+        "VERIFIED_STRONG",
+        "VERIFIED_AGGREGATE_ONLY",
+        "NO_USABLE_REVIEWS",
+        "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE",
+        "PROFILE_CONFLICT",
+    }
     review.check("google_reviews_state_valid", state in valid_states, f"googleReviews.state must be in {sorted(valid_states)}")
     review.check("google_reviews_no_conflict", state != "PROFILE_CONFLICT", "PROFILE_CONFLICT blocks Core QA PASS")
 
     dr_check = bool(re.search(r"(?im)^\s*GOOGLE_REVIEWS_CHECK\s*:\s*PASS\s*$", design_read))
     review.check("google_reviews_design_read_check", dr_check, "design-read must record GOOGLE_REVIEWS_CHECK: PASS")
 
-    if state == "VERIFIED_STRONG":
-        req = bool(gr_cfg.get("reviewSectionRequired", True))
-        rend = bool(gr_cfg.get("reviewSectionRendered", True))
-        review.check("google_reviews_section_required", req, "VERIFIED_STRONG requires reviewSectionRequired=true")
-        review.check("google_reviews_section_rendered", rend, "VERIFIED_STRONG requires reviewSectionRendered=true")
+    rating_count = gr_cfg.get("ratingCount")
+    if rating_count is None:
+        rating_count = gr_cfg.get("reviewCount")
+
+    has_ratings = isinstance(rating_count, (int, float)) and rating_count > 0
+    verified_profile = bool(gr_cfg.get("verifiedGoogleProfile", True))
+
+    section_required = bool(gr_cfg.get("reviewSectionRequired", False))
+    section_rendered = bool(gr_cfg.get("reviewSectionRendered", False))
+
+    requires_section = (
+        state in {"VERIFIED_STRONG", "VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE"}
+        or (verified_profile and has_ratings and state != "PROFILE_CONFLICT")
+    )
+
+    if requires_section:
+        review.check("google_reviews_section_required", section_required, f"State {state} with ratings requires reviewSectionRequired=true")
+        review.check("google_reviews_section_rendered", section_rendered, f"State {state} with ratings requires reviewSectionRendered=true")
         has_reviews_html = bool(
-            re.search(r"data-role=['\"]reviews['\"]|data-role=['\"]testimonials['\"]|class=['\"][^'\"]*(?:review|testimonial|avaliacao|depoimento)", html, re.IGNORECASE)
+            re.search(r"data-role=['\"]reviews['\"]|data-role=['\"]testimonials['\"]|id=['\"]avaliacoes['\"]|class=['\"][^'\"]*(?:review|testimonial|avaliacao|depoimento)", html, re.IGNORECASE)
         )
-        review.check("google_reviews_html_rendered", has_reviews_html, "VERIFIED_STRONG requires rendered review section in HTML")
+        review.check("google_reviews_html_rendered", has_reviews_html, f"State {state} requires rendered review section in HTML")
 
 
 def check_motion_and_map(manifest: dict, html: str, design_read: str, review: Review) -> None:

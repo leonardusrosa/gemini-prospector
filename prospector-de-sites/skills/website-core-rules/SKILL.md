@@ -230,34 +230,49 @@ Use asset/crop mobile dedicado quando necessário.
 
 Sempre que houver avaliações positivas **reais e verificáveis** no Google Business Profile correto do lead, incorpore prova social baseada nessas avaliações no site.
 
-### Regra de apresentação
+### Regra canônica para conceitos de primeira versão de negócios locais:
 
-Quando houver material suficiente para múltiplas avaliações, use **carrossel de avaliações** como formato padrão.
+A. **VERIFIED_STRONG**:
+- aggregate verificado + reviews textuais verificados suficientes (>= 3).
+- Seção de reviews: OBRIGATÓRIA (`reviewSectionRequired: true`, `reviewSectionRendered: true`).
+- Apresentação: carrossel ou masonry com aggregate real + textos verificados exclusivos.
 
-- prefira avaliações positivas específicas, informativas e relevantes
-- use somente reviews do perfil correto do negócio/profissional
-- preserve texto fiel quando apresentado entre aspas
-- não invente, combine ou reescreva avaliações como se fossem verbatim
-- não invente nome, nota, data ou número de reviews
-- se truncar um review, use trecho fiel e não altere o sentido
-- identifique a origem como Google de forma factual, sem simular widget oficial quando não for
-- estrelas só podem aparecer quando correspondem à nota real daquele review ou ao aggregate real verificado
-- aggregate rating e total de avaliações só podem aparecer se forem verificados no momento da coleta
-- mantenha internamente fonte/URL/place/profile e evidência da coleta
+B. **VERIFIED_AGGREGATE_ONLY**:
+- aggregate verificado existe, mas evidência textual é insuficiente (< 3 ou 0 textos utilizáveis).
+- Seção de reviews: OBRIGATÓRIA (`reviewSectionRequired: true`, `reviewSectionRendered: true`).
+- Apresentação: bloco editorial somente com aggregate (nota média e total de avaliações públicas), SEM cards de depoimentos inventados e SEM carrossel vazio.
 
-Se existir somente uma avaliação positiva utilizável, não invente slides adicionais; use a avaliação real de forma adequada até haver material suficiente para um carrossel real.
+C. **NO_USABLE_REVIEWS** com perfil verificado tendo `ratingCount > 0` e aggregate verificado:
+- Seção de reviews: OBRIGATÓRIA (`reviewSectionRequired: true`, `reviewSectionRendered: true`).
+- Apresentação: somente aggregate, sem texto falso.
 
-### UX do carrossel
+D. **Perfil verificado com exatamente 0 ratings e 0 reviews**:
+- Seção de reviews pode ser omitida.
+- Estado explícito `NO_USABLE_REVIEWS` (`ratingCount: 0`, `usableTextReviews: 0`) deve ser registrado no manifesto e design-read.
 
-- deve funcionar em desktop e mobile
-- suporte swipe/touch quando apropriado
-- controles com labels/aria
-- navegação por teclado
-- não dependa apenas de autoplay
-- se houver autoplay, ofereça pausa/controle e respeite `prefers-reduced-motion`
-- não use carrossel só para decorar; cada slide deve conter prova social real
+E. **PROFILE_CONFLICT**:
+- Conflito de identidade bloqueia o gate Core QA (`google_reviews_no_conflict` FAIL).
 
-Se não houver reviews verificáveis, não crie seção falsa de depoimentos.
+> **HARD RULE**: Um perfil verificado com >= 1 avaliação pública NUNCA pode sumir da primeira versão apenas porque reviews textuais não estão disponíveis.
+
+### Apresentação de seção aggregate-only (quando há nota, mas não há textos de review):
+
+Quando apenas o aggregate estiver disponível:
+- Título da seção: `Avaliações de pacientes` (ou equivalente natural contextual ao nicho).
+- Conteúdo: nota média verificada (ex: `5,0`) + contagem pública verificada (ex: `1 avaliação` ou `2 avaliações`, com concordância em PT-BR).
+- Sem aspas decorativas ou inventadas.
+- Sem nomes inventados de pacientes/revisores.
+- Sem datas ou comentários fabricados.
+- Sem carrossel vazio.
+- Indicador de proveniência discreto e sutil, respeitando a neutralidade de marca (sem simular widget oficial do Google).
+
+### Apresentação quando há textos verificados suficientes (>= 3):
+
+- Carrossel ou masonry de avaliações reais.
+- Prefira avaliações positivas específicas e relevantes.
+- Use somente reviews do perfil correto.
+- Preserve texto fiel quando apresentado entre aspas.
+- Não invente nome, nota, data ou número de reviews.
 
 ## 9. Estatísticas
 

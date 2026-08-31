@@ -122,11 +122,17 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
     if len(verified_reviews) >= minimum_reviews:
         return EvidenceResult(VERIFIED_STRONG, True, [], warnings, len(verified_reviews))
 
-    if isinstance(count, int) and count >= minimum_reviews:
-        warnings.append(
-            f"Google profile reports {count} reviews, but only {len(verified_reviews)} verified text reviews were captured. "
-            "Do not silently omit the carousel; continue collection or request human evidence."
-        )
+    if isinstance(count, int) and count > 0:
+        if count >= minimum_reviews:
+            warnings.append(
+                f"Google profile reports {count} reviews, but only {len(verified_reviews)} verified text reviews were captured. "
+                "Do not silently omit the carousel; continue collection or request human evidence."
+            )
+        else:
+            warnings.append(
+                f"Google profile reports {count} rating(s), with {len(verified_reviews)} verified text reviews. "
+                "Render aggregate-only section without fabricated review text."
+            )
         return EvidenceResult(VERIFIED_AGGREGATE_ONLY, False, [], warnings, len(verified_reviews))
 
     return EvidenceResult(NO_USABLE_REVIEWS, False, [], warnings, len(verified_reviews))
@@ -205,7 +211,7 @@ def qa_lines(result: EvidenceResult) -> List[str]:
         f"GOOGLE REVIEWS STATUS: {result.status}",
         f"VERIFIED TEXT REVIEWS: {result.verified_review_count}",
         f"CAROUSEL REQUIRED: {'YES' if result.carousel_required else 'NO'}",
-        f"GOOGLE REVIEWS QA: {'PASS' if result.pass_for_carousel or result.status == NO_USABLE_REVIEWS else 'BLOCKED'}",
+        f"GOOGLE REVIEWS QA: {'PASS' if (result.pass_for_carousel or result.status in {NO_USABLE_REVIEWS, VERIFIED_AGGREGATE_ONLY}) and not result.errors else 'BLOCKED'}",
     ]
 
 
@@ -238,4 +244,4 @@ if __name__ == "__main__":
             else:
                 print("PUBLIC SOURCE NEUTRALITY: PASS")
 
-    raise SystemExit(0 if ((result.pass_for_carousel or result.status == NO_USABLE_REVIEWS) and html_ok) else 2)
+    raise SystemExit(0 if (result.status in {VERIFIED_STRONG, VERIFIED_AGGREGATE_ONLY, NO_USABLE_REVIEWS} and not result.errors and html_ok) else 2)

@@ -379,6 +379,58 @@ def test_google_reviews_verified_strong_with_rendered_section_passes():
     assert payload["autonomousReviewPass"] is True
 
 
+def test_google_reviews_aggregate_only_with_rating_count_1_without_section_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "verifiedGoogleProfile": True,
+        "state": "VERIFIED_AGGREGATE_ONLY",
+        "aggregateRating": 5.0,
+        "ratingCount": 1,
+        "usableTextReviews": 0,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": False,
+    }
+    code, payload = run_case(manifest=manifest)
+    assert code == 1
+    assert "google_reviews_section_rendered" in failed_keys(payload)
+
+
+def test_google_reviews_aggregate_only_with_rating_count_1_with_section_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "verifiedGoogleProfile": True,
+        "state": "VERIFIED_AGGREGATE_ONLY",
+        "aggregateRating": 5.0,
+        "ratingCount": 1,
+        "usableTextReviews": 0,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+    }
+    html = PASS_HTML.replace('</body>', '<section data-role="reviews"><h2>Avaliações de pacientes</h2><div class="aggregate">5,0 de 5</div><div>1 avaliação</div></section></body>')
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 0
+    assert payload["autonomousReviewPass"] is True
+
+
+def test_google_reviews_zero_ratings_and_zero_reviews_omission_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "verifiedGoogleProfile": True,
+        "state": "NO_USABLE_REVIEWS",
+        "aggregateRating": 0.0,
+        "ratingCount": 0,
+        "usableTextReviews": 0,
+        "reviewSectionRequired": False,
+        "reviewSectionRendered": False,
+    }
+    code, payload = run_case(manifest=manifest)
+    assert code == 0
+    assert payload["autonomousReviewPass"] is True
+
+
 # --- General Regressions ---
 
 def test_motionless_page_is_blocked():
