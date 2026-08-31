@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "slug": "example-business-city",
+  "siteMode": "new_site_concept",
+  "preview": true,
+  "gptTaste": {
+    "required": true
+  },
+  "motion": {
+    "required": true,
+    "minimumRevealGroups": 2,
+    "headerScrollStateRequired": true,
+    "floatingCtaSyncRequired": true
+  },
+  "address": {
+    "verified": true,
+    "public": true,
+    "mapEmbedRequired": true
+  },
+  "whatsapp": {
+    "verified": true,
+    "number": "5511999999999",
+    "floatingRequired": true,
+    "contactActionRequired": true
+  },
+  "instagram": {
+    "state": "unverified",
+    "expectedUrl": null,
+    "mockAffordanceRequired": true
+  },
+  "assistant": {
+    "present": false,
+    "collisionCheckRequired": false
+  },
+  "qa": {
+    "desktop": [1440, 900],
+    "tablet": [800, 1024],
+    "mobile": [390, 844],
+    "noJsRequired": true,
+    "reducedMotionRequired": true,
+    "consoleNetworkCleanRequired": true
+  }
+}
