@@ -29,6 +29,32 @@ async def test_page():
         hero_ctas = await page.query_selector_all(".hero-cta-wrap .btn, .hero-section .btn")
         print(f"[Desktop] Hero CTA count: {len(hero_ctas)} (Expected: 1) -> {'PASS' if len(hero_ctas) == 1 else 'FAIL'}")
 
+        # Test Assistant Widget in Shadow DOM
+        assistant_open_test = await page.evaluate("""
+            () => {
+                const root = document.getElementById('iost-assistant-root');
+                if (!root || !root.shadowRoot) return false;
+                const launcher = root.shadowRoot.getElementById('btn-launcher');
+                const panel = root.shadowRoot.getElementById('panel-assistant');
+                if (!launcher || !panel) return false;
+                launcher.click();
+                return panel.dataset.open === 'true';
+            }
+        """)
+        print(f"[Desktop] Assistant widget open: {'PASS' if assistant_open_test else 'FAIL'}")
+        await page.screenshot(path="qa_iost_desktop_assistant_open.png")
+
+        # Test Escape key closes assistant
+        await page.keyboard.press("Escape")
+        assistant_closed_test = await page.evaluate("""
+            () => {
+                const root = document.getElementById('iost-assistant-root');
+                const panel = root.shadowRoot.getElementById('panel-assistant');
+                return panel.dataset.open === 'false';
+            }
+        """)
+        print(f"[Desktop] Assistant widget Escape close: {'PASS' if assistant_closed_test else 'FAIL'}")
+
         # Screenshot Desktop
         await page.screenshot(path="qa_iost_desktop_1440x900.png", full_page=True)
         print("Captured qa_iost_desktop_1440x900.png")
@@ -46,6 +72,28 @@ async def test_page():
         await page.wait_for_timeout(500)
         has_h_scroll_mob = await page.evaluate("() => document.documentElement.scrollWidth > window.innerWidth")
         print(f"[Mobile 390x844] Horizontal overflow: {'FAIL' if has_h_scroll_mob else 'PASS'}")
+        
+        # Test Assistant Widget on mobile
+        mob_assistant_open = await page.evaluate("""
+            () => {
+                const root = document.getElementById('iost-assistant-root');
+                const launcher = root.shadowRoot.getElementById('btn-launcher');
+                const panel = root.shadowRoot.getElementById('panel-assistant');
+                launcher.click();
+                return panel.dataset.open === 'true';
+            }
+        """)
+        print(f"[Mobile] Assistant widget open: {'PASS' if mob_assistant_open else 'FAIL'}")
+        await page.screenshot(path="qa_iost_mobile_assistant_open.png")
+        
+        # Close on mobile
+        await page.evaluate("""
+            () => {
+                const root = document.getElementById('iost-assistant-root');
+                const closeBtn = root.shadowRoot.getElementById('btn-close');
+                closeBtn.click();
+            }
+        """)
         await page.screenshot(path="qa_iost_mobile_390x844.png", full_page=True)
         print("Captured qa_iost_mobile_390x844.png")
 
