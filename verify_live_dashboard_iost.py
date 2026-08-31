@@ -1,12 +1,28 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-import asyncio
+import os
+import pathlib
 import base64
 from playwright.async_api import async_playwright
 
+def get_auth_header():
+    user = os.environ.get("PROSPECTOR_DASHBOARD_TEST_USER")
+    password = os.environ.get("PROSPECTOR_DASHBOARD_TEST_PASSWORD")
+    if not user or not password:
+        env_file = pathlib.Path(__file__).parent / ".env.test.local"
+        if env_file.is_file():
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                if "=" in line and not line.startswith("#"):
+                    k, v = line.split("=", 1)
+                    if k.strip() == "PROSPECTOR_DASHBOARD_TEST_USER":
+                        user = v.strip()
+                    elif k.strip() == "PROSPECTOR_DASHBOARD_TEST_PASSWORD":
+                        password = v.strip()
+    if not user or not password:
+        raise SystemExit("Missing PROSPECTOR_DASHBOARD_TEST_USER / PROSPECTOR_DASHBOARD_TEST_PASSWORD environment variables.")
+    return "Basic " + base64.b64encode(f"{user}:{password}".encode("utf-8")).decode("ascii")
+
 async def verify_live_dashboard():
     url = "https://prospector.autocora.com.br/"
-    auth_header = "Basic " + base64.b64encode(b"admin:REDACTED").decode("ascii")
+    auth_header = get_auth_header()
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
