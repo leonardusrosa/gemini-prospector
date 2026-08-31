@@ -7,6 +7,13 @@
     "required": true,
     "skillSha256Required": true
   },
+  "heroVisual": {
+    "required": true,
+    "kind": "contextual",
+    "sourceType": "generated",
+    "representsActualBusiness": false,
+    "illustrativeDisclosureRequired": true
+  },
   "motion": {
     "required": true,
     "minimumRevealGroups": 2,
