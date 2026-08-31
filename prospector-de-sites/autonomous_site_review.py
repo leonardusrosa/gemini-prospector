@@ -153,6 +153,9 @@ def check_hero_visual(manifest: dict, html: str, design_read: str, review: Revie
         layout_mode = extract_attr(hero_tag_str, "data-hero-layout")
         review.check("hero_template_layout_mode", layout_mode == "full-bleed-background", "Hero template requires data-hero-layout=\"full-bleed-background\"")
 
+        frame_policy = extract_attr(hero_tag_str, "data-hero-frame-policy")
+        review.check("hero_template_frame_policy", frame_policy == "preserve-complete-frame", "Hero template requires data-hero-frame-policy=\"preserve-complete-frame\"")
+
         has_picture = bool(re.search(r"<picture\b", hero_section.group(1), re.IGNORECASE))
         review.check("hero_template_picture_present", has_picture, "Hero template requires <picture> wrapper for responsive assets")
 
@@ -172,6 +175,19 @@ def check_hero_visual(manifest: dict, html: str, design_read: str, review: Revie
                 m_file = t_root / t_entry.get("mobile", "")
                 review.check("hero_template_desktop_file_exists", d_file.is_file(), f"Desktop template file missing: {d_file}")
                 review.check("hero_template_mobile_file_exists", m_file.is_file(), f"Mobile template file missing: {m_file}")
+
+                # Check declared dimensions match template dimensions
+                d_dims = t_entry.get("desktopDimensions", {})
+                exp_w = d_dims.get("width")
+                exp_h = d_dims.get("height")
+                img_w = extract_attr(hero_image_tag, "width")
+                img_h = extract_attr(hero_image_tag, "height")
+                dims_ok = (str(img_w) == str(exp_w) and str(img_h) == str(exp_h)) if (exp_w and exp_h) else True
+                review.check("hero_template_declared_dimensions", dims_ok, f"Hero desktop image declared dimensions ({img_w}x{img_h}) must match template dimensions ({exp_w}x{exp_h})")
+
+        # Check no object-fit: cover for preserve-complete-frame
+        has_cover_css = bool(re.search(r"(?:\.hero-bg-img|img\[data-role=['\"]hero-image['\"])[^{}]*\{[^}]*object-fit\s*:\s*cover", html, re.IGNORECASE))
+        review.check("hero_template_no_cover", not has_cover_css, "preserve-complete-frame template cannot use object-fit: cover (use object-fit: contain or width: 100%; height: auto)")
 
 
 def check_google_reviews(manifest: dict, html: str, design_read: str, review: Review) -> None:
@@ -226,6 +242,12 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
             review_mode = extract_attr(tag_str, "data-review-mode")
             review.check("google_reviews_mode_aggregate", review_mode == "aggregate-only", "Aggregate-only review section requires data-review-mode=\"aggregate-only\"")
 
+            presentation = extract_attr(tag_str, "data-review-presentation")
+            review.check("google_reviews_presentation_compact", presentation == "compact-summary", "Aggregate-only review section requires data-review-presentation=\"compact-summary\"")
+
+            has_summary_hook = bool(re.search(r"data-role=['\"]reviews-summary['\"]", section_inner, re.IGNORECASE))
+            review.check("google_reviews_summary_hook", has_summary_hook, "Aggregate-only review section requires [data-role=\"reviews-summary\"] element")
+
             rating_attr = extract_attr(tag_str, "data-review-rating")
             expected_rating = gr_cfg.get("aggregateRating")
             rating_ok = False
@@ -262,38 +284,67 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
 
 
 def check_factual_traceability(manifest: dict, design_read: str, html: str, review: Review) -> None:
+    import unicodedata
+
+    def strip_accents(s: str) -> str:
+        return unicodedata.normalize("NFKD", s).encode("ASCII", "ignore").decode("ASCII").lower()
+
     verified_services_cfg = manifest.get("factualServices") or manifest.get("verifiedServices")
     if verified_services_cfg is None:
         factual_evidence = section(manifest, "factualEvidence")
         verified_services_cfg = factual_evidence.get("verifiedServices")
 
+    # Normalize allowlist items
+    allowlist_claims = []
+    if isinstance(verified_services_cfg, list):
+        for item in verified_services_cfg:
+            if isinstance(item, dict):
+                allowlist_claims.append(strip_accents(str(item.get("claim", "")).strip()))
+            elif isinstance(item, str):
+                allowlist_claims.append(strip_accents(item.strip()))
+
+    if not allowlist_claims:
+        review.check("factual_traceability_verified_services", False, "factualEvidence.verifiedServices allowlist is empty or missing")
+        return
+
     # Extract claims from design_read
     claimed_services = []
     for line in design_read.splitlines():
         if re.search(r"factual verified services|serviços verificados", line, re.IGNORECASE):
-            claimed_services.append(line)
+            parts = line.split(":", 1)
+            if len(parts) > 1:
+                claimed_blob = parts[1]
+                for item in re.split(r"[,;•\n]", claimed_blob):
+                    cleaned = re.sub(r"^\s*[-*0-9.]+\s*", "", item).strip()
+                    if cleaned and len(cleaned) > 2:
+                        claimed_services.append(cleaned)
 
-    unsupported_terms = [
-        "invisalign",
-        "alinhador",
-        "ortopedia facial",
-        "interceptativa",
-        "contenção",
-        "adultos e crianças",
-    ]
+    # Verify that every claimed service maps to the allowlist
+    for claim in claimed_services:
+        norm_claim = strip_accents(claim)
+        claim_words = [w for w in re.findall(r"\b\w{4,}\b", norm_claim) if w not in {"para", "com", "sem", "sobre", "gerais", "geral", "procedimentos", "tratamentos"}]
+        is_supported = False
+        if any(norm_claim in a or a in norm_claim for a in allowlist_claims):
+            is_supported = True
+        elif claim_words:
+            for a in allowlist_claims:
+                if all(w in a for w in claim_words):
+                    is_supported = True
+                    break
 
-    if verified_services_cfg is not None and isinstance(verified_services_cfg, list):
-        norm_verified = " ".join(str(s).lower() for s in verified_services_cfg)
-        for term in unsupported_terms:
-            for claim_line in claimed_services:
-                if term in claim_line.lower() and term not in norm_verified:
-                    review.check(
-                        "factual_traceability_verified_services",
-                        False,
-                        f"design-read claims verified service '{term}' not traced to factual evidence inventory",
-                    )
-                    return
-    review.check("factual_traceability_verified_services", True, "All claimed verified services trace to factual evidence inventory")
+        review.check(
+            "factual_traceability_verified_services",
+            is_supported,
+            f"Claimed service '{claim}' is not supported by factualEvidence.verifiedServices allowlist",
+        )
+        if not is_supported:
+            return
+
+    review.check(
+        "factual_traceability_verified_services",
+        True,
+        "All claimed verified services trace to factual evidence inventory allowlist",
+    )
 
 
 def check_motion_and_map(manifest: dict, html: str, design_read: str, review: Review) -> None:

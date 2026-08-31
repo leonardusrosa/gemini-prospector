@@ -6,8 +6,17 @@
       "niche": "dentistry",
       "gender": "female",
       "layoutMode": "full-bleed-background",
+      "framePolicy": "preserve-complete-frame",
       "desktop": "dentistry/female/desktop-ultrawide.webp",
+      "desktopDimensions": {
+        "width": 1983,
+        "height": 793
+      },
       "mobile": "dentistry/female/mobile.webp",
+      "mobileDimensions": {
+        "width": 941,
+        "height": 1672
+      },
       "kind": "expert-placeholder",
       "sourceType": "generated-template",
       "representsActualBusiness": false,
@@ -20,8 +29,17 @@
       "niche": "dentistry",
       "gender": "male",
       "layoutMode": "full-bleed-background",
+      "framePolicy": "preserve-complete-frame",
       "desktop": "dentistry/male/desktop-ultrawide.webp",
+      "desktopDimensions": {
+        "width": 1983,
+        "height": 793
+      },
       "mobile": "dentistry/male/mobile.webp",
+      "mobileDimensions": {
+        "width": 941,
+        "height": 1672
+      },
       "kind": "expert-placeholder",
       "sourceType": "generated-template",
       "representsActualBusiness": false,

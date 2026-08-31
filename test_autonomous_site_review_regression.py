@@ -47,6 +47,11 @@ BASE_MANIFEST = {
         "headerScrollStateRequired": True,
         "floatingCtaSyncRequired": True,
     },
+    "factualEvidence": {
+        "verifiedServices": [
+            {"claim": "Atendimento clínico geral", "verified": True, "source": "official_record"}
+        ]
+    },
     "address": {"verified": True, "public": True, "mapEmbedRequired": True},
     "whatsapp": {
         "verified": True,
@@ -91,6 +96,7 @@ def make_design(skill_path: Path, *, include_read=True, sha_override: str | None
             f"GPT_TASTE_SHA256: {sha}",
             f"GOOGLE_REVIEWS_CHECK: PASS",
             f"GOOGLE_REVIEWS_STATE: {gr_state}",
+            "- **Factual Verified Services**: Atendimento clínico geral",
             "Design Variance: 5",
             "Motion: 3",
             "Density: 4",
@@ -316,7 +322,7 @@ def test_valid_dentistry_female_template_passes():
     }
     html = PASS_HTML.replace(
         '<section data-role="hero">',
-        '<section data-role="hero" data-hero-layout="full-bleed-background"><picture><source media="(max-width: 767px)" srcset="assets/mobile.webp">',
+        '<section data-role="hero" data-hero-layout="full-bleed-background" data-hero-frame-policy="preserve-complete-frame"><picture><source media="(max-width: 767px)" srcset="assets/mobile.webp" width="941" height="1672"><img data-role="hero-image" data-image-context="illustrative" src="/hero.webp" alt="Consultorio" width="1983" height="793">',
     ).replace('</section>', '</picture></section>', 1)
     code, payload = run_case(html=html, manifest=manifest)
     assert code == 0
@@ -338,7 +344,7 @@ def test_valid_dentistry_male_template_passes():
     }
     html = PASS_HTML.replace(
         '<section data-role="hero">',
-        '<section data-role="hero" data-hero-layout="full-bleed-background"><picture><source media="(max-width: 767px)" srcset="assets/mobile.webp">',
+        '<section data-role="hero" data-hero-layout="full-bleed-background" data-hero-frame-policy="preserve-complete-frame"><picture><source media="(max-width: 767px)" srcset="assets/mobile.webp" width="941" height="1672"><img data-role="hero-image" data-image-context="illustrative" src="/hero.webp" alt="Consultorio" width="1983" height="793">',
     ).replace('</section>', '</picture></section>', 1)
     code, payload = run_case(html=html, manifest=manifest)
     assert code == 0
@@ -416,7 +422,7 @@ def test_google_reviews_aggregate_only_with_rating_count_1_with_section_passes()
         "reviewSectionRequired": True,
         "reviewSectionRendered": True,
     }
-    html = PASS_HTML.replace('</body>', '<section data-role="reviews" data-review-mode="aggregate-only" data-review-rating="5.0" data-review-count="1"><h2>Avaliações</h2><div class="aggregate">5,0 de 5</div><div>1 avaliação</div></section></body>')
+    html = PASS_HTML.replace('</body>', '<section data-role="reviews" data-review-mode="aggregate-only" data-review-presentation="compact-summary" data-review-rating="5.0" data-review-count="1"><h2>Avaliações</h2><div data-role="reviews-summary">5,0 de 5 | 1 avaliação</div></section></body>')
     code, payload = run_case(html=html, manifest=manifest)
     assert code == 0
     assert payload["autonomousReviewPass"] is True
@@ -581,11 +587,104 @@ def test_google_reviews_aggregate_only_with_fake_cards_is_blocked():
     assert "google_reviews_no_fake_cards" in failed_keys(payload)
 
 
-def test_factual_traceability_unsupported_service_in_design_read_is_blocked():
+def test_placeholder_hero_missing_frame_policy_is_blocked():
     manifest = json.loads(json.dumps(BASE_MANIFEST))
-    manifest["factualServices"] = ["avaliação ortodôntica", "manutenção de aparelho fixo"]
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "dentistry-female",
+        "sourceType": "generated-template",
+        "representsActualExpert": False,
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    # Has layout mode but missing data-hero-frame-policy="preserve-complete-frame"
+    html = PASS_HTML.replace(
+        '<section data-role="hero">',
+        '<section data-role="hero" data-hero-layout="full-bleed-background"><picture><source media="(max-width: 767px)" srcset="assets/mobile.webp" width="941" height="1672"><img data-role="hero-image" data-image-context="illustrative" src="/hero.webp" alt="Consultorio" width="1983" height="793">',
+    ).replace('</section>', '</picture></section>', 1)
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "hero_template_frame_policy" in failed_keys(payload)
+
+
+def test_placeholder_hero_wrong_declared_dimensions_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "dentistry-female",
+        "sourceType": "generated-template",
+        "representsActualExpert": False,
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    # Has wrong dimensions (e.g. 1920x1080 instead of 1983x793)
+    html = PASS_HTML.replace(
+        '<section data-role="hero">',
+        '<section data-role="hero" data-hero-layout="full-bleed-background" data-hero-frame-policy="preserve-complete-frame"><picture><source media="(max-width: 767px)" srcset="assets/mobile.webp" width="941" height="1672"><img data-role="hero-image" data-image-context="illustrative" src="/hero.webp" alt="Consultorio" width="1920" height="1080">',
+    ).replace('</section>', '</picture></section>', 1)
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "hero_template_declared_dimensions" in failed_keys(payload)
+
+
+def test_placeholder_hero_with_cover_css_is_blocked():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "expert-placeholder",
+        "templateId": "dentistry-female",
+        "sourceType": "generated-template",
+        "representsActualExpert": False,
+        "representsActualBusiness": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    # HTML includes object-fit: cover for hero image
+    html = PASS_HTML.replace(
+        '</style>',
+        '.hero-bg-img { object-fit: cover; }</style>',
+    ).replace(
+        '<section data-role="hero">',
+        '<section data-role="hero" data-hero-layout="full-bleed-background" data-hero-frame-policy="preserve-complete-frame"><picture><source media="(max-width: 767px)" srcset="assets/mobile.webp" width="941" height="1672"><img data-role="hero-image" data-image-context="illustrative" src="/hero.webp" alt="Consultorio" width="1983" height="793" class="hero-bg-img">',
+    ).replace('</section>', '</picture></section>', 1)
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "hero_template_no_cover" in failed_keys(payload)
+
+
+def test_aggregate_only_reviews_must_be_compact():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "verifiedGoogleProfile": True,
+        "state": "VERIFIED_AGGREGATE_ONLY",
+        "aggregateRating": 5.0,
+        "ratingCount": 1,
+        "usableTextReviews": 0,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+    }
+    # Section missing compact-summary presentation
+    html = PASS_HTML.replace(
+        '</body>',
+        '<section data-role="reviews" data-review-mode="aggregate-only" data-review-rating="5.0" data-review-count="1"><div class="reviews-aggregate-card">5,0 de 5</div></section></body>',
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "google_reviews_presentation_compact" in failed_keys(payload)
+
+
+def test_factual_traceability_generic_allowlist_blocks_unsupported_service():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["factualEvidence"] = {
+        "verifiedServices": [
+            {"claim": "Avaliação ortodôntica", "verified": True, "source": "official_record"}
+        ]
+    }
+    # design-read claims a completely new unsupported service (e.g. Implantes dentários or Sedação consciente)
     code, payload = run_case(
-        design_transform=lambda d, s: d + "\n- **Factual Verified Services**: Alinhadores transparentes / Invisalign Doctor, ortopedia facial\n",
+        design_transform=lambda d, s: d + "\n- **Factual Verified Services**: Avaliação ortodôntica, Implantes dentários, Sedação consciente\n",
         manifest=manifest,
     )
     assert code == 1
