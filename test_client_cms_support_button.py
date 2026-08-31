@@ -53,56 +53,58 @@ def test_template_support_button_contract():
         
         # 5. Zero hard-coded wa.me or phone numbers in template
         assert "wa.me/" not in html, "Found hardcoded wa.me URL in static template!"
-        assert "994289238" not in html, "Found hardcoded operator phone in template!"
-        assert "5511" not in html, "Found hardcoded area code in template!"
+        raw_phone = os.environ.get("PROSPECTOR_CMS_SUPPORT_WHATSAPP", "").strip()
+        if raw_phone:
+            digits = re.sub(r"\D", "", raw_phone)
+            assert digits not in html, "Found configured operator phone in static template!"
         
         # 6. Zero emojis
         body_no_svg = re.sub(r'<svg.*?</svg>', '', html, flags=re.DOTALL)
         emojis = re.findall(r'[\U00010000-\U0010ffff]', body_no_svg)
         assert len(emojis) == 0, f"Found emojis in template: {emojis}"
 
-def test_publish_config_support_env_normalization():
+def test_publish_config_support_env_normalization(monkeypatch):
     """Test Section 9B, 9C, 9D: Server config parsing and normalization."""
     import argparse
     from editor_publish_server import PublishConfig
 
-    # Valid env (formatted with dashes/spaces/symbols)
-    os.environ["PROSPECTOR_CMS_SUPPORT_WHATSAPP"] = "+55 (11) 99428-9238"
+    # Valid env with formatting (dummy number for test)
+    monkeypatch.setenv("PROSPECTOR_CMS_SUPPORT_WHATSAPP", "+55 (11) 98765-4321")
     cfg = PublishConfig(argparse.Namespace(root=str(ROOT), host="127.0.0.1", port=8787, mode="local", deploy_repo="", base_path="clientes", branch="main", remote="origin"))
     assert cfg.support_enabled is True
-    assert cfg.support_whatsapp == "5511994289238"
-    assert cfg.support_base_url == "https://wa.me/5511994289238"
+    assert cfg.support_whatsapp == "5511987654321"
+    assert cfg.support_base_url == "https://wa.me/5511987654321"
 
     # Missing env
-    os.environ["PROSPECTOR_CMS_SUPPORT_WHATSAPP"] = ""
+    monkeypatch.setenv("PROSPECTOR_CMS_SUPPORT_WHATSAPP", "")
     cfg_missing = PublishConfig(argparse.Namespace(root=str(ROOT), host="127.0.0.1", port=8787, mode="local", deploy_repo="", base_path="clientes", branch="main", remote="origin"))
     assert cfg_missing.support_enabled is False
     assert cfg_missing.support_whatsapp is None
     assert cfg_missing.support_base_url is None
 
     # Malformed too short (<8 digits)
-    os.environ["PROSPECTOR_CMS_SUPPORT_WHATSAPP"] = "12345"
+    monkeypatch.setenv("PROSPECTOR_CMS_SUPPORT_WHATSAPP", "12345")
     cfg_short = PublishConfig(argparse.Namespace(root=str(ROOT), host="127.0.0.1", port=8787, mode="local", deploy_repo="", base_path="clientes", branch="main", remote="origin"))
     assert cfg_short.support_enabled is False
 
     # Malformed alpha only
-    os.environ["PROSPECTOR_CMS_SUPPORT_WHATSAPP"] = "invalid_phone"
+    monkeypatch.setenv("PROSPECTOR_CMS_SUPPORT_WHATSAPP", "invalid_phone")
     cfg_alpha = PublishConfig(argparse.Namespace(root=str(ROOT), host="127.0.0.1", port=8787, mode="local", deploy_repo="", base_path="clientes", branch="main", remote="origin"))
     assert cfg_alpha.support_enabled is False
 
     # Malformed too long (>15 digits)
-    os.environ["PROSPECTOR_CMS_SUPPORT_WHATSAPP"] = "12345678901234567"
+    monkeypatch.setenv("PROSPECTOR_CMS_SUPPORT_WHATSAPP", "12345678901234567")
     cfg_long = PublishConfig(argparse.Namespace(root=str(ROOT), host="127.0.0.1", port=8787, mode="local", deploy_repo="", base_path="clientes", branch="main", remote="origin"))
     assert cfg_long.support_enabled is False
 
 def test_status_endpoint_support_leakage():
     """Test Section 9E: Ensure unauthenticated requests do not leak support details."""
-    # Start server in thread or process
     import subprocess
     import tempfile
     
+    test_number = os.environ.get("PROSPECTOR_CMS_SUPPORT_WHATSAPP") or "5511987654321"
     env = os.environ.copy()
-    env["PROSPECTOR_CMS_SUPPORT_WHATSAPP"] = "5511994289238"
+    env["PROSPECTOR_CMS_SUPPORT_WHATSAPP"] = test_number
     env["PROSPECTOR_CMS_DATA_DIR"] = str(ROOT)
 
     proc = subprocess.Popen(
@@ -124,15 +126,18 @@ def test_status_endpoint_support_leakage():
 
         assert data.get("authorized") is False
         assert "support" not in data, "Unauthenticated response must NOT contain support object"
-        assert "5511994289238" not in json.dumps(data), "Unauthenticated response leaked support phone!"
+        raw_digits = re.sub(r"\D", "", test_number)
+        assert raw_digits not in json.dumps(data), "Unauthenticated response leaked support phone!"
     finally:
         proc.terminate()
         proc.wait()
 
 def test_browser_support_button_e2e():
     """Test Section 9F: Browser rendering, interaction, prefill, and mobile responsive behavior."""
+    test_number = os.environ.get("PROSPECTOR_CMS_SUPPORT_WHATSAPP") or "5511987654321"
+    raw_digits = re.sub(r"\D", "", test_number)
     env = os.environ.copy()
-    env["PROSPECTOR_CMS_SUPPORT_WHATSAPP"] = "5511994289238"
+    env["PROSPECTOR_CMS_SUPPORT_WHATSAPP"] = test_number
     env["PROSPECTOR_CMS_DATA_DIR"] = str(ROOT)
 
     proc = subprocess.Popen(
@@ -170,7 +175,7 @@ def test_browser_support_button_e2e():
             
             # Verify href and prefill
             href = btn_support.get_attribute("href")
-            assert href.startswith("https://wa.me/5511994289238?text="), f"Invalid href: {href}"
+            assert href.startswith(f"https://wa.me/{raw_digits}?text="), f"Invalid href: {href}"
             assert "Instituto" in href or "instituto" in href.lower()
             assert "painel%20do%20site" in href.lower() or "painel do site" in href.lower() or "ajuda" in href.lower()
 
