@@ -17,12 +17,12 @@ import urllib.request
 from playwright.async_api import async_playwright
 
 BASE_HTTPS_URL = "https://prospector.autocora.com.br"
-SLUG = "instituto-ferreira-odontologia-rio-claro"
+SLUG = "autocora-cms-qa"
 ADMIN_URL = f"{BASE_HTTPS_URL}/clientes/{SLUG}/admin/"
 PUBLIC_SITE_URL = f"https://prospector-sites-beta.vercel.app/clientes/{SLUG}/"
-OPERATOR_USER = "admin_instituto_qa"
+OPERATOR_USER = "admin_autocora_qa"
 OPERATOR_PASS = "REDACTED_TEST_SECRET"
-QA_TEXT = "QA CMS PUBLIC TEST TEMPORÁRIO"
+QA_TEXT = "QA CMS SYNTHETIC TEST TEMPORÁRIO"
 
 
 def https_request(path: str, method: str = "GET", data: dict = None, headers: dict = None):
@@ -92,7 +92,7 @@ async def run_live_draft_awareness_suite():
     )
     assert status == 200, f"Editor frame failed with status {status}"
     assert QA_TEXT not in frame_html, f"Found stale QA text in editor-frame: {QA_TEXT}"
-    assert "Excelência técnica" in frame_html, "Canonical baseline text missing in editor-frame"
+    assert "Infraestrutura Sintética" in frame_html or "Infraestrutura Sint" in frame_html, "Canonical baseline text missing in editor-frame"
     print("[PASS] Explicit source=live editor-frame returned canonical baseline HTML (zero QA text)")
 
     # Step 4: Playwright UI Verification
@@ -128,7 +128,7 @@ async def run_live_draft_awareness_suite():
         headline_text = await frame_el.locator("h1.hero-headline").inner_text()
         print(f"[PASS] Editor iframe rendered headline: '{headline_text.strip()}'")
         assert QA_TEXT not in headline_text, f"QA text found in iframe: '{headline_text}'"
-        assert "Excelência técnica" in headline_text, f"Unexpected headline text: '{headline_text}'"
+        assert "Infraestrutura Sintética" in headline_text or "Infraestrutura Sint" in headline_text, f"Unexpected headline text: '{headline_text}'"
 
         # Step 5: Save Draft Test
         print("\n--- Testing Draft Lifecycle ---")
@@ -166,7 +166,7 @@ async def run_live_draft_awareness_suite():
 
         reloaded_headline = await frame_el.locator("h1.hero-headline").inner_text()
         print(f"[PASS] Headline after 'Recarregar do site': '{reloaded_headline.strip()}'")
-        assert "Excelência técnica" in reloaded_headline, "Should have reloaded live baseline"
+        assert "Infraestrutura Sintética" in reloaded_headline or "Infraestrutura Sint" in reloaded_headline, "Should have reloaded live baseline"
 
         # Step 7: Test Stale Draft Detection Flow
         print("\n--- Testing Stale Draft Warning & Resolution ---")
@@ -224,7 +224,7 @@ async def run_live_draft_awareness_suite():
     with urllib.request.urlopen(req, timeout=15) as resp:
         vercel_html = resp.read().decode("utf-8")
         assert QA_TEXT not in vercel_html, f"QA text found on public Vercel: {QA_TEXT}"
-        assert "Excelência técnica" in vercel_html, "Public Vercel headline missing baseline"
+        assert "Infraestrutura Sintética" in vercel_html or "Infraestrutura Sint" in vercel_html, "Public Vercel headline missing baseline"
         print("[PASS] Public Vercel verified clean of QA text")
 
     print("\n" + "=" * 80)
