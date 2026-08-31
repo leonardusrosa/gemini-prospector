@@ -28,4 +28,4 @@ jobs:
         run: python test_google_reviews_evidence.py
 
       - name: Autonomous site-review regressions
-        run: python test_autonomous_site_review_regression.py
+        run: python run_autonomous_site_review_regressions.py
