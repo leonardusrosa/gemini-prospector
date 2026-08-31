@@ -433,13 +433,25 @@ class App(SimpleHTTPRequestHandler):
         partes = rota.split('/')
         if len(partes) == 4 and partes[1] == 'api' and partes[2] == 'leads':
             slug, ch = partes[3], self._corpo()
+            if not SLUG_RE.fullmatch(slug):
+                return self._json(400, {'ok': False, 'error': 'invalid_slug'})
             sets = [k for k in ch if k in CAMPOS and k != 'slug']
             if sets:
                 c = conexao()
-                c.execute('UPDATE leads SET %s, atualizado=datetime("now","localtime") WHERE slug=?' %
-                          ','.join('%s=?' % k for k in sets), [ch[k] for k in sets] + [slug])
+                cursor = c.execute('UPDATE leads SET %s, atualizado=datetime("now","localtime") WHERE slug=?' %
+                                   ','.join('%s=?' % k for k in sets), [ch[k] for k in sets] + [slug])
+                if cursor.rowcount == 0:
+                    c.close()
+                    return self._json(404, {'ok': False, 'error': 'lead_not_found'})
                 c.commit(); c.close()
-            return self._json(200, {'ok': True})
+                return self._json(200, {'ok': True})
+            else:
+                c = conexao()
+                row = c.execute('SELECT 1 FROM leads WHERE slug=?', (slug,)).fetchone()
+                c.close()
+                if not row:
+                    return self._json(404, {'ok': False, 'error': 'lead_not_found'})
+                return self._json(200, {'ok': True})
         return self._json(404, {'erro': 'rota'})
 
     def do_DELETE(self):
