@@ -1,5 +1,6 @@
 ---
 name: repository-policy
+instruction_language: en
 description: Canonical repository-wide policy for Prospector rules, skills, QA gates, and implementation guidance. Read before adding or changing any rule or quality gate.
 ---
 
@@ -58,7 +59,7 @@ When no assistant is present and verified WhatsApp is a primary conversion chann
 
 The assistant already acts as the persistent help/conversion entry point and can escalate to WhatsApp. Showing both fixed launchers creates duplicate attention targets, consumes mobile viewport space, and makes the page feel mechanically assembled.
 
-## 4. Enforcement
+## 4. Fixed-control enforcement
 
 Autonomous review, browser QA, and the Vercel predeploy gate must treat these states as follows:
 
@@ -68,3 +69,36 @@ Autonomous review, browser QA, and the Vercel predeploy gate must treat these st
 - no assistant + verified WhatsApp + synchronized floating WhatsApp => PASS
 
 Do not weaken this rule to solve a tenant-specific layout problem. Fix the tenant instead.
+
+## 5. Google Maps review evidence integrity
+
+Every local-business first version, review refresh, or materially revised public site that uses Google rating/review data MUST read and obey `../google-reviews-verification/SKILL.md` and MUST validate its evidence with `prospector-de-sites/google_reviews_evidence.py`.
+
+Direct Google Maps is the canonical aggregate source. Cached snippets, CRM values, search summaries, old screenshots, and previously accepted evidence never override the current exact Maps place profile.
+
+Publishable evidence requires two independent direct-Maps count observations from the same collection pass:
+
+1. the visible place-profile header count;
+2. the count visible after opening the reviews panel.
+
+Both must match the structured `reviewCount` and the same Place ID/CID. A mismatch is a hard BLOCK.
+
+If the direct profile reports 3 or more ratings/reviews but fewer than 3 verified same-profile text reviews were captured, the state is `COLLECTION_INCOMPLETE`, not aggregate-only PASS. The collector must continue or request human evidence.
+
+If the operator supplies a newer direct Maps observation that conflicts with stored evidence, the stored evidence becomes stale immediately and publication is blocked until recollection reconciles the values.
+
+The autonomous adversarial review must always ask whether the live direct Maps profile currently shows a different rating/count than the active evidence and visible page. If yes or uncertain, BLOCK.
+
+## 6. Review evidence regression requirements
+
+The repository CI must include deterministic regressions proving at least these states fail:
+
+- indirect/search-snippet aggregate used as publishable evidence;
+- structured review count differs from the direct Maps profile-header text;
+- structured review count differs from the independently observed reviews-panel count;
+- newer operator direct-Maps observation conflicts with stored evidence;
+- same profile reports 3+ ratings/reviews but text-review collection is incomplete;
+- captured review belongs to another Place ID/CID;
+- public review copy presents branded count labels such as `1 avaliação Google`.
+
+Do not remove or weaken these regressions to make a tenant pass.
