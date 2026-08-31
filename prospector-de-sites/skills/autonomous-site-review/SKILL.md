@@ -191,16 +191,19 @@ Do not rely on a blacklist of previously observed hallucinations. A new unsuppor
 
 ### Layer A: deterministic/static
 
-Run:
+Run both static gates:
 
 ```bash
 python prospector-de-sites/autonomous_site_review.py \
   --html sites/[slug]/[slug].html \
   --design-read sites/[slug]/design-read.md \
   --manifest sites/[slug]/review-manifest.json
+
+python prospector-de-sites/fixed_conversion_controls_review.py \
+  --html sites/[slug]/[slug].html
 ```
 
-Exit code must be non-zero for missing structural requirements.
+Both commands must exit with code 0. Any non-zero result blocks Static Review PASS.
 
 ### Layer B: browser/visual
 
@@ -220,6 +223,8 @@ Test at least:
 - tablet 800x1024;
 - mobile 390x844;
 - any additional viewport required by the current hero frame policy.
+
+If an assistant is present, browser QA must also verify that no `data-role="floating-whatsapp"` launcher exists at any tested viewport.
 
 ## 10. Required review manifest
 
