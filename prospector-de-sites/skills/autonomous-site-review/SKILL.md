@@ -23,18 +23,21 @@ Para qualquer criação, redesign ou rework visual:
 
 - leia o `SKILL.md` ATUAL do `gpt-taste` antes de codificar;
 - não trabalhe de memória;
-- registre o caminho lido e a decisão visual em `sites/[slug]/design-read.md`;
+- registre o caminho lido, SHA-256 do arquivo e a decisão visual em `sites/[slug]/design-read.md`;
 - o arquivo deve conter, no mínimo:
 
 ```text
 GPT_TASTE_READ: PASS
 GPT_TASTE_PATH: <caminho real lido>
+GPT_TASTE_SHA256: <sha256 do SKILL.md lido>
 Design Variance: <0-10>
 Motion: <0-10>
 Density: <0-10>
 ```
 
-Se `GPT_TASTE_READ: PASS` estiver ausente, o review falha.
+O validator abre o caminho registrado e compara o hash. Portanto, escrever apenas `GPT_TASTE_READ: PASS` sem ter o arquivo atual disponível não satisfaz o gate.
+
+Se a skill mudar, o agente deve reler e registrar o novo hash.
 
 `scroll-behavior: smooth` não conta como Motion & Behavior Pass.
 
@@ -75,6 +78,8 @@ Quando houver WhatsApp/telefone verificado e apropriado para contato:
 
 O floating CTA deve usar `data-role="floating-whatsapp"` nos novos sites para QA automatizado.
 
+Em mockup comercial onde WhatsApp ainda não tiver destino verificável, represente a affordance somente quando o manifesto pedir `mockAffordanceRequired`, usando `data-social="whatsapp"`, `aria-disabled="true"` e **sem atributo `href`**.
+
 ## 4. HARD GATE: Instagram/social em mockups comerciais
 
 Para conceitos/noindex de prospecção, represente a UI de Instagram mesmo quando o perfil ainda não estiver verificado.
@@ -90,6 +95,7 @@ Para conceitos/noindex de prospecção, represente a UI de Instagram mesmo quand
 - affordance visual presente;
 - `data-social="instagram"`;
 - `aria-disabled="true"`;
+- **nenhum atributo `href`**, nem `#`, nem `javascript:void(0)`;
 - sem URL inventada;
 - sem username inventado;
 - não navegável (`tabindex="-1"` ou equivalente).
@@ -180,15 +186,15 @@ Depois do primeiro PASS, faça uma segunda revisão com postura adversarial:
 
 Inspecione especialmente:
 
-- gpt-taste apenas citado, mas não usado;
+- gpt-taste apenas citado, mas não usado/arquivo atual não comprovado;
 - `Motion > 0` no design-read mas página imóvel;
 - mapa substituído por placeholder;
 - Instagram omitido porque não havia URL real;
+- social mock desabilitado mas ainda com `href`, `#` ou `javascript:void(0)`;
 - WhatsApp apenas no hero, sem floating/contact;
 - floating WhatsApp colidindo com assistant;
 - reduced motion declarado no CSS, mas comportamento ainda animado;
 - no-JS deixando conteúdo invisível;
-- placeholder/mock link navegável;
 - CTA/fato removido em desktop mas quebrado no mobile;
 - console/network 404 silencioso;
 - claims reintroduzidos depois do factual hardening.
@@ -201,6 +207,7 @@ Um relatório escrito pelo próprio agente não é evidência suficiente.
 
 - inspeção do HTML/DOM;
 - execução do validator;
+- hash do gpt-taste atual validado;
 - browser QA;
 - screenshots/geometry quando aplicável;
 - network/console checks;
@@ -215,6 +222,7 @@ Use este bloco na saída:
 ```text
 AUTONOMOUS SITE REVIEW
 GPT_TASTE_READ: PASS/FAIL
+GPT_TASTE_SHA_MATCH: PASS/FAIL
 STATIC REVIEW: PASS/FAIL
 BROWSER REVIEW: PASS/FAIL
 ADVERSARIAL REVIEW: PASS/FAIL
