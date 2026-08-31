@@ -1,98 +1,140 @@
 ---
 name: hero-visual-rule
-description: HARD RULE para todo site, conceito, redesign ou preview publico criado pelo Prospector. O hero deve conter uma imagem visualmente relevante ao negocio mesmo quando nao existe foto utilizavel do expert. Prioriza foto real verificada; quando isso nao existir, exige imagem contextual honesta e impede que stock/gerada seja apresentada como instalacao, pessoa ou resultado real do lead.
+description: HARD RULE para todo site, conceito, redesign ou preview público criado pelo Prospector. O hero deve conter uma imagem visualmente relevante ao negócio mesmo quando não existe foto utilizável do expert. Prioriza foto real verificada; quando não existir, busca no catálogo canônico de templates hero-expert (templates/hero-expert/manifest.json); quando não houver template de nicho, exige imagem contextual ilustrativa honesta. Proíbe heros sem imagem, heros apenas tipográficos, ou apresentar stock/template como instalação/pessoa real.
 ---
 
 # Hero Visual Rule
 
-Esta regra e obrigatoria para qualquer site publico ou preview comercial criado pelo Prospector, salvo excecao explicita do usuario para um site especifico.
+Esta regra é obrigatória para qualquer site público, conceito inicial ou preview comercial criado pelo Prospector, salvo exceção explícita do usuário para um site específico.
 
-## 1. Todo hero precisa de uma imagem relevante
+## 1. Todo hero de primeira versão precisa de uma imagem relevante
 
-Hero apenas tipografico, hero com card abstrato, mock dashboard, formas decorativas, gradientes ou icones nao satisfaz esta regra.
+Hero apenas tipográfico, hero com card abstrato, mock dashboard, formas decorativas, gradientes ou ícones **NÃO** satisfaz esta regra.
 
-O hero deve conter uma imagem que ajude a comunicar imediatamente o negocio e o contexto do lead.
+O hero deve conter uma imagem que ajude a comunicar imediatamente o negócio e o contexto do lead.
 
-Use a seguinte ordem de preferencia:
+Use a seguinte ordem estrita de preferência:
 
-1. foto real e verificavel do expert/profissional quando houver fonte utilizavel;
-2. foto first-party verificavel do local, equipe, produto ou contexto real do negocio;
-3. imagem fornecida pelo usuario;
-4. imagem contextual stock ou gerada, apenas quando nao houver material factual utilizavel e sem simular que a cena pertence ao lead.
+1. **Foto real e verificável do expert/profissional** quando houver fonte factual utilizável (ex: site original, CRO/CRM/OAB com foto oficial verificada, perfil de autoridade confirmado);
+2. **Foto first-party verificável do local, equipe, produto ou contexto real do negócio** (ex: fotos de fachada/consultório validadas via Google Maps / Place Details);
+3. **Imagem fornecida pelo usuário/cliente**;
+4. **Template canônico do catálogo `hero-expert`** (`prospector-de-sites/templates/hero-expert/manifest.json`), quando o negócio for liderado por especialista e não houver foto real verificada;
+5. **Imagem contextual ilustrativa de nicho**, criada especificamente quando não houver material factual nem template de nicho no catálogo.
 
-Exemplo para uma clinica odontologica sem foto utilizavel da profissional: use uma imagem contextual de consultorio/sala odontologica coerente com o servico, em vez de deixar o hero sem fotografia.
+Um hero **NUNCA** pode se tornar apenas tipográfico ou abstrato meramente porque um template ou foto real não está disponível.
 
-## 2. Imagem contextual nao pode virar fato inventado
+## 2. Catálogo Canônico de Templates Hero-Expert
 
-Stock ou imagem gerada pode comunicar categoria, atmosfera e contexto, mas nao pode ser apresentada como prova da instalacao real, da equipe real, de resultado real ou de equipamento real do prospecto.
+O Prospector mantém um catálogo canônico de templates em `prospector-de-sites/templates/hero-expert/manifest.json`.
 
-Quando a imagem nao retratar fato real do lead:
+### Seleção Automática de Template:
+Durante a fase de planejamento visual (`design-read.md`):
+- Se não houver foto real verificada do especialista, inspecione `templates/hero-expert/manifest.json` pelo nicho correspondente (ex: `dentistry`).
+- Se houver variante compatível com o gênero confirmado nos dados factuais do lead (ex: `female` para Dra., `male` para Dr.), selecione o `templateId` (ex: `dentistry-female`).
+- Se o gênero for ambíguo ou não puder ser determinado com segurança absoluta a partir dos dados do lead, **NÃO** adivinhe por nome; use composição contextual neutra ou solicite decisão.
 
-- nao use copy como `Nosso consultorio` sobre a imagem;
-- nao use alt que sugira que aquela e a instalacao real;
-- use alt factual, por exemplo `Imagem ilustrativa de consultorio odontologico`;
-- registre no manifesto `representsActualBusiness: false`;
-- use `data-image-context="illustrative"` no elemento de imagem para permitir QA deterministico.
-
-Quando a imagem realmente retratar o lead, `representsActualBusiness: true` so e permitido com fonte first-party, material fornecido pelo usuario ou outra evidencia verificavel.
-
-## 3. Hook obrigatorio
-
-A imagem principal do hero deve ser um elemento `<img>` com:
-
-```html
-<img
-  data-role="hero-image"
-  src="..."
-  alt="..."
-  width="..."
-  height="..."
->
+### Registro no `design-read.md`:
+```text
+HERO_VISUAL_SOURCE: canonical-template
+HERO_TEMPLATE_ID: dentistry-female
+HERO_TEMPLATE_DESKTOP: templates/hero-expert/dentistry/female/desktop-ultrawide.webp
+HERO_TEMPLATE_MOBILE: templates/hero-expert/dentistry/female/mobile.webp
+HERO_REPRESENTS_ACTUAL_EXPERT: false
+HERO_REPRESENTS_ACTUAL_BUSINESS: false
 ```
 
-`data-role="hero-image"` e um hook tecnico de QA. Nao e copy publica.
+## 3. Imagem de Template ou Contextual NÃO Pode Virar Fato Inventado
 
-Se usar `<picture>`, aplique `data-role="hero-image"` no `<img>` interno.
+Templates com silhueta e badge "SUA FOTO AQUI" ou imagens contextuais geradas servem para demonstrar layout e atmosfera, mas **NUNCA** podem ser apresentadas como prova da instalação real ou do profissional real.
 
-Nao esconda a imagem principal apenas em `background-image` CSS. O hero pode ter background complementar, mas a imagem semantica principal deve continuar existindo como `<img>` para acessibilidade, performance e QA.
+Quando usar template ou imagem contextual:
+- **NUNCA** use copy como "Foto da Dra. X" ou "Nosso consultório" sobre a imagem;
+- **NUNCA** use `alt` que sugira que aquela é a pessoa ou instalação real;
+- **SEMPRE** use `alt` factual e neutro, por exemplo:
+  `"Imagem ilustrativa de consultório odontológico com espaço reservado para foto profissional"`
+- **SEMPRE** inclua `data-image-context="illustrative"` no elemento `<img>` ou container;
+- **SEMPRE** registre no manifesto:
+  `representsActualExpert: false`
+  `representsActualBusiness: false`
+  `containsPhotoPlaceholder: true` (se for template com "SUA FOTO AQUI")
 
-## 4. Performance e composicao
+## 4. Fluxo de Substituição por Foto Real do Expert
 
-- hero image critica nao usa `loading="lazy"`;
-- forneca `width` e `height` ou geometria equivalente para evitar CLS;
-- use WebP/AVIF quando apropriado;
-- desktop e mobile podem usar assets/crops diferentes quando isso melhorar composicao;
-- preserve safe area para headline, supporting copy e CTA;
-- nao cubra rosto, equipamento essencial ou foco visual com copy;
-- se houver expert real, continuam valendo integralmente as regras de fidelidade do `website-core-rules`.
+O template com "SUA FOTO AQUI" é um **placeholder de prospecção**.
 
-## 5. Manifesto de review
+Assim que uma foto real e verificada do profissional for obtida:
+1. Substitua o template pela foto real do profissional;
+2. Preserve a identidade, feições e vestimenta profissional reais;
+3. Crie composição desktop ultrawide (~2000px de largura) com área limpa para o texto;
+4. Crie composição mobile (~900px de largura) com enquadramento vertical e fade suave para legibilidade;
+5. Remova completamente o badge "SUA FOTO AQUI" e a silhueta placeholder;
+6. Atualize o `review-manifest.json`:
+   - `representsActualExpert: true`
+   - `sourceType: "first_party"` (ou `"user_provided"`)
+   - `containsPhotoPlaceholder: false`
 
-Todo novo site deve declarar:
+**NUNCA** deixe o placeholder em produção final após o cliente ter fornecido/aprovado sua foto real.
+
+## 5. Hook Obrigatório e Estrutura Técnica
+
+A imagem principal do hero deve ser um elemento `<img>` (ou `<picture>` com `<img>` interno) contendo:
+
+```html
+<picture>
+  <source media="(max-width: 640px)" srcset="caminho/para/mobile.webp">
+  <img
+    data-role="hero-image"
+    data-image-context="illustrative"
+    src="caminho/para/desktop-ultrawide.webp"
+    alt="Imagem ilustrativa de consultório odontológico com espaço reservado para foto profissional"
+    width="1983"
+    height="793"
+  >
+</picture>
+```
+
+- `data-role="hero-image"`: Hook técnico de QA (não é texto visível).
+- Hero image crítica **NÃO** usa `loading="lazy"`.
+- Forneça `width` e `height` para prevenir Cumulative Layout Shift (CLS).
+- Safe area: Preserve espaço para headline, supporting copy e o único CTA do hero (`#hero-cta`).
+
+## 6. Manifesto de Review (`review-manifest.json`)
+
+Todo site deve declarar a seção `heroVisual`:
 
 ```json
-"heroVisual": {
-  "required": true,
-  "kind": "expert | facility | contextual | product | other",
-  "sourceType": "first_party | user_provided | stock | generated",
-  "representsActualBusiness": false,
-  "illustrativeDisclosureRequired": true
+{
+  "heroVisual": {
+    "required": true,
+    "kind": "expert-placeholder",
+    "templateId": "dentistry-female",
+    "sourceType": "generated-template",
+    "representsActualExpert": false,
+    "representsActualBusiness": false,
+    "illustrativeDisclosureRequired": true,
+    "desktopAssetRequired": true,
+    "mobileAssetRequired": true
+  }
 }
 ```
 
-`required: false` so e aceito quando o usuario pediu explicitamente hero sem imagem e a excecao estiver documentada no review.
+Valores permitidos para `kind`:
+- `expert` (foto real do profissional)
+- `expert-placeholder` (template com "SUA FOTO AQUI")
+- `facility` (foto real do local)
+- `contextual` (imagem ilustrativa de nicho/ambiente)
+- `product` (produto real)
+- `other`
 
-## 6. Gate de QA
+## 7. Gate de QA e Bloqueios
 
-O autonomous review deve reprovar quando:
-
-- nao existir `[data-role="hero-image"]`;
-- a imagem nao estiver dentro do hero;
-- `src` estiver ausente/vazio;
-- `alt` estiver ausente/vazio;
-- a imagem critica estiver com `loading="lazy"`;
-- `sourceType` for `stock` ou `generated`, `representsActualBusiness` for falso e o elemento nao tiver `data-image-context="illustrative"`;
-- `sourceType` for `stock` ou `generated` e o manifesto declarar `representsActualBusiness: true`;
-- a imagem nao estiver visivel ou tiver dimensoes insignificantes em desktop/tablet/mobile.
-
-A verificacao automatica de existencia e geometria nao substitui a revisao semantica. Na revisao adversarial e Screenshot Review, confirme visualmente que a imagem realmente corresponde ao negocio e nao cria contexto factual falso.
+O autonomous review estático e browser deve **REPROVAR / BLOQUEAR** quando:
+1. Não existir `[data-role="hero-image"]` dentro do hero;
+2. `src` estiver ausente ou apontar para arquivo inexistente;
+3. `kind == "expert-placeholder"` e o `templateId` não existir no catálogo canônico `templates/hero-expert/manifest.json`;
+4. `kind == "expert-placeholder"` e o arquivo desktop ou mobile declarado estiver ausente;
+5. `sourceType` for `generated-template`, `stock` ou `generated` e o manifesto declarar `representsActualExpert: true` ou `representsActualBusiness: true`;
+6. Template ou imagem ilustrativa não contiver `data-image-context="illustrative"`;
+7. Imagem crítica do hero estiver com `loading="lazy"`;
+8. Imagem do hero estiver invisível ou com geometria insignificante (<100px) em Desktop 1440x900 ou Mobile 390x844;
+9. O nicho possuir template no catálogo mas o site foi gerado como hero text-only sem imagem.

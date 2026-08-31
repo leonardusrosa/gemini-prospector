@@ -156,7 +156,7 @@ async def review_viewport(browser, url: str, manifest: dict[str, Any], name: str
             source_type = str(hero_cfg.get("sourceType") or "").strip().lower()
             represents_actual = bool(hero_cfg.get("representsActualBusiness", False))
             disclosure_required = bool(hero_cfg.get("illustrativeDisclosureRequired", True))
-            if source_type in {"stock", "generated"} and not represents_actual and disclosure_required:
+            if source_type in {"stock", "generated", "generated-template"} and not represents_actual and disclosure_required:
                 image_context = (await hero_image.first.get_attribute("data-image-context") or "").strip().lower()
                 review.check(
                     f"{name}_hero_image_illustrative_context",
@@ -164,6 +164,17 @@ async def review_viewport(browser, url: str, manifest: dict[str, Any], name: str
                     f"data-image-context={image_context!r}",
                     name,
                 )
+
+        # Check hero CTA count
+        hero_ctas = page.locator('[data-role="hero"] a.cta-btn, [data-role="hero"] a[class*="cta"], [data-role="hero"] a[id*="cta"], [data-role="hero"] button[class*="cta"]')
+        cta_count = await hero_ctas.count()
+        if cta_count > 0:
+            review.check(f"{name}_hero_cta_count", cta_count == 1, f"Hero must have exactly 1 CTA button, found {cta_count}", name)
+
+        # Check horizontal overflow
+        scroll_w = await page.evaluate("document.documentElement.scrollWidth")
+        client_w = await page.evaluate("document.documentElement.clientWidth")
+        review.check(f"{name}_horizontal_overflow", scroll_w <= client_w, f"scrollWidth={scroll_w}, clientWidth={client_w}", name)
 
     # Embedded map requirement.
     address_cfg = cfg(manifest, "address")
