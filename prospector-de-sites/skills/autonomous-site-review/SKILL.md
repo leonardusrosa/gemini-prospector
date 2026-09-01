@@ -1,7 +1,7 @@
 ---
 name: autonomous-site-review
 instruction_language: en
-description: Mandatory fail-closed quality gate after creating or changing any Prospector site, concept, or redesign and before screenshot approval, deploy, proposal, or outreach. It must independently detect missing gpt-taste usage, hero visual defects, motion/scroll omissions, WhatsApp/social/map issues, fixed-control conflicts, reduced-motion/no-JS failures, factual regressions, review-provenance failures, and visual regressions.
+description: Mandatory fail-closed quality gate after creating or changing any Prospector site, concept, or redesign and before screenshot approval, deploy, proposal, or outreach. It must independently detect missing gpt-taste/OpenDesign direction evidence, hero visual defects, motion/scroll omissions, WhatsApp/social/map issues, fixed-control conflicts, reduced-motion/no-JS failures, factual regressions, review-provenance failures, and visual regressions.
 ---
 
 # Autonomous Site Review
@@ -15,9 +15,10 @@ Read and obey, in order:
 1. `../repository-policy/SKILL.md`
 2. `../website-core-rules/SKILL.md`
 3. `../redesign-premium/SKILL.md`
-4. `../hero-visual-rule/SKILL.md`
-5. `../google-reviews-verification/SKILL.md` when a Google Business Profile exists or may exist
-6. the current installed `gpt-taste/SKILL.md`
+4. `../open-design-direction/SKILL.md` for schema v2+ first versions
+5. `../hero-visual-rule/SKILL.md`
+6. `../google-reviews-verification/SKILL.md` when a Google Business Profile exists or may exist
+7. the current installed `gpt-taste/SKILL.md`
 
 All new or materially modified repository rules, gate descriptions, regression names/comments, and agent-facing rule documentation must be written in English. Client-facing copy remains in the target market language.
 
@@ -45,7 +46,31 @@ The validator must compare the recorded hash with the current file. A textual `P
 
 `scroll-behavior: smooth` does not count as a Motion & Behavior Pass.
 
-## 2. HARD GATE: meaningful hero visual
+## 2. HARD GATE: OpenDesign direction evidence for schema v2+ first versions
+
+New first-version schema v2+ sites must obey `open-design-direction` before production HTML is written.
+
+The deterministic contract is checked with:
+
+```bash
+python prospector-de-sites/open_design_direction_review.py \
+  --manifest sites/[slug]/review-manifest.json \
+  --design-read sites/[slug]/design-read.md
+```
+
+A successful OpenDesign pass requires:
+
+- local MCP alias `open-design` was actually probed;
+- at least two structurally distinct directions were produced;
+- a selected/refined `open-design/DESIGN.md` exists;
+- gpt-taste reviewed the alternatives and selection;
+- OpenDesign remained `DIRECTION_ONLY`, not the production source.
+
+If the MCP is unavailable, the fallback must be explicit and truthful. `UNAVAILABLE + GPT_TASTE_ONLY` is allowed; pretending another model was OpenDesign is not.
+
+Legacy schema v1 sites are not retroactively blocked by this gate.
+
+## 3. HARD GATE: meaningful hero visual
 
 Every first-version site, concept, and redesign requires a meaningful hero image unless the operator explicitly requests a text-only exception.
 
@@ -73,7 +98,7 @@ Rules:
 - canonical expert-placeholder templates must follow the current hero-template manifest and frame policy;
 - missing expert photography is never a reason to omit the hero visual.
 
-## 3. HARD GATE: motion and behavior
+## 4. HARD GATE: motion and behavior
 
 Prospect/redesign sites default to `Motion > 0` unless an explicit documented exception exists.
 
@@ -87,7 +112,7 @@ Verify actual behavior:
 - `prefers-reduced-motion` is respected;
 - no scroll-jacking, gratuitous loops, or ornamental motion overload.
 
-## 4. HARD GATE: WhatsApp conversion points
+## 5. HARD GATE: WhatsApp conversion points
 
 When verified WhatsApp is an appropriate contact channel:
 
@@ -124,7 +149,7 @@ Forbidden on the same page:
 
 WhatsApp must still remain available through normal page CTAs and assistant escalation/handoff.
 
-## 5. HARD GATE: Instagram/social affordance in prospect mockups
+## 6. HARD GATE: Instagram/social affordance in prospect mockups
 
 For noindex prospect concepts, represent Instagram UI even when an official profile is not verified.
 
@@ -132,11 +157,11 @@ Verified profile: active verified link only.
 
 Unverified profile: visual affordance only, `aria-disabled="true"`, no `href`, no invented URL/handle, non-navigable.
 
-## 6. HARD GATE: embedded map
+## 7. HARD GATE: embedded map
 
 A verified public customer-facing physical address requires an embedded map preview by default. A decorative location card alone does not satisfy the gate.
 
-## 7. HARD GATE: Google Reviews provenance, completeness, and rendering
+## 8. HARD GATE: Google Reviews provenance, completeness, and rendering
 
 Every first-version local-business concept must explicitly verify the correct Google Business Profile and obey `google-reviews-verification`.
 
@@ -185,19 +210,23 @@ When an all-reviews carousel is used, every carousel item must bind to one canon
 
 Public copy must not call reviewers patients/clients unless that relationship is explicitly verified by source evidence.
 
-## 8. HARD GATE: factual traceability
+## 9. HARD GATE: factual traceability
 
 Public claims, verified-service lists, design-read claims, and assistant knowledge must derive from a verified factual allowlist/evidence inventory.
 
 Do not rely on a blacklist of previously observed hallucinations. A new unsupported service or claim must fail even if its wording has never appeared before.
 
-## 9. Two-layer review
+## 10. Two-layer review
 
 ### Layer A: deterministic/static
 
 Run all applicable static gates, including:
 
 ```bash
+python prospector-de-sites/open_design_direction_review.py \
+  --manifest sites/[slug]/review-manifest.json \
+  --design-read sites/[slug]/design-read.md
+
 python prospector-de-sites/autonomous_site_review.py \
   --html sites/[slug]/[slug].html \
   --design-read sites/[slug]/design-read.md \
@@ -221,13 +250,15 @@ If an assistant is present, verify no floating WhatsApp launcher exists.
 
 If reviews are rendered, browser QA must verify visible aggregate/count, actual review item count, evidence bindings, zero synthetic reviewer metadata, and zero unsupported reviewer-status attribution.
 
-## 10. Required review manifest
+## 11. Required review manifest
 
 The manifest records observed QA/evidence state, not convenient values chosen to make tests pass.
 
+Schema v2+ first-version manifests must include the `openDesignDirection` contract from `open-design-direction/SKILL.md`.
+
 For review evidence, `observedEntries[]` must be a real source inventory. Declared counts without corresponding entries are not proof of traversal.
 
-## 11. Mandatory adversarial review
+## 12. Mandatory adversarial review
 
 After the first PASS, perform a second review whose purpose is to fail the page.
 
@@ -238,6 +269,10 @@ Ask:
 Inspect especially:
 
 - stale or fake gpt-taste proof;
+- fake OpenDesign PASS without a real MCP probe;
+- two OpenDesign directions that differ only by color/font;
+- default OpenDesign template/house style copied into production;
+- OpenDesign-generated factual claims treated as evidence;
 - incorrect hero/frame behavior;
 - generated imagery presented as factual;
 - assistant and floating WhatsApp both present;
@@ -251,16 +286,20 @@ Inspect especially:
 - unsupported factual claims;
 - console/network failures.
 
-## 12. No self-approval by written checklist
+## 13. No self-approval by written checklist
 
 A report written by the implementing agent is not sufficient evidence. PASS requires observable proof from deterministic gates, source evidence, browser QA, and deployment checks.
 
-## 13. Final gate report
+## 14. Final gate report
 
 Use this output block:
 
 ```text
 AUTONOMOUS SITE REVIEW
+OPEN DESIGN DIRECTION: PASS/UNAVAILABLE/SKIPPED_BY_OPERATOR/N/A
+OPEN DESIGN MCP PROBE: PASS/FAIL/N/A
+OPEN DESIGN DIRECTIONS: <n>/N/A
+OPEN DESIGN GPT-TASTE REVIEW: PASS/FAIL/N/A
 GPT_TASTE_READ: PASS/FAIL
 GPT_TASTE_SHA_MATCH: PASS/FAIL
 STATIC REVIEW: PASS/FAIL
