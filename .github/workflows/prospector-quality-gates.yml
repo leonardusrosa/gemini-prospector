@@ -21,6 +21,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Agent-agnostic runtime bootstrap
+        run: python prospector.py self-test
+
       - name: Production QA credential hygiene
         run: python prospector-de-sites/repo_secret_hygiene.py
 
