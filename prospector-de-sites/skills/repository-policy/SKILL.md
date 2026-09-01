@@ -162,3 +162,35 @@ Repository CI must include deterministic regressions proving at least these stat
 - public review copy presents branded count labels such as `1 avaliação Google`.
 
 Do not remove or weaken these regressions to make a tenant pass.
+
+## 11. OpenDesign creative-direction policy
+
+For **new first-version public websites and landing pages created under review-manifest schema v2 or later**, read and obey `../open-design-direction/SKILL.md` before production HTML is written.
+
+OpenDesign is an art-direction layer only. It does not become a factual source, production authority, or deploy authority.
+
+The required order is:
+
+```text
+Prospector factual research/evidence
+-> OpenDesign direction pass
+-> gpt-taste critique/selection
+-> Prospector implementation
+-> autonomous/browser/deploy QA
+```
+
+When the local `open-design` MCP is available, generate two genuinely distinct structural directions and persist the selected/refined `open-design/DESIGN.md` before implementation.
+
+Do not use OpenDesign's bundled web/landing templates as the production source. Do not inherit a default OpenDesign house style merely because a template, seed, font rule, or section skeleton is available.
+
+`gpt-taste` remains the final creative critic/selector. Prospector factual evidence and Website Core Rules always outrank both OpenDesign and gpt-taste.
+
+If the MCP cannot be reached, record `OPEN_DESIGN_DIRECTION: UNAVAILABLE`, the actual probe failure, and `OPEN_DESIGN_FALLBACK: GPT_TASTE_ONLY`. Never claim OpenDesign PASS when another model or an ordinary prompt produced the direction.
+
+An explicit operator skip must be recorded as `SKIPPED_BY_OPERATOR`; it must not be silently treated as a successful OpenDesign pass.
+
+### Schema v2 enforcement
+
+New first-version schema v2+ manifests must include `openDesignDirection` with truthful MCP status. The deterministic autonomous reviewer must verify the manifest/design-read contract without changing legacy schema v1 sites.
+
+This integration is intended to improve first-pass art direction while preserving the existing fail-closed factual and production pipeline.
