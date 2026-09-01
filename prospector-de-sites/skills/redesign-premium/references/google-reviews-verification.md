@@ -1,347 +1,248 @@
 # Google Reviews Verification Protocol
 
-Use este protocolo em TODO redesign/novo site quando existir um Google Business Profile / Google Maps plausível para o lead.
+Use this protocol for every redesign or new local-business site when a plausible Google Business Profile / Google Maps listing exists.
 
-Objetivo: eliminar leituras ambíguas, evitar dados stale do CRM e impedir que avaliações reais sejam silenciosamente omitidas por falha de coleta.
+The objective is to prevent ambiguous profile matches, stale aggregate values, incomplete traversal, fabricated review metadata, and public review UI that cannot be traced back to source evidence.
 
-## 1. Identidade do perfil antes de ler qualquer número
+The canonical rule is `../../google-reviews-verification/SKILL.md`. This reference expands the implementation procedure and must not weaken that skill.
 
-Antes de aceitar nota, quantidade ou texto de review, confirme que a tela/painel pertence ao perfil correto.
+## 1. Identify the exact profile first
 
-A evidência deve combinar, na medida em que estiver disponível:
+Before accepting any rating, count, author, date, or review text, verify the correct listing using as many anchors as available:
 
-- nome exibido no Google
-- endereço/cidade
-- telefone/site oficial
-- URL canônica do Google Maps / Google Business Profile
-- `place_id`, `cid` ou outro identificador estável quando acessível
+- public business/professional name;
+- city and address;
+- phone and official site;
+- direct Google Maps URL;
+- Place ID and/or CID.
 
-Não misture dados de unidades, profissionais, clínicas homônimas ou perfis antigos.
+Do not mix branches, professionals, old profiles, or homonymous businesses.
 
-### Regra de identidade
+If identity remains uncertain, use `PROFILE_CONFLICT` and stop.
 
-`rating`, `reviewCount` e os reviews selecionados DEVEM vir do mesmo perfil identificado.
+## 2. Current direct Maps evidence wins
 
-Se houver dúvida sobre qual perfil é o correto, marque `PROFILE_CONFLICT` e pare a coleta. Não use o CRM para desempatar automaticamente.
+For public rendering, the current direct Maps observation takes precedence over:
 
-## 2. Fonte atual vence cache
+- CRM values;
+- search snippets;
+- old screenshots;
+- local caches;
+- prior JSON;
+- prior successful QA reports.
 
-Para página pública, a leitura do Google feita durante a pesquisa atual tem precedência sobre:
+Always record `collectedAt`.
 
-- valores antigos do CRM
-- snippets de buscas antigas
-- screenshots anteriores
-- caches locais
-- dados salvos de outro passe
+An operator-supplied current Maps observation is a conflict trigger when it disagrees with stored evidence. Recollect before PASS.
 
-O CRM pode ajudar a localizar o perfil, mas NÃO é fonte canônica de nota/quantidade para renderização pública.
+## 3. Aggregate collection
 
-Sempre registre `collectedAt`.
+From the exact profile, preserve:
 
-Se o usuário verificar explicitamente a leitura live do perfil correto, essa confirmação pode validar o aggregate atual. Ela não autoriza inventar ou reconstruir textos individuais de reviews.
+- `aggregateRating`;
+- `ratingCount`;
+- profile identity;
+- direct Maps URL;
+- timestamp;
+- raw visible header rating/count strings.
 
-## 3. Leitura inequívoca do aggregate
+After opening the reviews panel, preserve the independently visible panel count as a second observation.
 
-No mesmo perfil, capture explicitamente:
+Both count observations must reconcile with the structured count.
 
-- `aggregateRating`
-- `reviewCount`
-- nome do perfil
-- URL/identificador do perfil
-- timestamp da coleta
+## 4. Full panel traversal
 
-Não derive `reviewCount` somando páginas, snippets ou resultados de busca.
+For small profiles, traverse the complete available review/rating set.
 
-Não use um número de avaliações de um snippet e a nota de outro painel.
+Do not infer that total ratings equals textual reviews. Track every observed entry separately in `observedEntries[]`.
 
-Exemplo de evidência:
+The collector should preserve the native `data-review-id` or equivalent source identifier whenever available.
+
+Use unique source identities rather than DOM positions because Google Maps may virtualize/recycle list nodes.
+
+## 5. Per-entry factual provenance
+
+For every observed entry, preserve only values that were actually visible or available from Maps.
+
+Preferred fields:
 
 ```json
 {
-  "profileName": "Instituto Ferreira Odontologia e Harmonização Orofacial",
-  "profileUrl": "<google-maps-url>",
-  "placeIdOrCid": "<quando disponível>",
-  "aggregateRating": 5.0,
-  "reviewCount": 36,
-  "collectedAt": "2026-08-30T...",
-  "aggregateEvidence": "live-google-profile"
+  "nativeReviewId": "<actual source id or null>",
+  "author": "<actual author or null>",
+  "rating": 5,
+  "dateLabel": "<actual label or null>",
+  "hasText": false,
+  "textEvidenceId": null,
+  "sourceSurface": "direct_google_maps",
+  "collectedAt": "<ISO-8601>",
+  "provenance": {
+    "authorObserved": true,
+    "ratingObserved": true,
+    "dateLabelObserved": true
+  }
 }
 ```
 
-## 4. Coleta obrigatória de reviews para prova social
+If Maps does not expose a value, use `null`.
 
-Se o perfil correto possui múltiplas avaliações textuais positivas, coletar no mínimo **3 reviews utilizáveis**, com alvo de **4 a 6** para a seção pública.
+Never create a value to satisfy schema validation or visual composition.
 
-Para cada review, preservar:
+Forbidden synthetic metadata includes patterns such as:
 
-- nome público do avaliador
-- estrelas daquele review
-- texto verbatim
-- data ou label temporal exatamente como o Google disponibiliza
-- vínculo com o mesmo perfil verificado
+- `Paciente Verificado #1`;
+- `Reviewer #2`;
+- `Cliente #3`;
+- `Anonymous #4`;
+- invented relative dates;
+- invented reviewer type/status.
 
-Preferir reviews:
+A cryptographic hash does not establish provenance. It only verifies that the stored inputs have not changed.
 
-- específicos e informativos
-- com texto suficiente para transmitir experiência real
-- relevantes ao serviço/experiência do negócio
-- sem depender de informação sensível desnecessária
+## 6. Text reviews
 
-Não selecionar apenas reviews porque são curtos e convenientes.
+For each textual review:
 
-## 5. Ordem de tentativa de coleta
+- expand `More` / `Mais` before capture when necessary;
+- preserve author verbatim when visible;
+- preserve individual star rating;
+- preserve text verbatim;
+- preserve date/date label exactly when visible;
+- preserve native review ID when available;
+- bind the review to the same Place ID/CID.
 
-Quando reviews existem, não omita a seção na primeira dificuldade técnica. Tente, nesta ordem:
+Do not rewrite, summarize, merge, or reconstruct missing review text.
 
-1. perfil Google Maps/GBP live no navegador e painel de avaliações;
-2. rota/visualização alternativa do mesmo perfil Google;
-3. outra forma de leitura live do MESMO perfil que preserve autoria, estrelas e texto;
-4. evidência fornecida pelo usuário, como screenshots/cópia do painel do Google, validada contra o mesmo perfil.
+## 7. Star-only ratings
 
-Nunca substituir Google Reviews por depoimentos inventados, agregadores desconhecidos ou conteúdo de outro perfil.
+A star-only rating is not a missing testimonial to be filled in.
 
-## 6. Estados de verificação
+For a star-only entry:
+
+- `hasText=false`;
+- `textEvidenceId=null`;
+- public UI may show the observed stars and observed author/date;
+- if author/date are unavailable, omit them;
+- a neutral UI label such as `Avaliação sem comentário` is allowed;
+- never invent reviewer identity, date, sentiment, treatment, recommendation, or patient status.
+
+## 8. Canonical derived counts
+
+After traversal, derive rather than independently author:
+
+```text
+observedRatingEntries = observedEntries.length
+observedTextReviewEntries = count(hasText=true)
+starOnlyRatingCount = count(hasText=false)
+capturedTextReviewCount = valid same-place text evidence count
+```
+
+All declared counts must reconcile with the derived values.
+
+## 9. Verification states
 
 ### `VERIFIED_STRONG`
 
-Exige:
+Complete traversal plus at least 3 verified same-profile Google text reviews.
 
-- identidade inequívoca do perfil;
-- aggregate atual verificado;
-- pelo menos 3 reviews textuais positivos verificáveis do mesmo perfil.
+### `VERIFIED_TEXT_LIMITED`
 
-Resultado: **seção de prova social obrigatória**.
-
-O gate legado pode continuar emitindo `CAROUSEL REQUIRED: YES`, mas a implementação visual pode ser masonry quando essa for a composição superior.
+Complete traversal plus exactly 1 or 2 verified same-profile Google text reviews.
 
 ### `VERIFIED_AGGREGATE_ONLY`
 
-Identidade + nota + quantidade estão confirmadas, mas ainda não há pelo menos 3 textos individuais verificáveis.
+Complete traversal plus zero Google text reviews and a verified aggregate.
 
-Se o perfil possui múltiplas avaliações textuais visíveis, isto é um **bloqueador de coleta**, não justificativa para omitir silenciosamente a seção.
+### `COLLECTION_INCOMPLETE`
 
-Resultado: QA de Google Reviews NÃO pode ser marcado como concluído até resolver a coleta ou registrar uma limitação externa real e explícita para revisão humana.
+Traversal, provenance, text capture, count reconciliation, or binding is incomplete. Publication is blocked.
 
 ### `PROFILE_CONFLICT`
 
-Há conflito de identidade entre fontes/perfis.
-
-Resultado: não publicar aggregate nem reviews até resolver o perfil correto.
+Profile identity/provenance is unresolved. Publication is blocked.
 
 ### `NO_USABLE_REVIEWS`
 
-Perfil correto foi verificado, mas não há reviews textuais utilizáveis suficientes para uma seção rica.
+The correctly identified profile has zero ratings/reviews.
 
-Resultado: não inventar cards. Uma ou duas avaliações reais podem aparecer em formato estático, se úteis.
+Secondary review platforms are separate evidence and must never upgrade the Google-specific state.
 
-## 7. Conflitos entre números
+## 10. Fingerprinting
 
-Exemplo:
+Prefer fingerprints derived from:
 
-- CRM: 4,9 / 45
-- Google live no perfil correto: 5,0 / 36
+1. Place ID + native Google review ID;
+2. fallback observed fields only when no native ID is available.
 
-Não faça média, não escolha o maior e não preserve o CRM por conveniência.
+Fallback fingerprint inputs may include observed author, rating, date label, and text hash. Never insert generated placeholders into fingerprint inputs.
 
-Se a identidade do perfil live estiver inequívoca, a leitura live atual é a fonte pública canônica. Registre o conflito internamente e use o valor live.
+Validate separately:
 
-## 8. Evidência local obrigatória
+- source provenance;
+- fingerprint integrity;
+- traversal completeness;
+- public binding.
 
-Durante a pesquisa, salvar um artefato interno, fora do deploy público, por exemplo:
+## 11. Public presentation
 
-`sites/[slug]/research/google-reviews-evidence.json`
+Use source-neutral review-section copy. The section should look native to the client's website rather than like a copied Google widget.
 
-Estrutura recomendada:
+Do not use branded labels such as:
 
-```json
-{
-  "status": "VERIFIED_STRONG",
-  "profileName": "...",
-  "profileUrl": "...",
-  "placeIdOrCid": "...",
-  "aggregateRating": 5.0,
-  "reviewCount": 36,
-  "collectedAt": "...",
-  "reviews": [
-    {
-      "author": "...",
-      "rating": 5,
-      "text": "...",
-      "dateLabel": "..."
-    }
-  ]
-}
-```
+- `Google Reviews`;
+- `Avaliações no Google`;
+- `12 avaliações Google`.
 
-Não copie screenshot/evidência privada desnecessária para o bundle público.
+Neutral aggregate copy such as `5,0 · 12 avaliações` is appropriate.
 
-## 9. Build gate
+A small provenance icon may be used when consistent with current design rules.
 
-Antes do design final, declarar:
+Never call reviewers `patients`, `clients`, or another relationship category unless explicit evidence supports that status.
+
+## 12. All-reviews carousel
+
+When the chosen UX represents all observed rating/review entries:
+
+- `data-review-total-items` must equal `observedEntries.length`;
+- every slide must bind to exactly one observed-entry fingerprint;
+- every text slide must also bind to its exact `textEvidenceId`;
+- no duplicate fingerprints;
+- no orphan slides;
+- no fabricated metadata to make star-only cards look more complete.
+
+Use user-controlled navigation only. No forced auto-rotation.
+
+## 13. Build gate
+
+Before deploy, require explicit PASS for:
 
 ```text
-GOOGLE PROFILE IDENTIFIED: PASS/FAIL
-AGGREGATE CURRENTLY VERIFIED: PASS/FAIL
-AGGREGATE RATING: <valor>
-REVIEW COUNT: <valor>
-VERIFIED TEXT REVIEWS: <n>
-GOOGLE REVIEWS STATUS: VERIFIED_STRONG / VERIFIED_AGGREGATE_ONLY / PROFILE_CONFLICT / NO_USABLE_REVIEWS
-CAROUSEL REQUIRED: YES/NO
+REVIEW SOURCE PROVENANCE
+REVIEW FINGERPRINT INTEGRITY
+REVIEW TRAVERSAL COMPLETENESS
+REVIEW PUBLIC BINDING
+SYNTHETIC REVIEW METADATA = 0
 ```
 
-Se `VERIFIED_STRONG` e houver pelo menos 3 reviews:
+Any uncertainty is a BLOCK, not a reason to generate plausible data.
 
-`CAROUSEL REQUIRED = YES`
+## 14. Required regressions
 
-Interpretação atual: o site precisa renderizar a prova social verificada; `masonry` pode satisfazer o gate visual quando for melhor que um carousel.
+At minimum regress:
 
-## 10. Renderização
+- stale aggregate count;
+- mismatched profile header/panel count;
+- declared traversal count greater than entry inventory;
+- duplicate native review ID or fingerprint;
+- text entry without exact text evidence binding;
+- star-only entry with generated review text;
+- synthetic author such as `Paciente Verificado #1` with an otherwise valid SHA-256 fingerprint;
+- non-null author/date marked as not observed;
+- null author/date with real native review ID accepted;
+- public `patient/client` attribution without explicit source support.
 
-Quando a seção for obrigatória:
+Do not weaken regressions to make a tenant pass.
 
-- usar os textos fiéis coletados;
-- não simular widget oficial do Google;
-- NÃO mencionar `Google`, `Google Reviews`, `Avaliações no Google` ou equivalente em título, eyebrow, subtítulo, descrição, CTA, aggregate label ou qualquer outro texto visível da seção;
-- usar heading natural de prova social, por exemplo `O que nossos clientes dizem`, adaptado naturalmente ao idioma/contexto do negócio;
-- aggregate deve aparecer de forma neutra, por exemplo `5,0 · 36 avaliações`;
-- é permitido um pequeno logo/ícone do Google dentro do card individual, discreto e secundário, apenas como indicação visual de origem;
-- não usar o logo como badge, selo, heading, faixa ou elemento dominante;
-- a proveniência Google completa permanece no evidence record interno e não precisa ser repetida como copy pública;
-- estrelas individuais refletem o review individual;
-- truncamento deve ser fiel e não mudar o sentido;
-- responsivo, teclado, touch e reduced-motion conforme Website Core Rules.
+## 15. Outreach separation
 
-### HARD RULE de copy da seção
-
-A seção de prova social deve parecer uma parte natural do site do cliente, não uma seção promocional da plataforma de origem.
-
-Permitido:
-
-- `O que nossos clientes dizem`
-- `Experiências de quem já passou por aqui`
-- outro título natural e específico ao contexto
-- pequeno logo do Google dentro do review card
-
-Proibido:
-
-- `Google Reviews`
-- `Avaliações no Google`
-- `O que dizem no Google`
-- `Veja nossas avaliações no Google`
-- qualquer headline/subheadline/label visível que transforme Google no tema da seção
-
-### HARD RULE avançada de sizing/layout: Masonry testimonial grid
-
-Para depoimentos de comprimentos variados, o padrão preferido é uma **masonry/Pinterest-style grid** de cards com alturas intrínsecas diferentes.
-
-Direção visual de referência:
-
-> Create a testimonial section as a masonry/Pinterest-style grid of varied-height testimonial cards. Match the visual style, colors, typography, and overall aesthetic of the existing UI.
-
-A referência descreve composição, não autoriza copiar estilos genéricos que conflitem com o site. O masonry deve parecer nativo ao design existente.
-
-#### Gatilhos para usar masonry
-
-Prefira masonry quando:
-
-- houver 4 ou mais reviews com comprimentos variados;
-- o maior card ficar cerca de 35% ou mais alto que o menor/mediano;
-- a disposição em linha/carrossel criar corredores de espaço vazio relevantes;
-- o conjunto puder usar melhor a área disponível encaixando cards curtos sob cards mais altos.
-
-Se houver apenas 3 reviews ou alturas muito semelhantes, uma grid simples pode ser suficiente. Carousel deve ser usado apenas quando a navegação horizontal tiver valor real, não como padrão automático.
-
-#### Estrutura visual esperada
-
-- desktop: normalmente 3 colunas;
-- tablet: normalmente 2 colunas;
-- mobile: 1 coluna;
-- cada card: `height:auto`;
-- largura consistente dentro de cada breakpoint;
-- gap visual consistente;
-- cards seguintes sobem para ocupar espaço abaixo de cards curtos, formando o efeito masonry;
-- sem alinhamento obrigatório por linhas horizontais;
-- aggregate/heading continuam fora do masonry e alinhados ao sistema visual da página.
-
-#### Implementação técnica preferida
-
-Preserve a ordem DOM e implemente masonry com uma estratégia que não destrua a leitura semântica.
-
-Preferência:
-
-1. CSS Grid como base;
-2. row sizing pequeno (`grid-auto-rows`) + cálculo de `grid-row-end: span N` medido por card, ou outra implementação equivalente;
-3. `ResizeObserver` para recalcular spans quando fontes, viewport ou `Ler mais` alterarem altura;
-4. fallback natural para grid/1 coluna se JavaScript falhar.
-
-Evite `column-count` para testimonials quando a ordem visual por colunas divergir da ordem DOM e confundir teclado/leitor de tela.
-
-Não usar posicionamento absoluto manual por coordenadas salvo implementação de layout comprovadamente acessível e resiliente.
-
-#### Card anatomy
-
-Cada card mantém:
-
-- estrelas verificadas;
-- texto integral ou expansão acessível;
-- nome;
-- data/label quando verificada;
-- pequeno marcador de proveniência permitido;
-- footer imediatamente após o conteúdo.
-
-Não usar:
-
-```css
-height: 100%;
-min-height: <valor para igualar>;
-justify-content: space-between;
-align-stretch;
-```
-
-quando o objetivo for fazer todos os cards parecerem da mesma altura.
-
-#### Ordem e interação
-
-- DOM order = source of truth;
-- tab order = DOM order;
-- leitor de tela = DOM order;
-- mobile em 1 coluna = DOM order literal;
-- não reordenar depoimentos dinamicamente apenas para produzir encaixe visual melhor;
-- se houver `Ler mais`, foco permanece previsível e o card expande no lugar;
-- masonry recalcula sem overlap, clipping ou salto destrutivo de foco.
-
-#### QA visual obrigatório
-
-FAIL se houver:
-
-- grandes blocos vazios dentro de cards;
-- grandes corredores vazios que uma composição masonry deveria preencher;
-- cards sobrepostos ou cortados;
-- ordem visual/teclado incoerente;
-- layout quebrando após resize ou expansão;
-- masonry com aparência genérica que não combina com o UI existente.
-
-PASS quando:
-
-- alturas variadas parecem intencionais;
-- o espaço vertical é utilizado eficientemente;
-- cards curtos encaixam naturalmente sob cards de outras colunas;
-- largura/gaps permanecem organizados;
-- a hierarquia e estética continuam pertencendo ao site do cliente;
-- desktop/tablet/mobile mantêm boa leitura e acessibilidade.
-
-### Compatibilidade com gate legado
-
-Até o validator ser renomeado, trate:
-
-`CAROUSEL REQUIRED: YES`
-
-como:
-
-`VERIFIED REVIEW DISPLAY REQUIRED: YES`
-
-A escolha final entre masonry, grid e carousel é uma decisão de UI orientada pelo conteúdo e pelas regras acima.
-
-## 11. Não confundir prova social com cold outreach
-
-A confirmação de rating/review count para a página não significa que esses números devam ser colocados automaticamente no primeiro WhatsApp frio. As regras de outreach continuam independentes e podem proibir números stale ou desnecessários no cold contact.
+Verified review evidence for the public page does not automatically authorize using ratings, counts, or quotes in cold outreach. Outreach rules remain independent.
