@@ -33,7 +33,7 @@ No adapter is allowed to fork or weaken canonical rules.
 
 ## Supported agent runtimes
 
-The bootstrap currently recognizes these convenience labels:
+The bootstrap recognizes any runtime label. Known convenience adapters currently include:
 
 ```text
 generic
@@ -44,7 +44,7 @@ opencode
 hermes
 ```
 
-An unlisted CLI uses `generic`.
+Any unlisted CLI automatically uses the `generic` adapter.
 
 A runtime does not need a dedicated adapter if it can:
 
@@ -63,12 +63,14 @@ python prospector.py doctor --agent generic
 python prospector.py setup --agent generic --workspace .
 ```
 
-For another runtime:
+Any CLI name is accepted:
 
 ```bash
-python prospector.py doctor --agent codex
-python prospector.py setup --agent codex --workspace .
+python prospector.py doctor --agent my-new-cli
+python prospector.py setup --agent my-new-cli --workspace .
 ```
+
+Unknown labels fall back to `prospector-de-sites/adapters/generic.md`.
 
 Setup writes local ignored handoff files:
 
@@ -157,6 +159,7 @@ Important current contracts include:
 
 - `repository-policy`
 - `agent-runtime`
+- `design-judge`
 - `redesign-premium`
 - `open-design-direction`
 - `expert-hero-full-bleed`
@@ -167,6 +170,33 @@ Important current contracts include:
 - `contrato-servico`
 
 Runtime adapters must point agents to these skills rather than copying them.
+
+## Design judge portability
+
+An external current `gpt-taste` skill remains the preferred critic when the active runtime actually has it.
+
+Prospector no longer requires one vendor/runtime to provide it. Runtimes without external gpt-taste use the repository-owned:
+
+```text
+prospector-de-sites/skills/design-judge/SKILL.md
+```
+
+The deterministic autonomous-review launcher accepts either:
+
+```text
+real external gpt-taste + real path/hash
+```
+
+or:
+
+```text
+DESIGN_JUDGE_READ: PASS
+DESIGN_JUDGE_SOURCE: repository
+DESIGN_JUDGE_PATH: prospector-de-sites/skills/design-judge/SKILL.md
+DESIGN_JUDGE_SHA256: <current sha256>
+```
+
+It never permits a runtime to fake `GPT_TASTE_READ: PASS` merely because the external skill is unavailable.
 
 ## Site creation flow
 
@@ -255,6 +285,8 @@ The MCP must be probed in the active runtime. A config file alone is not proof o
 
 Antigravity-specific OpenDesign bootstrap remains documented in its adapter, but OpenDesign can be consumed by any compatible MCP client.
 
+The OpenDesign direction contract accepts either a real external gpt-taste review or the repository design-judge review. Agent portability does not reduce the selection quality bar.
+
 ## CRM
 
 The CRM MCP runs over the same local `prospector.db` used by the dashboard:
@@ -341,7 +373,7 @@ Repository runtime bootstrap self-test:
 python prospector.py self-test
 ```
 
-The GitHub quality workflow should run this together with the existing evidence and autonomous-review regressions.
+The GitHub quality workflow runs this together with the existing evidence and autonomous-review regressions.
 
 ## Portability principle
 
