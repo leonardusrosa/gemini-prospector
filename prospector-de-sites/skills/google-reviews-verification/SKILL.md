@@ -6,167 +6,223 @@ description: Mandatory fail-closed Google Reviews evidence gate for every Prospe
 
 # Google Reviews Verification
 
-This skill is mandatory together with `website-core-rules`, `redesign-premium`, and `autonomous-site-review` whenever the lead has or may have a Google Business Profile.
+This skill is mandatory together with `repository-policy`, `website-core-rules`, `redesign-premium`, and `autonomous-site-review` whenever the lead has or may have a Google Business Profile.
 
 Read the detailed protocol in:
 
 `../redesign-premium/references/google-reviews-verification.md`
 
-Validate the evidence record with:
+Validate evidence with:
 
 ```bash
 python prospector-de-sites/google_reviews_evidence.py <evidence.json> --html <site.html>
 ```
 
-A written agent report is not evidence. The current direct Maps observation, deterministic validator, and browser verification are authoritative.
+A written agent report is not evidence. Direct Maps observations, source provenance, deterministic validation, and browser verification are authoritative.
 
 ## 1. Canonical source precedence
 
-For aggregate rating and public rating/review count, source precedence is:
+For aggregate rating, count, and individual review/rating entries, source precedence is:
 
 1. the exact live Google Maps place profile;
-2. the live place header and live reviews panel for that same profile;
+2. the live profile header and opened reviews panel for that same profile;
 3. other Google surfaces only as corroboration.
 
-Never let CRM data, cached snippets, search-result summaries, old screenshots, stale JSON, or the number of captured text reviews override the direct Maps place profile.
+CRM values, cached snippets, search summaries, old screenshots, stale JSON, and prior PASS reports never override the current exact Maps profile.
 
-If direct Maps disagrees with any cached or secondary observation, the cached observation becomes stale and publication is blocked until the active evidence is recollected.
+If direct Maps disagrees with cached or secondary evidence, mark the cached evidence stale and BLOCK publication until recollection reconciles it.
 
-## 2. Required direct-Maps evidence contract
+## 2. Exact profile identity
 
-Active publishable evidence must include all of the following:
+Before trusting any rating, count, author, date, or review text, establish the exact listing using multiple anchors where available:
+
+- business/professional name;
+- city and address;
+- canonical phone;
+- official site;
+- Place ID and/or CID.
+
+Never mix reviews from different units, professionals, old profiles, or homonymous listings.
+
+## 3. Required direct-Maps evidence
+
+Publishable evidence must record the current direct Maps collection pass, including:
 
 ```json
 {
   "profileName": "...",
   "profileUrl": "https://www.google.../maps/place/...",
-  "placeIdOrCid": "...",
+  "placeId": "...",
+  "cid": "...",
   "aggregateRating": 5.0,
-  "reviewCount": 12,
+  "ratingCount": 12,
   "collectedAt": "<ISO-8601>",
   "sourceSurface": "direct_google_maps",
   "collectionMethod": "playwright_direct_maps",
   "profileHeaderObserved": true,
   "reviewsPanelOpened": true,
+  "reviewsPanelFullyTraversed": true,
   "textReviewCollectionAttempted": true,
   "aggregateObservation": {
     "ratingText": "5,0",
     "countText": "12 avaliações",
     "surfaceUrl": "https://www.google.../maps/place/..."
   },
-  "reviews": []
+  "reviewsPanelObservation": {
+    "countText": "12 avaliações",
+    "surfaceUrl": "https://www.google.../maps/place/..."
+  },
+  "reviews": [],
+  "observedEntries": []
 }
 ```
 
-`collectionMethod` may also be `browser_direct_maps` or `manual_direct_maps` when that truthfully describes the collection pass.
+`collectionMethod` may be `playwright_direct_maps`, `browser_direct_maps`, or `manual_direct_maps` only when it truthfully describes the collection.
 
-The raw header strings are mandatory because they create a second independent check against structured values. The validator must reject `reviewCount=1` when the preserved direct Maps header says `12 avaliações`.
+The header count and opened-panel count must independently match the structured rating count and the same Place ID/CID.
 
-## 3. Exact profile identity
+## 4. Complete traversal is evidence, not a declaration
 
-Before trusting rating, count, or review text, establish the exact listing using multiple identity anchors where available:
+When the site represents individual Google rating/review entries, `observedEntries[]` is the canonical traversal inventory.
 
-- business/professional name;
-- city and address;
-- canonical phone;
-- official site if present;
-- Place ID and/or CID.
+Do not trust a standalone declaration such as `observedRatingEntries: 12` without 12 corresponding observed-entry records.
 
-A review captured from another listing must never count toward the minimum review threshold.
+Derived values are:
 
-Every captured review must preserve:
+```text
+observedRatingEntries = observedEntries.length
+observedTextReviewEntries = count(hasText == true)
+starOnlyRatingCount = count(hasText == false)
+capturedTextReviewCount = count(valid same-place googleReviews.reviews)
+```
+
+All declared values must equal the derived values. Duplicate fingerprints or duplicate native review IDs are a hard FAIL.
+
+## 5. Source-observed metadata only
+
+Every factual field in an observed entry must come directly from the source or be `null`.
+
+Preferred record:
 
 ```json
 {
-  "author": "...",
+  "fingerprint": "...",
+  "fingerprintVersion": "maps-native-id-v1",
+  "nativeReviewId": "<actual Maps review id or null>",
+  "author": "<exact observed author or null>",
   "rating": 5,
-  "text": "...",
-  "dateLabel": "...",
-  "source": "google_maps",
-  "placeIdOrCid": "<same active profile id>"
+  "dateLabel": "<exact observed date label or null>",
+  "hasText": false,
+  "textEvidenceId": null,
+  "sourceSurface": "direct_google_maps",
+  "collectedAt": "<ISO-8601>",
+  "provenance": {
+    "authorObserved": true,
+    "ratingObserved": true,
+    "dateLabelObserved": true
+  }
 }
 ```
 
-## 4. Mandatory reviews-panel collection
+Hard rules:
 
-When `reviewCount > 0`:
+- preserve `nativeReviewId` whenever Maps exposes it;
+- preserve author verbatim only when observed;
+- preserve date/date label verbatim only when observed;
+- preserve rating only when observed;
+- preserve review text verbatim only when observed;
+- if author is unavailable, use `null`;
+- if date is unavailable, use `null`;
+- never invent a surrogate author to satisfy schema/layout;
+- never invent a plausible date;
+- never replace unavailable evidence with synthetic labels.
 
-- open the actual reviews panel;
-- attempt text-review collection;
-- expand truncated review text before capturing it;
-- scroll/load sufficiently to obtain the usable review set;
-- keep star-only ratings separate from text reviews.
+Forbidden examples include, but are not limited to:
 
-Do not infer that `reviewCount` equals the number of usable text reviews.
+- `Paciente Verificado #1`
+- `Paciente Verificado #7`
+- `Reviewer #2`
+- `Cliente #3`
+- `Anonymous #4`
+- `Paciente 1`
 
-## 5. Fail-closed classification
+A valid cryptographic fingerprint over fabricated metadata is still fabricated metadata and MUST BLOCK.
+
+## 6. Fingerprint integrity is not provenance
+
+Fingerprints protect integrity after collection; they do not establish that the input values were actually observed.
+
+Validation must report four independent dimensions:
+
+```text
+REVIEW SOURCE PROVENANCE
+REVIEW FINGERPRINT INTEGRITY
+REVIEW TRAVERSAL COMPLETENESS
+REVIEW PUBLIC BINDING
+```
+
+All four must PASS.
+
+When `nativeReviewId` is available, prefer a fingerprint derived from the same Place ID plus the native review ID. Fallback fingerprints may use observed fields only. Never hash generated placeholders.
+
+## 7. Text-evidence binding
+
+For every `observedEntries[]` item with `hasText=true`:
+
+- `textEvidenceId` is mandatory;
+- it must resolve to a verified same-place item in `googleReviews.reviews[]`;
+- author, rating, date label, and text must match the observed/source evidence where present.
+
+For `hasText=false`:
+
+- `textEvidenceId` must be `null`;
+- no quote, summary, sentiment, treatment, or recommendation text may be generated.
+
+## 8. Canonical states
+
+State depends on complete traversal, not aggregate count alone.
 
 ### `VERIFIED_STRONG`
 
-The exact direct Maps profile is verified, aggregate/count are current, and at least 3 same-profile text reviews are captured and verified.
+Complete direct-Maps traversal and at least 3 verified same-profile text reviews.
 
-Result:
+### `VERIFIED_TEXT_LIMITED`
 
-```text
-REVIEW DISPLAY REQUIRED: YES
-GOOGLE REVIEWS QA: PASS
-```
-
-Use 4 to 6 verified review cards when available; minimum 3.
+Complete direct-Maps traversal and exactly 1 or 2 verified same-profile text reviews.
 
 ### `VERIFIED_AGGREGATE_ONLY`
 
-This state is allowed only when the direct Maps profile itself reports fewer than 3 total ratings/reviews and there are not enough usable text reviews to reach the display minimum.
-
-Render only what is verified. Never fabricate text.
+Complete direct-Maps traversal and zero text reviews, with a verified aggregate.
 
 ### `COLLECTION_INCOMPLETE`
 
-If direct Maps reports 3 or more ratings/reviews but fewer than 3 verified text reviews were captured, this is a collection failure, not a valid aggregate-only PASS.
-
-Result:
-
-```text
-GOOGLE REVIEWS QA: BLOCKED
-```
-
-Continue collection or request human evidence. Never downgrade to aggregate-only merely because scraping/browser collection failed.
+Any required traversal, provenance, count reconciliation, text capture, or evidence binding is incomplete. BLOCK.
 
 ### `PROFILE_CONFLICT`
 
-Any unresolved identity/provenance/count/rating conflict blocks publication.
+Identity/provenance conflict. BLOCK.
 
 ### `NO_USABLE_REVIEWS`
 
-Only valid when the correctly identified direct Maps profile has zero ratings/reviews.
+The correctly identified profile has zero ratings/reviews.
 
-Never use this state as a fallback for failed collection.
+Secondary sources may be retained separately but must never upgrade the Google-specific state.
 
-## 6. Operator-supplied direct Maps observations
+## 9. Operator conflict rule
 
-If the operator supplies a current direct Maps URL, screenshot, rating, or review count that conflicts with stored evidence, treat that as a conflict trigger.
+If the operator supplies a current direct Maps URL, screenshot, rating, count, or other observation that conflicts with stored evidence:
 
-Record it as `operatorObservation` with an observation timestamp. If it is newer than or equal to the active evidence and the rating/count differs:
+- mark stored evidence stale;
+- recollect the exact profile;
+- BLOCK until reconciled.
 
-- mark the active evidence stale;
-- recollect the exact direct Maps profile;
-- block PASS until the conflict is reconciled.
+Never dismiss a newer direct observation because older evidence previously passed.
 
-Do not dismiss the operator observation because older cached evidence previously passed QA.
+## 10. Evidence-to-DOM binding
 
-## 7. Freshness and stale-state rule
+Public output must match active evidence exactly.
 
-Google review count is mutable public data.
-
-A previous successful collection does not freeze the value indefinitely. For first-version generation, review refreshes, or when a current conflicting observation is supplied, collect the live direct Maps state again.
-
-Historical evidence may be retained only if explicitly marked stale/superseded. Contradictory active evidence is forbidden.
-
-## 8. Evidence to DOM binding
-
-The rendered site must match the active evidence exactly.
-
-At minimum the review section must expose deterministic hooks such as:
+At minimum:
 
 ```html
 <section
@@ -176,76 +232,83 @@ At minimum the review section must expose deterministic hooks such as:
 >
 ```
 
-Browser QA must verify both the attributes and the visible user-facing values.
+If an all-reviews carousel is used:
 
-It is not sufficient for `data-review-count="12"` to be correct while visible copy still says `1 avaliação`.
+```html
+<div data-role="reviews-carousel" data-review-total-items="12">
+  <article
+    data-role="review-carousel-item"
+    data-review-entry-fingerprint="..."
+  >...</article>
+</div>
+```
 
-Any visible count that disagrees with the active direct Maps evidence is a hard FAIL.
+Every carousel item must bind to one `observedEntries[]` record. Text items must additionally bind to their exact `textEvidenceId`.
 
-## 9. Public source-neutral presentation
+A page that renders 2 items from 12 observed entries while claiming an all-reviews carousel is a FAIL.
+
+## 11. Public wording and reviewer status
 
 Google is provenance, not the main public message.
 
-In the public reviews UI:
+Do not use branded count labels such as `12 avaliações Google` in the review section. Neutral copy such as `Avaliações`, `5,0`, and `12 avaliações` is preferred.
 
-- do not use `Google Reviews`, `Avaliações no Google`, `O que dizem no Google`, `Veja nossas avaliações no Google`, or equivalent branded headings/labels;
-- do not display labels such as `1 avaliação Google` or `12 avaliações Google`;
-- use natural neutral copy such as `Avaliações`, `5,0`, `12 avaliações`;
-- a small Google logo/icon may be used discretely for provenance;
-- do not simulate official Google widget chrome;
-- keep full provenance in the internal evidence record.
+Do not call reviewers `patients`, `clients`, or equivalent merely because they left a Google review. Reviewer status is a separate factual claim and requires explicit source support.
 
-## 10. Review-card rendering
+For a star-only entry with no observed author/date, omit those fields in the public card. Do not display generated placeholders.
 
-For `VERIFIED_STRONG`, every public review card must map to an exact evidence object. Do not invent, merge, paraphrase-as-verbatim, or mix reviews from different profiles.
+## 12. Public rendering
 
-When review lengths vary significantly, prefer an accessible masonry/Pinterest-style layout:
+For text reviews, render exact verified text only. Do not invent, merge, paraphrase-as-verbatim, or mix profiles.
 
-- 3 columns desktop;
-- 2 columns tablet;
-- 1 column mobile;
-- intrinsic card heights;
-- consistent gaps;
-- DOM order remains the reading order;
-- no fixed equal-height cards;
-- no clipping/truncation merely to equalize cards;
-- resize/font loading/expansion must recalculate cleanly.
+For star-only ratings, render only observed factual metadata plus a neutral label such as `Avaliação sem comentário` when appropriate. The neutral label describes the absence of review text; it must not imply patient verification.
 
-A carousel remains allowed when review lengths are similar and horizontal browsing is genuinely useful.
+Carousel, grid, or masonry may be chosen based on the verified content and UX, but no visual requirement may justify inventing missing factual metadata.
 
-## 11. Mandatory adversarial check
+## 13. Mandatory adversarial check
 
-Before final PASS, explicitly ask:
+Before final PASS, ask:
 
-> Does the exact live Google Maps place profile currently show a different aggregate rating or review count than the evidence and public page?
+> Could any review author, date, rating, text, reviewer status, or count have been generated to make the schema, layout, or gate pass rather than observed from the source?
 
 If yes or uncertain: BLOCK.
 
 Also check:
 
 - wrong listing/CID;
-- stale cached count;
-- count accidentally taken from an individual review element;
-- profile header not fully loaded;
+- stale count;
+- count captured from an individual review element;
 - reviews panel never opened;
-- locale-dependent selector error;
-- captured text reviews from another listing;
-- visible site count differing from evidence attributes.
+- traversal count declared without entry inventory;
+- duplicate native review ID/fingerprint;
+- missing native review IDs that the collector actually observed;
+- synthetic author/date placeholders;
+- valid hash over fabricated metadata;
+- public reviewer/patient attribution unsupported by evidence;
+- visible public values disagreeing with evidence.
 
-## 12. Required report
+## 14. Required report
 
 ```text
 GOOGLE PROFILE IDENTIFIED: PASS/FAIL
 DIRECT MAPS SOURCE: PASS/FAIL
 PROFILE HEADER OBSERVED: PASS/FAIL
 REVIEWS PANEL OPENED: PASS/FAIL
-TEXT REVIEW COLLECTION ATTEMPTED: PASS/FAIL
-AGGREGATE CURRENTLY VERIFIED: PASS/FAIL
+REVIEWS PANEL FULLY TRAVERSED: PASS/FAIL
 AGGREGATE RATING: <value>
-REVIEW COUNT: <value>
+RATING COUNT: <value>
+OBSERVED ENTRIES: <n>
+UNIQUE NATIVE REVIEW IDS: <n>
 VERIFIED TEXT REVIEWS: <n>
-GOOGLE REVIEWS STATUS: VERIFIED_STRONG / VERIFIED_AGGREGATE_ONLY / COLLECTION_INCOMPLETE / PROFILE_CONFLICT / NO_USABLE_REVIEWS
-VISIBLE SITE COUNT MATCHES EVIDENCE: PASS/FAIL
+STAR-ONLY RATINGS: <n>
+ENTRIES WITH AUTHOR=NULL: <n>
+ENTRIES WITH DATE=NULL: <n>
+SYNTHETIC REVIEW METADATA: 0/<n>
+REVIEW SOURCE PROVENANCE: PASS/FAIL
+REVIEW FINGERPRINT INTEGRITY: PASS/FAIL
+REVIEW TRAVERSAL COMPLETENESS: PASS/FAIL
+REVIEW PUBLIC BINDING: PASS/FAIL
+GOOGLE REVIEWS STATUS: VERIFIED_STRONG / VERIFIED_TEXT_LIMITED / VERIFIED_AGGREGATE_ONLY / COLLECTION_INCOMPLETE / PROFILE_CONFLICT / NO_USABLE_REVIEWS
 GOOGLE REVIEWS QA: PASS/BLOCKED
 ```
 
