@@ -50,7 +50,7 @@ Never allow OpenDesign to invent or silently change:
 
 If OpenDesign output conflicts with verified evidence, discard the conflicting part rather than adapting the evidence.
 
-## 2. MCP expectation
+## 2. MCP expectation and local bootstrap
 
 The Antigravity MCP server alias is:
 
@@ -58,7 +58,29 @@ The Antigravity MCP server alias is:
 open-design
 ```
 
-The operator configures the local OpenDesign MCP outside the repository. Do not commit machine-specific user paths, secrets, API keys, daemon IPC paths, or local app data paths into Prospector.
+OpenDesign's verified Antigravity config location is the user-level file:
+
+```text
+~/.gemini/antigravity/mcp_config.json
+```
+
+Prospector includes a safe Windows bootstrap wrapper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File prospector-de-sites/install_open_design_antigravity.ps1
+```
+
+The wrapper calls OpenDesign's own `mcp install antigravity` merge path, then verifies that `mcpServers.open-design` exists. It derives user-specific paths from the Windows environment and does not commit them to the repository.
+
+Use `-PrintOnly` when only a dry-run/preview is desired:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File prospector-de-sites/install_open_design_antigravity.ps1 -PrintOnly
+```
+
+After a first-time MCP install, Antigravity may require an Agent-session reload/restart before the newly registered tools appear. Do not claim the MCP is available until it can actually be probed from the active session.
+
+Do not commit machine-specific user paths, secrets, API keys, daemon IPC paths, or local app data paths into Prospector.
 
 At the start of the pass:
 
