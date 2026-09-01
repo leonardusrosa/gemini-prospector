@@ -24,6 +24,9 @@ jobs:
       - name: Agent-agnostic runtime bootstrap
         run: python prospector.py self-test
 
+      - name: Portable design-judge regressions
+        run: python test_agent_runtime_portability.py
+
       - name: Production QA credential hygiene
         run: python prospector-de-sites/repo_secret_hygiene.py
 
