@@ -18,12 +18,13 @@ from typing import Any, Dict, List
 
 
 VERIFIED_STRONG = "VERIFIED_STRONG"
+VERIFIED_TEXT_LIMITED = "VERIFIED_TEXT_LIMITED"
 VERIFIED_AGGREGATE_ONLY = "VERIFIED_AGGREGATE_ONLY"
 COLLECTION_INCOMPLETE = "COLLECTION_INCOMPLETE"
 PROFILE_CONFLICT = "PROFILE_CONFLICT"
 NO_USABLE_REVIEWS = "NO_USABLE_REVIEWS"
 
-PASSING_STATUSES = {VERIFIED_STRONG, VERIFIED_AGGREGATE_ONLY, NO_USABLE_REVIEWS}
+PASSING_STATUSES = {VERIFIED_STRONG, VERIFIED_TEXT_LIMITED, VERIFIED_AGGREGATE_ONLY, NO_USABLE_REVIEWS}
 DIRECT_SOURCE_SURFACE = "direct_google_maps"
 DIRECT_COLLECTION_METHODS = {
     "playwright_direct_maps",
@@ -95,7 +96,7 @@ def _validate_direct_maps_provenance(data: Dict[str, Any], errors: List[str]) ->
     header_observed = data.get("profileHeaderObserved") is True
     reviews_panel_opened = data.get("reviewsPanelOpened") is True
     text_collection_attempted = data.get("textReviewCollectionAttempted") is True
-    count = data.get("reviewCount")
+    count = data.get("ratingCount") if data.get("ratingCount") is not None else data.get("reviewCount")
     rating = data.get("aggregateRating")
     observation = data.get("aggregateObservation")
     panel_observation = data.get("reviewsPanelObservation")
@@ -196,7 +197,7 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
     profile_url = data.get("profileUrl")
     place_id = data.get("placeIdOrCid")
     rating = data.get("aggregateRating")
-    count = data.get("reviewCount")
+    count = data.get("ratingCount") if data.get("ratingCount") is not None else data.get("reviewCount")
     collected_at = data.get("collectedAt")
     reviews = data.get("reviews") or []
     profile_conflict = bool(data.get("profileConflict"))
@@ -211,7 +212,7 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
     if not isinstance(rating, (int, float)) or not (0 <= float(rating) <= 5):
         errors.append("aggregateRating must be a number between 0 and 5.")
     if not isinstance(count, int) or count < 0:
-        errors.append("reviewCount must be a non-negative integer.")
+        errors.append("ratingCount or reviewCount must be a non-negative integer.")
     if _parse_timestamp(collected_at) is None:
         errors.append("collectedAt must be an ISO-8601 timestamp from the current direct Maps collection pass.")
     if not isinstance(reviews, list):
@@ -263,24 +264,45 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
     if errors:
         return EvidenceResult(PROFILE_CONFLICT, False, errors, warnings, len(verified_reviews))
 
+    # Panel completeness checks:
+    # A profile can have total ratings but only a subset of entries with text.
+    # We require observedRatingEntries == ratingCount and capturedTextReviewCount == observedTextReviewEntries.
+    observed_rating_entries = data.get("observedRatingEntries")
+    observed_text_entries = data.get("observedTextReviewEntries")
+    captured_text_count = data.get("capturedTextReviewCount")
+
+    if isinstance(count, int) and count > 0:
+        if observed_rating_entries is not None and observed_rating_entries != count:
+            errors.append(
+                f"Direct Maps panel traversal incomplete: observedRatingEntries ({observed_rating_entries}) != ratingCount ({count}). "
+                "COLLECTION_INCOMPLETE: keep scrolling until all entries are traversed or request human review."
+            )
+            return EvidenceResult(COLLECTION_INCOMPLETE, False, errors, warnings, len(verified_reviews))
+
+        if observed_text_entries is not None and len(verified_reviews) != observed_text_entries:
+            errors.append(
+                f"Discovered {observed_text_entries} textual reviews during panel traversal, but only {len(verified_reviews)} verified records were captured. "
+                "COLLECTION_INCOMPLETE: all observed textual reviews must be captured as evidence or deterministically rejected."
+            )
+            return EvidenceResult(COLLECTION_INCOMPLETE, False, errors, warnings, len(verified_reviews))
+
+        if captured_text_count is not None and captured_text_count != len(verified_reviews):
+            errors.append(
+                f"capturedTextReviewCount ({captured_text_count}) does not match captured review count ({len(verified_reviews)})."
+            )
+            return EvidenceResult(COLLECTION_INCOMPLETE, False, errors, warnings, len(verified_reviews))
+
+    # Review status determination based on captured verified textual reviews
     if len(verified_reviews) >= minimum_reviews:
         return EvidenceResult(VERIFIED_STRONG, True, [], warnings, len(verified_reviews))
 
-    if isinstance(count, int) and count >= minimum_reviews:
-        errors.append(
-            f"Direct Maps profile reports {count} reviews/ratings, but only {len(verified_reviews)} verified text reviews were captured. "
-            "Collection is incomplete: keep opening/scrolling the live reviews panel or request human evidence. Aggregate-only PASS is forbidden."
-        )
-        return EvidenceResult(COLLECTION_INCOMPLETE, False, errors, warnings, len(verified_reviews))
+    if len(verified_reviews) in {1, 2}:
+        return EvidenceResult(VERIFIED_TEXT_LIMITED, True, [], warnings, len(verified_reviews))
 
     if isinstance(count, int) and count > 0:
-        warnings.append(
-            f"Direct Maps profile reports {count} rating(s), with {len(verified_reviews)} verified text review(s). "
-            "Render the verified aggregate truthfully and never fabricate missing review text."
-        )
-        return EvidenceResult(VERIFIED_AGGREGATE_ONLY, False, [], warnings, len(verified_reviews))
+        return EvidenceResult(VERIFIED_AGGREGATE_ONLY, False, [], warnings, 0)
 
-    return EvidenceResult(NO_USABLE_REVIEWS, False, [], warnings, len(verified_reviews))
+    return EvidenceResult(NO_USABLE_REVIEWS, False, [], warnings, 0)
 
 
 FORBIDDEN_VISIBLE_PATTERNS = [

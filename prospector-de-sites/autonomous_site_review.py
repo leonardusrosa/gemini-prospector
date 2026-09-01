@@ -199,6 +199,7 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
     state = str(gr_cfg.get("state") or "").upper().strip()
     valid_states = {
         "VERIFIED_STRONG",
+        "VERIFIED_TEXT_LIMITED",
         "VERIFIED_AGGREGATE_ONLY",
         "NO_USABLE_REVIEWS",
         "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE",
@@ -225,25 +226,41 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
     section_required = bool(gr_cfg.get("reviewSectionRequired", False))
     section_rendered = bool(gr_cfg.get("reviewSectionRendered", False))
 
-    # Build inventory of verified text reviews from reviewEvidence and googleReviews
-    verified_reviews_inventory: dict[str, dict] = {}
-    review_evidence_cfg = section(manifest, "reviewEvidence")
-    for source in review_evidence_cfg.get("sources", []):
-        for r in source.get("reviews", []):
-            r_id = r.get("id")
-            if r_id and r.get("verified"):
-                verified_reviews_inventory[r_id] = r
-
+    # Build inventory of verified text reviews from googleReviews
+    google_verified_reviews: dict[str, dict] = {}
     for r in gr_cfg.get("reviews", []):
         r_id = r.get("id")
-        if r_id and r.get("verified"):
-            verified_reviews_inventory[r_id] = r
+        if r_id and r.get("verified") and r.get("hasText", True) and r.get("text"):
+            google_verified_reviews[r_id] = r
 
-    total_verified_texts = len(verified_reviews_inventory)
+    # Panel completeness validation
+    observed_rating_entries = gr_cfg.get("observedRatingEntries")
+    observed_text_entries = gr_cfg.get("observedTextReviewEntries")
+    captured_text_count = gr_cfg.get("capturedTextReviewCount")
+
+    if isinstance(rating_count, int) and rating_count > 0:
+        if observed_rating_entries is not None:
+            review.check(
+                "google_reviews_panel_traversal_complete",
+                observed_rating_entries == rating_count,
+                f"observedRatingEntries ({observed_rating_entries}) must equal ratingCount ({rating_count})",
+            )
+        if observed_text_entries is not None:
+            review.check(
+                "google_reviews_text_capture_complete",
+                len(google_verified_reviews) == observed_text_entries,
+                f"captured text reviews ({len(google_verified_reviews)}) must equal observedTextReviewEntries ({observed_text_entries})",
+            )
+        if captured_text_count is not None:
+            review.check(
+                "google_reviews_captured_count_match",
+                captured_text_count == len(google_verified_reviews),
+                f"capturedTextReviewCount ({captured_text_count}) must equal captured text reviews ({len(google_verified_reviews)})",
+            )
 
     requires_section = (
-        total_verified_texts > 0
-        or state in {"VERIFIED_STRONG", "VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE"}
+        len(google_verified_reviews) > 0
+        or state in {"VERIFIED_STRONG", "VERIFIED_TEXT_LIMITED", "VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE"}
         or (verified_profile and has_ratings and state != "PROFILE_CONFLICT")
     )
 
@@ -291,18 +308,21 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
             has_stale_1 = bool(re.search(r"\b1\s+avalia[cç][aã]o\b", text_only, re.IGNORECASE))
             review.check("google_reviews_no_stale_count_text", not has_stale_1, f"Review section cannot display '1 avaliação' when ratingCount is {expected_count}")
 
-        if total_verified_texts >= 1:
-            # Text Review / Multi-source mode
+        if state in {"VERIFIED_STRONG", "VERIFIED_TEXT_LIMITED"}:
             review_mode = extract_attr(tag_str, "data-review-mode")
             review.check(
                 "google_reviews_mode_text",
                 review_mode in {"verified-text", "multi-source", "text-reviews"},
-                f"Verified text reviews present ({total_verified_texts}) require data-review-mode in ['verified-text', 'multi-source', 'text-reviews']",
+                f"Verified text reviews present ({len(google_verified_reviews)}) require data-review-mode in ['verified-text', 'multi-source', 'text-reviews']",
             )
 
             # Find review cards
             card_matches = list(re.finditer(r"<(?P<tag>article|div)\b(?P<attrs>[^>]*)data-role=['\"]review-card['\"](?P<rest>[^>]*)>(?P<content>.*?)</(?P=tag)>", section_inner, re.DOTALL | re.IGNORECASE))
-            review.check("google_reviews_cards_present", len(card_matches) > 0, "Verified text reviews required review cards with data-role=\"review-card\"")
+            
+            if state == "VERIFIED_STRONG":
+                review.check("google_reviews_cards_present", len(card_matches) >= 3, f"VERIFIED_STRONG state requires >= 3 review cards, found {len(card_matches)}")
+            elif state == "VERIFIED_TEXT_LIMITED":
+                review.check("google_reviews_cards_present", len(card_matches) in {1, 2}, f"VERIFIED_TEXT_LIMITED state requires 1-2 review cards, found {len(card_matches)}")
 
             for card in card_matches:
                 full_card_tag = card.group("attrs") + " " + card.group("rest")
@@ -311,12 +331,12 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
                 
                 review.check(
                     "review_card_evidence_id_valid",
-                    bool(ev_id and ev_id in verified_reviews_inventory),
-                    f"Review card data-review-evidence-id={ev_id!r} must exist in verified reviewEvidence inventory",
+                    bool(ev_id and ev_id in google_verified_reviews),
+                    f"Review card data-review-evidence-id={ev_id!r} must exist in googleReviews.reviews evidence inventory",
                 )
 
-                if ev_id and ev_id in verified_reviews_inventory:
-                    ev_item = verified_reviews_inventory[ev_id]
+                if ev_id and ev_id in google_verified_reviews:
+                    ev_item = google_verified_reviews[ev_id]
                     ev_author = ev_item.get("author", "").strip().lower()
                     ev_text = ev_item.get("text", "").strip()
                     card_plain_text = re.sub(r"<[^>]+>", " ", card_content).strip()
@@ -327,14 +347,13 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
                         f"Review card {ev_id} must contain author '{ev_item.get('author')}'",
                     )
                     
-                    # Check that the text or significant portion matches exactly
                     ev_text_clean = " ".join(ev_text.split()[:8])
                     review.check(
                         "review_card_text_match",
                         ev_text_clean.lower() in card_plain_text.lower(),
                         f"Review card {ev_id} text must match evidence snippet '{ev_text_clean}'",
                     )
-        else:
+        elif state in {"VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE"}:
             # Aggregate-only mode
             review_mode = extract_attr(tag_str, "data-review-mode")
             review.check("google_reviews_mode_aggregate", review_mode == "aggregate-only", "Aggregate-only review section requires data-review-mode=\"aggregate-only\"")

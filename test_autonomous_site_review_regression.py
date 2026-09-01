@@ -19,6 +19,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "prospector-de-sites"))
 REVIEWER = ROOT / "prospector-de-sites" / "autonomous_site_review.py"
 
 BASE_MANIFEST = {
@@ -385,19 +386,23 @@ def test_google_reviews_verified_strong_with_rendered_section_passes():
     manifest["googleReviews"] = {
         "checked": True,
         "state": "VERIFIED_STRONG",
-        "usableTextReviews": 1,
+        "usableTextReviews": 3,
         "reviewSectionRequired": True,
         "reviewSectionRendered": True,
         "reviews": [
-            {
-                "id": "gr-1",
-                "author": "Carlos",
-                "text": "Excelente atendimento",
-                "verified": True,
-            }
+            {"id": "gr-1", "author": "Carlos", "text": "Excelente atendimento", "verified": True},
+            {"id": "gr-2", "author": "Ana", "text": "Muito atenciosa e pontual", "verified": True},
+            {"id": "gr-3", "author": "Bruno", "text": "Ambiente limpo e seguro", "verified": True},
         ],
     }
-    html = PASS_HTML.replace('</body>', '<section data-role="reviews" data-review-mode="text-reviews"><div data-role="review-card" data-review-evidence-id="gr-1"><p>Excelente atendimento</p><span>Carlos</span></div></section></body>')
+    html = PASS_HTML.replace(
+        '</body>',
+        '''<section data-role="reviews" data-review-mode="text-reviews">
+          <div data-role="review-card" data-review-evidence-id="gr-1"><p>Excelente atendimento</p><span>Carlos</span></div>
+          <div data-role="review-card" data-review-evidence-id="gr-2"><p>Muito atenciosa e pontual</p><span>Ana</span></div>
+          <div data-role="review-card" data-review-evidence-id="gr-3"><p>Ambiente limpo e seguro</p><span>Bruno</span></div>
+        </section></body>'''
+    )
     code, payload = run_case(html=html, manifest=manifest)
     assert code == 0
     assert payload["autonomousReviewPass"] is True
@@ -749,17 +754,226 @@ def test_banned_stale_count_text_fails_when_count_differs():
     assert "google_reviews_no_stale_count_text" in failed_keys(payload)
 
 
-def test_multi_source_verified_text_review_allows_card_when_google_is_aggregate_only():
+def test_case_a_incomplete_traversal_blocks():
+    from google_reviews_evidence import validate_evidence, COLLECTION_INCOMPLETE
+    data = {
+        "profileName": "Odontologia Dra. Aline Iost",
+        "profileUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+        "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+        "sourceSurface": "direct_google_maps",
+        "collectionMethod": "playwright_direct_maps",
+        "profileHeaderObserved": True,
+        "reviewsPanelOpened": True,
+        "reviewsPanelFullyTraversed": False,
+        "textReviewCollectionAttempted": True,
+        "aggregateRating": 5.0,
+        "ratingCount": 12,
+        "observedRatingEntries": 5,
+        "observedTextReviewEntries": 1,
+        "capturedTextReviewCount": 1,
+        "aggregateObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "ratingText": "5,0",
+            "countText": "12 avaliações"
+        },
+        "reviewsPanelObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "countText": "12 avaliações"
+        },
+        "collectedAt": "2026-08-31T20:55:00Z",
+        "reviews": [
+            {
+                "author": "Arthur Di Donato",
+                "rating": 5,
+                "dateLabel": "um ano atrás",
+                "text": "Gostaria de expressar minha profunda gratidão.",
+                "source": "google_maps",
+                "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A"
+            }
+        ]
+    }
+    res = validate_evidence(data)
+    assert res.status == COLLECTION_INCOMPLETE
+    assert not res.pass_for_publish
+
+
+def test_case_b_aggregate_only_complete_traversal_passes():
+    from google_reviews_evidence import validate_evidence, VERIFIED_AGGREGATE_ONLY
+    data = {
+        "profileName": "Odontologia Dra. Aline Iost",
+        "profileUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+        "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+        "sourceSurface": "direct_google_maps",
+        "collectionMethod": "playwright_direct_maps",
+        "profileHeaderObserved": True,
+        "reviewsPanelOpened": True,
+        "reviewsPanelFullyTraversed": True,
+        "textReviewCollectionAttempted": True,
+        "aggregateRating": 5.0,
+        "ratingCount": 12,
+        "observedRatingEntries": 12,
+        "observedTextReviewEntries": 0,
+        "capturedTextReviewCount": 0,
+        "aggregateObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "ratingText": "5,0",
+            "countText": "12 avaliações"
+        },
+        "reviewsPanelObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "countText": "12 avaliações"
+        },
+        "collectedAt": "2026-08-31T20:55:00Z",
+        "reviews": []
+    }
+    res = validate_evidence(data)
+    assert res.status == VERIFIED_AGGREGATE_ONLY
+    assert res.pass_for_publish
+
+
+def test_case_c_verified_text_limited_passes():
+    from google_reviews_evidence import validate_evidence, VERIFIED_TEXT_LIMITED
+    data = {
+        "profileName": "Odontologia Dra. Aline Iost",
+        "profileUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+        "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+        "sourceSurface": "direct_google_maps",
+        "collectionMethod": "playwright_direct_maps",
+        "profileHeaderObserved": True,
+        "reviewsPanelOpened": True,
+        "reviewsPanelFullyTraversed": True,
+        "textReviewCollectionAttempted": True,
+        "aggregateRating": 5.0,
+        "ratingCount": 12,
+        "observedRatingEntries": 12,
+        "observedTextReviewEntries": 2,
+        "capturedTextReviewCount": 2,
+        "aggregateObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "ratingText": "5,0",
+            "countText": "12 avaliações"
+        },
+        "reviewsPanelObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "countText": "12 avaliações"
+        },
+        "collectedAt": "2026-08-31T20:55:00Z",
+        "reviews": [
+            {
+                "author": "Arthur Di Donato",
+                "rating": 5,
+                "dateLabel": "um ano atrás",
+                "text": "Gostaria de expressar minha profunda gratidão pelo excelente trabalho.",
+                "source": "google_maps",
+                "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A"
+            },
+            {
+                "author": "João Victor Velasco",
+                "rating": 5,
+                "dateLabel": "5 anos atrás",
+                "text": "A Dra. Aline me atendeu com muita competência e profissionalismo.",
+                "source": "google_maps",
+                "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A"
+            }
+        ]
+    }
+    res = validate_evidence(data)
+    assert res.status == VERIFIED_TEXT_LIMITED
+    assert res.pass_for_publish
+    assert res.verified_review_count == 2
+
+
+def test_case_d_verified_strong_passes():
+    from google_reviews_evidence import validate_evidence, VERIFIED_STRONG
+    data = {
+        "profileName": "Odontologia Dra. Aline Iost",
+        "profileUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+        "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+        "sourceSurface": "direct_google_maps",
+        "collectionMethod": "playwright_direct_maps",
+        "profileHeaderObserved": True,
+        "reviewsPanelOpened": True,
+        "reviewsPanelFullyTraversed": True,
+        "textReviewCollectionAttempted": True,
+        "aggregateRating": 5.0,
+        "ratingCount": 12,
+        "observedRatingEntries": 12,
+        "observedTextReviewEntries": 5,
+        "capturedTextReviewCount": 5,
+        "aggregateObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "ratingText": "5,0",
+            "countText": "12 avaliações"
+        },
+        "reviewsPanelObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "countText": "12 avaliações"
+        },
+        "collectedAt": "2026-08-31T20:55:00Z",
+        "reviews": [
+            {"author": f"User {i}", "rating": 5, "dateLabel": "1 ano atrás", "text": f"Review {i} text here", "source": "google_maps", "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A"}
+            for i in range(1, 6)
+        ]
+    }
+    res = validate_evidence(data)
+    assert res.status == VERIFIED_STRONG
+    assert res.pass_for_publish
+    assert res.verified_review_count == 5
+
+
+def test_case_e_uncaptured_text_reviews_blocks():
+    from google_reviews_evidence import validate_evidence, COLLECTION_INCOMPLETE
+    data = {
+        "profileName": "Odontologia Dra. Aline Iost",
+        "profileUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+        "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+        "sourceSurface": "direct_google_maps",
+        "collectionMethod": "playwright_direct_maps",
+        "profileHeaderObserved": True,
+        "reviewsPanelOpened": True,
+        "reviewsPanelFullyTraversed": True,
+        "textReviewCollectionAttempted": True,
+        "aggregateRating": 5.0,
+        "ratingCount": 12,
+        "observedRatingEntries": 12,
+        "observedTextReviewEntries": 5,
+        "capturedTextReviewCount": 3,
+        "aggregateObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "ratingText": "5,0",
+            "countText": "12 avaliações"
+        },
+        "reviewsPanelObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "countText": "12 avaliações"
+        },
+        "collectedAt": "2026-08-31T20:55:00Z",
+        "reviews": [
+            {"author": f"User {i}", "rating": 5, "dateLabel": "1 ano atrás", "text": f"Review {i} text here", "source": "google_maps", "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A"}
+            for i in range(1, 4)
+        ]
+    }
+    res = validate_evidence(data)
+    assert res.status == COLLECTION_INCOMPLETE
+    assert not res.pass_for_publish
+
+
+def test_case_f_secondary_reviews_do_not_upgrade_google_state():
     manifest = json.loads(json.dumps(BASE_MANIFEST))
     manifest["googleReviews"] = {
         "checked": True,
+        "sourceSurface": "direct_google_maps",
         "verifiedGoogleProfile": True,
-        "state": "VERIFIED_STRONG",
+        "state": "VERIFIED_AGGREGATE_ONLY",
         "aggregateRating": 5.0,
         "ratingCount": 12,
+        "observedRatingEntries": 12,
+        "observedTextReviewEntries": 0,
+        "capturedTextReviewCount": 0,
         "usableTextReviews": 0,
         "reviewSectionRequired": True,
         "reviewSectionRendered": True,
+        "reviews": []
     }
     manifest["reviewEvidence"] = {
         "checked": True,
@@ -781,13 +995,81 @@ def test_multi_source_verified_text_review_allows_card_when_google_is_aggregate_
             }
         ],
     }
-    # HTML with verified text card
+    # HTML with aggregate-only section for Google
     html = PASS_HTML.replace(
         '</body>',
-        '<section data-role="reviews" data-review-mode="verified-text" data-review-rating="5.0" data-review-count="12"><div class="container"><article data-role="review-card" data-review-evidence-id="doctoralia-daniel-2022-05-04"><p>Excelente profissional. Cuidadosa, pontual. Faz um trabalho de muita qualidade.</p><span>Daniel</span></article></div></section></body>',
+        '<section data-role="reviews" data-review-mode="aggregate-only" data-review-presentation="compact-summary" data-review-rating="5.0" data-review-count="12"><div class="container"><div data-role="reviews-summary"><p>5,0 · 12 avaliações</p></div></div></section></body>',
     )
     code, payload = run_case(html=html, manifest=manifest)
-    assert code == 0, f"Expected PASS but got failure: {payload}"
+    assert code == 0, f"Expected PASS for VERIFIED_AGGREGATE_ONLY with secondary evidence present: {payload}"
+
+
+def test_iost_verified_text_limited_two_real_cards_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "sourceSurface": "direct_google_maps",
+        "collectionMethod": "playwright_direct_maps",
+        "placeId": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+        "cid": "8080486820542360312",
+        "profileName": "Odontologia Dra. Aline Iost",
+        "profileUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+        "verifiedGoogleProfile": True,
+        "state": "VERIFIED_TEXT_LIMITED",
+        "aggregateRating": 5.0,
+        "ratingCount": 12,
+        "observedRatingEntries": 12,
+        "observedTextReviewEntries": 2,
+        "capturedTextReviewCount": 2,
+        "starOnlyRatingCount": 10,
+        "reviewsPanelOpened": True,
+        "reviewsPanelFullyTraversed": True,
+        "textReviewCollectionAttempted": True,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+        "reviews": [
+            {
+                "id": "google-review-arthur-di-donato",
+                "author": "Arthur Di Donato",
+                "rating": 5,
+                "dateLabel": "um ano atrás",
+                "hasText": True,
+                "text": "Gostaria de expressar minha profunda gratidão pelo excelente trabalho realizado pela Dra. Aline. Desde a minha primeira consulta, fui recebido com profissionalismo e atenção. A Dra. explicou cada procedimento de forma clara, o que me deixou muito seguro durante todo o processo.",
+                "source": "google_maps",
+                "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+                "verified": True
+            },
+            {
+                "id": "google-review-joao-victor-velasco",
+                "author": "João Victor Velasco",
+                "rating": 5,
+                "dateLabel": "5 anos atrás",
+                "hasText": True,
+                "text": "A Dra. Aline me atendeu com muita competência e profissionalismo, seguindo rigidamente todos os protocolos de higiene e prevenção por conta da pandemia. Adorei o resultado do tratamento que fiz com ela. Excelente profissional!",
+                "source": "google_maps",
+                "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+                "verified": True
+            }
+        ]
+    }
+    # HTML with 2 real review cards
+    html = PASS_HTML.replace(
+        '</body>',
+        '''<section data-role="reviews" data-review-mode="verified-text" data-review-rating="5.0" data-review-count="12">
+          <div class="container">
+            <article data-role="review-card" data-review-evidence-id="google-review-arthur-di-donato">
+              <p>Gostaria de expressar minha profunda gratidão pelo excelente trabalho realizado pela Dra. Aline. Desde a minha primeira consulta, fui recebido com profissionalismo e atenção. A Dra. explicou cada procedimento de forma clara, o que me deixou muito seguro durante todo o processo.</p>
+              <span>Arthur Di Donato</span>
+            </article>
+            <article data-role="review-card" data-review-evidence-id="google-review-joao-victor-velasco">
+              <p>A Dra. Aline me atendeu com muita competência e profissionalismo, seguindo rigidamente todos os protocolos de higiene e prevenção por conta da pandemia. Adorei o resultado do tratamento que fiz com ela. Excelente profissional!</p>
+              <span>João Victor Velasco</span>
+            </article>
+          </div>
+        </section></body>''',
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 0, f"Expected PASS for IOST VERIFIED_TEXT_LIMITED: {payload}"
 
 
 if __name__ == "__main__":
@@ -796,3 +1078,4 @@ if __name__ == "__main__":
         globals()[name]()
         print(f"[PASS] {name}")
     print(f"\n{len(tests)}/{len(tests)} autonomous site-review regression cases passed")
+
