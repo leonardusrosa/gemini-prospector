@@ -27,9 +27,16 @@ Write-Host "OpenDesign executable: $openDesignExe"
 Write-Host "Antigravity MCP config: $antigravityConfig"
 Write-Host ("Mode: " + $(if ($PrintOnly) { 'print-only' } else { 'install/merge' }))
 
-& $openDesignExe @installArgs
-if ($LASTEXITCODE -ne 0) {
-    throw "OpenDesign MCP installer exited with code $LASTEXITCODE"
+if (Get-Command node -ErrorAction SilentlyContinue) {
+    & node @installArgs
+    $code = $LASTEXITCODE
+} else {
+    $proc = Start-Process -FilePath $openDesignExe -ArgumentList $installArgs -NoNewWindow -Wait -PassThru
+    $code = $proc.ExitCode
+}
+
+if ($code -ne 0) {
+    throw "OpenDesign MCP installer exited with code $code"
 }
 
 if ($PrintOnly) {
