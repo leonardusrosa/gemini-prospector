@@ -74,31 +74,91 @@ Do not weaken this rule to solve a tenant-specific layout problem. Fix the tenan
 
 Every local-business first version, review refresh, or materially revised public site that uses Google rating/review data MUST read and obey `../google-reviews-verification/SKILL.md` and MUST validate its evidence with `prospector-de-sites/google_reviews_evidence.py`.
 
-Direct Google Maps is the canonical aggregate source. Cached snippets, CRM values, search summaries, old screenshots, and previously accepted evidence never override the current exact Maps place profile.
+Direct Google Maps is the canonical source. Cached snippets, CRM values, search summaries, old screenshots, and previously accepted evidence never override the current exact Maps place profile.
 
-Publishable evidence requires two independent direct-Maps count observations from the same collection pass:
+Publishable evidence requires:
 
-1. the visible place-profile header count;
-2. the count visible after opening the reviews panel.
+1. the exact listing identity;
+2. the visible place-profile header aggregate/count;
+3. the count visible after opening the reviews panel;
+4. complete traversal evidence for the current rating/review set when the public site represents individual entries;
+5. evidence-to-DOM binding for every rendered review/rating item.
 
-Both must match the structured `reviewCount` and the same Place ID/CID. A mismatch is a hard BLOCK.
+The two live count observations must match the structured count and the same Place ID/CID. A mismatch is a hard BLOCK.
 
-If the direct profile reports 3 or more ratings/reviews but fewer than 3 verified same-profile text reviews were captured, the state is `COLLECTION_INCOMPLETE`, not aggregate-only PASS. The collector must continue or request human evidence.
+Do not infer text-review completeness from the aggregate count. A profile may have star-only ratings. Classification must be based on a completed traversal and the number of actual observed text entries.
+
+## 6. Review metadata provenance is mandatory
+
+Review/rating metadata is factual business evidence. It is subject to the same non-fabrication rule as names, phone numbers, addresses, credentials, services, testimonials, and prices.
+
+For every observed review/rating entry:
+
+- preserve the native Google review ID when exposed;
+- preserve the exact author only when observed;
+- preserve the exact date/date label only when observed;
+- preserve the exact rating only when observed;
+- preserve exact review text only when observed and linked to verified same-place evidence;
+- if author or date is unavailable, store `null` rather than inventing a replacement;
+- never generate surrogate identities such as `Paciente Verificado #1`, `Reviewer #2`, `Cliente #3`, `Anonymous #4`, or analogous placeholders;
+- never generate a plausible date merely to satisfy a schema or visual layout;
+- never label a reviewer as a patient/client unless the source explicitly verifies that status.
+
+A cryptographic fingerprint proves integrity of supplied values, not provenance. A valid SHA-256 over fabricated metadata is still fabricated metadata and MUST BLOCK.
+
+Source provenance, fingerprint integrity, traversal completeness, and public binding are four separate checks. All four must PASS.
+
+## 7. Canonical traversal semantics
+
+When a direct Maps profile is fully traversed, `observedEntries[]` is the canonical evidence inventory.
+
+Derived values must come from that inventory rather than being trusted as independently authored numbers:
+
+- `observedRatingEntries = observedEntries.length`
+- `observedTextReviewEntries = count(hasText === true)`
+- `starOnlyRatingCount = count(hasText === false)`
+- `capturedTextReviewCount = count(valid same-place text evidence records)`
+
+Every derived/declared count must reconcile. Duplicate fingerprints or duplicate native review IDs BLOCK.
+
+For an entry with `hasText=true`, its `textEvidenceId` must resolve to an exact verified same-place Google review. For `hasText=false`, `textEvidenceId` must be `null`.
+
+## 8. Review classification
+
+After complete traversal:
+
+- `VERIFIED_STRONG`: 3 or more verified same-place Google text reviews;
+- `VERIFIED_TEXT_LIMITED`: exactly 1 or 2 verified same-place Google text reviews;
+- `VERIFIED_AGGREGATE_ONLY`: zero text reviews after complete traversal, with a verified aggregate;
+- `COLLECTION_INCOMPLETE`: traversal or evidence reconciliation is incomplete;
+- `PROFILE_CONFLICT`: identity/provenance conflict;
+- `NO_USABLE_REVIEWS`: correctly identified profile has zero ratings/reviews.
+
+Secondary platforms may add separate evidence, but they must never upgrade the Google-specific state.
+
+## 9. Operator conflict rule
 
 If the operator supplies a newer direct Maps observation that conflicts with stored evidence, the stored evidence becomes stale immediately and publication is blocked until recollection reconciles the values.
 
 The autonomous adversarial review must always ask whether the live direct Maps profile currently shows a different rating/count than the active evidence and visible page. If yes or uncertain, BLOCK.
 
-## 6. Review evidence regression requirements
+## 10. Review evidence regression requirements
 
-The repository CI must include deterministic regressions proving at least these states fail:
+Repository CI must include deterministic regressions proving at least these states fail:
 
 - indirect/search-snippet aggregate used as publishable evidence;
 - structured review count differs from the direct Maps profile-header text;
 - structured review count differs from the independently observed reviews-panel count;
 - newer operator direct-Maps observation conflicts with stored evidence;
-- same profile reports 3+ ratings/reviews but text-review collection is incomplete;
+- declared traversal count exceeds `observedEntries.length`;
+- `capturedTextReviewCount` differs from actual text evidence;
 - captured review belongs to another Place ID/CID;
+- duplicate fingerprint or duplicate native review ID;
+- synthetic review author such as `Paciente Verificado #1`, even when its fingerprint is valid;
+- non-null author/date marked as not observed;
+- generated placeholder reviewer identity or generated date used instead of `null`;
+- public review UI renders an item that has no evidence binding;
+- public review copy claims `patient/client` status without explicit source support;
 - public review copy presents branded count labels such as `1 avaliação Google`.
 
 Do not remove or weaken these regressions to make a tenant pass.
