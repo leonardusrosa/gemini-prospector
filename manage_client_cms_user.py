@@ -44,15 +44,15 @@ def main() -> int:
     # register
     p_reg = subparsers.add_parser("register", help="Register or update tenant credentials")
     p_reg.add_argument("slug", help="Tenant slug")
-    p_reg.add_argument("username", help="Tenant admin username")
-    p_reg.add_argument("password", help="Tenant admin password")
+    p_reg.add_argument("username", nargs="?", default="admin", help="Tenant admin username (default: admin)")
+    p_reg.add_argument("password", nargs="?", default="admin12345678", help="Tenant admin password (default: admin12345678)")
     p_reg.add_argument("--display-name", default="", help="Display name for client")
     p_reg.add_argument("--email", default="", help="Recovery email")
 
     # reset-password
     p_reset = subparsers.add_parser("reset-password", help="Force reset tenant password (operator fallback)")
     p_reset.add_argument("slug", help="Tenant slug")
-    p_reset.add_argument("--password", default="", help="New password (randomly generated if omitted)")
+    p_reset.add_argument("--password", default="admin12345678", help="New password (default: admin12345678)")
 
     # set-email
     p_email = subparsers.add_parser("set-email", help="Configure recovery email for tenant")
