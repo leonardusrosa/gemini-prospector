@@ -225,7 +225,7 @@ def _validate_observed_entries(
         errors.append("observedEntries must be an array of observed rating/review items.")
         return
 
-    place_id = str(data.get("placeId") or data.get("placeIdOrCid") or "").strip()
+    place_id = str(data.get("placeId") or data.get("googleMapsFeatureId") or data.get("placeIdOrCid") or data.get("cid") or "").strip()
     witness_ids: Set[str] = set()
     entry_fps: Set[str] = set()
     native_ids: Set[str] = set()
@@ -397,9 +397,12 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
     if not isinstance(data, dict):
         return EvidenceResult(PROFILE_CONFLICT, False, ["Evidence root must be an object."], [], 0)
 
+    if "googleReviews" in data and isinstance(data.get("googleReviews"), dict):
+        data = data["googleReviews"]
+
     profile_name = data.get("profileName")
     profile_url = data.get("profileUrl")
-    place_id = data.get("placeIdOrCid")
+    place_id = data.get("placeIdOrCid") or data.get("googleMapsFeatureId") or data.get("placeId") or data.get("cid")
     rating = data.get("aggregateRating")
     count = data.get("ratingCount") if data.get("ratingCount") is not None else data.get("reviewCount")
     collected_at = data.get("collectedAt")
@@ -412,7 +415,7 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
     if not _nonempty(profile_name):
         errors.append("profileName is required.")
     if not (_nonempty(profile_url) and _nonempty(place_id)):
-        errors.append("Both profileUrl and placeIdOrCid are required to anchor the exact Maps profile.")
+        errors.append("Both profileUrl and a valid Maps anchor (googleMapsFeatureId, cid, placeId, or placeIdOrCid) are required to anchor the exact Maps profile.")
     if not isinstance(rating, (int, float)) or not (0 <= float(rating) <= 5):
         errors.append("aggregateRating must be a number between 0 and 5.")
     if not isinstance(count, int) or count < 0:
@@ -428,6 +431,11 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
 
     verified_reviews: List[Dict[str, Any]] = []
     fingerprints = set()
+    allowed_match_ids = {
+        str(x).strip()
+        for x in [place_id, data.get("placeIdOrCid"), data.get("googleMapsFeatureId"), data.get("cid"), f"cid:{data.get('cid')}"]
+        if _nonempty(str(x or "").strip())
+    }
     for index, review in enumerate(reviews):
         if not isinstance(review, dict):
             warnings.append(f"reviews[{index}] ignored: not an object.")
@@ -451,8 +459,8 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
             missing.append("dateLabel")
         if source != "google_maps":
             missing.append("source=google_maps")
-        if not review_place_id or review_place_id != str(place_id or "").strip():
-            missing.append("matching placeIdOrCid")
+        if not review_place_id or review_place_id not in allowed_match_ids:
+            missing.append("matching placeIdOrCid / googleMapsFeatureId")
 
         if missing:
             warnings.append(f"reviews[{index}] ignored: missing/invalid {', '.join(missing)}.")

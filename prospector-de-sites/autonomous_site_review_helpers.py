@@ -168,8 +168,8 @@ def _apply_review_integrity_guard(data: dict[str, Any]) -> None:
 
     if not isinstance(count, int) or count < 0:
         errors.append("ratingCount/reviewCount must be a non-negative integer")
-    if not str(gr.get("placeId") or gr.get("placeIdOrCid") or "").strip():
-        errors.append("direct Google Maps evidence requires a place ID")
+    if not str(gr.get("placeId") or gr.get("googleMapsFeatureId") or gr.get("placeIdOrCid") or "").strip():
+        errors.append("direct Google Maps evidence requires a place ID or Maps feature identifier")
 
     if isinstance(count, int) and count > 0:
         allowed_methods = {"playwright_direct_maps", "browser_direct_maps", "manual_direct_maps"}

@@ -117,9 +117,10 @@ for r in raw_entries:
 evidence_data = {
     "profileName": "Dentista Dra. Francine Goulart",
     "profileUrl": PLACE_URL,
-    "placeIdOrCid": PLACE_ID_CID,
-    "placeId": "0x94c7da5a58a30833:0x1f93843856f80228",
+    "googleMapsFeatureId": "0x94c7da5a58a30833:0x1f93843856f80228",
+    "placeId": None,
     "cid": "2275304677764727336",
+    "placeIdOrCid": "0x94c7da5a58a30833:0x1f93843856f80228",
     "aggregateRating": 4.2,
     "ratingCount": 5,
     "reviewCount": 5,

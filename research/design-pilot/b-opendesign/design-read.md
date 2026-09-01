@@ -67,7 +67,7 @@ GOOGLE_STAR_ONLY_COUNT: 3
 PANEL_FULLY_TRAVERSED: YES
 
 - **Direct Maps Evidence**:
-  - Exact profile: `Dentista Dra. Francine Goulart` (Place ID: `0x94c7da5a58a30833:0x1f93843856f80228`).
+  - Exact profile: `Dentista Dra. Francine Goulart` (googleMapsFeatureId: `0x94c7da5a58a30833:0x1f93843856f80228`, placeId: `null`, CID: `2275304677764727336`).
   - Observed aggregate rating 4.2 from 5 verified ratings.
   - Complete panel traversal completed (5 of 5 entries captured).
   - 2 verified textual reviews: Luis (5 estrelas, "Foi muito bom excelente dentista eu recomendo") and Maria José Leite (5 estrelas, "Muuto eficiente e atenciosa.").
