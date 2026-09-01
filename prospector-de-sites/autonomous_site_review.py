@@ -203,10 +203,12 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
         "VERIFIED_AGGREGATE_ONLY",
         "NO_USABLE_REVIEWS",
         "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE",
+        "COLLECTION_INCOMPLETE",
         "PROFILE_CONFLICT",
     }
     review.check("google_reviews_state_valid", state in valid_states, f"googleReviews.state must be in {sorted(valid_states)}")
     review.check("google_reviews_no_conflict", state != "PROFILE_CONFLICT", "PROFILE_CONFLICT blocks Core QA PASS")
+    review.check("google_reviews_no_incomplete", state != "COLLECTION_INCOMPLETE", "COLLECTION_INCOMPLETE blocks Core QA PASS")
 
     dr_check = bool(re.search(r"(?im)^\s*GOOGLE_REVIEWS_CHECK\s*:\s*PASS\s*$", design_read))
     review.check("google_reviews_design_read_check", dr_check, "design-read must record GOOGLE_REVIEWS_CHECK: PASS")

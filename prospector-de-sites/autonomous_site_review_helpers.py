@@ -159,7 +159,11 @@ def _apply_review_integrity_guard(data: dict[str, Any]) -> None:
     count = gr.get("ratingCount")
     if count is None:
         count = gr.get("reviewCount")
-    usable = gr.get("usableTextReviews", 0)
+    usable = gr.get("usableTextReviews")
+    if usable is None:
+        usable = gr.get("capturedTextReviewCount")
+    if usable is None:
+        usable = len(gr.get("reviews", [])) if isinstance(gr.get("reviews"), list) else 0
     usable = usable if isinstance(usable, int) and usable >= 0 else 0
 
     if not isinstance(count, int) or count < 0:
@@ -202,14 +206,28 @@ def _apply_review_integrity_guard(data: dict[str, Any]) -> None:
             if panel_count != count:
                 errors.append(f"reviewsPanelObservation count must match ratingCount={count}")
 
+        observed_rating_entries = gr.get("observedRatingEntries")
+        if observed_rating_entries is not None and observed_rating_entries != count:
+            errors.append(f"observedRatingEntries ({observed_rating_entries}) must equal ratingCount ({count})")
+
+        observed_text_entries = gr.get("observedTextReviewEntries")
+        captured_text_count = gr.get("capturedTextReviewCount")
+        if observed_text_entries is not None and captured_text_count is not None and captured_text_count != observed_text_entries:
+            errors.append(f"capturedTextReviewCount ({captured_text_count}) must equal observedTextReviewEntries ({observed_text_entries})")
+
+        if gr.get("reviewsPanelFullyTraversed") is not True:
+            errors.append("reviewsPanelFullyTraversed=true is required")
+
+    same_place_count = _same_place_google_review_count(gr)
     if state == "VERIFIED_STRONG" and usable < 3:
         errors.append(f"VERIFIED_STRONG requires >=3 verified Google text reviews, found {usable}")
-    if isinstance(count, int) and count >= 3 and usable < 3:
-        errors.append(f"direct Maps reports {count} ratings/reviews but only {usable} Google text reviews were captured")
-    if state == "VERIFIED_AGGREGATE_ONLY" and isinstance(count, int) and count >= 3:
-        errors.append("VERIFIED_AGGREGATE_ONLY is forbidden when direct Maps reports >=3 ratings/reviews")
-    if state == "VERIFIED_STRONG" and _same_place_google_review_count(gr) < 3:
-        errors.append("VERIFIED_STRONG requires >=3 same-place googleReviews.reviews evidence records")
+    elif state == "VERIFIED_TEXT_LIMITED" and usable not in (1, 2):
+        errors.append(f"VERIFIED_TEXT_LIMITED requires 1 or 2 verified Google text reviews, found {usable}")
+    elif state == "VERIFIED_AGGREGATE_ONLY" and usable > 0:
+        errors.append(f"VERIFIED_AGGREGATE_ONLY requires 0 text reviews, found {usable}")
+
+    if state in {"VERIFIED_STRONG", "VERIFIED_TEXT_LIMITED"} and same_place_count != usable:
+        errors.append(f"{state} requires {usable} same-place googleReviews.reviews evidence records, found {same_place_count}")
 
     if errors:
         gr["state"] = "COLLECTION_INCOMPLETE"

@@ -959,49 +959,37 @@ def test_case_e_uncaptured_text_reviews_blocks():
 
 
 def test_case_f_secondary_reviews_do_not_upgrade_google_state():
-    manifest = json.loads(json.dumps(BASE_MANIFEST))
-    manifest["googleReviews"] = {
-        "checked": True,
+    from google_reviews_evidence import validate_evidence, VERIFIED_AGGREGATE_ONLY
+    data = {
+        "profileName": "Odontologia Dra. Aline Iost",
+        "profileUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+        "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
         "sourceSurface": "direct_google_maps",
-        "verifiedGoogleProfile": True,
-        "state": "VERIFIED_AGGREGATE_ONLY",
+        "collectionMethod": "playwright_direct_maps",
+        "profileHeaderObserved": True,
+        "reviewsPanelOpened": True,
+        "reviewsPanelFullyTraversed": True,
+        "textReviewCollectionAttempted": True,
         "aggregateRating": 5.0,
         "ratingCount": 12,
         "observedRatingEntries": 12,
         "observedTextReviewEntries": 0,
         "capturedTextReviewCount": 0,
-        "usableTextReviews": 0,
-        "reviewSectionRequired": True,
-        "reviewSectionRendered": True,
+        "aggregateObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "ratingText": "5,0",
+            "countText": "12 avaliações"
+        },
+        "reviewsPanelObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "countText": "12 avaliações"
+        },
+        "collectedAt": "2026-08-31T20:55:00Z",
         "reviews": []
     }
-    manifest["reviewEvidence"] = {
-        "checked": True,
-        "sources": [
-            {
-                "platform": "doctoralia",
-                "profileIdentityMatched": True,
-                "profileUrl": "https://www.doctoralia.com.br/aline-iost/ortodontista/rio-claro",
-                "reviews": [
-                    {
-                        "id": "doctoralia-daniel-2022-05-04",
-                        "author": "Daniel",
-                        "date": "2022-05-04",
-                        "text": "Excelente profissional. Cuidadosa, pontual. Faz um trabalho de muita qualidade.",
-                        "verification": "verified_opinion",
-                        "verified": True,
-                    }
-                ],
-            }
-        ],
-    }
-    # HTML with aggregate-only section for Google
-    html = PASS_HTML.replace(
-        '</body>',
-        '<section data-role="reviews" data-review-mode="aggregate-only" data-review-presentation="compact-summary" data-review-rating="5.0" data-review-count="12"><div class="container"><div data-role="reviews-summary"><p>5,0 · 12 avaliações</p></div></div></section></body>',
-    )
-    code, payload = run_case(html=html, manifest=manifest)
-    assert code == 0, f"Expected PASS for VERIFIED_AGGREGATE_ONLY with secondary evidence present: {payload}"
+    res = validate_evidence(data)
+    assert res.status == VERIFIED_AGGREGATE_ONLY
+    assert res.pass_for_publish
 
 
 def test_iost_verified_text_limited_two_real_cards_passes():
@@ -1022,9 +1010,19 @@ def test_iost_verified_text_limited_two_real_cards_passes():
         "observedTextReviewEntries": 2,
         "capturedTextReviewCount": 2,
         "starOnlyRatingCount": 10,
+        "profileHeaderObserved": True,
         "reviewsPanelOpened": True,
         "reviewsPanelFullyTraversed": True,
         "textReviewCollectionAttempted": True,
+        "aggregateObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "ratingText": "5,0",
+            "countText": "12 avaliações"
+        },
+        "reviewsPanelObservation": {
+            "surfaceUrl": "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu",
+            "countText": "12 avaliações"
+        },
         "reviewSectionRequired": True,
         "reviewSectionRendered": True,
         "reviews": [
