@@ -1184,7 +1184,7 @@ def test_reviews_carousel_12_items_passes():
     def iost_design(design_text, skill_path):
         lines = [
             design_text.strip(),
-            "- **Factual Verified Services**: Ortodontia Preventiva e Interceptativa, Aparelhos Autoligados, Alinhadores Invisíveis, Ortodontia para Adultos e Crianças",
+            "- **Factual Verified Services**: Avaliação ortodôntica, manutenção de aparelho fixo, clareamento dental, procedimentos clínicos gerais",
         ]
         return "\n".join(lines) + "\n"
 
