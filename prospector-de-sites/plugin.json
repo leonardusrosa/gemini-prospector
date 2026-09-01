@@ -1,4 +1,4 @@
 {
   "name": "prospector-de-sites",
-  "description": "Prospecção de clientes com site fraco (Google Maps Platform + navegador), redesign premium, publicação automática via GitHub + Vercel, proposta anti-spam por Gmail e CRM local. Autor: Helio Arreche."
+  "description": "Prospector compatibility adapter for Antigravity. Canonical Prospector Core is agent-agnostic; factual, design, QA, CRM, deploy, and outreach rules live in the repository skills and AGENTS.md."
 }
