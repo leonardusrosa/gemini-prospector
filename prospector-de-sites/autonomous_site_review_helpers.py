@@ -121,7 +121,7 @@ def _same_place_google_review_count(gr: dict[str, Any]) -> int:
     reviews = gr.get("reviews")
     if not isinstance(reviews, list):
         return 0
-    place_id = str(gr.get("placeId") or gr.get("placeIdOrCid") or "").strip()
+    place_id = str(gr.get("placeId") or gr.get("googleMapsFeatureId") or gr.get("placeIdOrCid") or "").strip()
     cid = str(gr.get("cid") or "").strip()
     accepted = {x for x in {place_id, cid, f"cid:{cid}" if cid else ""} if x}
     count = 0
