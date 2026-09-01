@@ -7,7 +7,7 @@
 - **Niche**: Odontologia Clínica Geral e Diagnóstico Preventivo
 - **City**: Rio Claro - SP
 - **Address**: Avenida 7, nº 310, Centro, Rio Claro - SP, CEP 13500-143
-- **Phone / WhatsApp**: (19) 98849-4898 / 5519988494898 (verified primary channel)
+- **Phone / WhatsApp**: (19) 99884-4898 / 5519998844898 (verified primary channel)
 - **Factual Verified Services**: Avaliação e Prevenção, Restaurações Estéticas, Profilaxia Profissional, Conservação e Alívio de Dor
 
 ## 2. GPT-Taste Creative Direction & Pre-flight
@@ -43,10 +43,14 @@ HERO_TEMPLATE_DESKTOP: assets/templates/dentistry-female.webp
 HERO_TEMPLATE_MOBILE: assets/templates/dentistry-female-mobile.webp
 HERO_REPRESENTS_ACTUAL_EXPERT: false
 HERO_REPRESENTS_ACTUAL_BUSINESS: false
+EXPERT_HERO_FULL_BLEED: PASS
+EXPERT_HERO_DESKTOP_FULL_WIDTH: PASS
+EXPERT_HERO_MOBILE_FULL_WIDTH: PASS
+EXPERT_HERO_GPT_TASTE_JUDGED: PASS
 
-- **Hero Attributes**: `data-role="hero"`, `data-hero-layout="full-bleed-background"`, `data-hero-frame-policy="preserve-complete-frame"`.
+- **Hero Attributes**: `data-role="hero"`, `data-hero-layout="full-bleed-background"`, `data-hero-frame-policy="preserve-complete-frame"`, `data-hero-expert-presentation="background"`, `data-hero-mobile-layout="full-width-background"`.
 - **H1 Container**: max-w-3xl ensuring H1 strictly flows in 2 lines on desktop.
-- **Hero CTA**: Exactly ONE button ("Agendar avaliação no WhatsApp") linking directly to verified WhatsApp 5519988494898.
+- **Hero CTA**: Exactly ONE button ("Agendar avaliação no WhatsApp") linking directly to verified WhatsApp 5519998844898.
 
 ## 5. Google Reviews Evidence & Presentation
 GOOGLE_REVIEWS_CHECK: PASS

@@ -13,10 +13,10 @@ manifest = {
     "niche": "odontologia",
     "city": "Rio Claro",
     "state": "SP",
-    "phone": "19988494898",
+    "phone": "19998844898",
     "whatsapp": {
         "verified": True,
-        "number": "5519988494898",
+        "number": "5519998844898",
         "floatingRequired": True,
         "contactActionRequired": True,
         "mockAffordanceRequired": False
@@ -25,7 +25,7 @@ manifest = {
         "verified": True,
         "public": True,
         "mapEmbedRequired": True,
-        "text": "Avenida 7, nº 310, Centro, Rio Claro - SP, CEP 13500-143"
+        "text": "Avenida 7, nº 310, Centro, Rio Claro - SP, CEP 13506-800"
     },
     "cnpj": "33.339.590/0001-30",
     "factualEvidence": {
@@ -75,7 +75,10 @@ manifest = {
         "mobileAssetPath": "assets/templates/dentistry-female-mobile.webp",
         "representsActualBusiness": False,
         "representsActualExpert": False,
-        "illustrativeDisclosureRequired": True
+        "illustrativeDisclosureRequired": True,
+        "expertBackgroundRequired": True,
+        "desktopFullWidthRequired": True,
+        "mobileFullWidthRequired": True
     },
     "googleReviews": {
         "checked": True,
