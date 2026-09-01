@@ -1,0 +1,47 @@
+[
+  {
+    "idx": 0,
+    "nativeReviewId": "Ci9DQUlRQUNvZENodHljRjlvT25kbmNHUktOMU53UTJZM1NYVTJSWGszTFhVeFlrRRAB",
+    "author": "Luis",
+    "rating": 5,
+    "dateLabel": "um ano atrás",
+    "text": "Foi muito bom excelente dentista eu recomendo",
+    "hasText": true
+  },
+  {
+    "idx": 1,
+    "nativeReviewId": "ChdDSUhNMG9nS0VJQ0FnTUNvMHMtOHBnRRAB",
+    "author": "Maria José Leite",
+    "rating": 5,
+    "dateLabel": "um ano atrás",
+    "text": "Muuto eficiente e atenciosa.",
+    "hasText": true
+  },
+  {
+    "idx": 2,
+    "nativeReviewId": "Ci9DQUlRQUNvZENodHljRjlvT25FdFRqQnhPVVppVW1ObFozZEpVbk5mWmtGNFMxRRAB",
+    "author": "DELMA LOPES MATOS",
+    "rating": 5,
+    "dateLabel": "2 meses atrás",
+    "text": "",
+    "hasText": false
+  },
+  {
+    "idx": 3,
+    "nativeReviewId": "Ci9DQUlRQUNvZENodHljRjlvT2paS1RHbHNWWEJ1V1RGSFJYWTJUMWg0VFZwTVgyYxAB",
+    "author": "isabelly polido",
+    "rating": 1,
+    "dateLabel": "2 meses atrás",
+    "text": "",
+    "hasText": false
+  },
+  {
+    "idx": 4,
+    "nativeReviewId": "ChZDSUhNMG9nS0VJQ0FnTURvX29PRmJBEAE",
+    "author": "Yasmin Breda",
+    "rating": 5,
+    "dateLabel": "um ano atrás",
+    "text": "",
+    "hasText": false
+  }
+]

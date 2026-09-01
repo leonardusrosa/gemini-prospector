@@ -505,6 +505,13 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
         return EvidenceResult(VERIFIED_STRONG, True, [], warnings, len(verified_reviews))
 
     if len(verified_reviews) in {1, 2}:
+        if isinstance(count, int) and count >= minimum_reviews:
+            if not (data.get("reviewsPanelFullyTraversed") and data.get("observedRatingEntries") == count):
+                errors.append(
+                    f"Profile has {count} ratings but only {len(verified_reviews)} verified textual reviews "
+                    "without complete panel traversal. Collection is incomplete."
+                )
+                return EvidenceResult(COLLECTION_INCOMPLETE, False, errors, warnings, len(verified_reviews))
         return EvidenceResult(VERIFIED_TEXT_LIMITED, True, [], warnings, len(verified_reviews))
 
     if isinstance(count, int) and count > 0:

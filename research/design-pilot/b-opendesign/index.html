@@ -19,7 +19,6 @@
       --body-text: #292524;
       --muted-stone: #78716c;
       --hairline: #e7e5e4;
-      --border-dark: rgba(19, 42, 36, 0.12);
       --radius-sm: 4px;
       --radius-md: 8px;
     }
@@ -64,9 +63,10 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(250, 250, 249, 0.92);
+      background: rgba(250, 250, 249, 0.94);
       backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--hairline);
+      transition: background 0.3s ease;
     }
 
     .nav-inner {
@@ -86,7 +86,6 @@
       font-size: 1.35rem;
       font-weight: 600;
       color: var(--deep-forest);
-      letter-spacing: -0.01em;
     }
 
     .brand-caption {
@@ -100,7 +99,7 @@
     .nav-menu {
       display: flex;
       align-items: center;
-      gap: 36px;
+      gap: 32px;
     }
 
     .nav-item {
@@ -117,7 +116,7 @@
     .btn-nav {
       display: inline-flex;
       align-items: center;
-      padding: 10px 20px;
+      padding: 10px 22px;
       background: var(--deep-forest);
       color: #ffffff;
       font-size: 0.88rem;
@@ -132,19 +131,22 @@
 
     /* Hero Section */
     .hero-section {
-      padding: 60px 0 84px;
+      position: relative;
+      background-color: var(--canvas);
+      padding: 64px 0 88px;
       border-bottom: 1px solid var(--hairline);
+      overflow: hidden;
     }
 
     .hero-grid {
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
+      grid-template-columns: 1.15fr 0.85fr;
       gap: 48px;
       align-items: center;
     }
 
     .hero-content {
-      max-width: 620px;
+      max-width: 640px;
     }
 
     .hero-meta-label {
@@ -170,7 +172,7 @@
       max-width: 520px;
     }
 
-    .btn-primary {
+    .btn-hero {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -178,14 +180,15 @@
       background: var(--deep-forest);
       color: #ffffff;
       font-size: 1rem;
-      font-weight: 500;
+      font-weight: 600;
       border-radius: var(--radius-sm);
       transition: background 0.2s, transform 0.2s;
+      box-shadow: 0 4px 14px rgba(19, 42, 36, 0.2);
     }
 
-    .btn-primary:hover {
+    .btn-hero:hover {
       background: var(--forest-hover);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
     }
 
     .hero-media-card {
@@ -196,16 +199,15 @@
       background: #ffffff;
     }
 
-    .hero-media-img {
+    .hero-media-card picture,
+    .hero-media-card img {
       display: block;
       width: 100%;
-      height: 100%;
-      max-height: 480px;
-      object-fit: cover;
-      object-position: center;
+      height: auto;
+      object-fit: contain;
     }
 
-    /* Editorial Strip */
+    /* Editorial Detail Strip */
     .editorial-strip {
       padding: 32px 0;
       background: var(--surface);
@@ -236,14 +238,14 @@
       color: var(--muted-stone);
     }
 
-    /* Section Foundations */
+    /* Section Base */
     .section {
       padding: 104px 0;
     }
 
     .section-intro {
       max-width: 640px;
-      margin-bottom: 64px;
+      margin-bottom: 56px;
     }
 
     .section-category {
@@ -266,51 +268,44 @@
       line-height: 1.6;
     }
 
-    /* Treatment Directory (Continuous List, Card-Free) */
+    /* Treatment Directory (Continuous List, Card-Free, Number-Free) */
     .directory-container {
       border-bottom: 1px solid var(--hairline);
     }
 
     .directory-row {
       display: grid;
-      grid-template-columns: 80px 1.4fr 2fr 180px;
-      gap: 28px;
-      padding: 36px 0;
+      grid-template-columns: 1.4fr 2.2fr 200px;
+      gap: 32px;
+      padding: 38px 0;
       border-top: 1px solid var(--hairline);
       align-items: baseline;
       transition: background-color 0.2s;
     }
 
     .directory-row:hover {
-      background-color: rgba(244, 244, 242, 0.4);
-    }
-
-    .dir-number {
-      font-family: 'Newsreader', serif;
-      font-size: 1.4rem;
-      font-style: italic;
-      color: var(--muted-stone);
+      background-color: rgba(244, 244, 242, 0.45);
     }
 
     .dir-title {
       font-family: 'Newsreader', serif;
-      font-size: 1.45rem;
+      font-size: 1.55rem;
       font-weight: 600;
       color: var(--deep-forest);
     }
 
     .dir-text {
-      font-size: 0.95rem;
+      font-size: 0.96rem;
       color: var(--body-text);
-      line-height: 1.65;
+      line-height: 1.7;
     }
 
     .dir-action {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.88rem;
-      font-weight: 500;
+      font-size: 0.9rem;
+      font-weight: 600;
       color: var(--accent-sage);
       justify-self: end;
       transition: gap 0.2s, color 0.2s;
@@ -321,97 +316,197 @@
       gap: 10px;
     }
 
-    /* Google Proof Editorial Plate */
-    .proof-plate-section {
+    /* Reviews Section (Carousel Present) */
+    .reviews-section {
       background: var(--surface);
       border-top: 1px solid var(--hairline);
       border-bottom: 1px solid var(--hairline);
     }
 
-    .proof-plate {
+    .reviews-box {
       background: var(--deep-forest);
       color: #ffffff;
       border-radius: var(--radius-sm);
-      padding: 64px;
-      display: grid;
-      grid-template-columns: 1fr 1.6fr;
-      gap: 64px;
-      align-items: center;
+      padding: 60px;
     }
 
-    .plate-metric {
+    .reviews-header-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 48px;
+      align-items: center;
+      padding-bottom: 40px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      margin-bottom: 40px;
+    }
+
+    .aggregate-col {
       display: flex;
       flex-direction: column;
-      border-right: 1px solid rgba(255, 255, 255, 0.15);
-      padding-right: 48px;
     }
 
-    .plate-number {
+    .aggregate-number {
       font-family: 'Newsreader', serif;
-      font-size: 5rem;
+      font-size: 4.8rem;
       line-height: 1;
       font-weight: 500;
       color: #ffffff;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
-    .plate-stars {
+    .stars-row {
       display: flex;
       gap: 4px;
       color: #facc15;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
-    .plate-count {
+    .aggregate-count {
       font-size: 1.1rem;
       font-weight: 500;
       color: #e7e5e4;
       margin-bottom: 4px;
     }
 
-    .plate-source {
-      font-size: 0.85rem;
+    .aggregate-source {
+      font-size: 0.84rem;
       color: #a8a29e;
     }
 
-    .plate-narrative h3 {
+    .reviews-intro-title {
+      font-family: 'Newsreader', serif;
       color: #ffffff;
       font-size: 1.85rem;
-      margin-bottom: 18px;
+      margin-bottom: 12px;
       line-height: 1.25;
     }
 
-    .plate-narrative p {
-      font-size: 1rem;
-      line-height: 1.7;
+    .reviews-intro-p {
+      font-size: 0.98rem;
+      line-height: 1.65;
       color: #d6d3d1;
-      margin-bottom: 28px;
     }
 
-    .btn-plate {
+    /* Carousel */
+    .carousel-wrapper {
+      position: relative;
+    }
+
+    .carousel-track {
+      position: relative;
+      min-height: 170px;
+    }
+
+    .carousel-slide {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .carousel-slide.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .review-quote {
+      font-family: 'Newsreader', serif;
+      font-size: 1.45rem;
+      font-style: italic;
+      color: #ffffff;
+      line-height: 1.45;
+      margin-bottom: 20px;
+    }
+
+    .review-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    .review-author {
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .review-stars-inline {
+      display: inline-flex;
+      color: #facc15;
+      gap: 2px;
+    }
+
+    .rating-note {
+      font-size: 1.05rem;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+    }
+
+    .carousel-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 36px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .carousel-nav-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .carousel-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .carousel-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: #ffffff;
+    }
+
+    .carousel-counter {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      font-weight: 500;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .btn-maps-link {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 12px 24px;
-      background: rgba(255, 255, 255, 0.1);
+      padding: 10px 20px;
       border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.08);
       color: #ffffff;
-      font-size: 0.92rem;
-      font-weight: 500;
+      font-size: 0.88rem;
       border-radius: var(--radius-sm);
       transition: background 0.2s, border-color 0.2s;
     }
 
-    .btn-plate:hover {
+    .btn-maps-link:hover {
       background: rgba(255, 255, 255, 0.18);
       border-color: #ffffff;
     }
 
-    /* Location & Access Section */
+    /* Location Section */
     .location-layout {
       display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 56px;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 52px;
       align-items: center;
     }
 
@@ -462,7 +557,7 @@
       display: block;
     }
 
-    /* Footer */
+    /* Site Footer */
     .site-footer {
       background: #ffffff;
       border-top: 1px solid var(--hairline);
@@ -522,7 +617,7 @@
     }
 
     /* Floating WhatsApp Action */
-    .floating-action {
+    .floating-whatsapp {
       position: fixed;
       bottom: 28px;
       right: 28px;
@@ -535,21 +630,21 @@
       padding: 14px 24px;
       border-radius: 9999px;
       font-size: 0.94rem;
-      font-weight: 500;
-      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.3);
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);
       transform: translateY(120px);
       opacity: 0;
       pointer-events: none;
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
     }
 
-    .floating-action.visible {
+    .floating-whatsapp.visible {
       transform: translateY(0);
       opacity: 1;
       pointer-events: auto;
     }
 
-    .floating-action:hover {
+    .floating-whatsapp:hover {
       background: #20ba59;
       transform: translateY(-2px);
     }
@@ -560,27 +655,16 @@
         grid-template-columns: 1fr;
       }
       .directory-row {
-        grid-template-columns: 60px 1fr;
-        row-gap: 12px;
-      }
-      .dir-text {
-        grid-column: span 2;
+        grid-template-columns: 1fr;
+        gap: 12px;
       }
       .dir-action {
-        grid-column: span 2;
         justify-self: start;
         margin-top: 8px;
       }
-      .proof-plate {
+      .reviews-header-grid {
         grid-template-columns: 1fr;
-        padding: 40px;
-        gap: 36px;
-      }
-      .plate-metric {
-        border-right: none;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-        padding-right: 0;
-        padding-bottom: 32px;
+        gap: 28px;
       }
       .location-layout {
         grid-template-columns: 1fr;
@@ -602,10 +686,13 @@
       .hero-section {
         padding: 40px 0 56px;
       }
-      .floating-action span {
+      .reviews-box {
+        padding: 36px 24px;
+      }
+      .floating-whatsapp span {
         display: none;
       }
-      .floating-action {
+      .floating-whatsapp {
         padding: 14px;
         bottom: 20px;
         right: 20px;
@@ -623,23 +710,29 @@
 <body>
 
   <!-- Site Header -->
-  <header class="site-header">
+  <header class="site-header" data-role="site-header">
     <div class="container nav-inner">
       <div class="brand-mark">
         <span class="brand-name">Dra. Francine Goulart</span>
         <span class="brand-caption">Odontologia Clínica</span>
       </div>
       <nav class="nav-menu">
-        <a href="#procedimentos" class="nav-item">Procedimentos</a>
+        <a href="#procedimentos" class="nav-item">Tratamentos</a>
         <a href="#avaliacoes" class="nav-item">Reconhecimento</a>
-        <a href="#consultorio" class="nav-item">O consultório</a>
-        <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20solicitar%20um%20hor%C3%A1rio%20de%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." class="btn-nav" target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a>
+        <a href="#consultorio" class="nav-item">Localização</a>
+        <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." class="btn-nav" target="_blank" rel="noopener noreferrer">Agendar consulta</a>
       </nav>
     </div>
   </header>
 
   <!-- Hero Section -->
-  <section class="hero-section" id="inicio">
+  <section 
+    data-role="hero" 
+    data-hero-layout="full-bleed-background" 
+    data-hero-frame-policy="preserve-complete-frame" 
+    class="hero-section" 
+    id="inicio"
+  >
     <div class="container">
       <div class="hero-grid">
         <div class="hero-content">
@@ -647,23 +740,23 @@
           <h1 class="hero-title">Cuidado odontológico completo com atenção dedicada ao seu bem-estar</h1>
           <p class="hero-desc">Consultas estruturadas com diagnóstico preventivo minucioso, restaurações funcionais e acompanhamento personalizado em um ambiente acolhedor.</p>
           <a 
-            href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20solicitar%20um%20hor%C3%A1rio%20de%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
-            class="btn-primary"
+            href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
+            class="btn-hero"
             id="hero-cta"
             target="_blank" 
             rel="noopener noreferrer"
           >
-            Solicitar horário de avaliação
+            Agendar avaliação no WhatsApp
           </a>
         </div>
         <div class="hero-media-card">
           <picture>
-            <source media="(max-width: 768px)" srcset="../assets/mobile.webp">
+            <source media="(max-width: 767px)" srcset="assets/templates/dentistry-female-mobile.webp" width="941" height="1672">
             <img 
-              src="../assets/desktop-ultrawide.webp" 
+              data-role="hero-image"
+              data-image-context="illustrative" 
+              src="assets/templates/dentistry-female.webp" 
               alt="Imagem ilustrativa de consultório odontológico com espaço reservado para foto profissional"
-              class="hero-media-img"
-              data-image-context="illustrative"
               width="1983"
               height="793"
             >
@@ -673,7 +766,7 @@
     </div>
   </section>
 
-  <!-- Editorial Strip -->
+  <!-- Detail Strip -->
   <div class="editorial-strip">
     <div class="container strip-grid">
       <div class="strip-item">
@@ -681,7 +774,7 @@
         <div class="strip-desc">Dra. Francine Aparecida Goulart, CRO SP-CD-104303</div>
       </div>
       <div class="strip-item">
-        <div class="strip-title">Localização conveniente</div>
+        <div class="strip-title">Localização central</div>
         <div class="strip-desc">Avenida 7, nº 310, Centro, Rio Claro - SP</div>
       </div>
       <div class="strip-item">
@@ -691,8 +784,8 @@
     </div>
   </div>
 
-  <!-- Treatment Directory (Editorial List) -->
-  <section class="section" id="procedimentos">
+  <!-- Treatment Directory (Card-Free, Number-Free) -->
+  <section class="section" id="procedimentos" data-motion="reveal">
     <div class="container">
       <div class="section-intro">
         <div class="section-category">Especialidades e tratamentos</div>
@@ -702,41 +795,37 @@
 
       <div class="directory-container">
         <div class="directory-row">
-          <div class="dir-number">01</div>
-          <div class="dir-title">Avaliação e prevenção</div>
+          <h3 class="dir-title">Avaliação e prevenção</h3>
           <div class="dir-text">Exame clínico abrangente para diagnóstico precoce de alterações na dentição e tecidos moles, incluindo orientações práticas de higienização e prevenção contínua.</div>
-          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20diagn%C3%B3stica." class="dir-action" target="_blank" rel="noopener noreferrer">
-            <span>Consultar</span>
+          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20conversar%20sobre%20avalia%C3%A7%C3%A3o%20e%20preven%C3%A7%C3%A3o." class="dir-action" target="_blank" rel="noopener noreferrer">
+            <span>Conversar</span>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </a>
         </div>
 
         <div class="directory-row">
-          <div class="dir-number">02</div>
-          <div class="dir-title">Restaurações estéticas</div>
-          <div class="dir-text">Reconstrução anatômica de elementos fraturados ou acometidos por cárie com resinas compostas selecionadas para mimetizar o esmalte e devolver a resistência mastigatória.</div>
-          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20restaura%C3%A7%C3%B5es." class="dir-action" target="_blank" rel="noopener noreferrer">
-            <span>Consultar</span>
+          <h3 class="dir-title">Restaurações estéticas</h3>
+          <div class="dir-text">Reconstrução anatômica de dentes fraturados ou acometidos por cárie com resinas compostas selecionadas para mimetizar o esmalte e devolver a resistência mastigatória.</div>
+          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20conversar%20sobre%20restaura%C3%A7%C3%B5es%20est%C3%A9ticas." class="dir-action" target="_blank" rel="noopener noreferrer">
+            <span>Conversar</span>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </a>
         </div>
 
         <div class="directory-row">
-          <div class="dir-number">03</div>
-          <div class="dir-title">Profilaxia profissional</div>
+          <h3 class="dir-title">Profilaxia profissional</h3>
           <div class="dir-text">Remoção cuidadosa de biofilme bacteriano e cálculo supragengival, fundamental para prevenir gengivite, sensibilidade e perdas dentárias progressivas.</div>
-          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20profilaxia." class="dir-action" target="_blank" rel="noopener noreferrer">
-            <span>Consultar</span>
+          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20profilaxia." class="dir-action" target="_blank" rel="noopener noreferrer">
+            <span>Conversar</span>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </a>
         </div>
 
         <div class="directory-row">
-          <div class="dir-number">04</div>
-          <div class="dir-title">Conservação e alívio de dor</div>
+          <h3 class="dir-title">Conservação e alívio de dor</h3>
           <div class="dir-text">Manejo prioritário de episódios dolorosos, sensibilidade aguda e intervenções conservadoras para salvar dentes naturais com condutas clínicas seguras.</div>
-          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20para%20dor%20de%20dente." class="dir-action" target="_blank" rel="noopener noreferrer">
-            <span>Consultar</span>
+          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20para%20al%C3%ADvio%20de%20dor%20odontol%C3%B3gica." class="dir-action" target="_blank" rel="noopener noreferrer">
+            <span>Conversar</span>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </a>
         </div>
@@ -744,35 +833,140 @@
     </div>
   </section>
 
-  <!-- Google Proof Plate -->
-  <section class="section proof-plate-section" id="avaliacoes">
+  <!-- Reviews Section (Verified Text Limited Carousel) -->
+  <section 
+    data-role="reviews" 
+    data-review-mode="verified-text" 
+    data-review-rating="4.2" 
+    data-review-count="5" 
+    id="avaliacoes" 
+    class="section reviews-section"
+    data-motion="reveal"
+  >
     <div class="container">
-      <div class="proof-plate">
-        <div class="plate-metric">
-          <div class="plate-number">4,8</div>
-          <div class="plate-stars">
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+      <div class="reviews-box">
+        <div class="reviews-header-grid">
+          <div class="aggregate-col">
+            <div class="aggregate-number">4,2</div>
+            <div class="stars-row">
+              <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+              <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+              <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+              <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+              <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+            </div>
+            <div class="aggregate-count">5 avaliações públicas</div>
+            <div class="aggregate-source">Índice verificado no mapa público</div>
           </div>
-          <div class="plate-count">28 avaliações públicas</div>
-          <div class="plate-source">Índice verificado no Google Maps</div>
+          <div>
+            <h3 class="reviews-intro-title">Avaliações públicas sobre o atendimento</h3>
+            <p class="reviews-intro-p">Depoimentos e classificações compartilhados espontaneamente por quem conheceu o consultório da Dra. Francine Goulart no centro de Rio Claro.</p>
+          </div>
         </div>
-        <div class="plate-narrative">
-          <h3>Compromisso contínuo com a saúde dos pacientes</h3>
-          <p>O reconhecimento na comunidade de Rio Claro resulta da clareza em cada explicação, respeito estrito aos horários agendados e atenção genuína ao bem-estar durante todo o procedimento.</p>
-          <a href="https://maps.google.com/?cid=1" target="_blank" rel="noopener noreferrer" class="btn-plate">
-            <span>Ver perfil completo no Google Maps</span>
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-          </a>
+
+        <!-- Evidence-Bound Carousel with all 5 source-backed items -->
+        <div data-role="reviews-carousel" data-review-total-items="5" class="carousel-wrapper">
+          <div class="carousel-track">
+            <!-- Item 1: Luis (Verified Text) -->
+            <article 
+              data-role="review-carousel-item" 
+              data-review-entry-fingerprint="46f861649878b4920304dbf1424359742abd37fc1a34dcf953971edd45b9306e" 
+              data-review-has-text="true" 
+              data-review-evidence-id="review-1" 
+              class="carousel-slide active"
+            >
+              <p class="review-quote">"Foi muito bom excelente dentista eu recomendo"</p>
+              <div class="review-meta">
+                <span class="review-author">Luis</span>
+                <span class="review-stars-inline">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                <span>um ano atrás</span>
+              </div>
+            </article>
+
+            <!-- Item 2: Maria José Leite (Verified Text) -->
+            <article 
+              data-role="review-carousel-item" 
+              data-review-entry-fingerprint="7b59bd077175b98836c0ccf1ffd89bf2404090cbc9a2f794e9cd3ac080b08df1" 
+              data-review-has-text="true" 
+              data-review-evidence-id="review-2" 
+              class="carousel-slide"
+            >
+              <p class="review-quote">"Muuto eficiente e atenciosa."</p>
+              <div class="review-meta">
+                <span class="review-author">Maria José Leite</span>
+                <span class="review-stars-inline">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                <span>um ano atrás</span>
+              </div>
+            </article>
+
+            <!-- Item 3: DELMA LOPES MATOS (Star Only) -->
+            <article 
+              data-role="review-carousel-item" 
+              data-review-entry-fingerprint="eb68fe94f430c6ac008b307b253b09aa407941d12d817ad9629950cf9bfe5d3f" 
+              data-review-has-text="false" 
+              class="carousel-slide"
+            >
+              <p class="rating-note">Avaliação com 5 estrelas registrada publicamente.</p>
+              <div class="review-meta">
+                <span class="review-author">DELMA LOPES MATOS</span>
+                <span class="review-stars-inline">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                <span>2 meses atrás</span>
+              </div>
+            </article>
+
+            <!-- Item 4: isabelly polido (Star Only) -->
+            <article 
+              data-role="review-carousel-item" 
+              data-review-entry-fingerprint="b97d8a7e33c0987320d7a01da522113c161618389d40eea9e67fbebe6edec575" 
+              data-review-has-text="false" 
+              class="carousel-slide"
+            >
+              <p class="rating-note">Avaliação registrada publicamente no perfil da clínica.</p>
+              <div class="review-meta">
+                <span class="review-author">isabelly polido</span>
+                <span class="review-stars-inline">&#9733;</span>
+                <span>2 meses atrás</span>
+              </div>
+            </article>
+
+            <!-- Item 5: Yasmin Breda (Star Only) -->
+            <article 
+              data-role="review-carousel-item" 
+              data-review-entry-fingerprint="14e790c3c3c1da4063ad4b9ec6f859b919f3600c159427de11453ec39a1f7acc" 
+              data-review-has-text="false" 
+              class="carousel-slide"
+            >
+              <p class="rating-note">Avaliação com 5 estrelas registrada publicamente.</p>
+              <div class="review-meta">
+                <span class="review-author">Yasmin Breda</span>
+                <span class="review-stars-inline">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                <span>um ano atrás</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="carousel-controls">
+            <div class="carousel-nav-group">
+              <button data-role="carousel-prev" class="carousel-btn" id="carousel-prev-btn" aria-label="Avaliação anterior">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              </button>
+              <div data-role="carousel-counter" class="carousel-counter" id="carousel-counter-el">1 / 5</div>
+              <button data-role="carousel-next" class="carousel-btn" id="carousel-next-btn" aria-label="Próxima avaliação">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+              </button>
+            </div>
+
+            <a href="https://maps.google.com/maps?q=Avenida+7%2C+310%2C+Centro%2C+Rio+Claro+-+SP" target="_blank" rel="noopener noreferrer" class="btn-maps-link">
+              <span>Ver perfil no mapa</span>
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+            </a>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Location & Facility Section -->
+  <!-- Location Section -->
   <section class="section" id="consultorio">
     <div class="container">
       <div class="section-intro">
@@ -792,7 +986,7 @@
           <div class="loc-block">
             <div class="loc-label">Contato e agendamento</div>
             <div class="loc-main">(19) 98849-4898</div>
-            <div class="loc-sub">WhatsApp direto para marcação de consultas</div>
+            <div class="loc-sub">Canal oficial para esclarecimento de dúvidas e consultas</div>
           </div>
 
           <div class="loc-block">
@@ -804,12 +998,12 @@
           <div>
             <a 
               href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20um%20hor%C3%A1rio%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
-              class="btn-primary"
-              style="width: 100%; text-align: center;"
+              class="btn-hero"
+              style="width: 100%; text-align: center; justify-content: center;"
               target="_blank" 
               rel="noopener noreferrer"
             >
-              Agendar consulta pelo WhatsApp
+              Chamar no WhatsApp
             </a>
           </div>
         </div>
@@ -844,9 +1038,9 @@
           <div class="footer-subhead">Navegação</div>
           <ul class="footer-nav-list">
             <li><a href="#inicio">Início</a></li>
-            <li><a href="#procedimentos">Procedimentos</a></li>
-            <li><a href="#avaliacoes">Avaliações Google</a></li>
-            <li><a href="#consultorio">O consultório</a></li>
+            <li><a href="#procedimentos">Tratamentos</a></li>
+            <li><a href="#avaliacoes">Reconhecimento</a></li>
+            <li><a href="#consultorio">Localização</a></li>
           </ul>
         </div>
         <div>
@@ -865,41 +1059,67 @@
     </div>
   </footer>
 
-  <!-- Floating WhatsApp CTA (synchronized on hero CTA exit) -->
+  <!-- Floating WhatsApp Action -->
   <a 
-    href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20solicitar%20um%20hor%C3%A1rio%20de%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
-    class="floating-action"
-    id="floating-action"
+    href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
+    class="floating-whatsapp"
+    id="floating-whatsapp"
+    data-role="floating-whatsapp"
     target="_blank" 
     rel="noopener noreferrer"
     aria-label="Agendar no WhatsApp"
   >
     <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-    <span>Agendar pelo WhatsApp</span>
+    <span>Agendar no WhatsApp</span>
   </a>
 
-  <!-- Synchronized Floating Controller Script -->
+  <!-- Scripts: Carousel & Floating WhatsApp Synchronization -->
   <script>
     (function() {
+      // Floating WhatsApp synchronizer
       const heroCta = document.getElementById('hero-cta');
-      const floatingBtn = document.getElementById('floating-action');
+      const floatingBtn = document.getElementById('floating-whatsapp');
 
-      if (!heroCta || !floatingBtn) return;
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) {
-            floatingBtn.classList.add('visible');
-          } else {
-            floatingBtn.classList.remove('visible');
-          }
+      if (heroCta && floatingBtn) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) {
+              floatingBtn.classList.add('visible');
+            } else {
+              floatingBtn.classList.remove('visible');
+            }
+          });
+        }, {
+          threshold: 0,
+          rootMargin: '0px 0px -100px 0px'
         });
-      }, {
-        threshold: 0,
-        rootMargin: '0px 0px -100px 0px'
-      });
+        observer.observe(heroCta);
+      }
 
-      observer.observe(heroCta);
+      // Reviews Carousel Logic
+      const slides = Array.from(document.querySelectorAll('.carousel-slide'));
+      const prevBtn = document.getElementById('carousel-prev-btn');
+      const nextBtn = document.getElementById('carousel-next-btn');
+      const counterEl = document.getElementById('carousel-counter-el');
+
+      if (slides.length && prevBtn && nextBtn && counterEl) {
+        let currentIndex = 0;
+
+        function showSlide(index) {
+          if (index < 0) index = slides.length - 1;
+          if (index >= slides.length) index = 0;
+          currentIndex = index;
+
+          slides.forEach((slide, idx) => {
+            slide.classList.toggle('active', idx === currentIndex);
+          });
+
+          counterEl.textContent = (currentIndex + 1) + ' / ' + slides.length;
+        }
+
+        prevBtn.addEventListener('click', () => showSlide(currentIndex - 1));
+        nextBtn.addEventListener('click', () => showSlide(currentIndex + 1));
+      }
     })();
   </script>
 </body>

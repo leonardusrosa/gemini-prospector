@@ -1,0 +1,149 @@
+{
+  "profileName": "Dentista Dra. Francine Goulart",
+  "profileUrl": "https://www.google.com/maps/place/Dentista+Dra.+Francine+Goulart/@-22.4125632,-47.5594921,17z/data=!4m6!3m5!1s0x94c7da5a58a30833:0x1f93843856f80228!8m2!3d-22.4125632!4d-47.5594921!16s%2Fg%2F11kn6x5g20",
+  "placeIdOrCid": "0x94c7da5a58a30833:0x1f93843856f80228",
+  "placeId": "0x94c7da5a58a30833:0x1f93843856f80228",
+  "cid": "2275304677764727336",
+  "aggregateRating": 4.2,
+  "ratingCount": 5,
+  "reviewCount": 5,
+  "collectedAt": "2026-09-01T13:26:00-03:00",
+  "sourceSurface": "direct_google_maps",
+  "collectionMethod": "playwright_direct_maps",
+  "profileHeaderObserved": true,
+  "reviewsPanelOpened": true,
+  "reviewsPanelFullyTraversed": true,
+  "textReviewCollectionAttempted": true,
+  "aggregateObservation": {
+    "ratingText": "4,2",
+    "countText": "5 avaliações",
+    "surfaceUrl": "https://www.google.com/maps/place/Dentista+Dra.+Francine+Goulart/@-22.4125632,-47.5594921,17z/data=!4m6!3m5!1s0x94c7da5a58a30833:0x1f93843856f80228!8m2!3d-22.4125632!4d-47.5594921!16s%2Fg%2F11kn6x5g20"
+  },
+  "reviewsPanelObservation": {
+    "countText": "5 avaliações",
+    "surfaceUrl": "https://www.google.com/maps/place/Dentista+Dra.+Francine+Goulart/@-22.4125632,-47.5594921,17z/data=!4m6!3m5!1s0x94c7da5a58a30833:0x1f93843856f80228!8m2!3d-22.4125632!4d-47.5594921!16s%2Fg%2F11kn6x5g20"
+  },
+  "observedRatingEntries": 5,
+  "observedTextReviewEntries": 2,
+  "starOnlyRatingCount": 3,
+  "capturedTextReviewCount": 2,
+  "reviews": [
+    {
+      "id": "review-1",
+      "author": "Luis",
+      "rating": 5,
+      "dateLabel": "um ano atrás",
+      "text": "Foi muito bom excelente dentista eu recomendo",
+      "source": "google_maps",
+      "placeIdOrCid": "0x94c7da5a58a30833:0x1f93843856f80228",
+      "nativeReviewId": "Ci9DQUlRQUNvZENodHljRjlvT25kbmNHUktOMU53UTJZM1NYVTJSWGszTFhVeFlrRRAB"
+    },
+    {
+      "id": "review-2",
+      "author": "Maria José Leite",
+      "rating": 5,
+      "dateLabel": "um ano atrás",
+      "text": "Muuto eficiente e atenciosa.",
+      "source": "google_maps",
+      "placeIdOrCid": "0x94c7da5a58a30833:0x1f93843856f80228",
+      "nativeReviewId": "ChdDSUhNMG9nS0VJQ0FnTUNvMHMtOHBnRRAB"
+    }
+  ],
+  "observedEntries": [
+    {
+      "fingerprint": "46f861649878b4920304dbf1424359742abd37fc1a34dcf953971edd45b9306e",
+      "fingerprintVersion": "maps-native-id-v1",
+      "nativeReviewId": "Ci9DQUlRQUNvZENodHljRjlvT25kbmNHUktOMU53UTJZM1NYVTJSWGszTFhVeFlrRRAB",
+      "author": "Luis",
+      "rating": 5,
+      "dateLabel": "um ano atrás",
+      "hasText": true,
+      "textEvidenceId": "review-1",
+      "sourceSurface": "direct_google_maps",
+      "collectedAt": "2026-09-01T13:26:00-03:00",
+      "provenance": {
+        "authorObserved": true,
+        "ratingObserved": true,
+        "dateLabelObserved": true,
+        "nativeReviewIdObserved": true,
+        "textObserved": true
+      }
+    },
+    {
+      "fingerprint": "7b59bd077175b98836c0ccf1ffd89bf2404090cbc9a2f794e9cd3ac080b08df1",
+      "fingerprintVersion": "maps-native-id-v1",
+      "nativeReviewId": "ChdDSUhNMG9nS0VJQ0FnTUNvMHMtOHBnRRAB",
+      "author": "Maria José Leite",
+      "rating": 5,
+      "dateLabel": "um ano atrás",
+      "hasText": true,
+      "textEvidenceId": "review-2",
+      "sourceSurface": "direct_google_maps",
+      "collectedAt": "2026-09-01T13:26:00-03:00",
+      "provenance": {
+        "authorObserved": true,
+        "ratingObserved": true,
+        "dateLabelObserved": true,
+        "nativeReviewIdObserved": true,
+        "textObserved": true
+      }
+    },
+    {
+      "fingerprint": "eb68fe94f430c6ac008b307b253b09aa407941d12d817ad9629950cf9bfe5d3f",
+      "fingerprintVersion": "maps-native-id-v1",
+      "nativeReviewId": "Ci9DQUlRQUNvZENodHljRjlvT25FdFRqQnhPVVppVW1ObFozZEpVbk5mWmtGNFMxRRAB",
+      "author": "DELMA LOPES MATOS",
+      "rating": 5,
+      "dateLabel": "2 meses atrás",
+      "hasText": false,
+      "textEvidenceId": null,
+      "sourceSurface": "direct_google_maps",
+      "collectedAt": "2026-09-01T13:26:00-03:00",
+      "provenance": {
+        "authorObserved": true,
+        "ratingObserved": true,
+        "dateLabelObserved": true,
+        "nativeReviewIdObserved": true,
+        "textObserved": false
+      }
+    },
+    {
+      "fingerprint": "b97d8a7e33c0987320d7a01da522113c161618389d40eea9e67fbebe6edec575",
+      "fingerprintVersion": "maps-native-id-v1",
+      "nativeReviewId": "Ci9DQUlRQUNvZENodHljRjlvT2paS1RHbHNWWEJ1V1RGSFJYWTJUMWg0VFZwTVgyYxAB",
+      "author": "isabelly polido",
+      "rating": 1,
+      "dateLabel": "2 meses atrás",
+      "hasText": false,
+      "textEvidenceId": null,
+      "sourceSurface": "direct_google_maps",
+      "collectedAt": "2026-09-01T13:26:00-03:00",
+      "provenance": {
+        "authorObserved": true,
+        "ratingObserved": true,
+        "dateLabelObserved": true,
+        "nativeReviewIdObserved": true,
+        "textObserved": false
+      }
+    },
+    {
+      "fingerprint": "14e790c3c3c1da4063ad4b9ec6f859b919f3600c159427de11453ec39a1f7acc",
+      "fingerprintVersion": "maps-native-id-v1",
+      "nativeReviewId": "ChZDSUhNMG9nS0VJQ0FnTURvX29PRmJBEAE",
+      "author": "Yasmin Breda",
+      "rating": 5,
+      "dateLabel": "um ano atrás",
+      "hasText": false,
+      "textEvidenceId": null,
+      "sourceSurface": "direct_google_maps",
+      "collectedAt": "2026-09-01T13:26:00-03:00",
+      "provenance": {
+        "authorObserved": true,
+        "ratingObserved": true,
+        "dateLabelObserved": true,
+        "nativeReviewIdObserved": true,
+        "textObserved": false
+      }
+    }
+  ]
+}

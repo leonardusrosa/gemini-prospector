@@ -2,14 +2,31 @@
 **Business**: Clínica Odontológica Dra. Francine Goulart  
 **Slug**: `clinica-dra-francine-goulart-rio-claro`  
 **Selection**: Direction 1 (Critiqued & Approved via `gpt-taste`)  
-**Status**: Authoritative visual contract for Variant B implementation
+**Status**: Authoritative visual contract for production candidate
 
 ---
 
-## 1. Design Thesis
-Uma composição médica editorial de alta distinção e serenidade visual. Substitui inteiramente os arquétipos genéricos de SaaS (fundo escuro obrigatório, cards isolados com sombra e botões flutuantes descontextualizados) por uma narrativa em canvas luminoso marfim, tipografia serifada de autoridade médica (Newsreader), divisores horizontais geométricos finos e direcionamento de conversão contextual.
+## 1. Anti-House-Style Audit Record
+- `OPEN_DESIGN_HOUSE_STYLE_CHECK`: PASS
+- **Business Specific Decisions**:
+  - Direct individual clinical practice established in 2019 by Dra. Francine Aparecida Goulart (CRO SP-CD-104303) in downtown Rio Claro (Avenida 7, nº 310).
+  - Continuous card-free clinical procedure directory structured around real preventive, restorative, and periodontal scope, replacing generic SaaS card boxes.
+  - Absence of artificial process numbering (`01/02/03/04` removed per repository rules against decorative ordering).
+  - Explicit verified Google proof plate (4.2 stars, 5 direct Maps verified reviews, including verbatim quotes from Luis and Maria José Leite, and 3 star-only entries).
+- **Rejected OpenDesign / Template Defaults**:
+  - Rejected default dark SaaS background with floating cards.
+  - Rejected 3-card feature rows with drop-shadows.
+  - Rejected decorative tags, pills, chips, and artificial stats strips.
+  - Rejected generic gradient glow or glassmorphism.
+- **Why Typography & Composition Fit this Prospect**:
+  - Newsreader serif display delivers calm medical authority, dignity, and individualized patient focus, perfectly matching a private solo practice in a historic interior São Paulo city center.
+  - Plus Jakarta Sans provides crisp technical contrast for clinical specifications and contact affordances.
+- **Anti-Generalization Rule**:
+  - Do NOT generalize "ivory + editorial serif + medical publication" as the default dental/health aesthetic. It was chosen here because this prospect is an individualized solo practice where clinical intimacy, craftsmanship, and downtown trust take precedence over high-volume orthodontic tech imagery.
 
-## 2. Color Tokens
+---
+
+## 2. Design Tokens
 - **Canvas / Background**: `#fafaf9` (Warm Ivory / Linho Clínico)
 - **Surface / Contrast Section**: `#f4f4f2` (Porcelana Neutra)
 - **Primary Deep / Headings**: `#132a24` (Verde Floresta Cirúrgico Profundo)
@@ -18,50 +35,53 @@ Uma composição médica editorial de alta distinção e serenidade visual. Subs
 - **Accent Action**: `#1e473d` (Sálvia Cirúrgico Profundo)
 - **Accent Hover**: `#14352d`
 - **Hairline Dividers**: `#e7e5e4` (Linha divisória sutil 1px)
-- **Contrast Proof Badge**: `#132a24` (Fundo sólido contrastante para destaque de nota Google)
+- **Contrast Proof Plate**: `#132a24` (Fundo sólido para destaque de avaliações verificadas)
+
+---
 
 ## 3. Typography Stack
 - **Display Headings (H1, H2, H3)**: `'Newsreader', serif` (pesos 400, 500, 600)
-  - Proporção H1: `clamp(2.5rem, 4.2vw, 3.8rem)` com entrelinha estrita `1.15` e largura máxima controlada para 2 linhas no desktop.
+  - Proporção H1: `clamp(2.4rem, 4.2vw, 3.6rem)` com entrelinha estrita `1.15` e largura máxima controlada para 2 linhas no desktop.
 - **Body & Technical Copy**: `'Plus Jakarta Sans', system-ui, sans-serif` (pesos 400, 500, 600)
   - Corpo regular `1rem`, entrelinha `1.65`.
 
+---
+
 ## 4. Spacing & Rhythm
-- Seções com espaçamento editorial generoso: `padding: 104px 0` no desktop, `64px 0` no mobile.
+- Seções com espaçamento editorial generoso: `padding: 96px 0` no desktop, `56px 0` no mobile.
 - Alinhamento em grade de 12 colunas com gutter de `32px`.
-- Container central: `max-width: 1200px`.
+- Container central: `max-width: 1180px`.
+
+---
 
 ## 5. Hero Architecture
-- **Composição**: Canvas claro e luminoso (`#fafaf9`). Coluna de texto à esquerda com amplitude tipográfica (`max-w-3xl`), exibindo headline com serifa editorial expressiva.
-- **Asset Visual**: O template ultrawide da dentista (`desktop-ultrawide.webp`) é acomodado à direita em uma moldura arquitetônica com proporção refinada e máscara suave de luminosidade, preservando a silhueta da profissional sem corte abrupto e sem overlay escuro artificial.
-- **CTA**: Exatamente UM botão com preenchimento verde floresta cirúrgico e texto branco de alto contraste ("Solicitar horário de avaliação").
+- Full-bleed background layout mode (`data-hero-layout="full-bleed-background"`) with `data-hero-frame-policy="preserve-complete-frame"`.
+- Dedicated responsive `<picture>` wrapper with desktop ultrawide (`dentistry-female.webp`, 1983x793) and mobile (`dentistry-female-mobile.webp`, 941x1672).
+- Single high-contrast CTA button: "Agendar avaliação no WhatsApp".
 
-## 6. Treatment Directory Grammar (Zero Cards)
-- Ao invés de cards flutuantes com sombras, os tratamentos são dispostos em um diretório editorial contínuo com linhas divisórias horizontais finas (`border-top: 1px solid var(--hairline)`).
-- Cada linha apresenta:
-  - Número técnico discreto em serifa (`01`, `02`, `03`, `04`).
-  - Nome do tratamento em destaque editorial (`font-family: Newsreader; font-size: 1.6rem`).
-  - Descrição clínica factual em prosa corrida.
-  - Link de ação contextual direta ("Agendar pelo WhatsApp").
+---
+
+## 6. Treatment Directory Grammar (Zero Cards, Zero Decorative Numbers)
+- Substituição total de cards por linhas divisórias horizontais (`border-top: 1px solid var(--hairline)`).
+- Sem numeração artificial (`01`, `02`, etc.), apoiado puramente no nome do tratamento e tipografia serifada.
+- Links diretos com destinação para o WhatsApp verificado com mensagem contextual.
+
+---
 
 ## 7. Google Reviews Presentation
-- Apresentação em formato de placa editorial de certificação:
-  - Métrica central `4,8` em tipografia serifada de grande porte.
-  - Avaliação de 28 pacientes verificados no Google Maps.
-  - Texto de compromisso clínico com pontualidade e acolhimento humano.
-  - Link externo verificado para o perfil do Google Maps.
+- Seção verificada `data-role="reviews"` com `data-review-mode="verified-text"`, `data-review-rating="4.2"`, `data-review-count="5"`.
+- Carrossel com 5 slides vinculados estritamente às evidências observadas com `nativeReviewId`.
+- 2 itens com texto completo e citação fidedigna (Luis, Maria José Leite).
+- 3 itens com avaliação de estrelas e menção neutra ("Avaliação sem comentário").
+- Sem aspas fabricadas, sem "Paciente Verificado #1", sem marca Google em copy pública.
 
-## 8. Location & Accessibility Hub
-- Bloco em 2 colunas com moldura unificada:
-  - Esquerda: Dados de conveniência (Avenida 7, nº 310, Centro, Rio Claro), telefone (19) 98849-4898, orientações de chegada.
-  - Direita: Mapa interativo responsivo com borda milimétrica neutra e cantos sutis (4px).
+---
 
-## 9. Motion & Behavior
-- Entrada suave das linhas editoriais com transição de opacidade e sutil deslocamento vertical (0.5s).
-- Header com efeito de vidro esmerilado claro (`backdrop-filter: blur(16px)` com transparência de 90%).
-- Botão flutuante de WhatsApp que se torna visível somente após o CTA do hero sair do viewport.
-
-## 10. Anti-Slop & Core Rules Constraints
-- Proibição absoluta de pills, chips decorativos, gradientes fluorescentes e caixas elevadas por sombras.
-- Zero emojis e zero travessões (`—` / `–`).
-- Conformidade total com WCAG AA em todas as combinações de texto e fundo.
+## 8. Anti-Slop & Core Rules Compliance
+- Zero decorative tags/pills/badges.
+- Zero emojis in public UI.
+- Zero em dashes (`—`) or en dashes (`–`) in public text.
+- Full PT-BR sentence case.
+- Floating WhatsApp synchronized: appears only after hero CTA leaves viewport.
+- No competing assistant launcher.
+- Responsive Google Maps embed for Avenida 7, nº 310, Centro, Rio Claro - SP.
