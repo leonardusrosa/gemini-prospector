@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "baselineCommitSha": "e1ad7a1b9a4792a02735b417e171e2360406b1a7",
+  "acceptedBaselineHistory": {
+    "67005dfe237d5f74802c2a33d991853b6fb13747": {
+      "iost-ortodontia-aline-iost-rio-claro": {
+        "factualEvidence.verifiedServices": [
+          "Avaliação ortodôntica",
+          "Clareamento dental",
+          "Manutenção de aparelho fixo",
+          "Procedimentos clínicos gerais"
+        ]
+      }
+    }
+  },
+  "clients": {
+    "iost-ortodontia-aline-iost-rio-claro": {
+      "factualEvidence.verifiedServices": [
+        "Avaliação ortodôntica",
+        "Clareamento dental",
+        "Manutenção de aparelho fixo",
+        "Procedimentos clínicos gerais"
+      ],
+      "phone": "5519996571896",
+      "address": {
+        "text": "Avenida 9, nº 411, Sala 03, Bairro Saúde, Rio Claro - SP, CEP 13500-360"
+      }
+    }
+  }
+}
