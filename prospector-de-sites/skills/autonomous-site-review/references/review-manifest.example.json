@@ -1,8 +1,18 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "slug": "example-business-city",
   "siteMode": "new_site_concept",
   "preview": true,
+  "openDesignDirection": {
+    "required": true,
+    "mcpServerName": "open-design",
+    "mcpProbeAttempted": true,
+    "status": "used",
+    "directionsGenerated": 2,
+    "selectedDirection": "example-direction",
+    "designMdPath": "open-design/DESIGN.md",
+    "gptTasteSelectionReviewed": true
+  },
   "gptTaste": {
     "required": true,
     "skillSha256Required": true
