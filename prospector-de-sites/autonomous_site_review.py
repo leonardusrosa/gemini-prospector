@@ -32,7 +32,12 @@ def _portable_design_judge_check(manifest: dict, design_read: str, review: core.
     if not cfg.get("required", True):
         return
 
-    if re.search(r"(?im)^\s*GPT_TASTE_READ\s*:\s*PASS\s*$", design_read):
+    has_gpt_taste = bool(
+        re.search(r"(?im)^\s*GPT_TASTE_READ\s*:\s*PASS\s*$", design_read)
+        or _design_value(design_read, "GPT_TASTE_PATH")
+        or _design_value(design_read, "GPT_TASTE_SHA256")
+    )
+    if has_gpt_taste:
         core._legacy_check_gpt_taste(manifest, design_read, review)
         return
 

@@ -63,7 +63,7 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(250, 250, 249, 0.94);
+      background: rgba(250, 250, 249, 0.95);
       backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--hairline);
       transition: background 0.3s ease;
@@ -129,24 +129,49 @@
       background: var(--forest-hover);
     }
 
-    /* Hero Section */
+    /* Hero Section (Full-Bleed Expert Background) */
     .hero-section {
       position: relative;
+      width: 100%;
       background-color: var(--canvas);
-      padding: 64px 0 88px;
       border-bottom: 1px solid var(--hairline);
       overflow: hidden;
     }
 
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 48px;
+    .hero-media-plane {
+      position: relative;
+      width: 100%;
+      line-height: 0;
+    }
+
+    .hero-media-plane picture {
+      display: block;
+      width: 100%;
+    }
+
+    .hero-media-plane img[data-role="hero-image"] {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: none;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
       align-items: center;
+      background: linear-gradient(90deg, rgba(250, 250, 249, 0.97) 0%, rgba(250, 250, 249, 0.93) 38%, rgba(250, 250, 249, 0.6) 55%, rgba(250, 250, 249, 0) 74%);
+      pointer-events: none;
+    }
+
+    .hero-container {
+      pointer-events: auto;
     }
 
     .hero-content {
-      max-width: 640px;
+      max-width: 580px;
     }
 
     .hero-meta-label {
@@ -159,16 +184,17 @@
     }
 
     .hero-title {
-      font-size: clamp(2.4rem, 4.2vw, 3.6rem);
+      font-size: clamp(2.3rem, 3.8vw, 3.4rem);
       margin-bottom: 24px;
       max-width: 580px;
+      line-height: 1.15;
     }
 
     .hero-desc {
-      font-size: 1.12rem;
-      line-height: 1.7;
+      font-size: 1.1rem;
+      line-height: 1.68;
       color: #44403c;
-      margin-bottom: 36px;
+      margin-bottom: 34px;
       max-width: 520px;
     }
 
@@ -189,22 +215,6 @@
     .btn-hero:hover {
       background: var(--forest-hover);
       transform: translateY(-2px);
-    }
-
-    .hero-media-card {
-      position: relative;
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      border: 1px solid var(--hairline);
-      background: #ffffff;
-    }
-
-    .hero-media-card picture,
-    .hero-media-card img {
-      display: block;
-      width: 100%;
-      height: auto;
-      object-fit: contain;
     }
 
     /* Editorial Detail Strip */
@@ -651,9 +661,6 @@
 
     /* Responsive */
     @media (max-width: 980px) {
-      .hero-grid {
-        grid-template-columns: 1fr;
-      }
       .directory-row {
         grid-template-columns: 1fr;
         gap: 12px;
@@ -679,12 +686,34 @@
       }
     }
 
+    @media (max-width: 767px) {
+      .hero-overlay {
+        position: relative;
+        inset: auto;
+        margin-top: -140px;
+        padding: 40px 0 48px;
+        background: linear-gradient(180deg, rgba(250, 250, 249, 0) 0%, rgba(250, 250, 249, 0.94) 18%, rgba(250, 250, 249, 1) 36%);
+        pointer-events: auto;
+      }
+      .hero-content {
+        max-width: 100%;
+      }
+      .hero-title {
+        font-size: 2.1rem;
+        margin-bottom: 16px;
+      }
+      .hero-desc {
+        font-size: 1rem;
+        margin-bottom: 24px;
+      }
+      .btn-hero {
+        width: 100%;
+      }
+    }
+
     @media (max-width: 640px) {
       .nav-menu {
         display: none;
-      }
-      .hero-section {
-        padding: 40px 0 56px;
       }
       .reviews-box {
         padding: 36px 24px;
@@ -720,27 +749,42 @@
         <a href="#procedimentos" class="nav-item">Tratamentos</a>
         <a href="#avaliacoes" class="nav-item">Reconhecimento</a>
         <a href="#consultorio" class="nav-item">Localização</a>
-        <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." class="btn-nav" target="_blank" rel="noopener noreferrer">Agendar consulta</a>
+        <a href="https://wa.me/5519998844898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." class="btn-nav" target="_blank" rel="noopener noreferrer">Agendar consulta</a>
       </nav>
     </div>
   </header>
 
-  <!-- Hero Section -->
+  <!-- Hero Section (Full-Bleed Expert Background) -->
   <section 
     data-role="hero" 
     data-hero-layout="full-bleed-background" 
     data-hero-frame-policy="preserve-complete-frame" 
+    data-hero-expert-presentation="background" 
+    data-hero-mobile-layout="full-width-background" 
     class="hero-section" 
     id="inicio"
   >
-    <div class="container">
-      <div class="hero-grid">
+    <div class="hero-media-plane">
+      <picture>
+        <source media="(max-width: 767px)" srcset="assets/templates/dentistry-female-mobile.webp" width="941" height="1672">
+        <img 
+          data-role="hero-image"
+          data-image-context="illustrative" 
+          src="assets/templates/dentistry-female.webp" 
+          alt="Imagem ilustrativa de consultório odontológico no centro de Rio Claro"
+          width="1983"
+          height="793"
+        >
+      </picture>
+    </div>
+    <div class="hero-overlay">
+      <div class="container hero-container">
         <div class="hero-content">
           <div class="hero-meta-label">Atendimento clínico no centro de Rio Claro</div>
           <h1 class="hero-title">Cuidado odontológico completo com atenção dedicada ao seu bem-estar</h1>
           <p class="hero-desc">Consultas estruturadas com diagnóstico preventivo minucioso, restaurações funcionais e acompanhamento personalizado em um ambiente acolhedor.</p>
           <a 
-            href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
+            href="https://wa.me/5519998844898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
             class="btn-hero"
             id="hero-cta"
             target="_blank" 
@@ -748,19 +792,6 @@
           >
             Agendar avaliação no WhatsApp
           </a>
-        </div>
-        <div class="hero-media-card">
-          <picture>
-            <source media="(max-width: 767px)" srcset="assets/templates/dentistry-female-mobile.webp" width="941" height="1672">
-            <img 
-              data-role="hero-image"
-              data-image-context="illustrative" 
-              src="assets/templates/dentistry-female.webp" 
-              alt="Imagem ilustrativa de consultório odontológico com espaço reservado para foto profissional"
-              width="1983"
-              height="793"
-            >
-          </picture>
         </div>
       </div>
     </div>
@@ -797,7 +828,7 @@
         <div class="directory-row">
           <h3 class="dir-title">Avaliação e prevenção</h3>
           <div class="dir-text">Exame clínico abrangente para diagnóstico precoce de alterações na dentição e tecidos moles, incluindo orientações práticas de higienização e prevenção contínua.</div>
-          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20conversar%20sobre%20avalia%C3%A7%C3%A3o%20e%20preven%C3%A7%C3%A3o." class="dir-action" target="_blank" rel="noopener noreferrer">
+          <a href="https://wa.me/5519998844898?text=Ol%C3%A1%2C%20gostaria%20de%20conversar%20sobre%20avalia%C3%A7%C3%A3o%20e%20preven%C3%A7%C3%A3o." class="dir-action" target="_blank" rel="noopener noreferrer">
             <span>Conversar</span>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </a>
@@ -806,7 +837,7 @@
         <div class="directory-row">
           <h3 class="dir-title">Restaurações estéticas</h3>
           <div class="dir-text">Reconstrução anatômica de dentes fraturados ou acometidos por cárie com resinas compostas selecionadas para mimetizar o esmalte e devolver a resistência mastigatória.</div>
-          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20conversar%20sobre%20restaura%C3%A7%C3%B5es%20est%C3%A9ticas." class="dir-action" target="_blank" rel="noopener noreferrer">
+          <a href="https://wa.me/5519998844898?text=Ol%C3%A1%2C%20gostaria%20de%20conversar%20sobre%20restaura%C3%A7%C3%B5es%20est%C3%A9ticas." class="dir-action" target="_blank" rel="noopener noreferrer">
             <span>Conversar</span>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </a>
@@ -815,7 +846,7 @@
         <div class="directory-row">
           <h3 class="dir-title">Profilaxia profissional</h3>
           <div class="dir-text">Remoção cuidadosa de biofilme bacteriano e cálculo supragengival, fundamental para prevenir gengivite, sensibilidade e perdas dentárias progressivas.</div>
-          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20profilaxia." class="dir-action" target="_blank" rel="noopener noreferrer">
+          <a href="https://wa.me/5519998844898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20profilaxia." class="dir-action" target="_blank" rel="noopener noreferrer">
             <span>Conversar</span>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </a>
@@ -824,7 +855,7 @@
         <div class="directory-row">
           <h3 class="dir-title">Conservação e alívio de dor</h3>
           <div class="dir-text">Manejo prioritário de episódios dolorosos, sensibilidade aguda e intervenções conservadoras para salvar dentes naturais com condutas clínicas seguras.</div>
-          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20para%20al%C3%ADvio%20de%20dor%20odontol%C3%B3gica." class="dir-action" target="_blank" rel="noopener noreferrer">
+          <a href="https://wa.me/5519998844898?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20para%20al%C3%ADvio%20de%20dor%20odontol%C3%B3gica." class="dir-action" target="_blank" rel="noopener noreferrer">
             <span>Conversar</span>
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </a>
@@ -980,12 +1011,12 @@
           <div class="loc-block">
             <div class="loc-label">Endereço da clínica</div>
             <div class="loc-main">Avenida 7, nº 310, Centro</div>
-            <div class="loc-sub">Rio Claro - SP, CEP 13500-143</div>
+            <div class="loc-sub">Rio Claro - SP, CEP 13506-800</div>
           </div>
 
           <div class="loc-block">
             <div class="loc-label">Contato e agendamento</div>
-            <div class="loc-main">(19) 98849-4898</div>
+            <div class="loc-main">(19) 99884-4898</div>
             <div class="loc-sub">Canal oficial para esclarecimento de dúvidas e consultas</div>
           </div>
 
@@ -997,7 +1028,7 @@
 
           <div>
             <a 
-              href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20um%20hor%C3%A1rio%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
+              href="https://wa.me/5519998844898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20um%20hor%C3%A1rio%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
               class="btn-hero"
               style="width: 100%; text-align: center; justify-content: center;"
               target="_blank" 
@@ -1046,8 +1077,8 @@
         <div>
           <div class="footer-subhead">Contato</div>
           <ul class="footer-nav-list">
-            <li>Telefone: (19) 98849-4898</li>
-            <li>WhatsApp: (19) 98849-4898</li>
+            <li>Telefone: (19) 99884-4898</li>
+            <li>WhatsApp: (19) 99884-4898</li>
             <li>Centro, Rio Claro - SP</li>
           </ul>
         </div>
@@ -1061,7 +1092,7 @@
 
   <!-- Floating WhatsApp Action -->
   <a 
-    href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
+    href="https://wa.me/5519998844898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
     class="floating-whatsapp"
     id="floating-whatsapp"
     data-role="floating-whatsapp"
