@@ -1,203 +1,360 @@
-# Prospector de Sites — Plugin para Google Antigravity
+# Prospector
 
-Prospecção semiautomática de clientes com site fraco, redesign premium, publicação automática via GitHub + Vercel e proposta multicanal — empacotado como **Plugin do Antigravity** (Agy 2.0 / IDE / CLI compartilham a mesma config).
+Agent-agnostic prospecting, evidence, redesign, QA, CRM, publishing, and outreach workflow for local-business websites.
 
-É a mesma lógica da versão Claude, no formato nativo do Antigravity: um **plugin** (`plugin.json` + `mcp_config.json` + `skills/`). A busca de negócios usa o plugin oficial **Google Maps Platform** (Places); o navegador entra só pra avaliar o site do lead.
+Prospector Core is not tied to Antigravity, Claude, Codex, OpenCode, Hermes, or any other single agent runtime. The repository owns the canonical rules and deterministic gates; each agent runtime supplies capabilities through a thin adapter.
 
-## Estrutura do plugin
-
-```text
-prospector-de-sites/          ← esta é a pasta do plugin
-├── plugin.json               marcador do plugin
-├── mcp_config.json           define os MCP (CRM + navegador Playwright)
-├── prospector-mcp.py         servidor MCP do CRM (SQLite)
-├── evolution_client.py       conector seguro Evolution API WhatsApp
-├── outreach_service.py       gerador e orquestrador de outreach multicanal
-├── editor_publish_server.py  backend de referência para draft/publish local ou Git
-├── skills/                   as 8 skills (SKILL.md)
-│   ├── prospector-setup/
-│   ├── prospeccao-maps/
-│   ├── redesign-premium/
-│   ├── expert-hero-assets/   geração autônoma de hero desktop/mobile a partir de expert real
-│   ├── outreach-proposta/    outreach multicanal (WhatsApp + Gmail)
-│   ├── deploy-site/          deploy via GitHub + Vercel
-│   ├── dashboard-leads/
-│   └── contrato-servico/
-└── dashboard/                painel local (Python/SQLite)
-```
-
-Na raiz do workspace:
-
-- `create_editor.py` gera o editor visual client-ready;
-- `editor_server.py` serve o site/editor e habilita `Salvar rascunho` + `Publicar alterações` em localhost.
-
-## Instalação
-
-### 1. Instalar o plugin
-
-Copie a pasta `prospector-de-sites/` inteira para um dos locais que o Antigravity varre:
-
-- **Global (todos os projetos):** `~/.gemini/config/plugins/prospector-de-sites/`
-  (no Windows: `C:\Users\SEU_USUARIO\.gemini\config\plugins\prospector-de-sites\`)
-- **Só no projeto atual:** `.agents/plugins/prospector-de-sites/` na raiz do workspace aberto.
-
-As **skills** carregam sozinhas — não precisa copiar nada pra `~/.gemini/skills` na mão.
-
-### 2. Ajustar o `mcp_config.json` do plugin
-
-Abra `prospector-de-sites/mcp_config.json` e corrija os dois caminhos do `prospector-crm`:
-
-- o caminho do `prospector-mcp.py` (dentro da pasta do plugin);
-- o `--pasta` = a pasta do seu projeto (onde ficam `prospector.db`, os leads e os sites).
-
-O Antigravity lê esse `mcp_config.json` do plugin automaticamente.
-
-### 3. Instalar o plugin Google Maps Platform (a fonte da prospecção)
-
-Em **Settings → Customizations → Build with Google**, baixe o plugin **Google Maps Platform**. Ele dá as ferramentas de Places (buscar negócios, ler nota, nº de avaliações, site, telefone) que a skill `prospeccao-maps` usa. Precisa de uma **API key do Google Maps Platform** (tem cota grátis mensal).
-
-> Sem o plugin do Maps, a prospecção ainda funciona no modo navegador (raspando o Google Maps pelo Playwright) — só é menos confiável.
-
-### 4. Configurar o Prospector
-
-Abra a pasta do projeto e diga no chat: **"configurar o prospector"**. A skill `prospector-setup` coleta seus dados, o repositório Git de publicação e instala o painel local.
-
-## Como usar (linguagem natural)
-
-1. **"prospecta nutricionistas em São Paulo"** → busca no Google Maps Platform, qualifica e monta o dashboard.
-2. **"redesenha os 5 melhores"** → redesign premium + assets de hero quando aplicável + editor + comparador antes/depois.
-3. **"publica os redesigns"** → copia para o repositório Git local, faz commit/push para o GitHub, a Vercel publica e o plugin valida o HTTPS público.
-4. **"manda a proposta"** → outreach multicanal (WhatsApp via Evolution API ou Gmail) com link da proposta personalizada.
-5. Depois: contrato, e o `dashboard.html` administra tudo (kanban + financeiro + histórico de outreach).
-
-## Hero expert autônomo
-
-Quando `redesign-premium` classifica o hero como `expert_fullscreen` e existe uma foto real/verificada do profissional, a skill `expert-hero-assets` entra como etapa de produção antes do HTML final do hero.
-
-Outputs canônicos:
+## Architecture
 
 ```text
-sites/[slug]/assets/hero-expert-desktop.webp
-sites/[slug]/assets/hero-expert-mobile.webp
+Prospector Core
+├── AGENTS.md                         canonical runtime entry contract
+├── prospector.py                     runtime doctor + portable MCP handoff
+└── prospector-de-sites/
+    ├── skills/                       canonical factual/design/QA/outreach rules
+    ├── adapters/                     thin runtime-specific setup only
+    ├── prospector-mcp.py             CRM MCP over the local SQLite database
+    ├── dashboard/                    CRM dashboard
+    ├── editor / CMS tooling
+    ├── review evidence / QA gates
+    ├── OpenDesign integration
+    └── deploy tooling
 ```
 
-Padrão visual atual:
-
-- **desktop**: preferir composição **ultrawide ~2.3:1–2.6:1** quando há copy à esquerda e expert à direita; expert centrado na metade direita (`x≈75%`), `contain`/rendering subject-safe, sem zoom destrutivo, edge integration quando necessária e alta resolução real (tipicamente 3.5K–4.5K+ de largura quando a fonte suporta);
-- **mobile**: composição vertical própria, expert grande no top ~50–55%, head + upper body, sem mostrar waist-down, lower half calma para headline/CTA HTML;
-- identidade/pose reais têm prioridade sobre novidade estética;
-- se a geração mudar materialmente o rosto, usar fallback source-preserving com o expert original;
-- `4200×1728 WebP ~417 KB` é benchmark forte de qualidade para desktop ultrawide, não hard limit.
-
-### Capability/billing order
-
-O fluxo padrão prefere primeiro a capacidade de geração/edição de imagem que já estiver disponível na sessão do **Google Antigravity**.
+The target model is:
 
 ```text
-Antigravity-native
-→ source-preserving fallback
-→ API/provider externo apenas se explicitamente configurado
+one Prospector Core
+        +
+many thin agent adapters
 ```
 
-O Prospector **não exige `GEMINI_API_KEY` por padrão**, não deve pedir API key automaticamente para gerar o hero e não pode ativar uma rota paga silenciosamente. Assinatura Google AI Pro/quota do Antigravity e billing de Gemini API devem ser tratados como coisas distintas.
+No adapter is allowed to fork or weaken canonical rules.
 
-A referência completa de prompts, QA, identidade e fallback fica em:
+## Supported agent runtimes
+
+The bootstrap currently recognizes these convenience labels:
 
 ```text
-prospector-de-sites/skills/redesign-premium/references/expert-hero-generation.md
+generic
+antigravity
+codex
+claude-code
+opencode
+hermes
 ```
 
-## Editor visual client-ready
+An unlisted CLI uses `generic`.
 
-Para qualquer site gerado:
+A runtime does not need a dedicated adapter if it can:
+
+- read/write repository files;
+- run shell commands;
+- run Python 3.
+
+For the full workflow, MCP, browser automation, Git, GitHub, Vercel, Node/npx, and image generation are useful additional capabilities.
+
+## Quick start
+
+Clone/open the repository, then:
 
 ```bash
-python create_editor.py sites/[slug]/[slug].html
+python prospector.py doctor --agent generic
+python prospector.py setup --agent generic --workspace .
 ```
 
-Isso cria:
+For another runtime:
+
+```bash
+python prospector.py doctor --agent codex
+python prospector.py setup --agent codex --workspace .
+```
+
+Setup writes local ignored handoff files:
 
 ```text
-sites/[slug]/[slug]-editor.html
+.prospector/runtime.json
+.prospector/mcp.generated.json
 ```
 
-O editor permite, sem editar código:
+Make the active agent read:
 
-- alterar headings, parágrafos e textos;
-- trocar imagens, logo e `alt`;
-- editar label + hyperlink de CTAs;
-- editar WhatsApp e mensagem pré-preenchida;
-- editar telefone e e-mail;
-- editar Instagram/Facebook/outros links reais;
-- sincronizar destinos/brand assets repetidos;
-- salvar rascunho;
-- pré-visualizar a página;
-- **publicar alterações explicitamente** quando o publish backend está disponível;
-- exportar HTML limpo como fallback/portabilidade.
+```text
+AGENTS.md
+prospector-de-sites/skills/repository-policy/SKILL.md
+prospector-de-sites/skills/agent-runtime/SKILL.md
+```
 
-### Localhost com publicação real
+Then import `.prospector/mcp.generated.json` through that runtime's native MCP configuration mechanism.
 
-Para testar persistência real no arquivo local:
+## Runtime doctor
+
+```bash
+python prospector.py doctor --agent generic
+```
+
+The doctor reports static/local discovery such as:
+
+- Python;
+- Node / npx;
+- Git;
+- Prospector CRM MCP script;
+- canonical skills;
+- likely OpenDesign installation;
+- whether Playwright MCP is launchable.
+
+It deliberately does **not** pretend that a discovered binary/config proves live connectivity.
+
+The active agent must still probe runtime-only capabilities:
+
+```text
+MCP connectivity
+browser
+OpenDesign daemon
+image generation
+GitHub authentication
+Vercel authentication
+other connected services
+```
+
+## Portable MCP
+
+Print a portable local MCP definition:
+
+```bash
+python prospector.py mcp-config --workspace .
+```
+
+The generated CRM server uses an absolute local path to:
+
+```text
+prospector-de-sites/prospector-mcp.py
+```
+
+and the selected workspace/database.
+
+The CRM MCP itself is stdio and is not tied to an agent vendor.
+
+Optional Playwright MCP is also included when the runtime wants browser automation.
+
+A placeholder example is available at:
+
+```text
+prospector-de-sites/mcp_config.example.json
+```
+
+Do not treat the historical Antigravity `mcp_config.json` as canonical portable configuration.
+
+## Canonical skills
+
+All factual, UX, evidence, safety, conversion, QA, and outreach requirements live under:
+
+```text
+prospector-de-sites/skills/
+```
+
+Important current contracts include:
+
+- `repository-policy`
+- `agent-runtime`
+- `redesign-premium`
+- `open-design-direction`
+- `expert-hero-full-bleed`
+- `google-reviews-verification`
+- `autonomous-site-review`
+- `outreach-proposta`
+- `deploy-site`
+- `contrato-servico`
+
+Runtime adapters must point agents to these skills rather than copying them.
+
+## Site creation flow
+
+For schema v2+ first versions, the intended workflow is:
+
+```text
+Prospector factual research/evidence
+→ runtime capability probe
+→ OpenDesign direction pass when available
+→ design critique/selection
+→ Prospector-owned HTML/CSS/JS implementation
+→ deterministic QA
+→ browser/visual QA
+→ deploy gates
+→ human-reviewed proposal/outreach
+```
+
+OpenDesign is art direction only. It does not become a factual source, production renderer, or deploy authority.
+
+## Expert hero rule
+
+When `heroVisual.kind` is `expert` or `expert-placeholder`, the expert media must remain a full-width hero background/media plane on desktop and mobile.
+
+OpenDesign or a runtime-specific design model cannot replace it with:
+
+- a framed side portrait;
+- a card/tile;
+- an inset image panel;
+- a split-column portrait.
+
+The deterministic expert-hero gate and browser geometry QA remain runtime-independent.
+
+## Google review evidence
+
+Google review/rating publication is fail-closed.
+
+Direct Maps evidence, per-entry provenance, traversal completeness, fingerprint integrity, and evidence-to-DOM binding are separate checks.
+
+The runtime must never generate reviewer names, dates, patient/client status, quotes, review IDs, or other factual metadata to satisfy layout/schema requirements.
+
+A valid hash over fabricated metadata is still fabricated metadata.
+
+## Browser QA
+
+Browser QA can be satisfied by any implementation that proves the required observations:
+
+- native agent browser;
+- Playwright MCP;
+- another browser automation layer.
+
+The tool brand is not canonical.
+
+If no browser is available, the runtime cannot claim `BROWSER REVIEW: PASS` or full production readiness.
+
+## Image generation
+
+Image generation/editing is a runtime capability, not a Prospector vendor dependency.
+
+Preferred order:
+
+```text
+verified real/user-provided assets
+→ runtime-native image capability when available
+→ canonical Prospector templates
+→ explicit external provider only when configured/authorized
+```
+
+Prospector must never silently activate a paid image API.
+
+Missing image capability is never permission to fabricate a real expert, facility, patient, result, or product.
+
+## OpenDesign MCP
+
+OpenDesign is runtime-neutral through MCP.
+
+When available, Prospector uses it for:
+
+```text
+factual creative brief
+→ two structurally distinct directions
+→ DESIGN.md
+→ independent design critique/selection
+```
+
+The MCP must be probed in the active runtime. A config file alone is not proof of availability.
+
+Antigravity-specific OpenDesign bootstrap remains documented in its adapter, but OpenDesign can be consumed by any compatible MCP client.
+
+## CRM
+
+The CRM MCP runs over the same local `prospector.db` used by the dashboard:
+
+```bash
+python prospector-de-sites/prospector-mcp.py --pasta <workspace>
+```
+
+Local test:
+
+```bash
+python prospector-de-sites/prospector-mcp.py --teste
+```
+
+The CRM can therefore be used by any runtime capable of stdio MCP, or the underlying Python/database can be operated through repository code when MCP is unavailable.
+
+## Dashboard and editor
+
+The existing dashboard, editor, CMS, and publish bridge remain repository-owned and agent-neutral.
+
+Editor generation:
+
+```bash
+python create_editor.py sites/<slug>/<slug>.html
+```
+
+Local editor/publish bridge:
 
 ```bash
 python editor_server.py
 ```
 
-Abra o editor via:
+Production publication still requires authentication, tenant isolation, HTTPS, server-side credentials, and the canonical publish gates.
+
+## GitHub and Vercel
+
+Prospector does not require one connector implementation.
+
+A runtime may use:
+
+- native GitHub/Vercel tools;
+- CLI;
+- authenticated API/MCP integration;
+- repository Git commands.
+
+The required evidence remains the same: correct repository/ref, gates PASS, deployment state verified, public URL checked.
+
+If deploy credentials are absent, stop at local production-candidate status.
+
+## Outreach
+
+The messaging implementation may vary by runtime, but human approval does not.
+
+Prospector must never send cold outreach merely because the active agent has Gmail, Evolution API, WhatsApp, or another messaging connector.
+
+The canonical outreach skill remains authoritative.
+
+## Adapters
+
+Runtime setup lives under:
 
 ```text
-http://127.0.0.1:8787/sites/[slug]/[slug]-editor.html
+prospector-de-sites/adapters/
 ```
 
-Fluxo:
+Current examples:
 
 ```text
-Editar
-→ Salvar rascunho (opcional)
-→ Pré-visualizar
-→ Publicar alterações
-→ confirmação
-→ backup
-→ sites/[slug]/[slug].html atualizado atomicamente
+generic.md
+antigravity.md
+codex.md
+claude-code.md
+opencode.md
+hermes.md
 ```
 
-A publicação **não** ocorre a cada keystroke.
+Use `generic` first for a new CLI. Add a dedicated adapter only when the runtime needs special setup/discovery.
 
-`python -m http.server` continua útil para preview, mas sozinho não fornece endpoint de escrita. Se outro servidor estiver servindo os mesmos arquivos, ele refletirá o HTML atualizado após o publish + refresh.
+## CI / self-test
 
-### Deploy / Client CMS
+Repository runtime bootstrap self-test:
 
-O mesmo botão `Publicar alterações` pode usar o backend de referência em `git mode`, que escreve somente `[basePath]/[slug]/index.html`, faz `git add` apenas daquele path, commit e push; a Vercel pode então auto-deployar pela integração existente.
+```bash
+python prospector.py self-test
+```
 
-Produção exige:
+The GitHub quality workflow should run this together with the existing evidence and autonomous-review regressions.
 
-- HTTPS;
-- editor protegido/autenticado;
-- autorização restrita por slug;
-- Git credentials somente server-side;
-- rota `/api/editor/publish` realmente conectada ao backend.
+## Portability principle
 
-Um deploy Vercel puramente estático **não vira CMS sozinho**. Nunca exponha `*-editor.html` publicamente sem proteção e nunca coloque GitHub/Vercel tokens no browser.
+Agent portability means:
 
-Para CTAs complexos, use `data-pe-label`; para contatos/socials/logo repetidos, `data-pe-field`; e para backgrounds editáveis, `data-pe-bg`. A referência canônica está em `prospector-de-sites/skills/redesign-premium/references/editor-visual.md`.
+```text
+same evidence rules
+same design invariants
+same QA gates
+same approval requirements
+different capability providers
+```
 
-## Diferenças pra versão Claude
+It does **not** mean reducing the quality bar for a CLI that lacks a required capability.
 
-| | Claude Cowork | Antigravity |
-|---|---|---|
-| Empacotamento | plugin (.claude-plugin) | plugin (`plugin.json` + `mcp_config.json` + `skills/`) |
-| Onde instala | marketplace | `~/.gemini/config/plugins/` (ou `.agents/plugins/`) |
-| Comandos | `/prospectar`… | linguagem natural aciona a skill |
-| Busca no Maps | Claude in Chrome | **plugin Google Maps Platform** (Places) + navegador |
-| Navegador | Claude in Chrome | MCP Playwright / plugin Chrome DevTools |
-| Publicação | HostGator / FTP | **GitHub + Vercel** (deploy estático automático) |
-| CRM | MCP stdio | mesmo MCP, no `mcp_config.json` do plugin |
-| Outreach | E-mail manual | **WhatsApp (Evolution API)** + **Gmail** com revisão humana |
-| Hero expert | manual/composição | **ultrawide desktop + mobile dedicado, Antigravity-native first** |
-| Editor | conteúdo básico | **texto + imagens/logo + CTAs + drafts + publish bridge local/Git** |
-
-Mesma lógica, mesmos entregáveis. O CRM (`prospector-mcp.py`), o painel e as templates são reaproveitados sem mudança.
-
----
-
-Feito por **Helio Arreche**.
+If a mandatory capability is unavailable, complete safe earlier stages, record the limitation accurately, and stop before the stage that requires it.
