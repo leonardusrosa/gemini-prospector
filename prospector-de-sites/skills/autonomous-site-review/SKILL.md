@@ -1,7 +1,7 @@
 ---
 name: autonomous-site-review
 instruction_language: en
-description: Mandatory fail-closed quality gate after creating or changing any Prospector site, concept, or redesign and before screenshot approval, deploy, proposal, or outreach. It must independently detect missing gpt-taste/OpenDesign direction evidence, hero visual defects, motion/scroll omissions, WhatsApp/social/map issues, fixed-control conflicts, reduced-motion/no-JS failures, factual regressions, review-provenance failures, and visual regressions.
+description: Mandatory fail-closed quality gate after creating or changing any Prospector site, concept, or redesign and before screenshot approval, deploy, proposal, or outreach. It must independently detect missing gpt-taste/OpenDesign direction evidence, expert-hero full-bleed violations, hero visual defects, motion/scroll omissions, WhatsApp/social/map issues, fixed-control conflicts, reduced-motion/no-JS failures, factual regressions, review-provenance failures, and visual regressions.
 ---
 
 # Autonomous Site Review
@@ -14,11 +14,12 @@ Read and obey, in order:
 
 1. `../repository-policy/SKILL.md`
 2. `../website-core-rules/SKILL.md`
-3. `../redesign-premium/SKILL.md`
-4. `../open-design-direction/SKILL.md` for schema v2+ first versions
-5. `../hero-visual-rule/SKILL.md`
-6. `../google-reviews-verification/SKILL.md` when a Google Business Profile exists or may exist
-7. the current installed `gpt-taste/SKILL.md`
+3. `../expert-hero-full-bleed/SKILL.md` whenever `heroVisual.kind` is `expert` or `expert-placeholder`
+4. `../redesign-premium/SKILL.md`
+5. `../open-design-direction/SKILL.md` for schema v2+ first versions
+6. `../hero-visual-rule/SKILL.md`
+7. `../google-reviews-verification/SKILL.md` when a Google Business Profile exists or may exist
+8. the current installed `gpt-taste/SKILL.md`
 
 All new or materially modified repository rules, gate descriptions, regression names/comments, and agent-facing rule documentation must be written in English. Client-facing copy remains in the target market language.
 
@@ -97,6 +98,21 @@ Rules:
 - illustrative/stock/generated imagery uses honest provenance and must not pretend to show the real expert or facility;
 - canonical expert-placeholder templates must follow the current hero-template manifest and frame policy;
 - missing expert photography is never a reason to omit the hero visual.
+
+### Expert hero override
+
+If `heroVisual.kind` is `expert` or `expert-placeholder`, `expert-hero-full-bleed` is mandatory and overrides any framed/split expert concept from OpenDesign or gpt-taste.
+
+Required design-read evidence:
+
+```text
+EXPERT_HERO_FULL_BLEED: PASS
+EXPERT_HERO_DESKTOP_FULL_WIDTH: PASS
+EXPERT_HERO_MOBILE_FULL_WIDTH: PASS
+EXPERT_HERO_GPT_TASTE_JUDGED: PASS
+```
+
+The gpt-taste judge MUST reject or revise any expert direction that uses a framed portrait, side image card, inset image panel, or split-column expert frame. A visually attractive OpenDesign direction cannot override this invariant.
 
 ## 4. HARD GATE: motion and behavior
 
@@ -227,6 +243,11 @@ python prospector-de-sites/open_design_direction_review.py \
   --manifest sites/[slug]/review-manifest.json \
   --design-read sites/[slug]/design-read.md
 
+python prospector-de-sites/expert_hero_full_bleed_review.py \
+  --html sites/[slug]/[slug].html \
+  --design-read sites/[slug]/design-read.md \
+  --manifest sites/[slug]/review-manifest.json
+
 python prospector-de-sites/autonomous_site_review.py \
   --html sites/[slug]/[slug].html \
   --design-read sites/[slug]/design-read.md \
@@ -246,6 +267,14 @@ Any non-zero result blocks Static Review PASS.
 
 Run the browser QA and test at least desktop 1440x900, tablet 800x1024, mobile 390x844, plus any hero-specific viewport.
 
+For expert/expert-placeholder heroes, browser QA must additionally verify at 1440x900 and 390x844:
+
+- hero expert media plane width >= 98% of the hero/viewport width;
+- expert media is not inside a framed/inset/card/split image container;
+- mobile remains full width and does not fall back to an inset portrait;
+- copy does not cover the expert's face or critical anatomy;
+- no horizontal overflow is introduced.
+
 If an assistant is present, verify no floating WhatsApp launcher exists.
 
 If reviews are rendered, browser QA must verify visible aggregate/count, actual review item count, evidence bindings, zero synthetic reviewer metadata, and zero unsupported reviewer-status attribution.
@@ -255,6 +284,16 @@ If reviews are rendered, browser QA must verify visible aggregate/count, actual 
 The manifest records observed QA/evidence state, not convenient values chosen to make tests pass.
 
 Schema v2+ first-version manifests must include the `openDesignDirection` contract from `open-design-direction/SKILL.md`.
+
+For expert/expert-placeholder heroes in schema v2+, `heroVisual` must include:
+
+```json
+{
+  "expertBackgroundRequired": true,
+  "desktopFullWidthRequired": true,
+  "mobileFullWidthRequired": true
+}
+```
 
 For review evidence, `observedEntries[]` must be a real source inventory. Declared counts without corresponding entries are not proof of traversal.
 
@@ -273,6 +312,9 @@ Inspect especially:
 - two OpenDesign directions that differ only by color/font;
 - default OpenDesign template/house style copied into production;
 - OpenDesign-generated factual claims treated as evidence;
+- expert portrait framed/inset/split despite the full-bleed invariant;
+- desktop full-bleed expert that collapses into a framed mobile portrait;
+- gpt-taste accepting an OpenDesign expert hero that violates the invariant;
 - incorrect hero/frame behavior;
 - generated imagery presented as factual;
 - assistant and floating WhatsApp both present;
@@ -302,6 +344,10 @@ OPEN DESIGN DIRECTIONS: <n>/N/A
 OPEN DESIGN GPT-TASTE REVIEW: PASS/FAIL/N/A
 GPT_TASTE_READ: PASS/FAIL
 GPT_TASTE_SHA_MATCH: PASS/FAIL
+EXPERT HERO FULL-BLEED: PASS/FAIL/N/A
+EXPERT HERO DESKTOP FULL-WIDTH: PASS/FAIL/N/A
+EXPERT HERO MOBILE FULL-WIDTH: PASS/FAIL/N/A
+EXPERT HERO GPT-TASTE JUDGEMENT: PASS/FAIL/N/A
 STATIC REVIEW: PASS/FAIL
 BROWSER REVIEW: PASS/FAIL
 ADVERSARIAL REVIEW: PASS/FAIL
