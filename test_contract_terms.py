@@ -173,6 +173,62 @@ class ContractTermsTest(unittest.TestCase):
         self.assertIn("Atenciosamente", skill)
         self.assertIn("proibido usar `Com os melhores cumprimentos`", skill)
 
+    def test_contract_without_assistant_does_not_contain_assistant_clauses(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = pathlib.Path(td)
+            d = real_contract_data()
+            d["assistantIncluded"] = False
+            data_path = td / "dados.json"
+            out_path = td / "contrato.docx"
+            data_path.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+            proc = subprocess.run(
+                [sys.executable, str(GENERATOR), str(data_path), str(out_path)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stdout + "\n" + proc.stderr)
+            with zipfile.ZipFile(out_path) as zf:
+                xml = zf.read("word/document.xml").decode("utf-8")
+            self.assertNotIn("Do assistente inteligente do site", xml)
+            self.assertNotIn("consumo de API", xml)
+
+    def test_contract_with_assistant_contains_api_responsibility_and_variable_estimate(self):
+        with tempfile.TemporaryDirectory() as td:
+            td = pathlib.Path(td)
+            d = real_contract_data()
+            d["assistantIncluded"] = True
+            d["assistantSetupValue"] = "450,00"
+            data_path = td / "dados.json"
+            out_path = td / "contrato.docx"
+            data_path.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+            proc = subprocess.run(
+                [sys.executable, str(GENERATOR), str(data_path), str(out_path)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stdout + "\n" + proc.stderr)
+            with zipfile.ZipFile(out_path) as zf:
+                xml = zf.read("word/document.xml").decode("utf-8")
+            self.assertIn("Do assistente inteligente do site", xml)
+            self.assertIn("informações verificadas", xml)
+            self.assertIn("não substituindo avaliação", xml)
+            self.assertIn("cobrado separadamente", xml)
+            self.assertIn("integral responsabilidade do CONTRATANTE", xml)
+            self.assertIn("US$ 2 a 4 por 1.000 respostas curtas", xml)
+            self.assertIn("caráter meramente referencial e não vinculante", xml)
+            self.assertIn("não configura indisponibilidade da hospedagem ou do site", xml)
+            self.assertIn("substituídos quando tecnicamente necessário", xml)
+
+            # Ensure forbidden promises never exist in contract output
+            forbidden = [
+                "mensagens ilimitadas",
+                "preço fixo permanente",
+                "uso gratuito para sempre",
+                "volume garantido",
+            ]
+            for term in forbidden:
+                self.assertNotIn(term, xml)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

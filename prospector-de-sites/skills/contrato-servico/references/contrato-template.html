@@ -47,6 +47,8 @@ p{margin:8px 0;text-align:justify}
 
 {{CLAUSULA_MANUTENCAO}}
 
+{{CLAUSULA_ASSISTENTE}}
+
 <h2>Cláusula {{N_CONTEUDO}}ª — Do conteúdo e responsabilidades</h2>
 <p>O CONTRATANTE declara ser titular ou possuir autorização de uso de todos os textos, imagens, logotipo e informações fornecidos, responsabilizando-se pela veracidade das informações profissionais divulgadas. O CONTRATADO(A) compromete-se a não inserir na página informações não fornecidas, não verificadas ou não aprovadas pelo CONTRATANTE.</p>
 
@@ -96,13 +98,23 @@ A) AutoCORA fornece hospedagem sem cobrança separada:
 B) Cliente mantém hospedagem própria:
 "O registro, a titularidade e a renovação do domínio são de responsabilidade do CONTRATANTE. O CONTRATANTE opta por manter hospedagem própria, também sob sua responsabilidade financeira e operacional. A implantação nessa infraestrutura depende de compatibilidade técnica previamente validada. Eventual migração ou adequação fora do escopo original poderá ser orçada separadamente antes da execução."
 
-MANUTENÇÃO MENSAL:
+ASSISTENTE INTELIGENTE (CLAUSULA_ASSISTENTE):
+- Inserir CLAUSULA_ASSISTENTE apenas quando assistantIncluded=true.
+- A cláusula formaliza que o assistente responde a partir de informações verificadas e não substitui avaliação profissional.
+- A conta de API e os custos de consumo são de responsabilidade do CONTRATANTE (AutoCORA pode auxiliar na configuração técnica).
+- Consumo referencial: aproximadamente US$ 2–4 por 1.000 respostas curtas (estimativa de referência, não preço garantido).
+- Interrupção por limite na conta do cliente não constitui queda do site.
+- Provedor/modelo podem ser substituídos tecnicamente mantendo funcionalidade e segurança factual.
+- PROIBIDO prometer mensagens ilimitadas, preço fixo de API, gratuidade permanente ou volume garantido.
+
+MANUTENÇÃO MENSAL (CLAUSULA_MANUTENCAO):
 - Não confundir hospedagem com manutenção.
 - Só inserir CLAUSULA_MANUTENCAO se um serviço recorrente adicional tiver sido explicitamente contratado.
 - A cláusula deve descrever exatamente o escopo acordado; não presumir que inclui hospedagem, pequenas edições, suporte, SLA ou qualquer outro item.
 - Se não houver manutenção adicional: remover o bloco.
 
 NUMERAÇÃO:
-Sem manutenção: N_CONTEUDO=4, N_HOSPEDAGEM=5, N_EDITOR=6, N_RESCISAO=7, N_FORO=8.
-Com manutenção: cláusula 4 = manutenção; N_CONTEUDO=5, N_HOSPEDAGEM=6, N_EDITOR=7, N_RESCISAO=8, N_FORO=9.
+- Base (sem manutenção, sem assistente): N_CONTEUDO=4, N_HOSPEDAGEM=5, N_EDITOR=6, N_RESCISAO=7, N_FORO=8.
+- Com manutenção: incrementa em +1.
+- Com assistente: incrementa em +1.
 -->

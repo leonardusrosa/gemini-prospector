@@ -169,11 +169,44 @@ clausula(
 n = 4
 if d.get("MANUTENCAO"):
     clausula(
-        doc, 4, "Do serviço adicional de manutenção",
+        doc, n, "Do serviço adicional de manutenção",
         "O CONTRATANTE contrata serviço adicional de manutenção mensal pelo valor de R$ %s mensais, com o seguinte escopo expressamente acordado: %s. Itens não descritos neste escopo não são considerados incluídos automaticamente."
         % (d["VALOR_MANUTENCAO"], d["TEXTO_MANUTENCAO"])
     )
-    n = 5
+    n += 1
+
+assistant_included = bool(
+    d.get("assistantIncluded")
+    or d.get("ASSISTENTE_INCLUIDO")
+    or d.get("ASSISTENTE")
+)
+
+if assistant_included:
+    setup_val = str(d.get("assistantSetupValue") or d.get("VALOR_ASSISTENTE") or "").strip()
+    setup_text = f" pelo valor de implantação de R$ {setup_val}" if setup_val else ""
+    estimated_cost = str(
+        d.get("assistantEstimatedUsageCost")
+        or "aproximadamente US$ 2 a 4 por 1.000 respostas curtas do assistente"
+    ).strip()
+
+    clausula(
+        doc, n, "Do assistente inteligente do site",
+        f"O presente contrato contempla a implementação e configuração técnica do assistente inteligente para o site{setup_text}. "
+        "O assistente responde aos visitantes exclusivamente a partir das informações verificadas e configuradas para o negócio, "
+        "operando como assistente virtual automatizado e não substituindo avaliação, consulta ou orientação profissional individualizada. "
+        "O consumo de API de inteligência artificial de terceiros é cobrado separadamente pelo provedor correspondente, "
+        "sendo a conta, chave de acesso e custos de consumo da API de integral responsabilidade do CONTRATANTE, "
+        "podendo o CONTRATADO(A) prestar auxílio na configuração técnica inicial. "
+        f"A estimativa de referência atual de consumo é de {estimated_cost}. "
+        "Essa estimativa possui caráter meramente referencial e não vinculante, pois o volume de mensagens, extensão dos diálogos, "
+        "provedor, modelo e tarifas praticadas pelo provedor de API podem variar. "
+        "Eventual interrupção ou limitação do assistente decorrente de consumo, suspensão, limites ou esgotamento de saldo na conta do CONTRATANTE "
+        "junto ao provedor de API não configura indisponibilidade da hospedagem ou do site. "
+        "O provedor e o modelo de inteligência artificial poderão ser substituídos quando tecnicamente necessário, "
+        "mantendo-se o escopo funcional contratado e os critérios de segurança factual da solução."
+    )
+    n += 1
+
 
 clausula(
     doc, n, "Do conteúdo e responsabilidades",
