@@ -194,3 +194,55 @@ An explicit operator skip must be recorded as `SKIPPED_BY_OPERATOR`; it must not
 New first-version schema v2+ manifests must include `openDesignDirection` with truthful MCP status. The deterministic autonomous reviewer must verify the manifest/design-read contract without changing legacy schema v1 sites.
 
 This integration is intended to improve first-pass art direction while preserving the existing fail-closed factual and production pipeline.
+
+## 12. Expert hero full-bleed invariant
+
+Whenever `heroVisual.kind` is `expert` or `expert-placeholder`, read and obey `../expert-hero-full-bleed/SKILL.md`.
+
+This is a repository-level visual invariant, not an optional art-direction preference.
+
+For expert-led heroes:
+
+- the expert media is a full-width hero background/media plane on desktop;
+- the expert media remains full width on mobile;
+- framed portraits, image cards, inset portrait panels, side-image tiles, and split-column expert frames are forbidden;
+- dedicated desktop/mobile assets should be used when needed to preserve composition;
+- OpenDesign may not override this requirement;
+- gpt-taste MUST reject or revise any OpenDesign direction that violates it, even when that direction scores higher aesthetically;
+- autonomous static QA and browser QA must independently verify compliance before PASS.
+
+Required design-read evidence for expert-led heroes:
+
+```text
+EXPERT_HERO_FULL_BLEED: PASS
+EXPERT_HERO_DESKTOP_FULL_WIDTH: PASS
+EXPERT_HERO_MOBILE_FULL_WIDTH: PASS
+EXPERT_HERO_GPT_TASTE_JUDGED: PASS
+```
+
+Required schema v2+ manifest flags:
+
+```json
+{
+  "heroVisual": {
+    "expertBackgroundRequired": true,
+    "desktopFullWidthRequired": true,
+    "mobileFullWidthRequired": true
+  }
+}
+```
+
+Required HTML hooks:
+
+```html
+<section
+  data-role="hero"
+  data-hero-layout="full-bleed-background"
+  data-hero-expert-presentation="background"
+  data-hero-mobile-layout="full-width-background"
+>
+```
+
+Browser QA must verify at minimum 1440x900 and 390x844 that the expert media plane spans at least 98% of the hero/viewport width and has not collapsed into a framed/inset portrait.
+
+A gpt-taste or OpenDesign written PASS does not override failed geometry or missing hooks.
