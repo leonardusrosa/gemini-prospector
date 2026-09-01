@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clínica Odontológica Dra. Francine Goulart | Rio Claro - SP</title>
+  <meta name="description" content="Atendimento odontológico individualizado no centro de Rio Claro. Diagnóstico preventivo, restaurações estéticas e saúde bucal com Dra. Francine Goulart.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0b1f3a;
+      --navy-light: #122b4e;
+      --teal: #0f766e;
+      --teal-hover: #115e59;
+      --teal-soft: #f0fdfa;
+      --slate-dark: #0f172a;
+      --slate-body: #334155;
+      --slate-muted: #64748b;
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --border-subtle: #e2e8f0;
+      --border-card: #e5e7eb;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--slate-body);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Outfit', sans-serif;
+      color: var(--navy);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Top Navigation */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 76px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .brand-sub {
+      font-size: 0.8rem;
+      color: var(--slate-muted);
+      font-weight: 500;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .nav-link {
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--slate-body);
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--teal);
+    }
+
+    .btn-header {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 18px;
+      background: var(--teal);
+      color: #ffffff;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .btn-header:hover {
+      background: var(--teal-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Hero Section */
+    .hero-section {
+      position: relative;
+      min-height: 560px;
+      display: flex;
+      align-items: center;
+      background-color: var(--navy);
+      overflow: hidden;
+      padding: 64px 0 72px;
+    }
+
+    .hero-media-wrapper {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .hero-bg-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: right center;
+      opacity: 0.85;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        rgba(11, 31, 58, 0.96) 0%,
+        rgba(11, 31, 58, 0.88) 42%,
+        rgba(11, 31, 58, 0.3) 75%,
+        rgba(11, 31, 58, 0.05) 100%
+      );
+      z-index: 2;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 3;
+      max-width: 640px;
+      color: #ffffff;
+    }
+
+    .hero-pretitle {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #5eead4;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+
+    .hero-title {
+      font-size: clamp(2.3rem, 4vw, 3.4rem);
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      max-width: 620px;
+    }
+
+    .hero-desc {
+      font-size: 1.08rem;
+      line-height: 1.65;
+      color: #e2e8f0;
+      margin-bottom: 32px;
+      max-width: 540px;
+    }
+
+    .btn-hero {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 32px;
+      background: var(--teal);
+      color: #ffffff;
+      font-size: 1.05rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 10px 20px -5px rgba(15, 118, 110, 0.5);
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .btn-hero:hover {
+      background: var(--teal-hover);
+      transform: translateY(-2px);
+    }
+
+    /* Trust Stripe */
+    .trust-stripe {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 24px 0;
+    }
+
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      align-items: center;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .trust-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--teal-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--teal);
+      flex-shrink: 0;
+    }
+
+    .trust-text-main {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--navy);
+    }
+
+    .trust-text-sub {
+      font-size: 0.82rem;
+      color: var(--slate-muted);
+    }
+
+    /* Section Base */
+    .section {
+      padding: 96px 0;
+    }
+
+    .section-header {
+      margin-bottom: 56px;
+      max-width: 620px;
+    }
+
+    .section-tag {
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--teal);
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: clamp(1.9rem, 3.2vw, 2.5rem);
+      margin-bottom: 14px;
+    }
+
+    .section-desc {
+      font-size: 1.02rem;
+      color: var(--slate-muted);
+    }
+
+    /* Services Bento */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 24px;
+    }
+
+    .service-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 36px 32px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .service-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: #cbd5e1;
+    }
+
+    .service-card.span-7 {
+      grid-column: span 7;
+    }
+
+    .service-card.span-5 {
+      grid-column: span 5;
+    }
+
+    .service-card.span-6 {
+      grid-column: span 6;
+    }
+
+    .service-header-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 8px;
+      background: var(--teal-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--teal);
+      margin-bottom: 22px;
+    }
+
+    .service-name {
+      font-size: 1.28rem;
+      margin-bottom: 12px;
+    }
+
+    .service-body {
+      font-size: 0.95rem;
+      color: var(--slate-body);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .service-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--teal);
+      transition: gap 0.2s;
+    }
+
+    .service-card:hover .service-action {
+      gap: 12px;
+    }
+
+    /* Google Reviews Proof Section */
+    .proof-section {
+      background: #ffffff;
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .proof-box {
+      background: var(--bg-page);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 48px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .proof-metric-col {
+      border-right: 1px solid var(--border-subtle);
+      padding-right: 48px;
+    }
+
+    .rating-number {
+      font-size: 4rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .stars-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #eab308;
+      margin-bottom: 12px;
+    }
+
+    .rating-count {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+
+    .rating-source {
+      font-size: 0.88rem;
+      color: var(--slate-muted);
+    }
+
+    .proof-text-col h3 {
+      font-size: 1.5rem;
+      margin-bottom: 14px;
+    }
+
+    .proof-text-col p {
+      font-size: 0.96rem;
+      color: var(--slate-body);
+      line-height: 1.65;
+      margin-bottom: 20px;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: #ffffff;
+      border: 1px solid var(--border-card);
+      color: var(--navy);
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+    }
+
+    /* Location & Map Section */
+    .location-grid {
+      display: grid;
+      grid-template-columns: 5fr 7fr;
+      gap: 36px;
+      align-items: stretch;
+    }
+
+    .location-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .location-info-block {
+      margin-bottom: 24px;
+    }
+
+    .location-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--teal);
+      margin-bottom: 6px;
+    }
+
+    .location-value {
+      font-size: 1.05rem;
+      color: var(--navy);
+      font-weight: 500;
+    }
+
+    .map-frame-wrapper {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      min-height: 380px;
+    }
+
+    .map-frame {
+      width: 100%;
+      height: 100%;
+      min-height: 380px;
+      border: 0;
+      display: block;
+    }
+
+    /* Footer */
+    .site-footer {
+      background: var(--navy);
+      color: #94a3b8;
+      padding: 64px 0 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.88rem;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .footer-brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .footer-legal-copy {
+      font-size: 0.84rem;
+      color: #cbd5e1;
+      line-height: 1.6;
+      max-width: 440px;
+    }
+
+    .footer-heading {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 16px;
+    }
+
+    .footer-list {
+      list-style: none;
+    }
+
+    .footer-list li {
+      margin-bottom: 10px;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    /* Floating WhatsApp Button */
+    .floating-whatsapp {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #25d366;
+      color: #ffffff;
+      padding: 14px 22px;
+      border-radius: 9999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);
+      transform: translateY(120px);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+
+    .floating-whatsapp.visible {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .floating-whatsapp:hover {
+      background: #20ba59;
+      transform: translateY(-2px);
+    }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .services-grid {
+        grid-template-columns: 1fr;
+      }
+      .service-card.span-7,
+      .service-card.span-5,
+      .service-card.span-6 {
+        grid-column: span 1;
+      }
+      .proof-box {
+        grid-template-columns: 1fr;
+        padding: 32px;
+        gap: 32px;
+      }
+      .proof-metric-col {
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+        padding-right: 0;
+        padding-bottom: 32px;
+      }
+      .location-grid {
+        grid-template-columns: 1fr;
+      }
+      .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .trust-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero-section {
+        min-height: auto;
+        padding: 48px 0 60px;
+      }
+      .hero-overlay {
+        background: linear-gradient(
+          180deg,
+          rgba(11, 31, 58, 0.92) 0%,
+          rgba(11, 31, 58, 0.85) 60%,
+          rgba(11, 31, 58, 0.95) 100%
+        );
+      }
+      .nav-links {
+        display: none;
+      }
+      .floating-whatsapp span {
+        display: none;
+      }
+      .floating-whatsapp {
+        padding: 14px;
+        bottom: 20px;
+        right: 20px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="container nav-inner">
+      <div class="brand">
+        <span class="brand-title">Dra. Francine Goulart</span>
+        <span class="brand-sub">Clínica Odontológica</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#servicos" class="nav-link">Tratamentos</a>
+        <a href="#avaliacoes" class="nav-link">Avaliações</a>
+        <a href="#localizacao" class="nav-link">Localização</a>
+        <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." class="btn-header" target="_blank" rel="noopener noreferrer">Conversar no WhatsApp</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section" id="inicio">
+    <div class="hero-media-wrapper">
+      <picture>
+        <source media="(max-width: 768px)" srcset="../assets/mobile.webp">
+        <img 
+          src="../assets/desktop-ultrawide.webp" 
+          alt="Imagem ilustrativa de consultório odontológico com espaço reservado para foto profissional"
+          class="hero-bg-img"
+          data-image-context="illustrative"
+          width="1983"
+          height="793"
+        >
+      </picture>
+      <div class="hero-overlay"></div>
+    </div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-pretitle">Odontologia clínica no centro de Rio Claro</div>
+        <h1 class="hero-title">Cuidado odontológico completo com atenção dedicada ao seu bem-estar</h1>
+        <p class="hero-desc">Atendimento odontológico individualizado com foco em saúde preventiva, conforto e restaurações estéticas de alta precisão.</p>
+        <a 
+          href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
+          class="btn-hero"
+          id="hero-cta"
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          Agendar avaliação
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Stripe -->
+  <div class="trust-stripe">
+    <div class="container trust-grid">
+      <div class="trust-item">
+        <div class="trust-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div>
+          <div class="trust-text-main">Responsabilidade técnica</div>
+          <div class="trust-text-sub">Dra. Francine Goulart CRO SP-CD-104303</div>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </div>
+        <div>
+          <div class="trust-text-main">Localização central</div>
+          <div class="trust-text-sub">Avenida 7, nº 310, Centro, Rio Claro</div>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div>
+          <div class="trust-text-main">Atendimento com horário marcado</div>
+          <div class="trust-text-sub">Consultas planejadas sem esperas desnecessárias</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services Section -->
+  <section class="section" id="servicos">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Especialidades e tratamentos</div>
+        <h2 class="section-title">Soluções planejadas para sua saúde bucal</h2>
+        <p class="section-desc">Procedimentos executados com rigor técnico, materiais certificados e acompanhamento atencioso em cada etapa.</p>
+      </div>
+
+      <div class="services-grid">
+        <div class="service-card span-7">
+          <div class="service-header-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+          </div>
+          <div>
+            <h3 class="service-name">Avaliação diagnóstica e prevenção</h3>
+            <p class="service-body">Exame detalhado da estrutura dental e tecidos bucais para identificar alterações em estágio inicial. Inclui orientação personalizada para manutenção da higiene diária e prevenção de problemas futuros.</p>
+          </div>
+          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20avalia%C3%A7%C3%A3o%20odontol%C3%B3gica." class="service-action" target="_blank" rel="noopener noreferrer">
+            <span>Conversar sobre avaliação</span>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </a>
+        </div>
+
+        <div class="service-card span-5">
+          <div class="service-header-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+          </div>
+          <div>
+            <h3 class="service-name">Restaurações estéticas</h3>
+            <p class="service-body">Recuperação da anatomia e resistência dental através de resinas compostas que preservam a tonalidade natural dos dentes.</p>
+          </div>
+          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20restaura%C3%A7%C3%B5es%20est%C3%A9ticas." class="service-action" target="_blank" rel="noopener noreferrer">
+            <span>Saiba mais</span>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </a>
+        </div>
+
+        <div class="service-card span-6">
+          <div class="service-header-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+          </div>
+          <div>
+            <h3 class="service-name">Profilaxia e limpeza profissional</h3>
+            <p class="service-body">Remoção criteriosa de placa bacteriana e cálculo dentário para manter gengivas saudáveis, respiração fresca e proteção contra cáries.</p>
+          </div>
+          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20limpeza%20dental." class="service-action" target="_blank" rel="noopener noreferrer">
+            <span>Agendar limpeza</span>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </a>
+        </div>
+
+        <div class="service-card span-6">
+          <div class="service-header-icon">
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+          <div>
+            <h3 class="service-name">Conservação e alívio de dor</h3>
+            <p class="service-body">Atendimento pontual para dentes fraturados, sensibilidade aguda ou inflamação, priorizando sempre a integridade do dente natural.</p>
+          </div>
+          <a href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20preciso%20de%20atendimento%20para%20desconforto%20odontol%C3%B3gico." class="service-action" target="_blank" rel="noopener noreferrer">
+            <span>Falar com a clínica</span>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Google Proof Section -->
+  <section class="section proof-section" id="avaliacoes">
+    <div class="container">
+      <div class="proof-box">
+        <div class="proof-metric-col">
+          <div class="rating-number">4,8</div>
+          <div class="stars-row">
+            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+            <svg width="22" height="22" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+          </div>
+          <div class="rating-count">28 avaliações verificadas</div>
+          <div class="rating-source">Classificação pública no Google Maps</div>
+        </div>
+        <div class="proof-text-col">
+          <h3>Reconhecimento pela dedicação e qualidade técnica</h3>
+          <p>A pontualidade nas consultas, o acolhimento durante o tratamento e a transparência em cada procedimento consolidam a confiança de quem escolhe a clínica em Rio Claro.</p>
+          <a href="https://maps.google.com/?cid=1" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+            <span>Ver perfil no Google Maps</span>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Location Section -->
+  <section class="section" id="localizacao">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Atendimento presencial</div>
+        <h2 class="section-title">Facilidade de acesso no centro de Rio Claro</h2>
+        <p class="section-desc">Consultório estruturado na Avenida 7, proporcionando conveniência e facilidade de estacionamento.</p>
+      </div>
+
+      <div class="location-grid">
+        <div class="location-card">
+          <div>
+            <div class="location-info-block">
+              <div class="location-label">Endereço</div>
+              <div class="location-value">Avenida 7, nº 310, Centro</div>
+              <div style="font-size: 0.9rem; color: var(--slate-muted); margin-top: 4px;">Rio Claro - SP, CEP 13500-143</div>
+            </div>
+            <div class="location-info-block">
+              <div class="location-label">Contato direto</div>
+              <div class="location-value">(19) 98849-4898</div>
+              <div style="font-size: 0.88rem; color: var(--slate-muted); margin-top: 4px;">Disponível para agendamentos e esclarecimento de dúvidas</div>
+            </div>
+            <div class="location-info-block">
+              <div class="location-label">Estrutura</div>
+              <div class="location-value">Consultório climatizado e higienizado</div>
+              <div style="font-size: 0.88rem; color: var(--slate-muted); margin-top: 4px;">Atendimento individualizado com hora marcada</div>
+            </div>
+          </div>
+
+          <div>
+            <a 
+              href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20um%20hor%C3%A1rio%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
+              class="btn-hero"
+              style="width: 100%; text-align: center; justify-content: center;"
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              Chamar no WhatsApp
+            </a>
+          </div>
+        </div>
+
+        <div class="map-frame-wrapper">
+          <iframe 
+            class="map-frame"
+            src="https://maps.google.com/maps?q=Avenida+7%2C+310%2C+Centro%2C+Rio+Claro+-+SP&t=&z=16&ie=UTF8&iwloc=&output=embed" 
+            title="Localização da Clínica Odontológica Dra. Francine Goulart em Rio Claro"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand-title">Clínica Odontológica Dra. Francine Goulart</div>
+          <p class="footer-legal-copy">
+            Clínica Odontológica Dra. Francine Aparecida Goulart Ltda<br>
+            CNPJ: 33.339.590/0001-30 | Fundação: 2019<br>
+            Responsável Técnica: Dra. Francine Aparecida Goulart, CRO SP-CD-104303<br>
+            Avenida 7, nº 310, Centro, Rio Claro - SP
+          </p>
+        </div>
+        <div>
+          <div class="footer-heading">Navegação</div>
+          <ul class="footer-list">
+            <li><a href="#inicio">Início</a></li>
+            <li><a href="#servicos">Tratamentos</a></li>
+            <li><a href="#avaliacoes">Avaliações Google</a></li>
+            <li><a href="#localizacao">Localização</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-heading">Agendamentos</div>
+          <ul class="footer-list">
+            <li>Telefone: (19) 98849-4898</li>
+            <li>WhatsApp: (19) 98849-4898</li>
+            <li>Horários com agendamento prévio</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 Clínica Odontológica Dra. Francine Goulart. Todos os direitos reservados.</div>
+        <div>Rio Claro - SP</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating WhatsApp CTA (appears after hero CTA leaves viewport) -->
+  <a 
+    href="https://wa.me/5519988494898?text=Ol%C3%A1%2C%20gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20na%20Cl%C3%ADnica%20Dra.%20Francine%20Goulart." 
+    class="floating-whatsapp"
+    id="floating-whatsapp"
+    target="_blank" 
+    rel="noopener noreferrer"
+    aria-label="Falar pelo WhatsApp"
+  >
+    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+    <span>Agendar no WhatsApp</span>
+  </a>
+
+  <!-- Synchronized Floating Controller Script -->
+  <script>
+    (function() {
+      const heroCta = document.getElementById('hero-cta');
+      const floatingBtn = document.getElementById('floating-whatsapp');
+
+      if (!heroCta || !floatingBtn) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) {
+            floatingBtn.classList.add('visible');
+          } else {
+            floatingBtn.classList.remove('visible');
+          }
+        });
+      }, {
+        threshold: 0,
+        rootMargin: '0px 0px -100px 0px'
+      });
+
+      observer.observe(heroCta);
+    })();
+  </script>
+</body>
+</html>
