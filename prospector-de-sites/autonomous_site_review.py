@@ -310,6 +310,14 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
             has_stale_1 = bool(re.search(r"\b1\s+avalia[cç][aã]o\b", text_only, re.IGNORECASE))
             review.check("google_reviews_no_stale_count_text", not has_stale_1, f"Review section cannot display '1 avaliação' when ratingCount is {expected_count}")
 
+        # Ban synthetic reviewer placeholders (e.g. Paciente Verificado #1)
+        has_synthetic = bool(re.search(r"(?i)\b(?:paciente\s+verificado|reviewer|cliente|an[oô]nimo|paciente)\s*#?\s*\d+\b", text_only))
+        review.check("google_reviews_no_synthetic_metadata", not has_synthetic, "Public review section cannot contain synthetic reviewer placeholders (e.g. Paciente Verificado #1)")
+
+        # Ban unsupported patient status claim in review subtitle
+        has_patient_claim = bool(re.search(r"(?i)\bopini(?:ão|ões)\s+de\s+pacientes\b", text_only))
+        review.check("google_reviews_no_unsupported_patient_claim", not has_patient_claim, "Public review section subtitle cannot claim verified patient status ('Opiniões de pacientes') without source verification. Use 'Avaliações públicas sobre o atendimento' instead.")
+
         if state in {"VERIFIED_STRONG", "VERIFIED_TEXT_LIMITED"}:
             review_mode = extract_attr(tag_str, "data-review-mode")
             review.check(

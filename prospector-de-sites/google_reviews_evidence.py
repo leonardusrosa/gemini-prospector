@@ -32,17 +32,33 @@ DIRECT_COLLECTION_METHODS = {
 }
 
 
+SYNTHETIC_METADATA_PATTERN = re.compile(
+    r"(?i)\b(?:paciente\s+verificado|reviewer|cliente|an[oô]nimo|paciente|cliente)\s*#?\s*\d+\b"
+)
+
+
 def compute_entry_fingerprint(
     place_id: str,
-    author: str,
+    author: str | None,
     rating: int | float,
-    date_label: str,
+    date_label: str | None,
     text: str = "",
+    native_review_id: str | None = None,
+    entry_index: int | None = None,
 ) -> str:
     """Compute a deterministic sha256 fingerprint for an observed Google Maps rating/review entry."""
     text_clean = str(text or "").strip()
     text_hash = hashlib.sha256(text_clean.encode("utf-8")).hexdigest() if text_clean else ""
-    raw_key = f"{str(place_id).strip()}|{str(author).strip()}|{rating}|{str(date_label).strip()}|{text_hash}"
+    place_clean = str(place_id or "").strip()
+    native_clean = str(native_review_id or "").strip()
+    author_clean = str(author or "").strip()
+    date_clean = str(date_label or "").strip()
+
+    if native_clean:
+        raw_key = f"{place_clean}|{native_clean}|{author_clean}|{rating}|{date_clean}|{text_hash}"
+    else:
+        idx_key = str(entry_index) if entry_index is not None else ""
+        raw_key = f"{place_clean}|{idx_key}|{author_clean}|{rating}|{date_clean}|{text_hash}"
     return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
 
@@ -208,6 +224,7 @@ def _validate_observed_entries(
 
     place_id = str(data.get("placeId") or data.get("placeIdOrCid") or "").strip()
     entry_fps: Set[str] = set()
+    native_ids: Set[str] = set()
     text_entries_count = 0
     star_only_count = 0
 
@@ -217,6 +234,7 @@ def _validate_observed_entries(
             continue
 
         fp = entry.get("fingerprint")
+        native_review_id = entry.get("nativeReviewId")
         author = entry.get("author")
         rating = entry.get("rating")
         date_label = entry.get("dateLabel")
@@ -225,12 +243,35 @@ def _validate_observed_entries(
 
         if not _nonempty(fp):
             errors.append(f"observedEntries[{idx}] fingerprint is required.")
-        if not _nonempty(author):
-            errors.append(f"observedEntries[{idx}] author is required.")
+
+        if author is not None:
+            if not isinstance(author, str) or not author.strip():
+                errors.append(f"observedEntries[{idx}] author must be a non-empty string or null.")
+            elif SYNTHETIC_METADATA_PATTERN.search(author):
+                errors.append(
+                    f"observedEntries[{idx}] contains synthetic author placeholder {author!r}. "
+                    "Source-observed factual fields must be actual captured values or null."
+                )
+
+        if date_label is not None:
+            if not isinstance(date_label, str) or not date_label.strip():
+                errors.append(f"observedEntries[{idx}] dateLabel must be a non-empty string or null.")
+            elif SYNTHETIC_METADATA_PATTERN.search(date_label):
+                errors.append(
+                    f"observedEntries[{idx}] contains synthetic date placeholder {date_label!r}."
+                )
+
+        if native_review_id is not None:
+            if not isinstance(native_review_id, str) or not native_review_id.strip():
+                errors.append(f"observedEntries[{idx}] nativeReviewId must be a non-empty string or null.")
+            else:
+                clean_nid = native_review_id.strip()
+                if clean_nid in native_ids:
+                    errors.append(f"observedEntries[{idx}] duplicate nativeReviewId {clean_nid!r}.")
+                native_ids.add(clean_nid)
+
         if not isinstance(rating, (int, float)) or not (1 <= float(rating) <= 5):
             errors.append(f"observedEntries[{idx}] rating must be a number between 1 and 5.")
-        if not _nonempty(date_label):
-            errors.append(f"observedEntries[{idx}] dateLabel is required.")
         if not isinstance(has_text, bool):
             errors.append(f"observedEntries[{idx}] hasText must be a boolean.")
 
@@ -248,8 +289,16 @@ def _validate_observed_entries(
             if text_ev_id is not None:
                 errors.append(f"observedEntries[{idx}] hasText=false must have textEvidenceId=null.")
 
-        if _nonempty(fp) and _nonempty(author) and isinstance(rating, (int, float)) and _nonempty(date_label):
-            expected_fp = compute_entry_fingerprint(place_id, str(author), rating, str(date_label), review_text)
+        if _nonempty(fp) and isinstance(rating, (int, float)):
+            expected_fp = compute_entry_fingerprint(
+                place_id,
+                author,
+                rating,
+                date_label,
+                review_text,
+                native_review_id,
+                idx,
+            )
             if fp != expected_fp:
                 errors.append(
                     f"observedEntries[{idx}] fingerprint mismatch. Expected {expected_fp}, got {fp}."
@@ -259,6 +308,15 @@ def _validate_observed_entries(
             if fp in entry_fps:
                 errors.append(f"observedEntries[{idx}] duplicate fingerprint {fp}.")
             entry_fps.add(fp)
+
+    # Check reviews list for synthetic placeholder author/text
+    for r_idx, rev in enumerate(data.get("reviews") or []):
+        if isinstance(rev, dict):
+            r_author = rev.get("author")
+            if isinstance(r_author, str) and SYNTHETIC_METADATA_PATTERN.search(r_author):
+                errors.append(
+                    f"reviews[{r_idx}] contains synthetic author placeholder {r_author!r}."
+                )
 
     derived_total = len(observed_entries)
     declared_rating_entries = data.get("observedRatingEntries")

@@ -1163,9 +1163,14 @@ def test_reviews_carousel_slide_count_mismatch_fails():
         tpl_dir = p / "assets" / "templates"
         tpl_dir.mkdir(parents=True, exist_ok=True)
         (tpl_dir / "dentistry-female.webp").write_bytes(b"RIFF....WEBPVP8 ...")
-        (tpl_dir / "dentistry-female-mobile.webp").write_bytes(b"RIFF....WEBPVP8 ...")
+    def iost_design(design_text, skill_path):
+        lines = [
+            design_text.strip(),
+            "- **Factual Verified Services**: Ortodontia Preventiva e Interceptativa, Aparelhos Autoligados, Alinhadores Invisíveis, Ortodontia para Adultos e Crianças",
+        ]
+        return "\n".join(lines) + "\n"
 
-    code, payload = run_case(html=html_single_slide, manifest=manifest, custom_setup=setup_template)
+    code, payload = run_case(html=html_single_slide, manifest=manifest, design_transform=iost_design, custom_setup=setup_template)
     assert code == 1
     assert any(c.get("key") == "carousel_items_count" and c.get("status") == "FAIL" for c in payload.get("checks", []))
 
@@ -1179,7 +1184,7 @@ def test_reviews_carousel_12_items_passes():
     def iost_design(design_text, skill_path):
         lines = [
             design_text.strip(),
-            "- **Factual Verified Services**: Avaliação ortodôntica, Manutenção de aparelho fixo, Clareamento dental, Procedimentos clínicos gerais",
+            "- **Factual Verified Services**: Ortodontia Preventiva e Interceptativa, Aparelhos Autoligados, Alinhadores Invisíveis, Ortodontia para Adultos e Crianças",
         ]
         return "\n".join(lines) + "\n"
 
@@ -1193,10 +1198,58 @@ def test_reviews_carousel_12_items_passes():
     assert code == 0, f"Expected PASS for full 12-item carousel: {payload}"
 
 
+def test_synthetic_review_author_in_manifest_fails():
+    from google_reviews_evidence import validate_evidence
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"]["sourceSurface"] = "direct_google_maps"
+    manifest["googleReviews"]["collectionMethod"] = "playwright_direct_maps"
+    manifest["googleReviews"]["profileHeaderObserved"] = True
+    manifest["googleReviews"]["reviewsPanelOpened"] = True
+    manifest["googleReviews"]["reviewsPanelFullyTraversed"] = True
+    manifest["googleReviews"]["textReviewCollectionAttempted"] = True
+    manifest["googleReviews"]["profileName"] = "Odontologia Dra. Aline Iost"
+    manifest["googleReviews"]["profileUrl"] = "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu"
+    manifest["googleReviews"]["placeIdOrCid"] = "ChIJ5-3JUhHbx5QR-KoFM6msI3A"
+    manifest["googleReviews"]["collectedAt"] = "2026-08-31T20:55:00Z"
+    manifest["googleReviews"]["aggregateRating"] = 5.0
+    manifest["googleReviews"]["ratingCount"] = 1
+    manifest["googleReviews"]["observedRatingEntries"] = 1
+    manifest["googleReviews"]["observedTextReviewEntries"] = 1
+    manifest["googleReviews"]["capturedTextReviewCount"] = 1
+    manifest["googleReviews"]["starOnlyRatingCount"] = 0
+    manifest["googleReviews"]["observedEntries"] = [
+        {
+            "fingerprint": "123",
+            "author": "Paciente Verificado #1",
+            "rating": 5,
+            "dateLabel": "2 anos atrás",
+            "hasText": True,
+            "textEvidenceId": "g1"
+        }
+    ]
+    manifest["googleReviews"]["reviews"] = [
+        {
+            "id": "g1",
+            "author": "Paciente Verificado #1",
+            "rating": 5,
+            "dateLabel": "2 anos atrás",
+            "hasText": True,
+            "text": "Excelente",
+            "source": "google_maps",
+            "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+            "verified": True
+        }
+    ]
+    res = validate_evidence(manifest["googleReviews"])
+    assert not res.pass_for_publish
+    assert any("synthetic author placeholder" in e for e in res.errors)
+
+
 if __name__ == "__main__":
     tests = [name for name in globals() if name.startswith("test_")]
     for name in sorted(tests):
         globals()[name]()
         print(f"[PASS] {name}")
     print(f"\n{len(tests)}/{len(tests)} autonomous site-review regression cases passed")
+
 
