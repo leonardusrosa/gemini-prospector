@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Deterministic validator to prevent silent factual drift across maintenance patches (V2.2).
+"""Deterministic validator to prevent silent factual drift across maintenance patches (V2.2.1).
 
-Enforces immutable baseline anchors, field-by-field binding, and strict fail-closed baselines:
-1. Current HEAD factual-baseline.json is NOT its own root of trust.
-2. Baselines must be loaded from trusted external anchors or <trusted-ref>:factual-baseline.json.
-3. If factual-baseline.json changes in current diff, it cannot authorize that same build.
-4. accepted_baseline history is strictly verified against git history or <trusted-ref> baseline.
-5. In CI/production, absence of trusted baseline fails closed (no HEAD~1 fallback in production).
+Shallow-clone safe trusted baseline resolution:
+1. Targeted fetch helper: ensure_git_commit_available(ref, repo_dir, is_ci)
+2. External hash anchor: FACTUAL_DRIFT_BASELINE_SHA256
+3. Strict resolution priority:
+   - EXPLICIT_REF
+   - VERCEL_PREVIOUS_SHA
+   - CI_BASE_REF
+   - EXTERNAL_SHA256
+   - PERSISTED_FETCHED_COMMIT
+4. No HEAD~1 in CI/production.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -66,6 +71,8 @@ class FactualDriftResult:
     warnings: List[str] = field(default_factory=list)
     mutated_fields: List[str] = field(default_factory=list)
     authorized_fields: List[str] = field(default_factory=list)
+    baseline_mode: Optional[str] = None
+    baseline_sha: Optional[str] = None
 
 
 def is_presentation_patch(
@@ -141,6 +148,58 @@ def extract_protected_state(manifest: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
+def ensure_git_commit_available(
+    ref: Optional[str], repo_dir: Optional[Path] = None, is_ci: bool = False
+) -> Optional[str]:
+    """Ensure git commit is available locally, performing a targeted fetch if needed in CI."""
+    if not ref or not isinstance(ref, str) or not ref.strip():
+        return None
+    clean_ref = ref.strip()
+
+    if repo_dir:
+        try:
+            proc = subprocess.run(
+                ["git", "rev-parse", "--verify", clean_ref],
+                cwd=str(repo_dir),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                return proc.stdout.strip()
+        except Exception:
+            pass
+
+        if is_ci:
+            try:
+                subprocess.run(
+                    ["git", "fetch", "--no-tags", "--depth=1", "origin", clean_ref],
+                    cwd=str(repo_dir),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                proc2 = subprocess.run(
+                    ["git", "rev-parse", "--verify", clean_ref],
+                    cwd=str(repo_dir),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if proc2.returncode == 0 and proc2.stdout.strip():
+                    return proc2.stdout.strip()
+            except Exception:
+                pass
+
+    return None
+
+
+def calculate_baseline_sha256(file_bytes: bytes) -> str:
+    """Compute SHA-256 with normalized LF line endings."""
+    norm = file_bytes.decode("utf-8", errors="replace").replace("\r\n", "\n").encode("utf-8")
+    return hashlib.sha256(norm).hexdigest()
+
+
 def verify_accepted_baseline(
     repo_dir: Optional[Path],
     commit_sha: str,
@@ -148,32 +207,35 @@ def verify_accepted_baseline(
     protected_path: str,
     expected_val: Any,
     trusted_persisted_baseline: Optional[Dict[str, Any]] = None,
+    is_ci: bool = False,
 ) -> Optional[str]:
     """Verify that commit_sha contains expected_val via git or trusted prior baseline file.
 
-    Never trusts the working-tree or current HEAD factual-baseline.json for history verification.
+    Fetches targeted commit in shallow CI checkout if absent locally.
     """
     if repo_dir:
-        try:
-            proc = subprocess.run(
-                ["git", "show", f"{commit_sha}:{manifest_path}"],
-                cwd=str(repo_dir),
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if proc.returncode == 0:
-                past_manifest = json.loads(proc.stdout)
-                past_state = extract_protected_state(past_manifest)
-                past_val = past_state.get(protected_path)
-                if isinstance(expected_val, list) and isinstance(past_val, list):
-                    if sorted(expected_val) != sorted(past_val):
+        resolved_sha = ensure_git_commit_available(commit_sha, repo_dir, is_ci)
+        if resolved_sha:
+            try:
+                proc = subprocess.run(
+                    ["git", "show", f"{resolved_sha}:{manifest_path}"],
+                    cwd=str(repo_dir),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if proc.returncode == 0:
+                    past_manifest = json.loads(proc.stdout)
+                    past_state = extract_protected_state(past_manifest)
+                    past_val = past_state.get(protected_path)
+                    if isinstance(expected_val, list) and isinstance(past_val, list):
+                        if sorted(expected_val) != sorted(past_val):
+                            return f"Committed value {past_val} does not match expected baseline {expected_val}"
+                    elif past_val != expected_val:
                         return f"Committed value {past_val} does not match expected baseline {expected_val}"
-                elif past_val != expected_val:
-                    return f"Committed value {past_val} does not match expected baseline {expected_val}"
-                return None
-        except Exception:
-            pass
+                    return None
+            except Exception:
+                pass
 
     # Check trusted prior baseline history (from trusted baseline commit, NOT current HEAD)
     if trusted_persisted_baseline:
@@ -196,6 +258,7 @@ def validate_factual_refresh_artifact(
     base_dir: Optional[Path] = None,
     repo_dir: Optional[Path] = None,
     trusted_persisted_baseline: Optional[Dict[str, Any]] = None,
+    is_ci: bool = False,
 ) -> tuple[Set[str], List[str]]:
     """Validate factual-refresh.json artifact and return authorized field paths."""
     errors: List[str] = []
@@ -244,7 +307,7 @@ def validate_factual_refresh_artifact(
                 )
             else:
                 verify_err = verify_accepted_baseline(
-                    repo_dir, commit_sha, man_path, prot_path, exp_val, trusted_persisted_baseline
+                    repo_dir, commit_sha, man_path, prot_path, exp_val, trusted_persisted_baseline, is_ci
                 )
                 if verify_err:
                     errors.append(f"sources[{idx}] accepted_baseline verification failed: {verify_err}")
@@ -314,6 +377,8 @@ def check_factual_drift(
     repo_dir: Optional[Path] = None,
     trusted_persisted_baseline: Optional[Dict[str, Any]] = None,
     is_ci: bool = False,
+    baseline_mode: Optional[str] = None,
+    baseline_sha: Optional[str] = None,
 ) -> FactualDriftResult:
     """Validate that protected factual fields do not drift without field-bound authorization."""
     failures: List[str] = []
@@ -328,8 +393,10 @@ def check_factual_drift(
             return FactualDriftResult(
                 passed=False,
                 failures=["FACTUAL_DRIFT_BASELINE_UNRESOLVED: No trustworthy baseline manifest could be resolved."],
+                baseline_mode=baseline_mode,
+                baseline_sha=baseline_sha,
             )
-        return FactualDriftResult(passed=True)
+        return FactualDriftResult(passed=True, baseline_mode=baseline_mode, baseline_sha=baseline_sha)
 
     state_before = extract_protected_state(before_manifest)
 
@@ -340,7 +407,12 @@ def check_factual_drift(
             mutated_paths.append(p)
 
     if not mutated_paths:
-        return FactualDriftResult(passed=True, mutated_fields=[])
+        return FactualDriftResult(
+            passed=True,
+            mutated_fields=[],
+            baseline_mode=baseline_mode,
+            baseline_sha=baseline_sha,
+        )
 
     # STALE REFRESH MUST NOT AUTHORIZE (Requirement 1)
     is_refresh_in_files = False
@@ -360,7 +432,7 @@ def check_factual_drift(
             )
         else:
             auths, artifact_errors = validate_factual_refresh_artifact(
-                factual_refresh_data, base_dir, repo_dir, trusted_persisted_baseline
+                factual_refresh_data, base_dir, repo_dir, trusted_persisted_baseline, is_ci
             )
             failures.extend(artifact_errors)
             authorized_paths = auths
@@ -375,7 +447,7 @@ def check_factual_drift(
                 try:
                     data = json.loads(rf_path.read_text(encoding="utf-8"))
                     auths, artifact_errors = validate_factual_refresh_artifact(
-                        data, base_dir, repo_dir, trusted_persisted_baseline
+                        data, base_dir, repo_dir, trusted_persisted_baseline, is_ci
                     )
                     failures.extend(artifact_errors)
                     authorized_paths = auths
@@ -402,6 +474,8 @@ def check_factual_drift(
         warnings=warnings,
         mutated_fields=mutated_paths,
         authorized_fields=list(authorized_paths),
+        baseline_mode=baseline_mode,
+        baseline_sha=baseline_sha,
     )
 
 
@@ -437,5 +511,5 @@ if __name__ == "__main__":
         for f in res.failures:
             print(f, file=sys.stderr)
         sys.exit(1)
-    print("FACTUAL DRIFT V2.2: PASS")
+    print("FACTUAL DRIFT V2.2.1: PASS")
     sys.exit(0)

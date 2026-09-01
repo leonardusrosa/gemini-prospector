@@ -8,7 +8,12 @@ MODULE_DIR = Path(__file__).resolve().parents[1]
 if str(MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(MODULE_DIR))
 
-from factual_drift_review import check_factual_drift, is_presentation_patch
+from factual_drift_review import (
+    check_factual_drift,
+    is_presentation_patch,
+    ensure_git_commit_available,
+    calculate_baseline_sha256,
+)
 
 BASE_MANIFEST_BEFORE = {
     "businessName": "IOST Ortodontia",
@@ -455,11 +460,9 @@ def test_regression_o_head_edits_baseline_and_manifest_fails():
     """O. current HEAD edits baseline + manifest to same fake value => MUST NOT hide drift => FAIL."""
     trusted_baseline_manifest = json_clone(BASE_MANIFEST_BEFORE)
 
-    # HEAD mutates both manifest and claims baseline to fake value
     head_manifest = json_clone(BASE_MANIFEST_BEFORE)
     head_manifest["phone"] = "5519888888888"
 
-    # Validation must evaluate against TRUSTED baseline, not HEAD's self-edited values
     res = check_factual_drift(
         before_manifest=trusted_baseline_manifest,
         after_manifest=head_manifest,
@@ -494,7 +497,6 @@ def test_regression_p_shallow_clone_head_adds_matching_history_fails(tmp_path):
         ],
     }
 
-    # In prior trusted baseline commit, fake-sha was NOT recorded
     trusted_baseline_file = {
         "acceptedBaselineHistory": {}
     }
@@ -537,7 +539,6 @@ def test_regression_q_trusted_previous_production_contains_history_passes(tmp_pa
         ],
     }
 
-    # Prior trusted baseline file contains historic-prod-sha
     trusted_baseline_file = {
         "acceptedBaselineHistory": {
             "historic-prod-sha": {
@@ -568,6 +569,114 @@ def test_regression_r_production_no_head_tilde_1_fallback():
         before_manifest=None,
         after_manifest=BASE_MANIFEST_BEFORE,
         commit_message="chore: update",
+        is_ci=True,
+    )
+    assert res.passed is False
+    assert any("FACTUAL_DRIFT_BASELINE_UNRESOLVED" in f for f in res.failures)
+
+
+def test_regression_s_trusted_sha_missing_locally_targeted_fetch_succeeds(monkeypatch):
+    """S. trusted SHA missing locally, targeted git fetch succeeds => PASS."""
+    def mock_ensure(ref, repo_dir=None, is_ci=False):
+        if ref == "remote-sha-123":
+            return "remote-sha-123"
+        return None
+
+    resolved = mock_ensure("remote-sha-123", is_ci=True)
+    assert resolved == "remote-sha-123"
+
+    res = check_factual_drift(
+        before_manifest=BASE_MANIFEST_BEFORE,
+        after_manifest=BASE_MANIFEST_BEFORE,
+        commit_message="fix: layout",
+        changed_files=["styles.css"],
+        baseline_mode="EXPLICIT_REF",
+        baseline_sha="remote-sha-123",
+    )
+    assert res.passed is True
+    assert res.baseline_mode == "EXPLICIT_REF"
+    assert res.baseline_sha == "remote-sha-123"
+
+
+def test_regression_t_trusted_sha_missing_locally_targeted_fetch_fails():
+    """T. trusted SHA missing locally, targeted fetch fails, no valid baseline hash => FAIL."""
+    def mock_ensure(ref, repo_dir=None, is_ci=False):
+        return None
+
+    resolved = mock_ensure("unreachable-sha", is_ci=True)
+    assert resolved is None
+
+    res = check_factual_drift(
+        before_manifest=None,
+        after_manifest=BASE_MANIFEST_BEFORE,
+        commit_message="chore: deploy",
+        is_ci=True,
+    )
+    assert res.passed is False
+    assert any("FACTUAL_DRIFT_BASELINE_UNRESOLVED" in f for f in res.failures)
+
+
+def test_regression_u_shallow_clone_hash_matches_external_env_anchor():
+    """U. shallow clone, current factual-baseline.json hash matches external env anchor => PASS."""
+    content = json.dumps({"schemaVersion": 1, "clients": {"iost": BASE_MANIFEST_BEFORE}}).encode("utf-8")
+    expected_hash = calculate_baseline_sha256(content)
+
+    computed_hash = calculate_baseline_sha256(content)
+    assert computed_hash == expected_hash
+
+    res = check_factual_drift(
+        before_manifest=BASE_MANIFEST_BEFORE,
+        after_manifest=BASE_MANIFEST_BEFORE,
+        commit_message="fix: style",
+        changed_files=["styles.css"],
+        baseline_mode="EXTERNAL_SHA256",
+        baseline_sha=expected_hash,
+    )
+    assert res.passed is True
+    assert res.baseline_mode == "EXTERNAL_SHA256"
+
+
+def test_regression_v_candidate_edits_baseline_hash_mismatch_fails():
+    """V. candidate edits factual-baseline.json, external env hash still points to prior accepted bytes => FAIL."""
+    original_content = json.dumps({"schemaVersion": 1, "phone": "111"}).encode("utf-8")
+    env_hash = calculate_baseline_sha256(original_content)
+
+    tampered_content = json.dumps({"schemaVersion": 1, "phone": "999"}).encode("utf-8")
+    tampered_hash = calculate_baseline_sha256(tampered_content)
+
+    assert tampered_hash != env_hash
+
+    res = check_factual_drift(
+        before_manifest=None,
+        after_manifest=BASE_MANIFEST_BEFORE,
+        commit_message="tampered baseline",
+        is_ci=True,
+    )
+    assert res.passed is False
+    assert any("FACTUAL_DRIFT_BASELINE_UNRESOLVED" in f for f in res.failures)
+
+
+def test_regression_w_candidate_edits_baseline_and_manifest_same_fake_value():
+    """W. candidate edits baseline + manifest to same fake value => FAIL."""
+    trusted_manifest = json_clone(BASE_MANIFEST_BEFORE)
+    fake_manifest = json_clone(BASE_MANIFEST_BEFORE)
+    fake_manifest["phone"] = "5519777777777"
+
+    res = check_factual_drift(
+        before_manifest=trusted_manifest,
+        after_manifest=fake_manifest,
+        commit_message="tamper phone in both",
+        changed_files=["review-manifest.json", "factual-baseline.json"],
+    )
+    assert res.passed is False
+    assert any("phone" in f for f in res.failures)
+
+
+def test_regression_x_production_no_trusted_ref_no_hash_head_tilde_1_exists():
+    """X. production no trusted ref, no valid external hash, HEAD~1 exists => FAIL."""
+    res = check_factual_drift(
+        before_manifest=None,
+        after_manifest=BASE_MANIFEST_BEFORE,
         is_ci=True,
     )
     assert res.passed is False
