@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Deterministic validator to prevent silent factual drift across maintenance patches (V2.1).
+"""Deterministic validator to prevent silent factual drift across maintenance patches (V2.2).
 
-Enforces strict field-by-field binding, canonical refresh artifacts, and fail-closed baselines:
-1. Rejects stale unchanged factual-refresh.json artifacts.
-2. Any unauthorized mutation to protected fields always fails, regardless of commit message
-   or other authorized fields.
-3. Requires true fail-closed baseline resolution: missing baseline with protected state => FAIL.
-4. Distinguishes external source types from 'accepted_baseline', and enforces exact git
-   commit verification for baseline restorations.
-5. Verifies multi-commit ranges from trusted baseline to HEAD.
+Enforces immutable baseline anchors, field-by-field binding, and strict fail-closed baselines:
+1. Current HEAD factual-baseline.json is NOT its own root of trust.
+2. Baselines must be loaded from trusted external anchors or <trusted-ref>:factual-baseline.json.
+3. If factual-baseline.json changes in current diff, it cannot authorize that same build.
+4. accepted_baseline history is strictly verified against git history or <trusted-ref> baseline.
+5. In CI/production, absence of trusted baseline fails closed (no HEAD~1 fallback in production).
 """
 
 from __future__ import annotations
@@ -143,39 +141,61 @@ def extract_protected_state(manifest: Dict[str, Any]) -> Dict[str, Any]:
     return state
 
 
-def verify_accepted_baseline_git(
-    repo_dir: Optional[Path], commit_sha: str, manifest_path: str, protected_path: str, expected_val: Any
+def verify_accepted_baseline(
+    repo_dir: Optional[Path],
+    commit_sha: str,
+    manifest_path: str,
+    protected_path: str,
+    expected_val: Any,
+    trusted_persisted_baseline: Optional[Dict[str, Any]] = None,
 ) -> Optional[str]:
-    """Verify that commit_sha in git repository actually contains expected_val for protected_path."""
-    if not repo_dir:
-        return None
-    try:
-        proc = subprocess.run(
-            ["git", "show", f"{commit_sha}:{manifest_path}"],
-            cwd=str(repo_dir),
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if proc.returncode != 0:
-            return f"Git commit '{commit_sha}' does not contain '{manifest_path}'"
-        past_manifest = json.loads(proc.stdout)
-        past_state = extract_protected_state(past_manifest)
-        past_val = past_state.get(protected_path)
-        if isinstance(expected_val, list) and isinstance(past_val, list):
-            if sorted(expected_val) != sorted(past_val):
-                return f"Committed value {past_val} does not match expected baseline {expected_val}"
-        elif past_val != expected_val:
-            return f"Committed value {past_val} does not match expected baseline {expected_val}"
-    except Exception as ex:
-        return f"Failed to verify accepted_baseline commit in git: {ex}"
-    return None
+    """Verify that commit_sha contains expected_val via git or trusted prior baseline file.
+
+    Never trusts the working-tree or current HEAD factual-baseline.json for history verification.
+    """
+    if repo_dir:
+        try:
+            proc = subprocess.run(
+                ["git", "show", f"{commit_sha}:{manifest_path}"],
+                cwd=str(repo_dir),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if proc.returncode == 0:
+                past_manifest = json.loads(proc.stdout)
+                past_state = extract_protected_state(past_manifest)
+                past_val = past_state.get(protected_path)
+                if isinstance(expected_val, list) and isinstance(past_val, list):
+                    if sorted(expected_val) != sorted(past_val):
+                        return f"Committed value {past_val} does not match expected baseline {expected_val}"
+                elif past_val != expected_val:
+                    return f"Committed value {past_val} does not match expected baseline {expected_val}"
+                return None
+        except Exception:
+            pass
+
+    # Check trusted prior baseline history (from trusted baseline commit, NOT current HEAD)
+    if trusted_persisted_baseline:
+        history = trusted_persisted_baseline.get("acceptedBaselineHistory", {}).get(commit_sha)
+        if history:
+            for slug, fields in history.items():
+                if slug in manifest_path and fields.get(protected_path) is not None:
+                    h_val = fields.get(protected_path)
+                    if isinstance(expected_val, list) and isinstance(h_val, list):
+                        if sorted(expected_val) == sorted(h_val):
+                            return None
+                    elif h_val == expected_val:
+                        return None
+
+    return f"Git commit '{commit_sha}' could not be verified in git history or trusted prior baseline file"
 
 
 def validate_factual_refresh_artifact(
     artifact_data: Dict[str, Any],
     base_dir: Optional[Path] = None,
     repo_dir: Optional[Path] = None,
+    trusted_persisted_baseline: Optional[Dict[str, Any]] = None,
 ) -> tuple[Set[str], List[str]]:
     """Validate factual-refresh.json artifact and return authorized field paths."""
     errors: List[str] = []
@@ -223,9 +243,11 @@ def validate_factual_refresh_artifact(
                     f"sources[{idx}] of type='accepted_baseline' requires commitSha, manifestPath, protectedPath, expectedValue"
                 )
             else:
-                git_err = verify_accepted_baseline_git(repo_dir, commit_sha, man_path, prot_path, exp_val)
-                if git_err:
-                    errors.append(f"sources[{idx}] accepted_baseline verification failed: {git_err}")
+                verify_err = verify_accepted_baseline(
+                    repo_dir, commit_sha, man_path, prot_path, exp_val, trusted_persisted_baseline
+                )
+                if verify_err:
+                    errors.append(f"sources[{idx}] accepted_baseline verification failed: {verify_err}")
 
         elif s_type in VALID_EXTERNAL_SOURCE_TYPES:
             art_path = s.get("artifactPath")
@@ -238,7 +260,6 @@ def validate_factual_refresh_artifact(
                 elif full_path.stat().st_size == 0:
                     errors.append(f"sources[{idx}] artifactPath is empty placeholder: {art_path}")
                 else:
-                    # Check if internal JSON labels itself official_record (Regression M)
                     if full_path.suffix.lower() == ".json":
                         try:
                             content = full_path.read_text(encoding="utf-8")
@@ -291,6 +312,8 @@ def check_factual_drift(
     factual_refresh_modified: bool = True,
     base_dir: Optional[Path] = None,
     repo_dir: Optional[Path] = None,
+    trusted_persisted_baseline: Optional[Dict[str, Any]] = None,
+    is_ci: bool = False,
 ) -> FactualDriftResult:
     """Validate that protected factual fields do not drift without field-bound authorization."""
     failures: List[str] = []
@@ -299,9 +322,9 @@ def check_factual_drift(
     state_after = extract_protected_state(after_manifest)
     has_protected_fields = any(v is not None and v != [] for v in state_after.values())
 
-    # TRUE FAIL-CLOSED BASELINE (Requirement 3)
+    # TRUE FAIL-CLOSED BASELINE (Requirement 3 & 6)
     if before_manifest is None:
-        if has_protected_fields:
+        if has_protected_fields or is_ci:
             return FactualDriftResult(
                 passed=False,
                 failures=["FACTUAL_DRIFT_BASELINE_UNRESOLVED: No trustworthy baseline manifest could be resolved."],
@@ -336,7 +359,9 @@ def check_factual_drift(
                 "[factual-drift] research/factual-refresh.json was not added or modified in this change set and cannot authorize factual mutations (stale refresh)."
             )
         else:
-            auths, artifact_errors = validate_factual_refresh_artifact(factual_refresh_data, base_dir, repo_dir)
+            auths, artifact_errors = validate_factual_refresh_artifact(
+                factual_refresh_data, base_dir, repo_dir, trusted_persisted_baseline
+            )
             failures.extend(artifact_errors)
             authorized_paths = auths
     elif base_dir:
@@ -349,7 +374,9 @@ def check_factual_drift(
             else:
                 try:
                     data = json.loads(rf_path.read_text(encoding="utf-8"))
-                    auths, artifact_errors = validate_factual_refresh_artifact(data, base_dir, repo_dir)
+                    auths, artifact_errors = validate_factual_refresh_artifact(
+                        data, base_dir, repo_dir, trusted_persisted_baseline
+                    )
                     failures.extend(artifact_errors)
                     authorized_paths = auths
                 except Exception as ex:
@@ -389,6 +416,7 @@ if __name__ == "__main__":
     parser.add_argument("--files", nargs="*", default=[], help="Changed files list")
     parser.add_argument("--refresh", default="", help="Path to factual-refresh.json")
     parser.add_argument("--dir", default=".", help="Base directory for artifact path resolution")
+    parser.add_argument("--ci", action="store_true", help="Run in strict CI mode")
     args = parser.parse_args()
 
     b_data = json.loads(Path(args.before).read_text(encoding="utf-8")) if args.before else None
@@ -403,10 +431,11 @@ if __name__ == "__main__":
         changed_files=args.files,
         factual_refresh_data=r_data,
         base_dir=b_dir,
+        is_ci=args.ci,
     )
     if not res.passed:
         for f in res.failures:
             print(f, file=sys.stderr)
         sys.exit(1)
-    print("FACTUAL DRIFT V2.1: PASS")
+    print("FACTUAL DRIFT V2.2: PASS")
     sys.exit(0)

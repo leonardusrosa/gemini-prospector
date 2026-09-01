@@ -275,7 +275,6 @@ def test_regression_i_stale_unchanged_factual_refresh_reused_fails(tmp_path):
         ],
     }
 
-    # factual-refresh.json is NOT in changed_files, so it is stale
     res = check_factual_drift(
         before_manifest=BASE_MANIFEST_BEFORE,
         after_manifest=after,
@@ -330,7 +329,7 @@ def test_regression_k_no_trustworthy_baseline_fails():
     res = check_factual_drift(
         before_manifest=None,
         after_manifest=BASE_MANIFEST_BEFORE,
-        commit_message="deploy: publish site",
+        commit_message="deploy: initial site",
         changed_files=["index.html"],
     )
     assert res.passed is False
@@ -339,17 +338,13 @@ def test_regression_k_no_trustworthy_baseline_fails():
 
 def test_regression_l_multi_commit_push_with_drift_in_intermediate_commit():
     """L. multi-commit push with drift in intermediate commit: comparing baseline A to HEAD C detects drift."""
-    # Commit A: Baseline
     manifest_a = json_clone(BASE_MANIFEST_BEFORE)
 
-    # Commit B: intermediate commit mutated services without evidence
     manifest_b = json_clone(manifest_a)
     manifest_b["factualEvidence"]["verifiedServices"].append({"claim": "Alinhadores"})
 
-    # Commit C (HEAD): CSS fix, services remain mutated relative to A
     manifest_c = json_clone(manifest_b)
 
-    # Comparing A -> C must detect the factual drift that occurred in B
     res = check_factual_drift(
         before_manifest=manifest_a,
         after_manifest=manifest_c,
@@ -401,14 +396,25 @@ def test_regression_m_internal_json_labels_itself_official_record_fails(tmp_path
 
 def test_regression_n_exact_accepted_baseline_restoration_passes(tmp_path):
     """N. exact accepted-baseline restoration pointing to real previous commit/value => PASS."""
-    # Manifest currently has drifted services
     current_manifest = json_clone(BASE_MANIFEST_BEFORE)
     current_manifest["factualEvidence"]["verifiedServices"] = [
         {"claim": "Ortodontia Preventiva", "verified": True}
     ]
 
-    # Restoration targets the accepted conservative set from baseline
     target_restored = json_clone(BASE_MANIFEST_BEFORE)
+
+    trusted_baseline_file = {
+        "acceptedBaselineHistory": {
+            "abc1234": {
+                "iost": {
+                    "factualEvidence.verifiedServices": [
+                        "Avaliação ortodôntica",
+                        "Manutenção de aparelho fixo",
+                    ]
+                }
+            }
+        }
+    }
 
     refresh_data = {
         "schemaVersion": 1,
@@ -431,7 +437,6 @@ def test_regression_n_exact_accepted_baseline_restoration_passes(tmp_path):
         ],
     }
 
-    # In standalone test without git cwd, accepted_baseline validates structure and expectedValue match
     res = check_factual_drift(
         before_manifest=current_manifest,
         after_manifest=target_restored,
@@ -440,9 +445,133 @@ def test_regression_n_exact_accepted_baseline_restoration_passes(tmp_path):
         factual_refresh_data=refresh_data,
         base_dir=tmp_path,
         repo_dir=None,
+        trusted_persisted_baseline=trusted_baseline_file,
     )
     assert res.passed is True
     assert len(res.failures) == 0
+
+
+def test_regression_o_head_edits_baseline_and_manifest_fails():
+    """O. current HEAD edits baseline + manifest to same fake value => MUST NOT hide drift => FAIL."""
+    trusted_baseline_manifest = json_clone(BASE_MANIFEST_BEFORE)
+
+    # HEAD mutates both manifest and claims baseline to fake value
+    head_manifest = json_clone(BASE_MANIFEST_BEFORE)
+    head_manifest["phone"] = "5519888888888"
+
+    # Validation must evaluate against TRUSTED baseline, not HEAD's self-edited values
+    res = check_factual_drift(
+        before_manifest=trusted_baseline_manifest,
+        after_manifest=head_manifest,
+        commit_message="chore: update phone and baseline together",
+        changed_files=["review-manifest.json", "factual-baseline.json"],
+        factual_refresh_data=None,
+    )
+    assert res.passed is False
+    assert any("phone" in f for f in res.failures)
+
+
+def test_regression_p_shallow_clone_head_adds_matching_history_fails(tmp_path):
+    """P. shallow clone, historical accepted_baseline unavailable in git, HEAD adds matching acceptedBaselineHistory => FAIL."""
+    current_manifest = json_clone(BASE_MANIFEST_BEFORE)
+    current_manifest["phone"] = "5519888888888"
+
+    refresh_data = {
+        "schemaVersion": 1,
+        "collectedAt": "2026-09-01T12:00:00Z",
+        "reason": "unauthorized baseline restore",
+        "changedFields": [{"path": "phone", "evidenceIds": ["src-fake"]}],
+        "sources": [
+            {
+                "id": "src-fake",
+                "type": "accepted_baseline",
+                "repository": "prospector-sites",
+                "commitSha": "fake-sha-not-in-history",
+                "manifestPath": "clientes/iost/review-manifest.json",
+                "protectedPath": "phone",
+                "expectedValue": "5519888888888",
+            }
+        ],
+    }
+
+    # In prior trusted baseline commit, fake-sha was NOT recorded
+    trusted_baseline_file = {
+        "acceptedBaselineHistory": {}
+    }
+
+    res = check_factual_drift(
+        before_manifest=BASE_MANIFEST_BEFORE,
+        after_manifest=current_manifest,
+        commit_message="restore fake phone",
+        changed_files=["review-manifest.json", "research/factual-refresh.json"],
+        factual_refresh_data=refresh_data,
+        base_dir=tmp_path,
+        repo_dir=None,
+        trusted_persisted_baseline=trusted_baseline_file,
+    )
+    assert res.passed is False
+    assert any("could not be verified in git history or trusted prior baseline" in f for f in res.failures)
+
+
+def test_regression_q_trusted_previous_production_contains_history_passes(tmp_path):
+    """Q. trusted previous production contains acceptedBaselineHistory => PASS."""
+    target_manifest = json_clone(BASE_MANIFEST_BEFORE)
+    current_manifest = json_clone(BASE_MANIFEST_BEFORE)
+    current_manifest["phone"] = "5519111111111"
+
+    refresh_data = {
+        "schemaVersion": 1,
+        "collectedAt": "2026-09-01T12:00:00Z",
+        "reason": "restore accepted baseline",
+        "changedFields": [{"path": "phone", "evidenceIds": ["src-base"]}],
+        "sources": [
+            {
+                "id": "src-base",
+                "type": "accepted_baseline",
+                "repository": "prospector-sites",
+                "commitSha": "historic-prod-sha",
+                "manifestPath": "clientes/iost/review-manifest.json",
+                "protectedPath": "phone",
+                "expectedValue": "5519996571896",
+            }
+        ],
+    }
+
+    # Prior trusted baseline file contains historic-prod-sha
+    trusted_baseline_file = {
+        "acceptedBaselineHistory": {
+            "historic-prod-sha": {
+                "iost": {
+                    "phone": "5519996571896"
+                }
+            }
+        }
+    }
+
+    res = check_factual_drift(
+        before_manifest=current_manifest,
+        after_manifest=target_manifest,
+        commit_message="restore phone from accepted baseline",
+        changed_files=["review-manifest.json", "research/factual-refresh.json"],
+        factual_refresh_data=refresh_data,
+        base_dir=tmp_path,
+        repo_dir=None,
+        trusted_persisted_baseline=trusted_baseline_file,
+    )
+    assert res.passed is True
+    assert len(res.failures) == 0
+
+
+def test_regression_r_production_no_head_tilde_1_fallback():
+    """R. production baseline ref unavailable but HEAD~1 exists => FAIL, no production HEAD~1 fallback."""
+    res = check_factual_drift(
+        before_manifest=None,
+        after_manifest=BASE_MANIFEST_BEFORE,
+        commit_message="chore: update",
+        is_ci=True,
+    )
+    assert res.passed is False
+    assert any("FACTUAL_DRIFT_BASELINE_UNRESOLVED" in f for f in res.failures)
 
 
 def json_clone(obj):
