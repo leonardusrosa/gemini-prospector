@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Deterministic validator to prevent silent factual drift across maintenance patches (V2.2.1).
+"""Deterministic validator to prevent silent factual drift across maintenance patches (V2.2.2).
 
-Shallow-clone safe trusted baseline resolution:
+Shallow-clone safe trusted baseline resolution with immutable anchors:
 1. Targeted fetch helper: ensure_git_commit_available(ref, repo_dir, is_ci)
 2. External hash anchor: FACTUAL_DRIFT_BASELINE_SHA256
-3. Strict resolution priority:
+3. Hash-only mode: if historical commit is unavailable, identical protected state PASSES,
+   mutations FAIL CLOSED with FACTUAL_DRIFT_HISTORY_REQUIRED_FOR_MUTATION.
+4. No HEAD~1 fallback in CI/production under any circumstances.
+5. Strict resolution priority:
    - EXPLICIT_REF
    - VERCEL_PREVIOUS_SHA
    - CI_BASE_REF
    - EXTERNAL_SHA256
    - PERSISTED_FETCHED_COMMIT
-4. No HEAD~1 in CI/production.
 """
 
 from __future__ import annotations
@@ -310,7 +312,7 @@ def validate_factual_refresh_artifact(
                     repo_dir, commit_sha, man_path, prot_path, exp_val, trusted_persisted_baseline, is_ci
                 )
                 if verify_err:
-                    errors.append(f"sources[{idx}] accepted_baseline verification failed: {verify_err}")
+                    errors.append(f"sources[{idx}] accepted_baseline verification failed: ${verify_err}")
 
         elif s_type in VALID_EXTERNAL_SOURCE_TYPES:
             art_path = s.get("artifactPath")
@@ -379,6 +381,7 @@ def check_factual_drift(
     is_ci: bool = False,
     baseline_mode: Optional[str] = None,
     baseline_sha: Optional[str] = None,
+    history_available: bool = True,
 ) -> FactualDriftResult:
     """Validate that protected factual fields do not drift without field-bound authorization."""
     failures: List[str] = []
@@ -406,10 +409,25 @@ def check_factual_drift(
         if json.dumps(val_b, sort_keys=True) != json.dumps(val_a, sort_keys=True):
             mutated_paths.append(p)
 
+    # If no protected fields mutated: PASS
     if not mutated_paths:
         return FactualDriftResult(
             passed=True,
             mutated_fields=[],
+            baseline_mode=baseline_mode,
+            baseline_sha=baseline_sha,
+        )
+
+    # HASH-ONLY MODE PROTECTION (V2.2.2):
+    # If historical commit is unavailable, mutations cannot be authorized without diff provenance.
+    if not history_available:
+        return FactualDriftResult(
+            passed=False,
+            failures=[
+                "FACTUAL_DRIFT_HISTORY_REQUIRED_FOR_MUTATION: Protected factual fields were mutated, "
+                "but historical baseline commit is unavailable to verify artifact provenance and staleness."
+            ],
+            mutated_fields=mutated_paths,
             baseline_mode=baseline_mode,
             baseline_sha=baseline_sha,
         )
@@ -511,5 +529,5 @@ if __name__ == "__main__":
         for f in res.failures:
             print(f, file=sys.stderr)
         sys.exit(1)
-    print("FACTUAL DRIFT V2.2.1: PASS")
+    print("FACTUAL DRIFT V2.2.2: PASS")
     sys.exit(0)

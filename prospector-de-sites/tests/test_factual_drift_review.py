@@ -376,7 +376,7 @@ def test_regression_m_internal_json_labels_itself_official_record_fails(tmp_path
     refresh_data = {
         "schemaVersion": 1,
         "collectedAt": "2026-09-01T12:00:00Z",
-        "reason": "internal notes claim",
+        "reason": "internal baseline note",
         "changedFields": [{"path": "factualEvidence.verifiedServices", "evidenceIds": ["src-note"]}],
         "sources": [
             {
@@ -681,6 +681,92 @@ def test_regression_x_production_no_trusted_ref_no_hash_head_tilde_1_exists():
     )
     assert res.passed is False
     assert any("FACTUAL_DRIFT_BASELINE_UNRESOLVED" in f for f in res.failures)
+
+
+def test_regression_y_external_sha256_valid_commit_unavailable_no_mutation_passes():
+    """Y. EXTERNAL_SHA256 valid, historical commit unavailable, HEAD~1 exists, no factual mutation => PASS without HEAD~1."""
+    res = check_factual_drift(
+        before_manifest=BASE_MANIFEST_BEFORE,
+        after_manifest=BASE_MANIFEST_BEFORE,
+        commit_message="fix: responsive css",
+        changed_files=None,  # diff unavailable
+        history_available=False,
+        baseline_mode="EXTERNAL_SHA256",
+        baseline_sha="3c34dd26",
+    )
+    assert res.passed is True
+    assert len(res.failures) == 0
+
+
+def test_regression_z_external_sha256_valid_commit_unavailable_mutation_fails_closed(tmp_path):
+    """Z. EXTERNAL_SHA256 valid, historical commit unavailable, protected mutation exists even with refresh => FAIL FACTUAL_DRIFT_HISTORY_REQUIRED_FOR_MUTATION."""
+    after = json_clone(BASE_MANIFEST_BEFORE)
+    after["phone"] = "5519999999999"
+
+    refresh_data = {
+        "schemaVersion": 1,
+        "collectedAt": "2026-09-01T12:00:00Z",
+        "reason": "phone change",
+        "changedFields": [{"path": "phone", "evidenceIds": ["src-phone"]}],
+        "sources": [
+            {
+                "id": "src-phone",
+                "type": "direct_maps",
+                "artifactPath": "research/phone-proof.txt",
+            }
+        ],
+    }
+
+    res = check_factual_drift(
+        before_manifest=BASE_MANIFEST_BEFORE,
+        after_manifest=after,
+        commit_message="update phone",
+        changed_files=None,  # diff unavailable
+        history_available=False,
+        factual_refresh_data=refresh_data,
+        baseline_mode="EXTERNAL_SHA256",
+        baseline_sha="3c34dd26",
+    )
+    assert res.passed is False
+    assert any("FACTUAL_DRIFT_HISTORY_REQUIRED_FOR_MUTATION" in f for f in res.failures)
+
+
+def test_regression_aa_external_sha256_valid_commit_fetched_valid_refresh_passes(tmp_path):
+    """AA. EXTERNAL_SHA256 valid, historical commit successfully targeted-fetched, valid new factual refresh => PASS normal full-history path."""
+    after = json_clone(BASE_MANIFEST_BEFORE)
+    after["phone"] = "5519999999999"
+
+    proof = tmp_path / "research" / "phone-proof.txt"
+    proof.parent.mkdir(parents=True, exist_ok=True)
+    proof.write_text("proof text", encoding="utf-8")
+
+    refresh_data = {
+        "schemaVersion": 1,
+        "collectedAt": "2026-09-01T12:00:00Z",
+        "reason": "phone change",
+        "changedFields": [{"path": "phone", "evidenceIds": ["src-phone"]}],
+        "sources": [
+            {
+                "id": "src-phone",
+                "type": "direct_maps",
+                "artifactPath": "research/phone-proof.txt",
+            }
+        ],
+    }
+
+    res = check_factual_drift(
+        before_manifest=BASE_MANIFEST_BEFORE,
+        after_manifest=after,
+        commit_message="factual-refresh: update phone",
+        changed_files=["review-manifest.json", "research/factual-refresh.json"],
+        history_available=True,  # commit fetched!
+        factual_refresh_data=refresh_data,
+        base_dir=tmp_path,
+        baseline_mode="EXTERNAL_SHA256",
+        baseline_sha="3c34dd26",
+    )
+    assert res.passed is True
+    assert len(res.failures) == 0
 
 
 def json_clone(obj):
