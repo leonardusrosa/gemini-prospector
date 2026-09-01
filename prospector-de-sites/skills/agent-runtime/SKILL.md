@@ -52,6 +52,8 @@ python prospector.py setup --agent <agent> --workspace <workspace>
 
 The generated `.prospector/` files are local runtime artifacts and must remain uncommitted.
 
+Unknown agent labels automatically use the generic adapter. A dedicated adapter is not required for a new CLI.
+
 ## 3. Static discovery vs live proof
 
 The bootstrap doctor may discover:
@@ -146,9 +148,80 @@ If unavailable, record the canonical unavailable state rather than pretending an
 
 The final creative critique is a capability, not an agent vendor feature.
 
-When the external current `gpt-taste` skill is installed and readable, use it as the preferred critic and record the actual path/hash when required by current gates.
+### Preferred path: external gpt-taste
 
-When it is absent in another runtime, do not fabricate its presence. Use only the repository-documented fallback state until the deterministic design-judge contract is satisfied.
+When the external current `gpt-taste` skill is installed and readable, use it as the preferred critic and record its real path/hash using the existing markers:
+
+```text
+GPT_TASTE_READ: PASS
+GPT_TASTE_PATH: <real path>
+GPT_TASTE_SHA256: <current sha256>
+```
+
+Never fabricate those markers.
+
+### Portable path: repository design judge
+
+When external gpt-taste is absent, read:
+
+```text
+prospector-de-sites/skills/design-judge/SKILL.md
+```
+
+and record:
+
+```text
+DESIGN_JUDGE_READ: PASS
+DESIGN_JUDGE_SOURCE: repository
+DESIGN_JUDGE_PATH: prospector-de-sites/skills/design-judge/SKILL.md
+DESIGN_JUDGE_SHA256: <current sha256>
+```
+
+The canonical autonomous reviewer validates the file path and hash. A stale/fake fallback hash blocks PASS.
+
+For OpenDesign selection, the portable manifest/marker pair is:
+
+```json
+{
+  "designJudgeSelectionReviewed": true
+}
+```
+
+```text
+OPEN_DESIGN_DESIGN_JUDGE_REVIEW: PASS
+```
+
+The legacy external path remains accepted as:
+
+```json
+{
+  "gptTasteSelectionReviewed": true
+}
+```
+
+```text
+OPEN_DESIGN_GPT_TASTE_REVIEW: PASS
+```
+
+For expert-hero judgment, either of these may satisfy the critic proof:
+
+```text
+EXPERT_HERO_GPT_TASTE_JUDGED: PASS
+```
+
+or:
+
+```text
+EXPERT_HERO_DESIGN_JUDGE_JUDGED: PASS
+```
+
+The hero geometry/full-bleed gates are identical in both paths.
+
+### Legacy wording compatibility
+
+Some older skills/reference text may still say “gpt-taste required” or mention a Gemini-specific gpt-taste path. In an agent-agnostic runtime, interpret that as “a verified Prospector design judge is required” unless the current deterministic gate explicitly requires the external skill.
+
+Do not invent a Gemini/Antigravity path on another runtime. Use the repository design judge path instead.
 
 Agent portability may not be achieved by weakening design QA.
 
