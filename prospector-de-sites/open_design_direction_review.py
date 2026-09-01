@@ -21,6 +21,16 @@ def _marker(text: str, key: str) -> str | None:
     return match.group(1).strip() if match else None
 
 
+def _design_judge_reviewed(cfg: dict[str, Any], design_read: str) -> bool:
+    legacy = cfg.get("gptTasteSelectionReviewed") is True and _marker(
+        design_read, "OPEN_DESIGN_GPT_TASTE_REVIEW"
+    ) == "PASS"
+    portable = cfg.get("designJudgeSelectionReviewed") is True and _marker(
+        design_read, "OPEN_DESIGN_DESIGN_JUDGE_REVIEW"
+    ) == "PASS"
+    return legacy or portable
+
+
 def validate_open_design_direction(
     manifest: dict[str, Any],
     design_read: str,
@@ -37,7 +47,6 @@ def validate_open_design_direction(
     site_mode = str(manifest.get("siteMode") or "").strip().lower()
     cfg = manifest.get("openDesignDirection")
 
-    # Legacy schema v1 remains untouched. Schema v2+ first versions are governed here.
     if schema_version < 2 and not cfg:
         return errors
     if schema_version < 2 and site_mode not in FIRST_VERSION_MODES:
@@ -88,14 +97,17 @@ def validate_open_design_direction(
                 if not candidate.is_file():
                     errors.append(f"OpenDesign DESIGN.md file is missing: {design_md_path}")
 
-        if cfg.get("gptTasteSelectionReviewed") is not True:
-            errors.append("OpenDesign used state requires gptTasteSelectionReviewed=true.")
+        if not _design_judge_reviewed(cfg, design_read):
+            errors.append(
+                "OpenDesign used state requires a verified design selection review: "
+                "either legacy gptTasteSelectionReviewed + OPEN_DESIGN_GPT_TASTE_REVIEW: PASS "
+                "or designJudgeSelectionReviewed + OPEN_DESIGN_DESIGN_JUDGE_REVIEW: PASS."
+            )
 
         expected_markers = {
             "OPEN_DESIGN_DIRECTION": "PASS",
             "OPEN_DESIGN_MCP_PROBE": "PASS",
             "OPEN_DESIGN_IMPLEMENTATION_ROLE": "DIRECTION_ONLY",
-            "OPEN_DESIGN_GPT_TASTE_REVIEW": "PASS",
         }
         for key, expected in expected_markers.items():
             if _marker(design_read, key) != expected:
@@ -119,8 +131,12 @@ def validate_open_design_direction(
             errors.append("design-read must contain OPEN_DESIGN_DIRECTION: UNAVAILABLE.")
         if _marker(design_read, "OPEN_DESIGN_MCP_PROBE") != "FAIL":
             errors.append("design-read must contain OPEN_DESIGN_MCP_PROBE: FAIL.")
-        if _marker(design_read, "OPEN_DESIGN_FALLBACK") != "GPT_TASTE_ONLY":
-            errors.append("OpenDesign unavailable state requires OPEN_DESIGN_FALLBACK: GPT_TASTE_ONLY.")
+        fallback = _marker(design_read, "OPEN_DESIGN_FALLBACK")
+        if fallback not in {"GPT_TASTE_ONLY", "DESIGN_JUDGE_ONLY"}:
+            errors.append(
+                "OpenDesign unavailable state requires OPEN_DESIGN_FALLBACK: "
+                "GPT_TASTE_ONLY or DESIGN_JUDGE_ONLY."
+            )
         dr_reason = _marker(design_read, "OPEN_DESIGN_UNAVAILABLE_REASON")
         if not dr_reason:
             errors.append("design-read must preserve the actual OpenDesign unavailable reason.")
