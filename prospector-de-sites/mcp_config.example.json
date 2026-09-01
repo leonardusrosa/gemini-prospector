@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "prospector-crm": {
+      "command": "<ABSOLUTE_PYTHON_PATH>",
+      "args": [
+        "<ABSOLUTE_REPO_PATH>/prospector-de-sites/prospector-mcp.py",
+        "--pasta",
+        "<ABSOLUTE_WORKSPACE_PATH>"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "optional": true
+    }
+  }
+}
