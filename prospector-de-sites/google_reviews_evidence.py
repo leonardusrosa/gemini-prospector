@@ -44,7 +44,7 @@ def compute_entry_fingerprint(
     date_label: str | None,
     text: str = "",
     native_review_id: str | None = None,
-    entry_index: int | None = None,
+    source_witness: dict | None = None,
 ) -> str:
     """Compute a deterministic sha256 fingerprint for an observed Google Maps rating/review entry."""
     text_clean = str(text or "").strip()
@@ -56,9 +56,12 @@ def compute_entry_fingerprint(
 
     if native_clean:
         raw_key = f"{place_clean}|{native_clean}|{author_clean}|{rating}|{date_clean}|{text_hash}"
+    elif source_witness and isinstance(source_witness, dict):
+        w_type = str(source_witness.get("type") or "").strip()
+        w_val = str(source_witness.get("value") or "").strip()
+        raw_key = f"{place_clean}|{w_type}:{w_val}|{author_clean}|{rating}|{date_clean}|{text_hash}"
     else:
-        idx_key = str(entry_index) if entry_index is not None else ""
-        raw_key = f"{place_clean}|{idx_key}|{author_clean}|{rating}|{date_clean}|{text_hash}"
+        raw_key = f"{place_clean}|{author_clean}|{rating}|{date_clean}|{text_hash}"
     return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
 
@@ -223,6 +226,7 @@ def _validate_observed_entries(
         return
 
     place_id = str(data.get("placeId") or data.get("placeIdOrCid") or "").strip()
+    witness_ids: Set[str] = set()
     entry_fps: Set[str] = set()
     native_ids: Set[str] = set()
     text_entries_count = 0
@@ -235,14 +239,49 @@ def _validate_observed_entries(
 
         fp = entry.get("fingerprint")
         native_review_id = entry.get("nativeReviewId")
+        source_witness = entry.get("sourceWitness")
         author = entry.get("author")
         rating = entry.get("rating")
         date_label = entry.get("dateLabel")
         has_text = entry.get("hasText")
         text_ev_id = entry.get("textEvidenceId")
+        collected_at = entry.get("collectedAt")
+        source_surface = entry.get("sourceSurface")
+        provenance = entry.get("provenance")
 
         if not _nonempty(fp):
             errors.append(f"observedEntries[{idx}] fingerprint is required.")
+
+        # sourceSurface validation
+        if str(source_surface or "").strip().lower() != "direct_google_maps":
+            errors.append(f"observedEntries[{idx}].sourceSurface must be 'direct_google_maps'.")
+
+        # collectedAt validation
+        if not _nonempty(collected_at) or not re.match(r"^\d{4}-\d{2}-\d{2}T", str(collected_at)):
+            errors.append(f"observedEntries[{idx}].collectedAt must record an ISO direct-source collection timestamp.")
+
+        # provenance validation
+        if not isinstance(provenance, dict):
+            errors.append(f"observedEntries[{idx}].provenance object is required.")
+        else:
+            if provenance.get("ratingObserved") is not True:
+                errors.append(f"observedEntries[{idx}].provenance.ratingObserved must be true.")
+            if author is not None and provenance.get("authorObserved") is not True:
+                errors.append(f"observedEntries[{idx}] non-null author requires provenance.authorObserved=true.")
+            if author is None and provenance.get("authorObserved") is True:
+                errors.append(f"observedEntries[{idx}] null author cannot have provenance.authorObserved=true.")
+            if date_label is not None and provenance.get("dateLabelObserved") is not True:
+                errors.append(f"observedEntries[{idx}] non-null dateLabel requires provenance.dateLabelObserved=true.")
+            if date_label is None and provenance.get("dateLabelObserved") is True:
+                errors.append(f"observedEntries[{idx}] null dateLabel cannot have provenance.dateLabelObserved=true.")
+            if native_review_id is not None and provenance.get("nativeReviewIdObserved") is not True:
+                errors.append(f"observedEntries[{idx}] non-null nativeReviewId requires provenance.nativeReviewIdObserved=true.")
+            if native_review_id is None and provenance.get("nativeReviewIdObserved") is True:
+                errors.append(f"observedEntries[{idx}] null nativeReviewId cannot have provenance.nativeReviewIdObserved=true.")
+            if has_text is True and provenance.get("textObserved") is not True:
+                errors.append(f"observedEntries[{idx}] hasText=true requires provenance.textObserved=true.")
+            if has_text is False and provenance.get("textObserved") is True:
+                errors.append(f"observedEntries[{idx}] hasText=false cannot have provenance.textObserved=true.")
 
         if author is not None:
             if not isinstance(author, str) or not author.strip():
@@ -269,6 +308,15 @@ def _validate_observed_entries(
                 if clean_nid in native_ids:
                     errors.append(f"observedEntries[{idx}] duplicate nativeReviewId {clean_nid!r}.")
                 native_ids.add(clean_nid)
+
+        if source_witness is not None:
+            if not isinstance(source_witness, dict) or not _nonempty(source_witness.get("type")) or not _nonempty(source_witness.get("value")):
+                errors.append(f"observedEntries[{idx}].sourceWitness must be an object with non-empty type and value.")
+            else:
+                wit_key = f"{source_witness.get('type')}:{source_witness.get('value')}"
+                if wit_key in witness_ids:
+                    errors.append(f"observedEntries[{idx}] duplicate sourceWitness {wit_key!r}.")
+                witness_ids.add(wit_key)
 
         if not isinstance(rating, (int, float)) or not (1 <= float(rating) <= 5):
             errors.append(f"observedEntries[{idx}] rating must be a number between 1 and 5.")
@@ -297,7 +345,7 @@ def _validate_observed_entries(
                 date_label,
                 review_text,
                 native_review_id,
-                idx,
+                source_witness,
             )
             if fp != expected_fp:
                 errors.append(
@@ -305,7 +353,7 @@ def _validate_observed_entries(
                 )
 
         if fp:
-            if fp in entry_fps:
+            if (native_review_id or source_witness) and fp in entry_fps:
                 errors.append(f"observedEntries[{idx}] duplicate fingerprint {fp}.")
             entry_fps.add(fp)
 

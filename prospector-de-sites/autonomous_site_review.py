@@ -338,6 +338,12 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
             has_carousel = bool(re.search(r"data-role=['\"]reviews-carousel['\"]", section_inner, re.IGNORECASE))
 
             if observed_entries and isinstance(observed_entries, list) and has_carousel:
+                source_backed_entries = [
+                    e for e in observed_entries
+                    if isinstance(e, dict) and (e.get("nativeReviewId") or (e.get("sourceWitness") and isinstance(e.get("sourceWitness"), dict) and e.get("sourceWitness").get("value")))
+                ]
+                expected_carousel_count = len(source_backed_entries)
+
                 # Validate carousel presentation
                 carousel_match = re.search(r"<[^>]*data-role=['\"]reviews-carousel['\"][^>]*>", section_inner, re.IGNORECASE)
                 carousel_tag = carousel_match.group(0) if carousel_match else ""
@@ -345,18 +351,18 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
                 
                 review.check(
                     "carousel_total_items_attr",
-                    carousel_total is not None and int(carousel_total) == len(observed_entries),
-                    f"Carousel data-review-total-items={carousel_total!r} must match observedEntries length {len(observed_entries)}",
+                    carousel_total is not None and int(carousel_total) == expected_carousel_count,
+                    f"Carousel data-review-total-items={carousel_total!r} must match source-backed entries length {expected_carousel_count}",
                 )
 
                 carousel_items = list(re.finditer(r"<(?P<tag>article|div)\b(?P<attrs>[^>]*)data-role=['\"]review-carousel-item['\"](?P<rest>[^>]*)>(?P<content>.*?)</(?P=tag)>", section_inner, re.DOTALL | re.IGNORECASE))
                 review.check(
                     "carousel_items_count",
-                    len(carousel_items) == len(observed_entries),
-                    f"Carousel must render all {len(observed_entries)} observed entries, found {len(carousel_items)} items",
+                    len(carousel_items) == expected_carousel_count,
+                    f"Carousel must render all {expected_carousel_count} source-backed observed entries, found {len(carousel_items)} items",
                 )
 
-                observed_by_fp = {e.get("fingerprint"): e for e in observed_entries if e.get("fingerprint")}
+                observed_by_fp = {e.get("fingerprint"): e for e in source_backed_entries if e.get("fingerprint")}
 
                 for item in carousel_items:
                     full_item_tag = item.group("attrs") + " " + item.group("rest")
@@ -367,7 +373,7 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
                     review.check(
                         "carousel_item_fingerprint_valid",
                         bool(item_fp and item_fp in observed_by_fp),
-                        f"Carousel item fingerprint {item_fp!r} must exist in googleReviews.observedEntries",
+                        f"Carousel item fingerprint {item_fp!r} must exist in source-backed observedEntries",
                     )
 
                     if item_fp and item_fp in observed_by_fp:

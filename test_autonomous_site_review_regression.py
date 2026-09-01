@@ -1245,11 +1245,173 @@ def test_synthetic_review_author_in_manifest_fails():
     assert any("synthetic author placeholder" in e for e in res.errors)
 
 
+def test_star_only_without_unique_source_witness_cannot_be_individual_carousel_item():
+    from google_reviews_evidence import compute_entry_fingerprint, validate_evidence
+    # Two entries without nativeReviewId or sourceWitness have identical raw fingerprints (no entryIndex fake differentiator)
+    fp1 = compute_entry_fingerprint("ChIJ5-3JUhHbx5QR-KoFM6msI3A", None, 5, None, "", None)
+    fp2 = compute_entry_fingerprint("ChIJ5-3JUhHbx5QR-KoFM6msI3A", None, 5, None, "", None)
+    assert fp1 == fp2, "Fingerprints without source witness must not use entryIndex as fake discriminator"
+
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"]["sourceSurface"] = "direct_google_maps"
+    manifest["googleReviews"]["collectionMethod"] = "playwright_direct_maps"
+    manifest["googleReviews"]["profileHeaderObserved"] = True
+    manifest["googleReviews"]["reviewsPanelOpened"] = True
+    manifest["googleReviews"]["reviewsPanelFullyTraversed"] = True
+    manifest["googleReviews"]["textReviewCollectionAttempted"] = True
+    manifest["googleReviews"]["profileName"] = "Odontologia Dra. Aline Iost"
+    manifest["googleReviews"]["profileUrl"] = "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu"
+    manifest["googleReviews"]["placeIdOrCid"] = "ChIJ5-3JUhHbx5QR-KoFM6msI3A"
+    manifest["googleReviews"]["collectedAt"] = "2026-08-31T20:55:00Z"
+    manifest["googleReviews"]["aggregateRating"] = 5.0
+    manifest["googleReviews"]["ratingCount"] = 2
+    manifest["googleReviews"]["observedRatingEntries"] = 2
+    manifest["googleReviews"]["observedTextReviewEntries"] = 0
+    manifest["googleReviews"]["capturedTextReviewCount"] = 0
+    manifest["googleReviews"]["starOnlyRatingCount"] = 2
+    manifest["googleReviews"]["usableTextReviews"] = 0
+    manifest["googleReviews"]["state"] = "VERIFIED_AGGREGATE_ONLY"
+    manifest["googleReviews"]["aggregateObservation"] = {
+        "ratingText": "5,0",
+        "countText": "2 avaliações",
+        "surfaceUrl": "https://maps.google.com",
+    }
+    manifest["googleReviews"]["reviewsPanelObservation"] = {
+        "countText": "2 avaliações",
+        "surfaceUrl": "https://maps.google.com",
+    }
+    manifest["googleReviews"]["observedEntries"] = [
+        {
+            "fingerprint": fp1,
+            "fingerprintVersion": "observed-fields-v1",
+            "nativeReviewId": None,
+            "author": None,
+            "rating": 5,
+            "dateLabel": None,
+            "hasText": False,
+            "textEvidenceId": None,
+            "sourceSurface": "direct_google_maps",
+            "collectedAt": "2026-09-01T01:00:00Z",
+            "provenance": {
+                "ratingObserved": True,
+                "authorObserved": False,
+                "dateLabelObserved": False,
+                "nativeReviewIdObserved": False,
+                "textObserved": False,
+            },
+        },
+        {
+            "fingerprint": fp2,
+            "fingerprintVersion": "observed-fields-v1",
+            "nativeReviewId": None,
+            "author": None,
+            "rating": 5,
+            "dateLabel": None,
+            "hasText": False,
+            "textEvidenceId": None,
+            "sourceSurface": "direct_google_maps",
+            "collectedAt": "2026-09-01T01:00:00Z",
+            "provenance": {
+                "ratingObserved": True,
+                "authorObserved": False,
+                "dateLabelObserved": False,
+                "nativeReviewIdObserved": False,
+                "textObserved": False,
+            },
+        },
+    ]
+    res = validate_evidence(manifest["googleReviews"])
+    assert res.status == "VERIFIED_AGGREGATE_ONLY"
+    assert not res.errors
+
+
+def test_star_only_with_source_witness_passes():
+    from google_reviews_evidence import compute_entry_fingerprint, validate_evidence
+    fp1 = compute_entry_fingerprint("ChIJ5-3JUhHbx5QR-KoFM6msI3A", None, 5, None, "", None, {"type": "maps_card_hash", "value": "card-hash-1"})
+    fp2 = compute_entry_fingerprint("ChIJ5-3JUhHbx5QR-KoFM6msI3A", None, 5, None, "", None, {"type": "maps_card_hash", "value": "card-hash-2"})
+    assert fp1 != fp2, "Entries with distinct source witnesses must produce distinct fingerprints"
+
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"]["sourceSurface"] = "direct_google_maps"
+    manifest["googleReviews"]["collectionMethod"] = "playwright_direct_maps"
+    manifest["googleReviews"]["profileHeaderObserved"] = True
+    manifest["googleReviews"]["reviewsPanelOpened"] = True
+    manifest["googleReviews"]["reviewsPanelFullyTraversed"] = True
+    manifest["googleReviews"]["textReviewCollectionAttempted"] = True
+    manifest["googleReviews"]["profileName"] = "Odontologia Dra. Aline Iost"
+    manifest["googleReviews"]["profileUrl"] = "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu"
+    manifest["googleReviews"]["placeIdOrCid"] = "ChIJ5-3JUhHbx5QR-KoFM6msI3A"
+    manifest["googleReviews"]["collectedAt"] = "2026-08-31T20:55:00Z"
+    manifest["googleReviews"]["aggregateRating"] = 5.0
+    manifest["googleReviews"]["ratingCount"] = 2
+    manifest["googleReviews"]["observedRatingEntries"] = 2
+    manifest["googleReviews"]["observedTextReviewEntries"] = 0
+    manifest["googleReviews"]["capturedTextReviewCount"] = 0
+    manifest["googleReviews"]["starOnlyRatingCount"] = 2
+    manifest["googleReviews"]["usableTextReviews"] = 0
+    manifest["googleReviews"]["state"] = "VERIFIED_AGGREGATE_ONLY"
+    manifest["googleReviews"]["aggregateObservation"] = {
+        "ratingText": "5,0",
+        "countText": "2 avaliações",
+        "surfaceUrl": "https://maps.google.com",
+    }
+    manifest["googleReviews"]["reviewsPanelObservation"] = {
+        "countText": "2 avaliações",
+        "surfaceUrl": "https://maps.google.com",
+    }
+    manifest["googleReviews"]["observedEntries"] = [
+        {
+            "fingerprint": fp1,
+            "fingerprintVersion": "maps-witness-v1",
+            "nativeReviewId": None,
+            "sourceWitness": {"type": "maps_card_hash", "value": "card-hash-1"},
+            "author": None,
+            "rating": 5,
+            "dateLabel": None,
+            "hasText": False,
+            "textEvidenceId": None,
+            "sourceSurface": "direct_google_maps",
+            "collectedAt": "2026-09-01T01:00:00Z",
+            "provenance": {
+                "ratingObserved": True,
+                "authorObserved": False,
+                "dateLabelObserved": False,
+                "nativeReviewIdObserved": False,
+                "textObserved": False,
+            },
+        },
+        {
+            "fingerprint": fp2,
+            "fingerprintVersion": "maps-witness-v1",
+            "nativeReviewId": None,
+            "sourceWitness": {"type": "maps_card_hash", "value": "card-hash-2"},
+            "author": None,
+            "rating": 5,
+            "dateLabel": None,
+            "hasText": False,
+            "textEvidenceId": None,
+            "sourceSurface": "direct_google_maps",
+            "collectedAt": "2026-09-01T01:00:00Z",
+            "provenance": {
+                "ratingObserved": True,
+                "authorObserved": False,
+                "dateLabelObserved": False,
+                "nativeReviewIdObserved": False,
+                "textObserved": False,
+            },
+        },
+    ]
+    res = validate_evidence(manifest["googleReviews"])
+    assert res.status == "VERIFIED_AGGREGATE_ONLY"
+    assert not res.errors
+
+
 if __name__ == "__main__":
     tests = [name for name in globals() if name.startswith("test_")]
     for name in sorted(tests):
         globals()[name]()
         print(f"[PASS] {name}")
     print(f"\n{len(tests)}/{len(tests)} autonomous site-review regression cases passed")
+
 
 
