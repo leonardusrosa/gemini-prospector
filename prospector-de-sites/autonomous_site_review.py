@@ -318,43 +318,126 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
                 f"Verified text reviews present ({len(google_verified_reviews)}) require data-review-mode in ['verified-text', 'multi-source', 'text-reviews']",
             )
 
-            # Find review cards
-            card_matches = list(re.finditer(r"<(?P<tag>article|div)\b(?P<attrs>[^>]*)data-role=['\"]review-card['\"](?P<rest>[^>]*)>(?P<content>.*?)</(?P=tag)>", section_inner, re.DOTALL | re.IGNORECASE))
-            
-            if state == "VERIFIED_STRONG":
-                review.check("google_reviews_cards_present", len(card_matches) >= 3, f"VERIFIED_STRONG state requires >= 3 review cards, found {len(card_matches)}")
-            elif state == "VERIFIED_TEXT_LIMITED":
-                review.check("google_reviews_cards_present", len(card_matches) in {1, 2}, f"VERIFIED_TEXT_LIMITED state requires 1-2 review cards, found {len(card_matches)}")
+        if state in {"VERIFIED_STRONG", "VERIFIED_TEXT_LIMITED"}:
+            review_mode = extract_attr(tag_str, "data-review-mode")
+            review.check(
+                "google_reviews_mode_text",
+                review_mode in {"verified-text", "multi-source", "text-reviews"},
+                f"Verified text reviews present ({len(google_verified_reviews)}) require data-review-mode in ['verified-text', 'multi-source', 'text-reviews']",
+            )
 
-            for card in card_matches:
-                full_card_tag = card.group("attrs") + " " + card.group("rest")
-                card_content = card.group("content")
-                ev_id = extract_attr(full_card_tag, "data-review-evidence-id")
+            observed_entries = gr_cfg.get("observedEntries")
+            has_carousel = bool(re.search(r"data-role=['\"]reviews-carousel['\"]", section_inner, re.IGNORECASE))
+
+            if observed_entries and isinstance(observed_entries, list) and has_carousel:
+                # Validate carousel presentation
+                carousel_match = re.search(r"<[^>]*data-role=['\"]reviews-carousel['\"][^>]*>", section_inner, re.IGNORECASE)
+                carousel_tag = carousel_match.group(0) if carousel_match else ""
+                carousel_total = extract_attr(carousel_tag, "data-review-total-items")
                 
                 review.check(
-                    "review_card_evidence_id_valid",
-                    bool(ev_id and ev_id in google_verified_reviews),
-                    f"Review card data-review-evidence-id={ev_id!r} must exist in googleReviews.reviews evidence inventory",
+                    "carousel_total_items_attr",
+                    carousel_total is not None and int(carousel_total) == len(observed_entries),
+                    f"Carousel data-review-total-items={carousel_total!r} must match observedEntries length {len(observed_entries)}",
                 )
 
-                if ev_id and ev_id in google_verified_reviews:
-                    ev_item = google_verified_reviews[ev_id]
-                    ev_author = ev_item.get("author", "").strip().lower()
-                    ev_text = ev_item.get("text", "").strip()
-                    card_plain_text = re.sub(r"<[^>]+>", " ", card_content).strip()
+                carousel_items = list(re.finditer(r"<(?P<tag>article|div)\b(?P<attrs>[^>]*)data-role=['\"]review-carousel-item['\"](?P<rest>[^>]*)>(?P<content>.*?)</(?P=tag)>", section_inner, re.DOTALL | re.IGNORECASE))
+                review.check(
+                    "carousel_items_count",
+                    len(carousel_items) == len(observed_entries),
+                    f"Carousel must render all {len(observed_entries)} observed entries, found {len(carousel_items)} items",
+                )
+
+                observed_by_fp = {e.get("fingerprint"): e for e in observed_entries if e.get("fingerprint")}
+
+                for item in carousel_items:
+                    full_item_tag = item.group("attrs") + " " + item.group("rest")
+                    item_content = item.group("content")
+                    item_fp = extract_attr(full_item_tag, "data-review-entry-fingerprint")
+                    item_has_text = extract_attr(full_item_tag, "data-review-has-text")
 
                     review.check(
-                        "review_card_author_match",
-                        ev_author in card_plain_text.lower(),
-                        f"Review card {ev_id} must contain author '{ev_item.get('author')}'",
+                        "carousel_item_fingerprint_valid",
+                        bool(item_fp and item_fp in observed_by_fp),
+                        f"Carousel item fingerprint {item_fp!r} must exist in googleReviews.observedEntries",
                     )
+
+                    if item_fp and item_fp in observed_by_fp:
+                        obs_entry = observed_by_fp[item_fp]
+                        item_plain_text = re.sub(r"<[^>]+>", " ", item_content).strip()
+                        obs_author = str(obs_entry.get("author") or "").strip().lower()
+
+                        if obs_entry.get("hasText"):
+                            ev_id = extract_attr(full_item_tag, "data-review-evidence-id")
+                            expected_ev_id = obs_entry.get("textEvidenceId")
+                            review.check(
+                                "carousel_text_item_evidence_id",
+                                ev_id == expected_ev_id and ev_id in google_verified_reviews,
+                                f"Text carousel item must bind data-review-evidence-id={expected_ev_id!r}",
+                            )
+                            if ev_id in google_verified_reviews:
+                                ev_item = google_verified_reviews[ev_id]
+                                ev_text = ev_item.get("text", "").strip()
+                                ev_text_clean = " ".join(ev_text.split()[:8])
+                                review.check(
+                                    "carousel_text_item_match",
+                                    ev_text_clean.lower() in item_plain_text.lower(),
+                                    f"Text carousel item must contain snippet '{ev_text_clean}'",
+                                )
+                        else:
+                            # Star-only rating card
+                            has_fake_quote = bool(re.search(r"[\"“][^\"”\n]{15,}[\"”]", item_plain_text))
+                            review.check(
+                                "carousel_rating_only_no_fake_quotes",
+                                not has_fake_quote,
+                                f"Rating-only carousel item for {obs_author} cannot contain fabricated review quote",
+                            )
+
+                # Check carousel navigation hooks
+                has_prev = bool(re.search(r"data-role=['\"]carousel-prev['\"]", section_inner, re.IGNORECASE))
+                has_next = bool(re.search(r"data-role=['\"]carousel-next['\"]", section_inner, re.IGNORECASE))
+                has_counter = bool(re.search(r"data-role=['\"]carousel-counter['\"]", section_inner, re.IGNORECASE))
+                review.check("carousel_prev_button", has_prev, "Carousel requires [data-role=\"carousel-prev\"] button")
+                review.check("carousel_next_button", has_next, "Carousel requires [data-role=\"carousel-next\"] button")
+                review.check("carousel_counter", has_counter, "Carousel requires [data-role=\"carousel-counter\"] element")
+            else:
+                # Find standard review cards
+                card_matches = list(re.finditer(r"<(?P<tag>article|div)\b(?P<attrs>[^>]*)data-role=['\"]review-card['\"](?P<rest>[^>]*)>(?P<content>.*?)</(?P=tag)>", section_inner, re.DOTALL | re.IGNORECASE))
+                
+                if state == "VERIFIED_STRONG":
+                    review.check("google_reviews_cards_present", len(card_matches) >= 3, f"VERIFIED_STRONG state requires >= 3 review cards, found {len(card_matches)}")
+                elif state == "VERIFIED_TEXT_LIMITED":
+                    review.check("google_reviews_cards_present", len(card_matches) in {1, 2}, f"VERIFIED_TEXT_LIMITED state requires 1-2 review cards, found {len(card_matches)}")
+
+                for card in card_matches:
+                    full_card_tag = card.group("attrs") + " " + card.group("rest")
+                    card_content = card.group("content")
+                    ev_id = extract_attr(full_card_tag, "data-review-evidence-id")
                     
-                    ev_text_clean = " ".join(ev_text.split()[:8])
                     review.check(
-                        "review_card_text_match",
-                        ev_text_clean.lower() in card_plain_text.lower(),
-                        f"Review card {ev_id} text must match evidence snippet '{ev_text_clean}'",
+                        "review_card_evidence_id_valid",
+                        bool(ev_id and ev_id in google_verified_reviews),
+                        f"Review card data-review-evidence-id={ev_id!r} must exist in googleReviews.reviews evidence inventory",
                     )
+
+                    if ev_id and ev_id in google_verified_reviews:
+                        ev_item = google_verified_reviews[ev_id]
+                        ev_author = ev_item.get("author", "").strip().lower()
+                        ev_text = ev_item.get("text", "").strip()
+                        card_plain_text = re.sub(r"<[^>]+>", " ", card_content).strip()
+
+                        review.check(
+                            "review_card_author_match",
+                            ev_author in card_plain_text.lower(),
+                            f"Review card {ev_id} must contain author '{ev_item.get('author')}'",
+                        )
+                        
+                        ev_text_clean = " ".join(ev_text.split()[:8])
+                        review.check(
+                            "review_card_text_match",
+                            ev_text_clean.lower() in card_plain_text.lower(),
+                            f"Review card {ev_id} text must match evidence snippet '{ev_text_clean}'",
+                        )
         elif state in {"VERIFIED_AGGREGATE_ONLY", "NO_USABLE_REVIEWS_WITH_VERIFIED_AGGREGATE"}:
             # Aggregate-only mode
             review_mode = extract_attr(tag_str, "data-review-mode")

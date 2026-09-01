@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -86,11 +87,18 @@ window.addEventListener('scroll',()=>document.querySelector('header').classList.
 </body></html>'''
 
 
-def make_design(skill_path: Path, *, include_read=True, sha_override: str | None = None, gr_state="NO_USABLE_REVIEWS") -> str:
+def make_design(skill_path: Path, *, include_read=True, sha_override: str | None = None, gr_state="NO_USABLE_REVIEWS", manifest=None) -> str:
     sha = sha_override or hashlib.sha256(skill_path.read_bytes()).hexdigest()
     lines = []
     if include_read:
         lines.append("GPT_TASTE_READ: PASS")
+
+    verified_services = "Atendimento clínico geral"
+    if manifest and "factualEvidence" in manifest:
+        services = [s.get("claim") for s in manifest["factualEvidence"].get("verifiedServices", []) if s.get("claim")]
+        if services:
+            verified_services = ", ".join(services)
+
     lines.extend(
         [
             f"GPT_TASTE_PATH: {skill_path}",
@@ -98,7 +106,7 @@ def make_design(skill_path: Path, *, include_read=True, sha_override: str | None
             "GOOGLE_REVIEWS_CHECK: PASS",
             f"GOOGLE_REVIEWS_STATE: {gr_state}",
             "SECONDARY_REVIEW_SEARCH: PASS",
-            "- **Factual Verified Services**: Atendimento clínico geral",
+            f"- **Factual Verified Services**: {verified_services}",
             "Design Variance: 5",
             "Motion: 3",
             "Density: 4",
@@ -118,7 +126,7 @@ def run_case(html: str = PASS_HTML, design_transform=None, manifest=None, custom
         skill_path.write_text("# Synthetic current gpt-taste skill\nrule: use deliberate composition\n", encoding="utf-8")
         
         gr_state = manifest.get("googleReviews", {}).get("state", "NO_USABLE_REVIEWS")
-        design = make_design(skill_path, gr_state=gr_state)
+        design = make_design(skill_path, gr_state=gr_state, manifest=manifest)
         if design_transform:
             design = design_transform(design, skill_path)
             
@@ -1068,6 +1076,121 @@ def test_iost_verified_text_limited_two_real_cards_passes():
     )
     code, payload = run_case(html=html, manifest=manifest)
     assert code == 0, f"Expected PASS for IOST VERIFIED_TEXT_LIMITED: {payload}"
+
+
+def test_observed_entries_fingerprint_mismatch_fails():
+    from google_reviews_evidence import validate_evidence
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"]["sourceSurface"] = "direct_google_maps"
+    manifest["googleReviews"]["collectionMethod"] = "playwright_direct_maps"
+    manifest["googleReviews"]["profileHeaderObserved"] = True
+    manifest["googleReviews"]["reviewsPanelOpened"] = True
+    manifest["googleReviews"]["reviewsPanelFullyTraversed"] = True
+    manifest["googleReviews"]["textReviewCollectionAttempted"] = True
+    manifest["googleReviews"]["profileName"] = "Odontologia Dra. Aline Iost"
+    manifest["googleReviews"]["profileUrl"] = "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu"
+    manifest["googleReviews"]["placeIdOrCid"] = "ChIJ5-3JUhHbx5QR-KoFM6msI3A"
+    manifest["googleReviews"]["collectedAt"] = "2026-08-31T20:55:00Z"
+    manifest["googleReviews"]["aggregateRating"] = 5.0
+    manifest["googleReviews"]["ratingCount"] = 1
+    manifest["googleReviews"]["observedRatingEntries"] = 1
+    manifest["googleReviews"]["observedTextReviewEntries"] = 1
+    manifest["googleReviews"]["capturedTextReviewCount"] = 1
+    manifest["googleReviews"]["starOnlyRatingCount"] = 0
+    manifest["googleReviews"]["observedEntries"] = [
+        {
+            "fingerprint": "bad_fingerprint_hash",
+            "author": "Arthur Di Donato",
+            "rating": 5,
+            "dateLabel": "um ano atrás",
+            "hasText": True,
+            "textEvidenceId": "google-review-arthur-di-donato"
+        }
+    ]
+    manifest["googleReviews"]["reviews"] = [
+        {
+            "id": "google-review-arthur-di-donato",
+            "author": "Arthur Di Donato",
+            "rating": 5,
+            "dateLabel": "um ano atrás",
+            "hasText": True,
+            "text": "Excelente atendimento",
+            "source": "google_maps",
+            "placeIdOrCid": "ChIJ5-3JUhHbx5QR-KoFM6msI3A",
+            "verified": True
+        }
+    ]
+    res = validate_evidence(manifest["googleReviews"])
+    assert not res.pass_for_publish
+    assert any("fingerprint mismatch" in e for e in res.errors)
+
+
+def test_observed_entries_count_mismatch_fails():
+    from google_reviews_evidence import validate_evidence
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"]["sourceSurface"] = "direct_google_maps"
+    manifest["googleReviews"]["collectionMethod"] = "playwright_direct_maps"
+    manifest["googleReviews"]["profileHeaderObserved"] = True
+    manifest["googleReviews"]["reviewsPanelOpened"] = True
+    manifest["googleReviews"]["reviewsPanelFullyTraversed"] = True
+    manifest["googleReviews"]["textReviewCollectionAttempted"] = True
+    manifest["googleReviews"]["profileName"] = "Odontologia Dra. Aline Iost"
+    manifest["googleReviews"]["profileUrl"] = "https://www.google.com.br/maps/place/Odontologia+Dra.+Aline+Iost/@-22.4138359,-47.5626633,17z/data=!3m1!4b1!4m6!3m5!1s0x94c7db1152c9ede7:0x7023aca93305aaf8!8m2!3d-22.4138409!4d-47.5600884!16s%2Fg%2F11qyn05pnk!5m1!1e1?entry=ttu"
+    manifest["googleReviews"]["placeIdOrCid"] = "ChIJ5-3JUhHbx5QR-KoFM6msI3A"
+    manifest["googleReviews"]["collectedAt"] = "2026-08-31T20:55:00Z"
+    manifest["googleReviews"]["aggregateRating"] = 5.0
+    manifest["googleReviews"]["ratingCount"] = 12
+    manifest["googleReviews"]["observedRatingEntries"] = 12
+    manifest["googleReviews"]["observedEntries"] = []
+    res = validate_evidence(manifest["googleReviews"])
+    assert not res.pass_for_publish
+    assert any("observedRatingEntries" in e for e in res.errors)
+
+
+def test_reviews_carousel_slide_count_mismatch_fails():
+    with open("sites/iost-ortodontia-aline-iost-rio-claro/review-manifest.json", "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+    with open("sites/iost-ortodontia-aline-iost-rio-claro/index.html", "r", encoding="utf-8") as f:
+        html = f.read()
+
+    # Tamper HTML to only have 1 slide instead of 12
+    articles = re.findall(r"<article[^>]*data-role=[\"']review-carousel-item[\"'][^>]*>.*?</article>", html, re.DOTALL)
+    html_single_slide = html
+    for art in articles[1:]:
+        html_single_slide = html_single_slide.replace(art, "")
+
+    def setup_template(p: Path):
+        tpl_dir = p / "assets" / "templates"
+        tpl_dir.mkdir(parents=True, exist_ok=True)
+        (tpl_dir / "dentistry-female.webp").write_bytes(b"RIFF....WEBPVP8 ...")
+        (tpl_dir / "dentistry-female-mobile.webp").write_bytes(b"RIFF....WEBPVP8 ...")
+
+    code, payload = run_case(html=html_single_slide, manifest=manifest, custom_setup=setup_template)
+    assert code == 1
+    assert any(c.get("key") == "carousel_items_count" and c.get("status") == "FAIL" for c in payload.get("checks", []))
+
+
+def test_reviews_carousel_12_items_passes():
+    with open("sites/iost-ortodontia-aline-iost-rio-claro/review-manifest.json", "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+    with open("sites/iost-ortodontia-aline-iost-rio-claro/index.html", "r", encoding="utf-8") as f:
+        html = f.read()
+
+    def iost_design(design_text, skill_path):
+        lines = [
+            design_text.strip(),
+            "- **Factual Verified Services**: Avaliação ortodôntica, Manutenção de aparelho fixo, Clareamento dental, Procedimentos clínicos gerais",
+        ]
+        return "\n".join(lines) + "\n"
+
+    def setup_template(p: Path):
+        tpl_dir = p / "assets" / "templates"
+        tpl_dir.mkdir(parents=True, exist_ok=True)
+        (tpl_dir / "dentistry-female.webp").write_bytes(b"RIFF....WEBPVP8 ...")
+        (tpl_dir / "dentistry-female-mobile.webp").write_bytes(b"RIFF....WEBPVP8 ...")
+
+    code, payload = run_case(html=html, manifest=manifest, design_transform=iost_design, custom_setup=setup_template)
+    assert code == 0, f"Expected PASS for full 12-item carousel: {payload}"
 
 
 if __name__ == "__main__":

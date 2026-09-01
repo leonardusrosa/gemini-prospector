@@ -7,14 +7,13 @@ an explicitly observed direct Google Maps place profile, not from cached snippet
 CRM state, search summaries, or the number of captured text reviews.
 """
 
-from __future__ import annotations
-
+import hashlib
 import json
 import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 
 VERIFIED_STRONG = "VERIFIED_STRONG"
@@ -31,6 +30,20 @@ DIRECT_COLLECTION_METHODS = {
     "browser_direct_maps",
     "manual_direct_maps",
 }
+
+
+def compute_entry_fingerprint(
+    place_id: str,
+    author: str,
+    rating: int | float,
+    date_label: str,
+    text: str = "",
+) -> str:
+    """Compute a deterministic sha256 fingerprint for an observed Google Maps rating/review entry."""
+    text_clean = str(text or "").strip()
+    text_hash = hashlib.sha256(text_clean.encode("utf-8")).hexdigest() if text_clean else ""
+    raw_key = f"{str(place_id).strip()}|{str(author).strip()}|{rating}|{str(date_label).strip()}|{text_hash}"
+    return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
 
 @dataclass
@@ -179,10 +192,95 @@ def _validate_operator_observation(data: Dict[str, Any], errors: List[str]) -> N
             f"Newer direct Maps operator observation reports reviewCount={op_count}, but active evidence says {count}. "
             "Mark active evidence stale and recollect before PASS."
         )
-    if isinstance(op_rating, (int, float)) and isinstance(rating, (int, float)) and abs(float(op_rating) - float(rating)) >= 0.01:
+def _validate_observed_entries(
+    data: Dict[str, Any],
+    verified_reviews_by_id: Dict[str, Dict[str, Any]],
+    errors: List[str],
+    warnings: List[str],
+) -> None:
+    observed_entries = data.get("observedEntries")
+    if observed_entries is None:
+        return
+
+    if not isinstance(observed_entries, list):
+        errors.append("observedEntries must be an array of observed rating/review items.")
+        return
+
+    place_id = str(data.get("placeId") or data.get("placeIdOrCid") or "").strip()
+    entry_fps: Set[str] = set()
+    text_entries_count = 0
+    star_only_count = 0
+
+    for idx, entry in enumerate(observed_entries):
+        if not isinstance(entry, dict):
+            errors.append(f"observedEntries[{idx}] must be an object.")
+            continue
+
+        fp = entry.get("fingerprint")
+        author = entry.get("author")
+        rating = entry.get("rating")
+        date_label = entry.get("dateLabel")
+        has_text = entry.get("hasText")
+        text_ev_id = entry.get("textEvidenceId")
+
+        if not _nonempty(fp):
+            errors.append(f"observedEntries[{idx}] fingerprint is required.")
+        if not _nonempty(author):
+            errors.append(f"observedEntries[{idx}] author is required.")
+        if not isinstance(rating, (int, float)) or not (1 <= float(rating) <= 5):
+            errors.append(f"observedEntries[{idx}] rating must be a number between 1 and 5.")
+        if not _nonempty(date_label):
+            errors.append(f"observedEntries[{idx}] dateLabel is required.")
+        if not isinstance(has_text, bool):
+            errors.append(f"observedEntries[{idx}] hasText must be a boolean.")
+
+        review_text = ""
+        if has_text is True:
+            text_entries_count += 1
+            if not _nonempty(text_ev_id):
+                errors.append(f"observedEntries[{idx}] hasText=true requires textEvidenceId.")
+            elif text_ev_id not in verified_reviews_by_id:
+                errors.append(f"observedEntries[{idx}] textEvidenceId={text_ev_id!r} not found in verified reviews.")
+            else:
+                review_text = str(verified_reviews_by_id[text_ev_id].get("text") or "").strip()
+        elif has_text is False:
+            star_only_count += 1
+            if text_ev_id is not None:
+                errors.append(f"observedEntries[{idx}] hasText=false must have textEvidenceId=null.")
+
+        if _nonempty(fp) and _nonempty(author) and isinstance(rating, (int, float)) and _nonempty(date_label):
+            expected_fp = compute_entry_fingerprint(place_id, str(author), rating, str(date_label), review_text)
+            if fp != expected_fp:
+                errors.append(
+                    f"observedEntries[{idx}] fingerprint mismatch. Expected {expected_fp}, got {fp}."
+                )
+
+        if fp:
+            if fp in entry_fps:
+                errors.append(f"observedEntries[{idx}] duplicate fingerprint {fp}.")
+            entry_fps.add(fp)
+
+    derived_total = len(observed_entries)
+    declared_rating_entries = data.get("observedRatingEntries")
+    declared_text_entries = data.get("observedTextReviewEntries")
+    declared_star_only = data.get("starOnlyRatingCount")
+    count = data.get("ratingCount") if data.get("ratingCount") is not None else data.get("reviewCount")
+
+    if declared_rating_entries is not None and declared_rating_entries != derived_total:
         errors.append(
-            f"Newer direct Maps operator observation reports aggregateRating={op_rating}, but active evidence says {rating}. "
-            "Mark active evidence stale and recollect before PASS."
+            f"observedRatingEntries ({declared_rating_entries}) != derived count ({derived_total}) from observedEntries[]."
+        )
+    if declared_text_entries is not None and declared_text_entries != text_entries_count:
+        errors.append(
+            f"observedTextReviewEntries ({declared_text_entries}) != derived text count ({text_entries_count}) from observedEntries[]."
+        )
+    if declared_star_only is not None and declared_star_only != star_only_count:
+        errors.append(
+            f"starOnlyRatingCount ({declared_star_only}) != derived star-only count ({star_only_count}) from observedEntries[]."
+        )
+    if isinstance(count, int) and count != derived_total:
+        errors.append(
+            f"ratingCount ({count}) != derived total entries ({derived_total}) from observedEntries[]."
         )
 
 
@@ -260,6 +358,10 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
             continue
         fingerprints.add(fp)
         verified_reviews.append(review)
+    verified_reviews_by_id = {
+        str(r.get("id") or "").strip(): r for r in verified_reviews if _nonempty(r.get("id"))
+    }
+    _validate_observed_entries(data, verified_reviews_by_id, errors, warnings)
 
     if errors:
         return EvidenceResult(PROFILE_CONFLICT, False, errors, warnings, len(verified_reviews))
