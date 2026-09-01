@@ -1,14 +1,14 @@
 ---
 name: expert-hero-full-bleed
 instruction_language: en
-description: Canonical hard rule for any Prospector hero whose primary visual is a real expert or canonical expert placeholder. The expert media must be a full-width background composition on both desktop and mobile, regardless of OpenDesign direction, gpt-taste preference, or template aesthetics.
+description: Canonical hard rule for any Prospector hero whose primary visual is a real expert or canonical expert placeholder. The expert media must be a full-width background composition on both desktop and mobile, regardless of OpenDesign direction, design-judge preference, or template aesthetics.
 ---
 
 # Expert Hero Full-Bleed Rule
 
 This rule is mandatory whenever `heroVisual.kind` is `expert` or `expert-placeholder`.
 
-It outranks OpenDesign art direction, gpt-taste stylistic preference, `redesign-premium` hero mode suggestions, template defaults, and implementation convenience.
+It outranks OpenDesign art direction, any design-judge stylistic preference, `redesign-premium` hero mode suggestions, template defaults, and implementation convenience.
 
 ## 1. Non-negotiable visual invariant
 
@@ -65,20 +65,35 @@ Required responsive structure:
 
 For canonical placeholder templates, preserve the template's factual/illustrative disclosure and frame-preservation requirements while still making the media layer full width.
 
-## 4. gpt-taste judge responsibility
+## 4. Design-judge responsibility
 
-The gpt-taste review is not allowed to trade this rule away for a visually attractive OpenDesign direction.
+The active design judge is not allowed to trade this rule away for a visually attractive OpenDesign direction.
 
-When evaluating OpenDesign directions, gpt-taste MUST reject or revise any direction that uses an expert/expert-placeholder hero as a framed, split-column, carded, tiled, or inset image.
+The preferred critic is the current external `gpt-taste` skill when it is genuinely available. Agent runtimes without it use the repository-owned `../design-judge/SKILL.md` under the `agent-runtime` portability contract.
 
-A direction cannot receive `OPEN_DESIGN_GPT_TASTE_REVIEW: PASS` for an expert-led hero until all of these are true:
+Whichever critic is active MUST reject or revise any direction that uses an expert/expert-placeholder hero as a framed, split-column, carded, tiled, or inset image.
+
+A direction cannot receive design-selection PASS for an expert-led hero until all of these are true:
 
 ```text
 EXPERT_HERO_FULL_BLEED: PASS
 EXPERT_HERO_DESKTOP_FULL_WIDTH: PASS
 EXPERT_HERO_MOBILE_FULL_WIDTH: PASS
+```
+
+and one truthful judge marker exists:
+
+```text
 EXPERT_HERO_GPT_TASTE_JUDGED: PASS
 ```
+
+or:
+
+```text
+EXPERT_HERO_DESIGN_JUDGE_JUDGED: PASS
+```
+
+Do not write the gpt-taste marker unless the external skill was actually read and validated.
 
 This remains true even when the rejected framed/split solution scores better on originality or editorial aesthetics.
 
@@ -93,7 +108,7 @@ Do not propose framed portraits, side image cards, split-column portrait panels,
 or inset expert photography.
 ```
 
-If one of the two generated directions violates this constraint, it does not count as a valid direction and must be regenerated or revised before gpt-taste compares the options.
+If one of the two generated directions violates this constraint, it does not count as a valid direction and must be regenerated or revised before the active design judge compares the options.
 
 ## 6. Manifest contract
 
@@ -121,7 +136,8 @@ Static QA must BLOCK an expert hero when any of the following is true:
 - `data-hero-mobile-layout` is not `full-width-background`;
 - there is no responsive `<picture>` / mobile `<source>`;
 - the manifest does not require desktop and mobile full-width expert presentation;
-- design-read lacks the four expert-hero PASS markers.
+- design-read lacks the three geometry PASS markers;
+- design-read lacks both valid judge markers.
 
 ## 8. Browser QA geometry
 
@@ -158,7 +174,9 @@ Repository regression coverage must include at least:
 - expert hero in a right-side framed portrait => FAIL;
 - expert hero in a split image column => FAIL;
 - desktop full-bleed but mobile framed => FAIL;
-- full-bleed desktop + full-width mobile with responsive source => PASS;
+- missing both judge markers => FAIL;
+- external gpt-taste judge + valid full-bleed => PASS;
+- repository design judge + valid full-bleed => PASS;
 - non-expert hero => this rule is not applicable.
 
 Do not weaken this rule to preserve an OpenDesign direction. Revise the direction instead.
