@@ -1,6 +1,7 @@
 ---
 name: autonomous-site-review
-description: Mandatory fail-closed quality gate after creating or changing any Prospector site, concept, or redesign and before screenshot approval, deploy, proposal, or outreach. It must independently detect missing gpt-taste usage, hero visual defects, motion/scroll omissions, WhatsApp/social/map issues, fixed-control conflicts, reduced-motion/no-JS failures, factual regressions, and visual regressions.
+instruction_language: en
+description: Mandatory fail-closed quality gate after creating or changing any Prospector site, concept, or redesign and before screenshot approval, deploy, proposal, or outreach. It must independently detect missing gpt-taste usage, hero visual defects, motion/scroll omissions, WhatsApp/social/map issues, fixed-control conflicts, reduced-motion/no-JS failures, factual regressions, review-provenance failures, and visual regressions.
 ---
 
 # Autonomous Site Review
@@ -15,7 +16,8 @@ Read and obey, in order:
 2. `../website-core-rules/SKILL.md`
 3. `../redesign-premium/SKILL.md`
 4. `../hero-visual-rule/SKILL.md`
-5. the current installed `gpt-taste/SKILL.md`
+5. `../google-reviews-verification/SKILL.md` when a Google Business Profile exists or may exist
+6. the current installed `gpt-taste/SKILL.md`
 
 All new or materially modified repository rules, gate descriptions, regression names/comments, and agent-facing rule documentation must be written in English. Client-facing copy remains in the target market language.
 
@@ -85,14 +87,6 @@ Verify actual behavior:
 - `prefers-reduced-motion` is respected;
 - no scroll-jacking, gratuitous loops, or ornamental motion overload.
 
-Recommended QA hooks:
-
-```html
-<header data-role="site-header">...</header>
-<section data-role="hero">...</section>
-<div data-motion="reveal">...</div>
-```
-
 ## 4. HARD GATE: WhatsApp conversion points
 
 When verified WhatsApp is an appropriate contact channel:
@@ -128,58 +122,68 @@ Forbidden on the same page:
 <a data-role="floating-whatsapp">...</a>
 ```
 
-WhatsApp must still remain available through normal page CTAs and through assistant escalation/handoff. The rule removes only the competing fixed floating WhatsApp launcher.
-
-Deterministic outcomes:
-
-- assistant + floating WhatsApp => BLOCK
-- assistant + normal WhatsApp CTAs + no floating WhatsApp => PASS
-- no assistant + verified WhatsApp + missing required floating WhatsApp => BLOCK
-
-Cookie/privacy controls may coexist only when functionally required and must not become competing conversion launchers.
+WhatsApp must still remain available through normal page CTAs and assistant escalation/handoff.
 
 ## 5. HARD GATE: Instagram/social affordance in prospect mockups
 
 For noindex prospect concepts, represent Instagram UI even when an official profile is not verified.
 
-Verified profile:
+Verified profile: active verified link only.
 
-- active real link;
-- `data-social="instagram"`;
-- verified destination only.
-
-Unverified profile:
-
-- visual affordance present;
-- `data-social="instagram"`;
-- `aria-disabled="true"`;
-- no `href`, including no `#` and no `javascript:void(0)`;
-- no invented URL or handle;
-- non-navigable (`tabindex="-1"` or equivalent).
+Unverified profile: visual affordance only, `aria-disabled="true"`, no `href`, no invented URL/handle, non-navigable.
 
 ## 6. HARD GATE: embedded map
 
-A verified public customer-facing physical address requires an embedded map preview by default.
+A verified public customer-facing physical address requires an embedded map preview by default. A decorative location card alone does not satisfy the gate.
 
-A decorative location card without an embedded map does not satisfy the gate.
+## 7. HARD GATE: Google Reviews provenance, completeness, and rendering
 
-A map may be omitted only for a private/non-public address, an explicit operator decision, or a documented technical restriction.
+Every first-version local-business concept must explicitly verify the correct Google Business Profile and obey `google-reviews-verification`.
 
-## 7. HARD GATE: Google Reviews evidence and rendering
+Review QA has four independent dimensions:
 
-Every first-version local-business concept must explicitly check the correct Google Business Profile.
+```text
+REVIEW SOURCE PROVENANCE
+REVIEW FINGERPRINT INTEGRITY
+REVIEW TRAVERSAL COMPLETENESS
+REVIEW PUBLIC BINDING
+```
 
-Canonical states:
+All four must PASS.
 
-- `VERIFIED_STRONG`: verified aggregate plus enough verified text reviews; review section required with only verified review text.
-- `VERIFIED_AGGREGATE_ONLY`: verified aggregate exists but text evidence is insufficient; compact aggregate-only section required, with no testimonial cards or invented reviewer language.
-- `NO_USABLE_REVIEWS` with verified `ratingCount > 0`: aggregate-only section required.
-- verified profile with exactly 0 ratings/reviews: section may be omitted, but the state must be recorded.
+A cryptographic fingerprint is not source provenance. A valid SHA-256 over fabricated author/date metadata remains a hard FAIL.
+
+### Source-observed metadata rule
+
+Every factual review/rating field must be directly observed from the source or be `null`.
+
+Never create surrogate values to satisfy schema/layout, including:
+
+- `Paciente Verificado #1` or numbered variants;
+- `Reviewer #1`;
+- `Cliente #1`;
+- `Anonymous #1`;
+- invented date/date labels;
+- inferred patient/client status.
+
+If Google Maps does not expose an author or date, use `null` and omit it publicly.
+
+Preserve native Google review IDs whenever available. Missing source IDs must not be replaced with generated identities.
+
+### Canonical states
+
+- `VERIFIED_STRONG`: complete traversal + at least 3 verified same-place Google text reviews.
+- `VERIFIED_TEXT_LIMITED`: complete traversal + exactly 1 or 2 verified same-place Google text reviews.
+- `VERIFIED_AGGREGATE_ONLY`: complete traversal + zero Google text reviews and a verified aggregate.
+- `COLLECTION_INCOMPLETE`: incomplete traversal/provenance/reconciliation/binding => BLOCK.
 - `PROFILE_CONFLICT`: BLOCK.
+- verified profile with exactly 0 ratings/reviews: section may be omitted when recorded truthfully.
 
-Evidence values must flow into DOM hooks rather than being manually retyped without verification.
+Do not infer text-review count from aggregate rating count.
 
-Never infer that a public reviewer is a patient/client unless verified text evidence supports that statement.
+When an all-reviews carousel is used, every carousel item must bind to one canonical `observedEntries[]` record. Text items must additionally bind to exact verified text evidence. Star-only items must not receive invented quotes, authors, dates, or reviewer status.
+
+Public copy must not call reviewers patients/clients unless that relationship is explicitly verified by source evidence.
 
 ## 8. HARD GATE: factual traceability
 
@@ -191,7 +195,7 @@ Do not rely on a blacklist of previously observed hallucinations. A new unsuppor
 
 ### Layer A: deterministic/static
 
-Run both static gates:
+Run all applicable static gates, including:
 
 ```bash
 python prospector-de-sites/autonomous_site_review.py \
@@ -201,47 +205,27 @@ python prospector-de-sites/autonomous_site_review.py \
 
 python prospector-de-sites/fixed_conversion_controls_review.py \
   --html sites/[slug]/[slug].html
+
+python prospector-de-sites/google_reviews_evidence.py \
+  sites/[slug]/review-manifest.json \
+  --html sites/[slug]/[slug].html
 ```
 
-Both commands must exit with code 0. Any non-zero result blocks Static Review PASS.
+Any non-zero result blocks Static Review PASS.
 
 ### Layer B: browser/visual
 
-Run:
+Run the browser QA and test at least desktop 1440x900, tablet 800x1024, mobile 390x844, plus any hero-specific viewport.
 
-```bash
-python prospector-de-sites/autonomous_site_review_browser.py \
-  --url <URL> \
-  --manifest sites/[slug]/review-manifest.json
-```
+If an assistant is present, verify no floating WhatsApp launcher exists.
 
-If Playwright/browser QA was not actually executed, Browser Review is `NOT VERIFIED`, never PASS.
-
-Test at least:
-
-- desktop 1440x900;
-- tablet 800x1024;
-- mobile 390x844;
-- any additional viewport required by the current hero frame policy.
-
-If an assistant is present, browser QA must also verify that no `data-role="floating-whatsapp"` launcher exists at any tested viewport.
+If reviews are rendered, browser QA must verify visible aggregate/count, actual review item count, evidence bindings, zero synthetic reviewer metadata, and zero unsupported reviewer-status attribution.
 
 ## 10. Required review manifest
 
-Create `sites/[slug]/review-manifest.json` from the canonical example.
+The manifest records observed QA/evidence state, not convenient values chosen to make tests pass.
 
-The manifest records QA/evidence state, not convenient values chosen to make tests pass. Relevant sections include:
-
-- hero visual and provenance;
-- address/map state;
-- verified WhatsApp destination;
-- Instagram state;
-- assistant presence;
-- fixed conversion-control policy;
-- motion expectations;
-- Google Reviews evidence;
-- factual evidence/verified claims;
-- preview/noindex state.
+For review evidence, `observedEntries[]` must be a real source inventory. Declared counts without corresponding entries are not proof of traversal.
 
 ## 11. Mandatory adversarial review
 
@@ -254,34 +238,22 @@ Ask:
 Inspect especially:
 
 - stale or fake gpt-taste proof;
-- missing/incorrect hero image or crop/frame behavior;
-- generated/stock imagery presented as the real person/facility;
-- motion declared but not implemented;
-- missing embedded map;
-- missing/false Instagram state;
-- wrong WhatsApp destination;
+- incorrect hero/frame behavior;
+- generated imagery presented as factual;
 - assistant and floating WhatsApp both present;
-- fixed controls covering content on mobile;
 - reduced-motion/no-JS failures;
 - Google review numbers/copy not matching evidence;
-- fabricated reviewer/patient attribution;
-- unsupported factual claims reintroduced after hardening;
+- traversal counts declared without source entries;
+- fabricated reviewer names/dates hidden behind valid hashes;
+- synthetic placeholder identities;
+- unsupported patient/client attribution;
+- missing native review IDs that were available during collection;
+- unsupported factual claims;
 - console/network failures.
 
 ## 12. No self-approval by written checklist
 
-A report written by the implementing agent is not sufficient evidence.
-
-PASS requires observable proof such as:
-
-- DOM/HTML inspection;
-- deterministic validator execution;
-- current gpt-taste hash verification;
-- factual evidence traceability;
-- browser QA;
-- geometry/screenshot checks where relevant;
-- console/network checks;
-- deploy gate execution.
+A report written by the implementing agent is not sufficient evidence. PASS requires observable proof from deterministic gates, source evidence, browser QA, and deployment checks.
 
 ## 13. Final gate report
 
@@ -303,6 +275,11 @@ FIXED CONTROL EXCLUSIVITY: PASS/FAIL/N/A
 INSTAGRAM UI: PASS/FAIL/N/A
 MAP EMBED: PASS/FAIL/N/A
 GOOGLE REVIEWS: PASS/FAIL/N/A
+REVIEW SOURCE PROVENANCE: PASS/FAIL/N/A
+REVIEW FINGERPRINT INTEGRITY: PASS/FAIL/N/A
+REVIEW TRAVERSAL COMPLETENESS: PASS/FAIL/N/A
+REVIEW PUBLIC BINDING: PASS/FAIL/N/A
+SYNTHETIC REVIEW METADATA: 0/<n>
 FACTUAL TRACEABILITY: PASS/FAIL
 REDUCED MOTION: PASS/FAIL
 NO-JS: PASS/FAIL
