@@ -56,7 +56,6 @@ if not is_dry_run:
                 f"Contrato real bloqueado: campo obrigatório do prestador '{field_name}' ausente ou contém placeholder."
             )
 
-# Evita reintroduzir a lógica comercial antiga em que hospedagem e manutenção eram sinônimos.
 legacy_phrases = [
     "manutenção mensal da página (hospedagem, pequenas atualizações de texto/imagens e suporte)",
     "a contratação e renovação de hospedagem e domínio próprios são de responsabilidade do contratante"
@@ -95,7 +94,6 @@ def run(p, texto, bold=False, size=11):
 
 
 def editavel(p, texto):
-    """Insere um trecho que o cliente pode editar (permStart/permEnd, grupo everyone)."""
     PID[0] += 1
     pid = str(PID[0])
     ps = OxmlElement("w:permStart")
@@ -186,7 +184,7 @@ if assistant_included:
     setup_text = f" pelo valor de implantação de R$ {setup_val}" if setup_val else ""
     estimated_cost = str(
         d.get("assistantEstimatedUsageCost")
-        or "aproximadamente R$ 10 a R$ 25 por 1.000 respostas curtas do assistente (referencial secundário de cerca de US$ 2 a 4)"
+        or "aproximadamente R$ 1 a R$ 3 por 1.000 respostas curtas do assistente (referencial secundário aproximado de US$ 0,20 a US$ 0,60)"
     ).strip()
 
     clausula(
@@ -194,19 +192,18 @@ if assistant_included:
         f"O presente contrato contempla a implementação e configuração técnica do assistente inteligente para o site{setup_text}. "
         "O assistente responde aos visitantes exclusivamente a partir das informações verificadas e configuradas para o negócio, "
         "operando como assistente virtual automatizado e não substituindo avaliação, consulta ou orientação profissional individualizada. "
-        "O consumo de API de inteligência artificial de terceiros é cobrado separadamente pelo provedor correspondente, "
-        "sendo a conta, chave de acesso e custos de consumo da API de integral responsabilidade do CONTRATANTE, "
+        "O consumo do serviço de inteligência artificial de terceiros é cobrado separadamente pelo fornecedor correspondente, "
+        "sendo a conta, chave de acesso e custos de consumo de integral responsabilidade do CONTRATANTE, "
         "podendo o CONTRATADO(A) prestar auxílio na configuração técnica inicial. "
         f"A estimativa de referência atual de consumo é de {estimated_cost}. "
         "Essa estimativa possui caráter meramente referencial e não vinculante, pois o volume de mensagens, extensão dos diálogos, "
-        "provedor, modelo e tarifas praticadas pelo provedor de API podem variar. "
+        "fornecedor, modelo e tarifas praticadas podem variar. "
         "Eventual interrupção ou limitação do assistente decorrente de consumo, suspensão, limites ou esgotamento de saldo na conta do CONTRATANTE "
-        "junto ao provedor de API não configura indisponibilidade da hospedagem ou do site. "
-        "O provedor e o modelo de inteligência artificial poderão ser substituídos quando tecnicamente necessário, "
+        "não configura indisponibilidade da hospedagem ou do site. "
+        "O fornecedor e o modelo de inteligência artificial poderão ser substituídos quando tecnicamente necessário, "
         "mantendo-se o escopo funcional contratado e os critérios de segurança factual da solução."
     )
     n += 1
-
 
 clausula(
     doc, n, "Do conteúdo e responsabilidades",
@@ -255,7 +252,6 @@ par(
     antes=20
 )
 
-# Proteção: somente leitura, exceto as regiões permitidas acima.
 dp = OxmlElement("w:documentProtection")
 dp.set(qn("w:edit"), "readOnly")
 dp.set(qn("w:enforcement"), "1")
