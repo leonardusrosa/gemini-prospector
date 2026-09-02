@@ -33,14 +33,14 @@ The BRL estimate must be based on the **production** assistant pool, never on th
 Current runtime contract:
 
 - test: Groq with `qwen/qwen3.8-27b` and `openai/gpt-oss-120b` fallback;
-- production: OpenRouter with `inclusionai/ling-3.0-flash`, `qwen/qwen3.7-flash`, and `nex-agi/nex-n2-mini` as the configured pool/fallback set.
+- production: OpenRouter with `inclusionai/ling-3.0-flash` and `qwen/qwen3.7-flash` as the configured pool/fallback set.
 
 Reference prices checked on OpenRouter on 2026-09-02:
 
 - Ling 3.0 Flash: US$ 0.021 / 1M input tokens and US$ 0.063 / 1M output tokens;
-- Nex N2 Mini: US$ 0.025 / 1M input and US$ 0.10 / 1M output;
 - Qwen 3.7 Flash: US$ 0.03 / 1M input and US$ 0.13 / 1M output;
 - OpenRouter standard pay-as-you-go credit purchases currently add a 5.5% platform fee.
+*(Nex N2 Mini was removed from the default pool on 2026-09-02 following scheduled deprecation).*
 
 Using a planning envelope from roughly 1.5k–10k input tokens and 120–500 output tokens per short response, the current production pool is comfortably below R$ 3 per 1,000 responses at the exchange rate used for this review. The public range is intentionally rounded upward to **R$ 1–3 / 1,000 short responses** for clarity and ordinary exchange/provider variance.
 
