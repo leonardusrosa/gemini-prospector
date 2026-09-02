@@ -33,7 +33,7 @@ Trate os pontos abaixo como padrão comercial atual, salvo exceção explicitame
 3. **hospedagem**, quando fornecida pela AutoCORA sem cobrança separada ou quando mantida pelo cliente por conta própria;
 4. **edição simples pelo painel**, incluída no escopo entregue;
 5. **alterações estruturais/complexas futuras**, sujeitas a orçamento separado;
-6. **assistente inteligente do site**, opcional (`assistantIncluded: true/false`), com configuração técnica incluída, mas consumo de API terceiro por conta do cliente (~R$ 10 a R$ 25 por 1.000 respostas curtas como estimativa de referência em BRL, sem promessa de mensagens ilimitadas ou preço fixo);
+6. **assistente inteligente do site**, opcional (`assistantIncluded: true/false`), com configuração técnica incluída, mas consumo de serviço de IA terceiro por conta do cliente (~R$ 1 a R$ 3 por 1.000 respostas curtas como estimativa de referência atual em BRL, sem promessa de mensagens ilimitadas ou preço fixo);
 7. **manutenção mensal**, somente se tiver sido contratada explicitamente como serviço adicional e com escopo descrito.
 
 Nunca usar `manutenção` como sinônimo automático de `hospedagem`.
@@ -44,11 +44,12 @@ Campos estruturados opcionais: `assistantIncluded`, `assistantSetupValue`, `assi
 
 Quando contratado:
 - Respostas a partir de informações reais e verificadas da página; caráter automatizado, sem substituir avaliação profissional.
-- Consumo de API faturado à parte pelo provedor de IA; conta e custos sob responsabilidade do cliente (AutoCORA auxilia na configuração técnica).
-- Estimativa de referência atual: aproximadamente R$ 10 a R$ 25 por 1.000 respostas curtas para contratos no Brasil (valor referencial, não vinculante e variável; referência secundária de cerca de US$ 2–4).
-- Limite/esgotamento de saldo de API do cliente não é equivalente a queda ou indisponibilidade do site.
-- Provedor e modelo podem ser substituídos tecnicamente mantendo funcionalidade e segurança factual.
-- **PROIBIDO**: prometer mensagens ilimitadas, preço fixo de API, gratuidade permanente ou volume garantido.
+- Consumo do serviço de IA faturado à parte pelo fornecedor; conta e custos sob responsabilidade do cliente (AutoCORA auxilia na configuração técnica).
+- Estimativa de referência atual para contratos no Brasil: aproximadamente **R$ 1 a R$ 3 por 1.000 respostas curtas** (valor referencial, não vinculante e variável; referência secundária aproximada de **US$ 0,20 a US$ 0,60** na data da revisão).
+- A estimativa comercial deve refletir o **pool de produção**, atualmente OpenRouter, e nunca o pool Groq usado para testes. Revalidar a faixa quando preços, modelos, roteamento ou tamanho médio do contexto mudarem materialmente.
+- Limite/esgotamento de saldo da conta do cliente não é equivalente a queda ou indisponibilidade do site.
+- Fornecedor e modelo podem ser substituídos tecnicamente mantendo funcionalidade e segurança factual.
+- **PROIBIDO**: prometer mensagens ilimitadas, preço fixo de IA, gratuidade permanente ou volume garantido.
 - Se `assistantIncluded=false` (ou omitido), a cláusula do assistente não deve constar no contrato.
 
 ## Privacidade e forma de entrega — HARD RULE
