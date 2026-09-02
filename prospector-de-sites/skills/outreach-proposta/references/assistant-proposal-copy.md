@@ -24,13 +24,27 @@ Do not turn the proposal page into a technical or contractual disclosure. Detail
 >
 > A AutoCORA cuida da integração e configuração inicial. O uso da inteligência artificial fica por conta do cliente e tem custo baixo para esse tipo de atendimento.
 >
-> **Estimativa atual:** cerca de **R$ 10 a R$ 25 por 1.000 respostas curtas**.
+> **Estimativa atual:** cerca de **R$ 1 a R$ 3 por 1.000 respostas curtas**.
 
 ## Pricing note
 
-The BRL range above is a rounded customer-facing planning estimate based on the current provider/model cost envelope previously modeled at roughly US$ 2–4 per 1,000 short responses. It is intentionally rounded upward for clarity and exchange/provider variance.
+The BRL estimate must be based on the **production** assistant pool, never on the Groq test pool.
 
-Treat it as a reference estimate, not a guaranteed tariff. Recheck it when provider/model pricing changes materially.
+Current runtime contract:
+
+- test: Groq with `qwen/qwen3.8-27b` and `openai/gpt-oss-120b` fallback;
+- production: OpenRouter with `inclusionai/ling-3.0-flash`, `qwen/qwen3.7-flash`, and `nex-agi/nex-n2-mini` as the configured pool/fallback set.
+
+Reference prices checked on OpenRouter on 2026-09-02:
+
+- Ling 3.0 Flash: US$ 0.021 / 1M input tokens and US$ 0.063 / 1M output tokens;
+- Nex N2 Mini: US$ 0.025 / 1M input and US$ 0.10 / 1M output;
+- Qwen 3.7 Flash: US$ 0.03 / 1M input and US$ 0.13 / 1M output;
+- OpenRouter standard pay-as-you-go credit purchases currently add a 5.5% platform fee.
+
+Using a planning envelope from roughly 1.5k–10k input tokens and 120–500 output tokens per short response, the current production pool is comfortably below R$ 3 per 1,000 responses at the exchange rate used for this review. The public range is intentionally rounded upward to **R$ 1–3 / 1,000 short responses** for clarity and ordinary exchange/provider variance.
+
+This remains a planning estimate, not a guaranteed tariff. Recheck it whenever provider/model pricing, routing, prompt size, or the production pool changes materially.
 
 For non-Brazilian proposals, do not automatically reuse the BRL figure. Use a locale-appropriate estimate explicitly approved for that market.
 
