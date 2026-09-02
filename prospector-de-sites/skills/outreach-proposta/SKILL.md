@@ -222,6 +222,15 @@ Só prometer o nível 2 quando autenticação, autorização por slug, backend d
 
 O template da proposta possui `__SECAO_EDITOR_CLIENTE__`; preencher somente quando esse diferencial fizer parte da oferta.
 
+### Assistente inteligente na proposta (quando habilitado)
+
+Quando a proposta comercial incluir o assistente inteligente opcional, consulte obrigatoriamente a referência canônica:
+
+- **Referência canônica de cópia e visual:** `references/assistant-proposal-copy.md`.
+- **pt-BR:** O título padrão obrigatório é `Assistente virtual inteligente (opcional)` e a linha de custo de planejamento é `Estimativa atual: cerca de R$ 10 a R$ 25 por 1.000 respostas curtas.`
+- **Mercados internacionais (não-BR):** Não reutilizar o valor em BRL automaticamente. Utilizar estimativa aprovada e ajustada à moeda/mercado local.
+- **Tratamento visual e vocabulário:** Bloco único leve integrado (sem cards aninhados, sem bloco separado de aviso/disclosure abaixo de outro item de assistente, sem termos técnicos proibidos como API, RAG, LLM, Groq, Qwen, OpenRouter, tokens, prompt).
+
 ---
 
 ## 5. Histórico e Follow-ups no CRM

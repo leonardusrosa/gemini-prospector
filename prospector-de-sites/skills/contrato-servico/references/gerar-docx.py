@@ -186,7 +186,7 @@ if assistant_included:
     setup_text = f" pelo valor de implantação de R$ {setup_val}" if setup_val else ""
     estimated_cost = str(
         d.get("assistantEstimatedUsageCost")
-        or "aproximadamente US$ 2 a 4 por 1.000 respostas curtas do assistente"
+        or "aproximadamente R$ 10 a R$ 25 por 1.000 respostas curtas do assistente (referencial secundário de cerca de US$ 2 a 4)"
     ).strip()
 
     clausula(
