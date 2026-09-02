@@ -110,7 +110,6 @@ class ContractTermsTest(unittest.TestCase):
             self.assertIn("orçamento separado", xml)
 
     def test_real_contract_fails_closed_when_provider_legal_data_missing(self):
-        """Real contract generation (dry_run=False) fails closed if provider legal fields have placeholders."""
         bad_placeholders = [
             "(PREENCHER ANTES DO CONTRATO REAL)",
             "(preencher)",
@@ -136,7 +135,6 @@ class ContractTermsTest(unittest.TestCase):
                 self.assertTrue("Contrato real bloqueado" in out or "Campos obrigatórios ausentes" in out)
 
     def test_dry_run_contract_generation_succeeds(self):
-        """Dry-run mode explicitly allows synthetic placeholders."""
         with tempfile.TemporaryDirectory() as td:
             td = pathlib.Path(td)
             d = synthetic_data()
@@ -190,9 +188,9 @@ class ContractTermsTest(unittest.TestCase):
             with zipfile.ZipFile(out_path) as zf:
                 xml = zf.read("word/document.xml").decode("utf-8")
             self.assertNotIn("Do assistente inteligente do site", xml)
-            self.assertNotIn("consumo de API", xml)
+            self.assertNotIn("consumo do serviço de inteligência artificial", xml)
 
-    def test_contract_with_assistant_contains_api_responsibility_and_variable_estimate(self):
+    def test_contract_with_assistant_contains_responsibility_and_variable_estimate(self):
         with tempfile.TemporaryDirectory() as td:
             td = pathlib.Path(td)
             d = real_contract_data()
@@ -214,13 +212,12 @@ class ContractTermsTest(unittest.TestCase):
             self.assertIn("não substituindo avaliação", xml)
             self.assertIn("cobrado separadamente", xml)
             self.assertIn("integral responsabilidade do CONTRATANTE", xml)
-            self.assertIn("R$ 10 a R$ 25 por 1.000 respostas curtas", xml)
-            self.assertIn("US$ 2 a 4", xml)
+            self.assertIn("R$ 1 a R$ 3 por 1.000 respostas curtas", xml)
+            self.assertIn("US$ 0,20 a US$ 0,60", xml)
             self.assertIn("caráter meramente referencial e não vinculante", xml)
             self.assertIn("não configura indisponibilidade da hospedagem ou do site", xml)
             self.assertIn("substituídos quando tecnicamente necessário", xml)
 
-            # Ensure forbidden promises never exist in contract output
             forbidden = [
                 "mensagens ilimitadas",
                 "preço fixo permanente",
@@ -229,6 +226,13 @@ class ContractTermsTest(unittest.TestCase):
             ]
             for term in forbidden:
                 self.assertNotIn(term, xml)
+
+    def test_old_groq_based_estimate_is_not_canonical(self):
+        skill = SKILL.read_text(encoding="utf-8")
+        generator = GENERATOR.read_text(encoding="utf-8")
+        self.assertNotIn("R$ 10 a R$ 25 por 1.000 respostas curtas", skill)
+        self.assertNotIn("R$ 10 a R$ 25 por 1.000 respostas curtas", generator)
+        self.assertIn("pool de produção", skill)
 
 
 if __name__ == "__main__":
