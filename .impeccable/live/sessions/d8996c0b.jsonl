@@ -18,3 +18,4 @@
 {"seq":18,"id":"d8996c0b","type":"checkpoint","ts":"2026-09-03T18:28:44.123Z","event":{"type":"checkpoint","id":"d8996c0b","revision":16,"owner":"436a183d","phase":"cycling","reason":"variant_changed","pageUrl":"/","expectedVariants":3,"arrivedVariants":3,"visibleVariant":3,"paramValues":{},"token":"43e77a5d-ffbe-48de-b3ed-31ed31292606"}}
 {"seq":19,"id":"d8996c0b","type":"accept","ts":"2026-09-03T18:28:47.514Z","event":{"type":"accept","id":"d8996c0b","variantId":"3","token":"43e77a5d-ffbe-48de-b3ed-31ed31292606"}}
 {"seq":20,"id":"d8996c0b","type":"agent_done","ts":"2026-09-03T18:28:47.827Z","event":{"type":"agent_done","id":"d8996c0b","file":"sites\\clinica-dra-francine-goulart-rio-claro\\index.html","carbonize":false}}
+{"seq":21,"id":"d8996c0b","type":"complete","ts":"2026-09-03T18:30:37.184Z","event":{"type":"complete","id":"d8996c0b","carbonize":false}}

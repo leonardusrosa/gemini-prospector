@@ -10,6 +10,12 @@ Environment:
   PROSPECTOR_AUTH_USER=...
   PROSPECTOR_AUTH_PASSWORD=...
 """
+"""LEGACY / OPTIONAL remote CRM adapter.
+
+Not part of the normal production workflow. Local SQLite is the only CRM
+source of truth. No active workflow may call this module automatically; it
+exists only for manual/legacy remote inspection.
+"""
 
 import argparse
 import base64
