@@ -69,7 +69,7 @@
 
 - [x] Stop and disable `prospector-dashboard.service`; verify inactive/disabled and no Prospector timer restarts it.
 - [x] Verify preserved rollback files/directories remain present.
-- [x] Verify `prospector.autocora.com.br` still DNS-resolves to Phoenix and returns the expected retired/stale 502 state without changing DNS.
+- [x] Remove the retired `prospector.autocora.com.br` DNS record without changing other records; verify authoritative and public resolvers return NXDOMAIN while the apex and `www` records remain intact.
 
 ### Task 7: Final verification and integration
 
