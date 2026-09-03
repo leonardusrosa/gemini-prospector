@@ -91,7 +91,28 @@ def f_salvar(dados):
     c.execute('INSERT OR REPLACE INTO leads (%s,atualizado) VALUES (%s,?)' % (','.join(CAMPOS), ','.join('?'*len(CAMPOS))),
               [atual.get(k) for k in CAMPOS] + [_agora()])
     c.commit(); c.close()
-    return {'ok': True, 'lead': atual['slug'], 'status': atual['status']}
+    res = {'ok': True, 'lead': atual['slug'], 'status': atual['status']}
+    if atual.get('status') == 'publicado':
+        try:
+            import prospector_remote
+            sync_res = prospector_remote.sync_lead(atual['slug'], db_path=DB)
+            if sync_res.get('sync_status') == 'REMOTE_SYNC_OK':
+                res['remote_sync'] = 'REMOTE_SYNC_OK'
+                res['status_result'] = 'PUBLISHED + REMOTE_SYNC_OK'
+            elif sync_res.get('sync_status') == 'REMOTE_SYNC_NOT_CONFIGURED':
+                res['remote_sync'] = 'REMOTE_SYNC_NOT_CONFIGURED'
+                res['status_result'] = 'PUBLISHED_LOCAL_ONLY'
+            else:
+                res['ok'] = False
+                res['remote_sync'] = 'REMOTE_SYNC_FAILED'
+                res['status_result'] = 'REMOTE_SYNC_PENDING'
+                res['error'] = sync_res.get('error', 'Remote synchronization failed')
+        except Exception as exc:
+            res['ok'] = False
+            res['remote_sync'] = 'REMOTE_SYNC_FAILED'
+            res['status_result'] = 'REMOTE_SYNC_PENDING'
+            res['error'] = str(exc)
+    return res
 
 def f_status(slug, status, obs_extra=None):
     if status not in STATUS_VALIDOS:
@@ -106,7 +127,32 @@ def f_status(slug, status, obs_extra=None):
         c.execute('UPDATE leads SET obs=? WHERE slug=?', (novo_obs, slug))
     c.execute('UPDATE leads SET status=?, atualizado=? WHERE slug=?', (status, _agora(), slug))
     c.commit(); c.close()
-    return {'ok': True, 'lead': slug, 'novo_status': status}
+
+    res = {'ok': True, 'lead': slug, 'novo_status': status}
+    if status == 'publicado':
+        try:
+            import prospector_remote
+            sync_res = prospector_remote.sync_lead(slug, db_path=DB)
+            if sync_res.get('sync_status') == 'REMOTE_SYNC_OK':
+                res['remote_sync'] = 'REMOTE_SYNC_OK'
+                res['status_result'] = 'PUBLISHED + REMOTE_SYNC_OK'
+            elif sync_res.get('sync_status') == 'REMOTE_SYNC_NOT_CONFIGURED':
+                res['remote_sync'] = 'REMOTE_SYNC_NOT_CONFIGURED'
+                res['status_result'] = 'PUBLISHED_LOCAL_ONLY'
+            else:
+                res['ok'] = False
+                res['remote_sync'] = 'REMOTE_SYNC_FAILED'
+                res['status_result'] = 'REMOTE_SYNC_PENDING'
+                res['error'] = sync_res.get('error', 'Remote synchronization failed')
+                if 'divergences' in sync_res:
+                    res['divergences'] = sync_res['divergences']
+        except Exception as exc:
+            res['ok'] = False
+            res['remote_sync'] = 'REMOTE_SYNC_FAILED'
+            res['status_result'] = 'REMOTE_SYNC_PENDING'
+            res['error'] = str(exc)
+
+    return res
 
 def f_fechar(slug, valor, manutencao=None):
     lead = f_obter(slug)
