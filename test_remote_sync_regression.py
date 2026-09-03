@@ -10,12 +10,15 @@ during normal publication.
 import importlib.util
 import json
 import os
+from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
 from unittest.mock import patch
 
 import prospector_remote
+
+ROOT = Path(__file__).resolve().parent
 
 
 class DummyHTTPResponse:
@@ -34,7 +37,7 @@ class DummyHTTPResponse:
 
 
 def _load_mcp(db_path):
-    spec = importlib.util.spec_from_file_location('prospector_mcp_test', 'prospector-mcp.py')
+    spec = importlib.util.spec_from_file_location('prospector_mcp_test', ROOT / 'prospector-mcp.py')
     pm = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(pm)
     pm.DB = db_path
@@ -96,8 +99,20 @@ class TestLocalPublication(unittest.TestCase):
         with patch.dict(os.environ, {'PROSPECTOR_AUTH_PASSWORD': secret, 'PROSPECTOR_AUTH_USER': 'admin'}):
             raw_text = 'Error with password ' + secret
             cleaned = prospector_remote.redact(raw_text)
-            self.assertNotIn(secret, cleaned)
-            self.assertIn('[REDACTED]', cleaned)
+        self.assertNotIn(secret, cleaned)
+        self.assertIn('[REDACTED]', cleaned)
+
+
+class TestLocalWorkflowContract(unittest.TestCase):
+    def test_active_mcp_publication_has_no_remote_adapter_dependency(self):
+        source = (ROOT / 'prospector-mcp.py').read_text(encoding='utf-8')
+        self.assertNotRegex(source, r'(?m)^\s*(?:from|import)\s+prospector_remote\b')
+        self.assertNotIn('sync_lead(', source)
+        self.assertNotIn('REMOTE_SYNC_PENDING', source)
+        self.assertNotIn('REMOTE_SYNC_FAILED', source)
+
+    def test_remote_adapter_declares_legacy_optional_module(self):
+        self.assertIn('LEGACY / OPTIONAL', (prospector_remote.__doc__ or '').upper())
 
 
 class TestLegacyRemoteAdapter(unittest.TestCase):

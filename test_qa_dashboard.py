@@ -13,8 +13,10 @@ async def test_dashboard():
         await page.goto(dash_url, wait_until="load")
         await page.wait_for_timeout(1500)
         
-        # Check IOST card
-        iost_card = await page.query_selector('text="IOST Ortodontia"')
+        # Lead cards are rendered in the Clientes view; overview intentionally shows metrics.
+        await page.locator("#nav button").filter(has_text="Clientes").click()
+        await page.wait_for_timeout(100)
+        iost_card = await page.get_by_text("IOST Ortodontia", exact=False).count()
         print("IOST card present on dashboard:", "PASS" if iost_card else "FAIL")
 
         await page.screenshot(path="qa_dashboard_iost_updated.png", full_page=True)

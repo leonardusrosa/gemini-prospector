@@ -34,15 +34,16 @@ async def test_all_zooms():
             await reviews.scroll_into_view_if_needed()
             await page.wait_for_timeout(300)
             
-            title = await reviews.locator(".section-title").inner_text()
+            title = await reviews.locator(".reviews-title").inner_text()
             rating = await reviews.get_attribute("data-review-rating")
             count = await reviews.get_attribute("data-review-count")
             mode = await reviews.get_attribute("data-review-mode")
             
-            assert "Avaliações de pacientes" in title
+            assert title == "Avaliações"
             assert rating == "5.0"
-            assert count == "1"
-            assert mode == "aggregate-only"
+            assert count == "12"
+            assert mode == "verified-text"
+            assert await reviews.locator("[data-role='review-carousel-item']").count() >= 3
             
             await page.screenshot(path=f"e:/Antigravity/prospector/qa_zoom_{name}.png")
             print(f"[{name}] Screenshot saved -> qa_zoom_{name}.png")

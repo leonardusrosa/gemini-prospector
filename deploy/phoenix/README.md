@@ -1,28 +1,46 @@
-# Phoenix — Prospector Dashboard
+# Phoenix — Legacy Prospector Rollback Archive
 
-This deployment keeps the public client previews on Vercel and runs only the private CRM/dashboard on the Phoenix VPS.
+Phoenix is no longer part of the active Prospector runtime. The local
+Windows checkout owns CRM state, evidence, generation, gates, and deployment
+orchestration. Vercel serves public client sites, proposals, and the
+production assistant API.
+
+The Phoenix service, database, configuration, and proxy files are retained
+temporarily for rollback/archive purposes. Do not reactivate them as part of
+normal lead publication.
 
 ## Architecture
 
-- Public client sites/proposals: existing `prospector-sites` Vercel project.
-- Private dashboard/backend: Phoenix, bound to `127.0.0.1:8765`.
-- Public access to the dashboard: existing Phoenix reverse proxy + HTTPS.
-- Dashboard protection: application-level HTTP Basic Auth from `/etc/prospector-dashboard.env`.
-- CRM database: `/var/lib/prospector-dashboard/prospector.db`.
-- Dashboard config: `/var/lib/prospector-dashboard/prospector-config.json`.
-- Code: the GitHub checkout, normally `/opt/gemini-prospector`.
+- Canonical CRM/dashboard: local Windows `prospector.db` and
+  `dashboard-server.py` at `http://localhost:8765`.
+- Public client sites/proposals/assistant: existing `prospector-sites` Vercel
+  project.
+- Retired Phoenix service: `prospector-dashboard.service`, formerly bound to
+  `127.0.0.1:8765`.
+- Preserved Phoenix database: `/var/lib/prospector-dashboard/prospector.db`.
+- Preserved Phoenix config: `/var/lib/prospector-dashboard/prospector-config.json`.
+- Preserved code checkout: normally `/opt/gemini-prospector`.
 
-The production wrapper is `prospector-de-sites/dashboard/dashboard-prod-server.py`. The existing local `dashboard-server.py` remains unchanged.
+The former production wrapper was
+`prospector-de-sites/dashboard/dashboard-prod-server.py`. The existing local
+`dashboard-server.py` is now the canonical dashboard runtime.
 
-## Important: one writable CRM
+## Legacy remote adapter
 
-After migration, the Phoenix database must be treated as the canonical CRM. Do not keep the local Windows SQLite database and the Phoenix SQLite database independently writable; they will diverge.
+`prospector_remote.py` remains in the repository as a legacy/optional remote
+CRM adapter. It is not called automatically by `f_status`, `f_salvar`, site
+publication, or proposal workflows. Local SQLite mutations must succeed
+without Phoenix availability.
 
-Local agents should use `prospector_remote.py` against the Phoenix API after the cutover instead of directly mutating a second `prospector.db`.
+The adapter's `REMOTE_SYNC_*` result values are legacy-only semantics. They
+must not be used as normal publication outcomes.
 
-## First deployment
+## Rollback/reactivation only
 
-1. On Phoenix, use the Git checkout that is already authenticated to GitHub. If it is not `/opt/gemini-prospector`, set `PROSPECTOR_REPO_DIR` when running the installer.
+Run these steps only after an explicit operator decision to restore Phoenix as
+a rollback environment. They are not part of normal Prospector operation.
+
+1. On Phoenix, use the preserved Git checkout. If it is not `/opt/gemini-prospector`, set `PROSPECTOR_REPO_DIR` when running the installer.
 2. Pull `main`.
 3. Run `deploy/phoenix/install-or-update.sh` as root. The first run creates `/etc/prospector-dashboard.env` and exits so secrets can be filled safely.
 4. Put a long random dashboard password in `/etc/prospector-dashboard.env`.
@@ -80,26 +98,28 @@ External verification must use the HTTPS dashboard hostname.
 
 The VPS does not need a copy of `sites/<slug>/...`. `dashboard-prod-server.py` treats a valid public proposal URL as available and removes/replaces local-only site/editor actions at runtime. Published `urlNova` links continue to point to Vercel.
 
-## Local agent after cutover
+## Local workflow after cutover
 
-Set locally:
-
-```text
-PROSPECTOR_REMOTE_URL=https://<dashboard-hostname>
-PROSPECTOR_AUTH_USER=<dashboard-user>
-PROSPECTOR_AUTH_PASSWORD=<dashboard-password>
-```
-
-Then use, for example:
+Use the local dashboard and SQLite directly:
 
 ```bash
-python prospector_remote.py health
-python prospector_remote.py lead instituto-ferreira-odontologia-rio-claro
-python prospector_remote.py update instituto-ferreira-odontologia-rio-claro '{"status":"publicado"}'
+python dashboard-server.py
+# open http://localhost:8765
 ```
 
-`prospector_remote.py` deliberately does not expose deletion or outreach sending. Outreach remains a human-reviewed action in the dashboard.
+The local MCP also targets the same local database:
+
+```bash
+python prospector-de-sites/prospector-mcp.py --pasta .
+```
+
+Only an explicit rollback or migration check may use `prospector_remote.py`.
+Outreach remains a human-reviewed action in the local dashboard.
 
 ## Backups
 
-Back up `/var/lib/prospector-dashboard/prospector.db` independently of Git. SQLite is the operational state and Git is only the application code.
+Keep `/var/lib/prospector-dashboard`, `/opt/gemini-prospector`, and the
+Phoenix proxy configuration temporarily. Back up the Phoenix SQLite database
+and configuration independently of Git. They are rollback/archive data, not
+the active CRM source of truth. Never place credential contents in Git or in
+operator-facing reports.

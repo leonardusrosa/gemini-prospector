@@ -55,23 +55,28 @@ async def run_browser_suite():
             summary_el = reviews_sec.locator("[data-role='reviews-summary']")
             summary_box = await summary_el.bounding_box()
             
+            mode = await reviews_sec.get_attribute("data-review-mode")
             presentation = await reviews_sec.get_attribute("data-review-presentation")
-            assert presentation == "compact-summary", f"[{name}] Expected data-review-presentation='compact-summary', got {presentation}"
+            assert mode == "verified-text", f"[{name}] Expected verified-text reviews, got {mode}"
+            assert presentation is None, f"[{name}] Verified-text reviews must not use aggregate-only presentation, got {presentation}"
             
-            # Desktop compactness bounds
+            # Desktop summary remains compact; verified text carousel may occupy more vertical space.
             if w >= 1024:
                 assert summary_box["height"] <= 180, f"[{name}] reviews-summary height ({summary_box['height']}px) exceeds 180px ceiling"
-                assert sec_box["height"] <= 380, f"[{name}] reviews section height ({sec_box['height']}px) exceeds 380px ceiling"
+            assert sec_box["height"] > 0, f"[{name}] reviews section must be visible"
             
             # Check old card not present
             old_card_count = await page.locator(".reviews-aggregate-card").count()
             assert old_card_count == 0, f"[{name}] Old .reviews-aggregate-card must be removed"
+
+            carousel_count = await reviews_sec.locator("[data-role='review-carousel-item']").count()
+            assert carousel_count >= 3, f"[{name}] Expected at least 3 evidence-bound review items, found {carousel_count}"
             
             # Verify score and count
             score_text = await summary_el.locator(".reviews-score-num").inner_text()
             count_text = await summary_el.locator(".reviews-count-text").inner_text()
             assert score_text == "5,0"
-            assert "1 avaliação" in count_text
+            assert "12 avaliações" in count_text
             
             screenshot_path = f"e:/Antigravity/prospector/qa_{name}.png"
             await page.screenshot(path=screenshot_path)

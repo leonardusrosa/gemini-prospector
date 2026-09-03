@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Standard-library client for a remote Prospector dashboard.
+"""LEGACY / OPTIONAL remote Prospector CRM adapter.
 
-Provides remote query, update, and deterministic synchronization between
-local canonical SQLite and the remote production CRM.
+Local SQLite is the only CRM source of truth. This module is retained for
+explicit manual inspection, rollback, or migration checks and is not part
+of the normal production workflow. No active publication path may import or
+call it automatically.
+
+It provides remote query, update, and deterministic synchronization helpers
+for an operator who explicitly chooses the legacy adapter.
 
 Environment:
   PROSPECTOR_REMOTE_URL=https://dashboard.example.com
   PROSPECTOR_AUTH_USER=...
   PROSPECTOR_AUTH_PASSWORD=...
-"""
-"""LEGACY / OPTIONAL remote CRM adapter.
-
-Not part of the normal production workflow. Local SQLite is the only CRM
-source of truth. No active workflow may call this module automatically; it
-exists only for manual/legacy remote inspection.
 """
 
 import argparse

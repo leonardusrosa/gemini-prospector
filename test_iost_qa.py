@@ -1,5 +1,4 @@
 import asyncio
-import re
 from pathlib import Path
 from playwright.async_api import async_playwright
 
@@ -47,17 +46,17 @@ async def main():
         reviews_mode = await page_desktop.locator("section[data-role='reviews']").get_attribute("data-review-mode")
         
         print(f"[Desktop 1440x900] Reviews mode={reviews_mode}, rating={reviews_rating}, count={reviews_count}")
-        assert reviews_mode == "aggregate-only"
+        assert reviews_mode == "verified-text"
         assert reviews_rating == "5.0"
-        assert reviews_count == "1"
+        assert reviews_count == "12"
         
-        # Check that no cards exist in reviews
-        card_count = await page_desktop.locator("section[data-role='reviews'] [data-role='review-card']").count()
-        assert card_count == 0, f"Found {card_count} fake review cards"
+        # Verified text reviews must be evidence-bound carousel items.
+        carousel_items = await page_desktop.locator("section[data-role='reviews'] [data-role='review-carousel-item']").count()
+        assert carousel_items >= 3, f"Expected at least 3 verified review items, found {carousel_items}"
         
-        # Check that no patient attribution words exist in reviews
-        reviews_text = await page_desktop.locator("section[data-role='reviews']").inner_text()
-        assert not re.search(r"\b(?:paciente|pacientes|atendido|atendidos)\b", reviews_text, re.IGNORECASE), "Found unsupported patient attribution in reviews"
+        # The public subtitle must stay source-neutral; quoted source text may contain native wording.
+        reviews_subtitle = await page_desktop.locator("section[data-role='reviews'] .reviews-subtitle").inner_text()
+        assert reviews_subtitle == "Avaliações públicas sobre o atendimento."
         
         await page_desktop.screenshot(path="e:/Antigravity/prospector/desktop_hero_qa.png")
         print("[Desktop 1440x900] Screenshot saved: desktop_hero_qa.png")
@@ -72,10 +71,13 @@ async def main():
         assert "mobile" in current_src_mobile.lower(), f"Mobile asset not selected on 390px viewport; got {current_src_mobile}"
         
         # Check floating WhatsApp and Assistant geometry
-        wa_floating = await page_mobile.locator("[data-role='floating-whatsapp']").bounding_box()
+        wa_floating_locator = page_mobile.locator("[data-role='floating-whatsapp']")
+        wa_floating = await wa_floating_locator.bounding_box() if await wa_floating_locator.count() else None
         assistant = await page_mobile.locator("button[data-role='assistant-launcher'], #btn-launcher").bounding_box()
         
         print(f"[Mobile 390x844] Floating WA Box: {wa_floating}, Assistant Box: {assistant}")
+        assert wa_floating is None, "Assistant-present site must not expose a floating WhatsApp launcher"
+        assert assistant is not None, "Assistant-present site must expose the fixed assistant launcher"
         
         await page_mobile.screenshot(path="e:/Antigravity/prospector/mobile_hero_qa.png")
         print("[Mobile 390x844] Screenshot saved: mobile_hero_qa.png")
