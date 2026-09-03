@@ -1,0 +1,50 @@
+{
+  "assinatura": {
+    "nome": "Leonardo Rosa",
+    "apresentacao": "AutoCORA | Landing pages e automação com IA",
+    "whatsapp": "5511994289238"
+  },
+  "prospeccao": {
+    "nichos": [
+      "nutricionistas",
+      "psicologos",
+      "advogados",
+      "psiquiatras"
+    ],
+    "cidade": "São Paulo",
+    "leadsPorBusca": 10
+  },
+  "envio": {
+    "modo": "rascunho"
+  },
+  "deploy": {
+    "provider": "vercel-github",
+    "repoPath": "E:/Antigravity/prospector-sites",
+    "githubRepo": "leonardusrosa/prospector-sites",
+    "branch": "main",
+    "basePath": "clientes",
+    "domain": "prospector-sites-beta.vercel.app"
+  },
+  "evolution": {
+    "enabled": true,
+    "baseUrl": "https://evolution.autocora.com.br",
+    "instance": "Ana",
+    "apiKeyEnv": "EVOLUTION_API_KEY",
+    "timeoutSeconds": 15
+  },
+  "outreach": {
+    "channelPriority": [
+      "whatsapp",
+      "email"
+    ],
+    "mode": "review",
+    "portfolioUrl": "https://autocora.com.br/pt/landing-pages",
+    "maxFollowUps": 1,
+    "followUpAfterBusinessDays": 3
+  },
+  "market": {
+    "defaultCountry": "BR",
+    "defaultLocale": "pt-BR",
+    "defaultLanguage": "pt"
+  }
+}

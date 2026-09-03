@@ -26,7 +26,8 @@ async def main():
                 device_scale_factor=1,
             )
             page = await context.new_page()
-            await page.goto(url, wait_until="networkidle")
+            await page.goto(url, wait_until="load")
+            await page.wait_for_timeout(500)
             
             # Check horizontal overflow
             overflow = await page.evaluate(

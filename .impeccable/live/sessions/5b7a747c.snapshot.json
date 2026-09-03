@@ -1,6 +1,6 @@
 {
   "id": "5b7a747c",
-  "phase": "variants_ready",
+  "phase": "completed",
   "pageUrl": "/",
   "sourceFile": "sites\\clinica-dra-francine-goulart-rio-claro\\index.html",
   "expectedVariants": 3,
@@ -16,5 +16,5 @@
   "fallbackMode": null,
   "annotationArtifacts": [],
   "diagnostics": [],
-  "updatedAt": "2026-09-03T18:17:40.227Z"
+  "updatedAt": "2026-09-03T18:18:39.649Z"
 }

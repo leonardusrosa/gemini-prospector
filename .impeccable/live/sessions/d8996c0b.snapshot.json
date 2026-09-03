@@ -1,0 +1,77 @@
+{
+  "id": "d8996c0b",
+  "phase": "generate_requested",
+  "pageUrl": "/",
+  "sourceFile": null,
+  "expectedVariants": 3,
+  "arrivedVariants": 0,
+  "visibleVariant": 0,
+  "paramValues": {},
+  "pendingEventSeq": 2,
+  "pendingEvent": {
+    "type": "generate",
+    "id": "d8996c0b",
+    "action": "polish",
+    "freeformPrompt": "improve content/space usage",
+    "count": 3,
+    "pageUrl": "/",
+    "element": {
+      "tagName": "div",
+      "id": null,
+      "classes": [
+        "reviews-box"
+      ],
+      "textContent": "\n        \n          \n            4,2\n            \n              \n              \n              \n              \n              \n            \n            5 avaliações públicas\n            Índice verificado no mapa público\n          \n          \n            Avaliações públicas sobre o atendimento\n            Depoimentos e classificações compartilhados espontaneamente por quem conheceu o consultório da Dra. Francine Goulart no centro de Rio Claro.\n          \n        \n\n        \n        \n          \n     ",
+      "outerHTML": "<div class=\"reviews-box\">\n        <div class=\"reviews-header-grid\">\n          <div class=\"aggregate-col\">\n            <div class=\"aggregate-number\">4,2</div>\n            <div class=\"stars-row\">\n              <svg width=\"24\" height=\"24\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z\"></path></svg>\n              <svg width=\"24\" height=\"24\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z\"></path></svg>\n              <svg width=\"24\" height=\"24\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z\"></path></svg>\n              <svg width=\"24\" height=\"24\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z\"></path></svg>\n              <svg width=\"24\" height=\"24\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z\"></path></svg>\n            </div>\n            <div class=\"aggregate-count\">5 avaliações públicas</div>\n            <div class=\"aggregate-source\">Índice verificado no mapa público</div>\n          </div>\n          <div>\n            <h3 class=\"reviews-intro-title\">Avaliações públicas sobre o atendimento</h3>\n            <p class=\"reviews-intro-p\">Depoimentos e classificações compartilhados espontaneamente por quem conheceu o consultório da Dra. Francine Goulart no centro de Rio Claro.</p>\n          </div>\n        </div>\n\n        <!-- Evidence-Bound Carousel with all 5 source-backed items -->\n        <div data-role=\"reviews-carousel\" data-review-total-items=\"5\" class=\"carousel-wrapper\">\n          <div class=\"carousel-track\">\n            <!-- Item 1: Luis (Verified Text) -->\n            <article data-role=\"review-carousel-item\" data-review-entry-fingerprint=\"46f861649878b4920304dbf1424359742abd37fc1a34dcf953971edd45b9306e\" data-review-has-text=\"true\" data-review-evidence-id=\"review-1\" class=\"carousel-slide active\">\n              <p class=\"review-quote\">\"Foi muito bom excelente dentista eu recomendo\"</p>\n              <div class=\"review-meta\">\n                <span class=\"review-author\">Luis</span>\n                <span class=\"review-stars-inline\">★★★★★</span>\n                <span>um ano atrás</span>\n              </div>\n            </article>\n\n            <!-- Item 2: Maria José Leite (Verified Text) -->\n            <article data-role=\"review-carousel-item\" data-review-entry-fingerprint=\"7b59bd077175b98836c0ccf1ffd89bf2404090cbc9a2f794e9cd3ac080b08df1\" data-review-has-text=\"true\" data-review-evidence-id=\"review-2\" class=\"carousel-slide\">\n              <p class=\"review-quote\">\"Muuto eficiente e atenciosa.\"</p>\n              <div class=\"review-meta\">\n                <span class=\"review-author\">Maria José Leite</span>\n                <span class=\"review-stars-inline\">★★★★★</span>\n                <span>um ano atrás</span>\n              </div>\n            </article>\n\n            <!-- Item 3: DELMA LOPES MATOS (Star Only) -->\n            <article data-role=\"review-carousel-item\" data-review-entry-fingerprint=\"eb68fe94f430c6ac008b307b253b09aa407941d12d817ad9629950cf9bfe5d3f\" data-review-has-text=\"false\" class=\"carousel-slide\">\n              <p class=\"rating-note\">Avaliação com 5 estrelas registrada publicamente.</p>\n              <div class=\"review-meta\">\n                <span class=\"review-author\">DELMA LOPES MATOS</span>\n                <span class=\"review-stars-inline\">★★★★★</span>\n                <span>2 meses atrás</span>\n              </div>\n            </article>\n\n            <!-- Item 4: isabelly polido (Star Only) -->\n            <article data-role=\"review-carousel-item\" data-review-entry-fingerprint=\"b97d8a7e33c0987320d7a01da522113c161618389d40eea9e67fbebe6edec575\" data-review-has-text=\"false\" class=\"carousel-slide\">\n              <p class=\"rating-note\">Avaliação registrada publicamente no perfil da clínica.</p>\n              <div class=\"review-meta\">\n                <span class=\"review-author\">isabelly polido</span>\n                <span class=\"review-stars-inline\">★</span>\n                <span>2 meses atrás</span>\n              </div>\n            </article>\n\n            <!-- Item 5: Yasmin Breda (Star Only) -->\n            <article data-role=\"review-carousel-item\" data-review-entry-fingerprint=\"14e790c3c3c1da4063ad4b9ec6f859b919f3600c159427de11453ec39a1f7acc\" data-review-has-text=\"false\" class=\"carousel-slide\">\n              <p class=\"rating-note\">Avaliação com 5 estrelas registrada publicamente.</p>\n              <div class=\"review-meta\">\n                <span class=\"review-author\">Yasmin Breda</span>\n                <span class=\"review-stars-inline\">★★★★★</span>\n                <span>um ano atrás</span>\n              </div>\n            </article>\n          </div>\n\n          <div class=\"carousel-controls\">\n            <div class=\"carousel-nav-group\">\n              <button data-role=\"carousel-prev\" class=\"carousel-btn\" id=\"carousel-prev-btn\" aria-label=\"Avaliação anterior\">\n                <svg width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 19l-7-7 7-7\"></path></svg>\n              </button>\n              <div data-role=\"carousel-counter\" class=\"carousel-counter\" id=\"carousel-counter-el\">1 / 5</div>\n              <button data-role=\"carousel-next\" class=\"carousel-btn\" id=\"carousel-next-btn\" aria-label=\"Próxima avaliação\">\n                <svg width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 5l7 7-7 7\"></path></svg>\n              </button>\n            </div>\n\n            <a href=\"https://maps.google.com/maps?q=Avenida+7%2C+310%2C+Centro%2C+Rio+Claro+-+SP\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"btn-maps-link\">\n              <span>Ver perfil no mapa</span>\n              <svg width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14\"></path></svg>\n            </a>\n          </div>\n        </div>\n      </div>",
+      "computedStyles": {
+        "font-family": "Outfit, system-ui, -apple-system, sans-serif",
+        "font-size": "16px",
+        "font-weight": "400",
+        "line-height": "26.4px",
+        "color": "rgb(255, 255, 255)",
+        "background": "rgba(0, 0, 0, 0) radial-gradient(at 0% 0%, rgb(24, 58, 50) 0%, rgb(17, 37, 32) 60%, rgb(10, 23, 20) 100%) repeat scroll 0% 0% / auto padding-box border-box",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "padding": "68px 60px",
+        "margin": "0px",
+        "display": "block",
+        "position": "static",
+        "gap": "normal",
+        "border-radius": "18px",
+        "box-shadow": "rgba(17, 37, 32, 0.25) 0px 16px 40px 0px"
+      },
+      "cssCustomProperties": {
+        "--canvas": "#fafaf9",
+        "--surface": "#f5f5f3",
+        "--surface-card": "#ffffff",
+        "--deep-forest": "#112520",
+        "--forest-hover": "#0a1714",
+        "--accent-sage": "#2a574e",
+        "--sage-light": "#eef4f2",
+        "--body-text": "#1c1917",
+        "--muted-stone": "#66615c",
+        "--hairline": "#e7e5e4",
+        "--hairline-soft": "rgba(231, 229, 228, 0.7)",
+        "--radius-sm": "6px",
+        "--radius-md": "12px",
+        "--radius-lg": "18px",
+        "--shadow-subtle": "0 2px 8px rgba(17, 37, 32, 0.04)",
+        "--shadow-hover": "0 12px 28px rgba(17, 37, 32, 0.08)",
+        "--shadow-float": "0 8px 24px rgba(17, 37, 32, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08)",
+        "--transition-smooth": "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)"
+      },
+      "parentContext": "<div class=\"container\">",
+      "boundingRect": {
+        "width": 1136,
+        "height": 708
+      }
+    }
+  },
+  "deliveryLease": null,
+  "checkpointRevision": 1,
+  "activeOwner": "42503f92",
+  "sourceMarkers": {},
+  "fallbackMode": null,
+  "annotationArtifacts": [],
+  "diagnostics": [],
+  "updatedAt": "2026-09-03T18:24:43.460Z"
+}
