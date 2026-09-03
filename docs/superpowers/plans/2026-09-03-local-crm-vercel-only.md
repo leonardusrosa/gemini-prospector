@@ -56,10 +56,11 @@
 
 **Files:**
 - Read/verify: `E:/Antigravity/prospector-sites/package.json`, `assistant/provider-runtime.js`, live Vercel endpoints.
+- Modify: `E:/Antigravity/prospector-sites/vercel.json` (preview-route robots headers only).
 
 - [x] Run the complete `npm run site-review` and `npm run vercel-build` gates from the clean sites repository.
-- [ ] Verify live Vercel root, generated site/proposal routes, robots policy including the new Vercel `X-Robots-Tag`, assistant method behavior, and production OpenRouter provider order after the config push.
-- [ ] Confirm generated prospect HTML and assistant/provider source remain unchanged; only the required preview header config may differ.
+- [x] Verify live Vercel root, generated site/proposal routes, robots policy including the new Vercel `X-Robots-Tag`, assistant method behavior, and production OpenRouter provider order after the config push.
+- [x] Confirm generated prospect HTML and assistant/provider source remain unchanged; only the required preview header config differs.
 
 ### Task 6: Verify Phoenix retirement and domain state
 
@@ -75,7 +76,7 @@
 **Files:**
 - Git state in `E:/Antigravity/prospector` and `E:/Antigravity/prospector-sites`.
 
-- [ ] Run fresh final tests after all edits and inspect both repository diffs/status.
-- [ ] Commit local-repository changes with a descriptive migration message.
-- [ ] Push the local Prospector commit to `origin/main`; do not change the clean sites repository.
-- [ ] Report local CRM, Vercel, Phoenix, domain, tests, Git, remaining issues, and `Messages sent: 0`.
+- [x] Run fresh final tests after all edits and inspect both repository diffs/status.
+- [x] Commit local Prospector changes and the required Vercel preview-header change with descriptive messages.
+- [x] Push both repository commits to `origin/main`.
+- [x] Report local CRM, Vercel, Phoenix, domain, tests, Git, remaining issues, and `Messages sent: 0`.
