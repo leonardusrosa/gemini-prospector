@@ -1,0 +1,69 @@
+{
+  "id": "0af79473",
+  "phase": "completed",
+  "pageUrl": "/",
+  "sourceFile": "sites\\clinica-dra-francine-goulart-rio-claro\\index.html",
+  "expectedVariants": 3,
+  "arrivedVariants": 3,
+  "visibleVariant": 3,
+  "paramValues": {},
+  "pendingEventSeq": null,
+  "pendingEvent": null,
+  "deliveryLease": null,
+  "checkpointRevision": 15,
+  "activeOwner": "7a6cf1a5",
+  "sourceMarkers": {},
+  "fallbackMode": null,
+  "annotationArtifacts": [],
+  "diagnostics": [
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 1
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 2
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 3
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 4
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 5
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 6
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 7
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 8
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 9
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 10
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 11
+    },
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 12
+    }
+  ],
+  "updatedAt": "2026-09-03T19:28:20.392Z"
+}

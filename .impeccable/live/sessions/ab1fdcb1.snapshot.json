@@ -1,0 +1,20 @@
+{
+  "id": "ab1fdcb1",
+  "phase": "completed",
+  "pageUrl": "/",
+  "sourceFile": "sites\\clinica-dra-francine-goulart-rio-claro\\index.html",
+  "expectedVariants": 3,
+  "arrivedVariants": 3,
+  "visibleVariant": 2,
+  "paramValues": {},
+  "pendingEventSeq": null,
+  "pendingEvent": null,
+  "deliveryLease": null,
+  "checkpointRevision": 12,
+  "activeOwner": "6e10d181",
+  "sourceMarkers": {},
+  "fallbackMode": null,
+  "annotationArtifacts": [],
+  "diagnostics": [],
+  "updatedAt": "2026-09-03T19:04:12.906Z"
+}
