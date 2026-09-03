@@ -27,16 +27,16 @@ SYNC_FIELDS = ['status', 'nota', 'avaliacoes', 'urlNova', 'endCliente', 'telefon
 
 def _env(key, default=''):
     val = os.environ.get(key, '').strip()
-    if sys.platform == 'win32' and (not val or (key == 'PROSPECTOR_AUTH_PASSWORD' and len(val) < 20)):
+    if val:
+        return val
+    if sys.platform == 'win32':
         try:
             import winreg
             k = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Environment', 0, winreg.KEY_READ)
-            reg_val, _ = winreg.QueryValueEx(k, key)
+            val, _ = winreg.QueryValueEx(k, key)
             winreg.CloseKey(k)
-            if reg_val and len(reg_val) >= 20:
-                val = reg_val.strip()
         except Exception:
-            pass
+            val = ''
     return (val or default).strip()
 
 
