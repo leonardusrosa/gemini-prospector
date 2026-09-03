@@ -1,0 +1,6 @@
+{
+  "files": ["sites/clinica-dra-francine-goulart-rio-claro/index.html"],
+  "insertBefore": "</body>",
+  "commentSyntax": "html",
+  "cspChecked": true
+}
