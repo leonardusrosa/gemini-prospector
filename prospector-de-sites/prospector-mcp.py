@@ -93,25 +93,9 @@ def f_salvar(dados):
     c.commit(); c.close()
     res = {'ok': True, 'lead': atual['slug'], 'status': atual['status']}
     if atual.get('status') == 'publicado':
-        try:
-            import prospector_remote
-            sync_res = prospector_remote.sync_lead(atual['slug'], db_path=DB)
-            if sync_res.get('sync_status') == 'REMOTE_SYNC_OK':
-                res['remote_sync'] = 'REMOTE_SYNC_OK'
-                res['status_result'] = 'PUBLISHED + REMOTE_SYNC_OK'
-            elif sync_res.get('sync_status') == 'REMOTE_SYNC_NOT_CONFIGURED':
-                res['remote_sync'] = 'REMOTE_SYNC_NOT_CONFIGURED'
-                res['status_result'] = 'PUBLISHED_LOCAL_ONLY'
-            else:
-                res['ok'] = False
-                res['remote_sync'] = 'REMOTE_SYNC_FAILED'
-                res['status_result'] = 'REMOTE_SYNC_PENDING'
-                res['error'] = sync_res.get('error', 'Remote synchronization failed')
-        except Exception as exc:
-            res['ok'] = False
-            res['remote_sync'] = 'REMOTE_SYNC_FAILED'
-            res['status_result'] = 'REMOTE_SYNC_PENDING'
-            res['error'] = str(exc)
+        # Local SQLite is the canonical CRM. Phoenix remote sync is legacy/optional
+        # and is never part of the normal publication workflow (see prospector_remote.py).
+        res['status_result'] = 'PUBLISHED_LOCAL_ONLY'
     return res
 
 def f_status(slug, status, obs_extra=None):
@@ -130,27 +114,9 @@ def f_status(slug, status, obs_extra=None):
 
     res = {'ok': True, 'lead': slug, 'novo_status': status}
     if status == 'publicado':
-        try:
-            import prospector_remote
-            sync_res = prospector_remote.sync_lead(slug, db_path=DB)
-            if sync_res.get('sync_status') == 'REMOTE_SYNC_OK':
-                res['remote_sync'] = 'REMOTE_SYNC_OK'
-                res['status_result'] = 'PUBLISHED + REMOTE_SYNC_OK'
-            elif sync_res.get('sync_status') == 'REMOTE_SYNC_NOT_CONFIGURED':
-                res['remote_sync'] = 'REMOTE_SYNC_NOT_CONFIGURED'
-                res['status_result'] = 'PUBLISHED_LOCAL_ONLY'
-            else:
-                res['ok'] = False
-                res['remote_sync'] = 'REMOTE_SYNC_FAILED'
-                res['status_result'] = 'REMOTE_SYNC_PENDING'
-                res['error'] = sync_res.get('error', 'Remote synchronization failed')
-                if 'divergences' in sync_res:
-                    res['divergences'] = sync_res['divergences']
-        except Exception as exc:
-            res['ok'] = False
-            res['remote_sync'] = 'REMOTE_SYNC_FAILED'
-            res['status_result'] = 'REMOTE_SYNC_PENDING'
-            res['error'] = str(exc)
+        # Local SQLite is the canonical CRM. Phoenix remote sync is legacy/optional
+        # and is never part of the normal publication workflow (see prospector_remote.py).
+        res['status_result'] = 'PUBLISHED_LOCAL_ONLY'
 
     return res
 
