@@ -40,7 +40,9 @@ Elas têm precedência absoluta sobre hábitos de LLM e templates pré-concebido
 5. **`design-taste-frontend` = apoio contextual/anti-slop** — detectar clichês e verificar adequação ao negócio.
 6. **Arquitetura estática do Prospector** — HTML/CSS/JS puro.
 7. **Motion & Behavior Pass** — obrigatório decidir comportamento, mesmo que `Motion = 0`.
-8. **`impeccable` = QA/polimento final** — qualidade de execução; não é diretor criativo.
+8. **`/impeccable` = QA visual e polimento de execução** — desktop, mobile e proposta; distingue CRITICAL, REAL IMPROVEMENT e OPTIONAL/TASTE.
+9. **`/copywriting-marketing` = revisão de copy e conversão** — elimina jargões de auditoria interna, frases robóticas e frieza burocrática, mantendo limites factuais estritos.
+10. **Factual Re-check** — revalida integridade de dados protegidos após edições de copy.
 
 Quando as skills estiverem instaladas, leia seus `SKILL.md` atuais. Não presuma regras antigas de memória.
 
@@ -533,39 +535,29 @@ Dependências JS externas só quando justificadas e com fallback.
 
 ---
 
-## 15. QA Final — Impeccable Bounded
+## 15. QA Final — /impeccable + /copywriting-marketing Bounded
 
-Impeccable verifica qualidade de execução; não inicia outro redesign.
+Após implementação e renderização no navegador, e antes do review determinístico final e deploy, execute as duas revisões obrigatórias via slash commands:
 
-Teste pelo menos:
+### A. `/impeccable` (Visual Craft & Layout)
+Verifica qualidade de execução sobre o resultado renderizado (desktop, mobile e proposta); não inicia outro redesign.
+- Classifique findings em `CRITICAL`, `REAL IMPROVEMENT` e `OPTIONAL/TASTE`.
+- Aplique obrigatoriamente `CRITICAL` e `REAL IMPROVEMENT`. Não redesenhe infinitamente por gosto opcional.
+- Teste pelo menos: 360, 390/393, 768, 1024, 1440.
+- Verifique: hero composition, tipografia, contraste WCAG AA, hierarquia, espaçamento/ritmo, cards/reviews, mapa embed, launcher do assistente, tap targets, zero overflow horizontal, hero crop correto, ausência de badges/pills decorativos, motion sem jank e fallback no-JS.
 
-- 360
-- 375
-- 390/393 quando relevante ao mobile atual
-- 768
-- 1024
-- 1280
-- 1440
+### B. `/copywriting-marketing` (Conversão & Anti-Jargão de Auditoria)
+Revisa todo o texto voltado ao usuário no site, proposta, botões de CTA, navegação, cabeçalhos de avaliações, notas e assistente.
+- Detecte e elimine vazamento de linguagem interna de auditoria (ex.: *"Área de atuação informada nos registros públicos consultados"*, *"O que aparece no perfil público"*, *"Conteúdo limitado ao que foi verificado para esta primeira versão"*).
+- Substitua cabeçalhos robóticos por redação natural e convidativa (direção recomendada: *"O que dizem sobre a [Clínica]"*).
+- Elimine ressalvas defensivas que assustam o visitante.
+- **Invariante factual:** a melhoria de persuasão NUNCA pode inventar serviços, credenciais, preços, horários, garantias ou alterar depoimentos reais. A evidência continua soberana.
 
-Verifique:
+### C. Factual Re-check
+Após as alterações visuais e de copy, revalide a integridade dos dados protegidos. Nenhuma claim factual nova ou alteração de dados de contato/avaliação pode passar.
 
-- zero overflow horizontal
-- contraste WCAG AA
-- legibilidade e line length
-- hover/focus-visible
-- tap targets
-- mobile first fold
-- hero crop/asset correto
-- expert/product/venue realmente dominante quando esse for o modo
-- nenhum gradient/overlay apagando sujeito principal
-- **nenhum metadata pill/bubble no hero**
-- CTA claro e cedo
-- social/contact actions sem overcrowding
-- motion sem jank/layout shift
-- reduced-motion
-- conteúdo visível sem JS
-- copy sem redundância
-- ausência de padrões AI repetitivos
+### D. Semântica Fail-Closed
+Estados permitidos: `PASS` ou `PASS_AFTER_CHANGES`. Se qualquer skill estiver indisponível (`BLOCKED_SKILL_UNAVAILABLE`), o site NÃO pode ser marcado como publish-ready.
 
 ### Site Core Rule QA (Obrigatório)
 

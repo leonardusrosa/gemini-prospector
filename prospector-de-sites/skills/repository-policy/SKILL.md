@@ -246,3 +246,83 @@ Required HTML hooks:
 Browser QA must verify at minimum 1440x900 and 390x844 that the expert media plane spans at least 98% of the hero/viewport width and has not collapsed into a framed/inset portrait.
 
 A gpt-taste or OpenDesign written PASS does not override failed geometry or missing hooks.
+
+## 13. Mandatory pre-publish reviews: /impeccable and /copywriting-marketing
+
+Before any prospect site or proposal can be marked publish-ready or deployed to production, it must pass two mandatory reviews using the installed skills by their slash-command names: `/impeccable` and `/copywriting-marketing`.
+
+### 1. Mandatory /impeccable review
+
+After implementation and browser rendering, but before deterministic site-review and deployment, invoke `/impeccable`.
+
+The review must inspect the actual rendered result on both desktop and mobile, plus the proposal page:
+
+- **Desktop**: hero composition, typography, hierarchy, spacing/rhythm, visual balance, section transitions, density, CTA prominence, review presentation, map/location presentation, assistant launcher integration, footer, perceived quality, and removal of anything looking like a raw template, placeholder, or unfinished UI.
+- **Mobile**: first fold, hero crop, heading wrapping, CTA visibility, section spacing, cards/reviews, map, persistent assistant launcher, horizontal overflow, and tap targets.
+- **Proposal**: visual hierarchy, typography, spacing, readability, and professional presentation.
+
+Findings must be classified as:
+- `CRITICAL`: must be fixed.
+- `REAL IMPROVEMENT`: genuine quality/conversion lift, must be applied.
+- `OPTIONAL/TASTE`: subjective preference, do not endlessly redesign.
+
+Apply `CRITICAL` and genuine `REAL IMPROVEMENT` fixes before proceeding. Do not endlessly redesign based on subjective taste.
+
+### 2. Mandatory /copywriting-marketing review
+
+After visual corrections, invoke `/copywriting-marketing` to review all user-facing copy on the site, proposal, CTA buttons, navigation, review headings/context, disclaimers, assistant launcher/greeting, and empty/disabled states.
+
+Specifically detect and eliminate:
+- technically correct but unnatural wording;
+- internal audit/evidence jargon leaking into customer-facing copy (e.g. "Área de atuação informada nos registros públicos consultados", "O que aparece no perfil público", "Conteúdo limitado ao que foi verificado para esta primeira versão");
+- robotic or bureaucratic headings;
+- vague generic marketing clichés;
+- unnecessary defensive caveats in prominent positions;
+- awkward or passive CTAs;
+- overexplaining database or provenance mechanics;
+- copy reading like internal QA rather than a real business website.
+
+Preferred heading direction for reviews: natural customer-facing language such as "O que dizem sobre a [Clínica]" while keeping provenance/disclosure precise but unobtrusive.
+
+**Evidence guardrails**:
+Persuasive copy must NOT invent unsupported services, credentials, guarantees, prices, hours, fake medical claims, altered review quotes, or altered aggregate numbers. Factual evidence remains authoritative.
+
+### 3. Factual re-check after copy edits
+
+After both review passes and edits, re-run protected factual comparison. Ensure copy edits did not introduce new factual claims or mutate protected fields.
+
+### 4. Fail-closed skill semantics
+
+Allowed states:
+- `IMPECCABLE_REVIEW: PASS` or `PASS_AFTER_CHANGES`
+- `COPYWRITING_MARKETING_REVIEW: PASS` or `PASS_AFTER_CHANGES`
+- `BLOCKED_SKILL_UNAVAILABLE`
+
+If either skill is unavailable:
+- do not silently substitute generic LLM taste review;
+- do not claim equivalent PASS;
+- do not mark the lead fully publish-ready;
+- fail closed and report the blocker explicitly.
+
+A fallback may be used for development preview only, but not for canonical publish readiness.
+
+### 5. Acceptance order
+
+The canonical sequence for lead publication is strictly:
+1. evidence verified
+2. design workflow complete
+3. implementation complete
+4. browser QA desktop/mobile
+5. `/impeccable` review
+6. impeccable corrections
+7. `/copywriting-marketing` review
+8. copy corrections
+9. factual re-check
+10. deterministic site/review/hero/conversion gates
+11. proposal QA
+12. Vercel build
+13. deploy
+14. live browser verification
+15. local CRM promotion to `publicado`
+
+A lead cannot advance to `publicado` before steps 1–14 are complete.

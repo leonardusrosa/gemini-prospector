@@ -1406,6 +1406,44 @@ def test_star_only_with_source_witness_passes():
     assert not res.errors
 
 
+def test_prepublish_reviews_schema_v2_missing_fails():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["schemaVersion"] = 2
+    code, payload = run_case(manifest=manifest)
+    assert code != 0
+    assert "impeccable_review_pass" in failed_keys(payload)
+
+
+def test_prepublish_reviews_impeccable_blocked_fails():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["schemaVersion"] = 2
+    def transform(d, *args):
+        return d + "\nIMPECCABLE_REVIEW: BLOCKED_SKILL_UNAVAILABLE\nCOPYWRITING_MARKETING_REVIEW: PASS\nFACTUAL_RECHECK: PASS\n"
+    code, payload = run_case(manifest=manifest, design_transform=transform)
+    assert code != 0
+    assert "impeccable_review_not_blocked" in failed_keys(payload)
+
+
+def test_prepublish_reviews_copywriting_blocked_fails():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["schemaVersion"] = 2
+    def transform(d, *args):
+        return d + "\nIMPECCABLE_REVIEW: PASS\nCOPYWRITING_MARKETING_REVIEW: BLOCKED_SKILL_UNAVAILABLE\nFACTUAL_RECHECK: PASS\n"
+    code, payload = run_case(manifest=manifest, design_transform=transform)
+    assert code != 0
+    assert "copywriting_marketing_review_not_blocked" in failed_keys(payload)
+
+
+def test_prepublish_reviews_pass_after_changes_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["schemaVersion"] = 2
+    def transform(d, *args):
+        return d + "\nIMPECCABLE_REVIEW: PASS_AFTER_CHANGES\nCOPYWRITING_MARKETING_REVIEW: PASS_AFTER_CHANGES\nFACTUAL_RECHECK: PASS\n"
+    code, payload = run_case(manifest=manifest, design_transform=transform)
+    assert code == 0
+    assert not failed_keys(payload)
+
+
 if __name__ == "__main__":
     tests = [name for name in globals() if name.startswith("test_")]
     for name in sorted(tests):

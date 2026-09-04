@@ -174,7 +174,43 @@ DEPLOY QA
 
 If the runtime cannot execute one layer, report it as unavailable and stop before claiming a full production PASS.
 
-## 10. New runtime support
+## 10. Mandatory pre-publish reviews: /impeccable and /copywriting-marketing
+
+Before any lead is considered publish-ready, every prospect site and proposal must pass two mandatory skill reviews using the installed Antigravity/Codex skills by their slash-command names:
+
+1. `/impeccable`: visual craft, typography, spacing, hierarchy, layout rhythm, responsive presentation on rendered desktop and mobile views, and proposal layout. Distinguishes CRITICAL, REAL IMPROVEMENT, and OPTIONAL/TASTE.
+2. `/copywriting-marketing`: reviews all user-facing copy on site, proposal, CTAs, navigation, review headings, disclaimers, and assistant prompts. Eliminates robotic internal/audit jargon while preserving factual evidence invariants.
+
+### Fail-closed semantics
+
+Allowed review states:
+- `PASS`
+- `PASS_AFTER_CHANGES`
+- `BLOCKED_SKILL_UNAVAILABLE`
+
+If either skill is unavailable, the agent MUST NOT silently substitute generic LLM taste or claim equivalent PASS. The blocker must be reported explicitly, and the lead cannot advance to publish readiness.
+
+### Canonical publish sequence
+
+1. evidence verified
+2. design workflow complete
+3. implementation complete
+4. browser QA desktop/mobile
+5. `/impeccable` review
+6. impeccable corrections
+7. `/copywriting-marketing` review
+8. copy corrections
+9. factual re-check
+10. deterministic site/review/hero/conversion gates
+11. proposal QA
+12. Vercel build
+13. deploy
+14. live browser verification
+15. local CRM promotion to `publicado`
+
+A lead cannot advance to `publicado` before steps 1–14 are complete.
+
+## 11. New runtime support
 
 To support another CLI:
 

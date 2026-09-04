@@ -328,11 +328,26 @@ Inspect especially:
 - unsupported factual claims;
 - console/network failures.
 
-## 13. No self-approval by written checklist
+## 13. HARD GATE: Mandatory pre-publish reviews (/impeccable + /copywriting-marketing)
+
+Before marking autonomous review PASS or proceeding to deploy/proposal/outreach, the site and proposal must undergo two mandatory reviews using the installed skills by their slash-command names:
+
+1. `/impeccable`: review actual rendered desktop and mobile views and proposal layout. Distinguishes CRITICAL, REAL IMPROVEMENT, and OPTIONAL/TASTE. Apply all critical and real improvement findings.
+2. `/copywriting-marketing`: review all user-facing copy on site, proposal, CTAs, review headings, and assistant. Replaces robotic internal/audit jargon with natural customer-facing wording without mutating factual claims.
+3. `FACTUAL_RECHECK`: ensures copy adjustments did not introduce unsupported claims or mutate protected fields.
+
+Fail-closed semantics:
+- `IMPECCABLE_REVIEW: PASS | PASS_AFTER_CHANGES`
+- `COPYWRITING_MARKETING_REVIEW: PASS | PASS_AFTER_CHANGES`
+- `FACTUAL_RECHECK: PASS`
+
+If either skill is unavailable (`BLOCKED_SKILL_UNAVAILABLE`), fail closed. Do not substitute generic LLM judgment and do not claim publish-readiness.
+
+## 14. No self-approval by written checklist
 
 A report written by the implementing agent is not sufficient evidence. PASS requires observable proof from deterministic gates, source evidence, browser QA, and deployment checks.
 
-## 14. Final gate report
+## 15. Final gate report
 
 Use this output block:
 
@@ -351,6 +366,9 @@ EXPERT HERO GPT-TASTE JUDGEMENT: PASS/FAIL/N/A
 STATIC REVIEW: PASS/FAIL
 BROWSER REVIEW: PASS/FAIL
 ADVERSARIAL REVIEW: PASS/FAIL
+IMPECCABLE_REVIEW: PASS/PASS_AFTER_CHANGES/BLOCKED_SKILL_UNAVAILABLE
+COPYWRITING_MARKETING_REVIEW: PASS/PASS_AFTER_CHANGES/BLOCKED_SKILL_UNAVAILABLE
+FACTUAL_RECHECK: PASS/FAIL
 HERO IMAGE: PASS/FAIL
 HERO FRAME/CROP: PASS/FAIL/N/A
 MOTION: PASS/FAIL

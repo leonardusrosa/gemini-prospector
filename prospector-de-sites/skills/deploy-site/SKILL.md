@@ -69,9 +69,14 @@ Para cliente final, o editor só pode ser exposto online quando houver autentica
 
 Ao receber ordens como *"publica os 5 redesigns"* ou *"sobe o site da clinica-exemplo"*:
 
-1. **Validação local**:
+1. **Validação local e gates pré-publicação (OBRIGATÓRIO)**:
    - Verificar se `prospector-config.json` possui o bloco `deploy` preenchido.
    - Verificar se o arquivo do redesign existe em `sites/[slug]/[slug].html`.
+   - **HARD GATE Pré-Publish:** O lead SÓ pode avançar para deploy se tiver passado pelas duas revisões obrigatórias instaladas:
+     - `/impeccable`: `PASS` ou `PASS_AFTER_CHANGES` registrado.
+     - `/copywriting-marketing`: `PASS` ou `PASS_AFTER_CHANGES` registrado.
+     - `Factual re-check`: confirmado sem mutação de campos protegidos.
+     - Se qualquer skill estiver indisponível (`BLOCKED_SKILL_UNAVAILABLE`), o deploy é BLOQUEADO.
 2. **Preparação de arquivos**:
    - Criar diretório `[repoPath]/[basePath]/[slug]/`.
    - Copiar `sites/[slug]/[slug].html` para `[repoPath]/[basePath]/[slug]/index.html`.
@@ -103,9 +108,25 @@ Após o push com sucesso:
    - Se na primeira checagem retornar 404, aguarde 5 segundos e tente novamente (até 3 tentativas).
    - Se após o intervalo a URL ainda não responder com o conteúdo esperado, relate o status como: `push concluído, deploy ainda não verificado` e NÃO marque como `publicado` definitivo.
 
-## 5. Atualização do CRM e Dashboard
+## 5. Atualização do CRM e Dashboard (Passo 15 da Sequência Canônica)
 
-Quando a URL for verificada com sucesso:
+A promoção de um lead para o status `publicado` no CRM local SÓ é permitida após a conclusão de todos os 14 passos anteriores:
+1. evidência verificada
+2. design workflow concluído
+3. implementação estática
+4. browser QA desktop/mobile
+5. `/impeccable` review
+6. correções do visual craft
+7. `/copywriting-marketing` review
+8. correções de copy e remoção de jargão
+9. factual re-check
+10. gates determinísticos (site/hero/reviews/conversão)
+11. proposal QA
+12. Vercel build
+13. deploy
+14. verificação em navegador da URL pública live
+
+Quando a URL for verificada com sucesso em produção:
 
 1. Atualizar lead no banco `prospector.db`:
    - `status = 'publicado'`

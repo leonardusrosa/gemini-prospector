@@ -611,6 +611,60 @@ def check_socials_and_extras(manifest: dict, html: str, review: Review) -> None:
     review.check("fake_online_state", not bool(re.search(r">\s*Online\s*<|>\s*Estamos online\s*<", html, re.IGNORECASE)), "Do not simulate human/online state")
 
 
+def check_mandatory_prepublish_reviews(manifest: dict, design_read: str, review: Review) -> None:
+    cfg = section(manifest, "prepublishReviews")
+    is_schema_v2 = int(manifest.get("schemaVersion", 1) or 1) >= 2
+    required = bool(cfg.get("required", True)) if (is_schema_v2 or "prepublishReviews" in manifest) else False
+
+    impeccable_raw = extract_design_value(design_read, "IMPECCABLE_REVIEW")
+    copywriting_raw = extract_design_value(design_read, "COPYWRITING_MARKETING_REVIEW")
+    factual_recheck_raw = extract_design_value(design_read, "FACTUAL_RECHECK")
+
+    if not (required or impeccable_raw or copywriting_raw or factual_recheck_raw or "prepublishReviews" in manifest):
+        return
+
+    valid_states = {"PASS", "PASS_AFTER_CHANGES"}
+    blocked_state = "BLOCKED_SKILL_UNAVAILABLE"
+
+    # 1. /impeccable review
+    impeccable_val = (impeccable_raw or str(cfg.get("impeccable") or "")).strip().upper()
+    if impeccable_val == blocked_state:
+        review.check(
+            "impeccable_review_not_blocked",
+            False,
+            "Mandatory /impeccable review is BLOCKED_SKILL_UNAVAILABLE; publish-readiness requires the skill to be available and run",
+        )
+    else:
+        review.check(
+            "impeccable_review_pass",
+            impeccable_val in valid_states,
+            f"Pre-publish requires IMPECCABLE_REVIEW: PASS or PASS_AFTER_CHANGES in design-read.md; found {impeccable_val or 'none'!r}",
+        )
+
+    # 2. /copywriting-marketing review
+    copywriting_val = (copywriting_raw or str(cfg.get("copywritingMarketing") or "")).strip().upper()
+    if copywriting_val == blocked_state:
+        review.check(
+            "copywriting_marketing_review_not_blocked",
+            False,
+            "Mandatory /copywriting-marketing review is BLOCKED_SKILL_UNAVAILABLE; publish-readiness requires the skill to be available and run",
+        )
+    else:
+        review.check(
+            "copywriting_marketing_review_pass",
+            copywriting_val in valid_states,
+            f"Pre-publish requires COPYWRITING_MARKETING_REVIEW: PASS or PASS_AFTER_CHANGES in design-read.md; found {copywriting_val or 'none'!r}",
+        )
+
+    # 3. Factual recheck
+    factual_val = (factual_recheck_raw or str(cfg.get("factualRecheck") or "")).strip().upper()
+    review.check(
+        "prepublish_factual_recheck",
+        factual_val == "PASS",
+        f"Pre-publish requires FACTUAL_RECHECK: PASS in design-read.md; found {factual_val or 'none'!r}",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Prospector deterministic autonomous site review")
     parser.add_argument("--html", required=True)
@@ -635,6 +689,7 @@ def main() -> int:
     check_factual_traceability(manifest, design_read, html, review)
     check_motion_and_map(manifest, html, design_read, review)
     check_socials_and_extras(manifest, html, review)
+    check_mandatory_prepublish_reviews(manifest, design_read, review)
 
     return review.emit()
 
