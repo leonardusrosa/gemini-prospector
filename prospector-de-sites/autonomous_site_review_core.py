@@ -563,8 +563,9 @@ def check_semantic_claims(manifest: dict, html: str, review: Review) -> None:
     diagnostic_catalog_verified = bool(factual_evidence.get("diagnosticCatalogVerified") or "diagnostic_catalog" in capabilities)
     procedure_catalog_verified = bool(factual_evidence.get("procedureCatalogVerified") or "procedure_catalog" in capabilities)
     facial_procedures_verified = bool(factual_evidence.get("facialHarmonizationVerified") or "facial_harmonization" in capabilities)
-    facility_verified = bool(factual_evidence.get("facilityVerified") or "facility_comfort" in capabilities)
-    service_quality_verified = bool(factual_evidence.get("serviceQualityVerified") or "service_quality" in capabilities)
+    facility_verified = bool(factual_evidence.get("facilityVerified") or "facility_comfort" in capabilities or "facility_modernity" in capabilities)
+    service_quality_verified = bool(factual_evidence.get("serviceQualityVerified") or "service_quality" in capabilities or "welcoming_service" in capabilities)
+    convenience_verified = bool(factual_evidence.get("convenienceVerified") or factual_evidence.get("accessibilityVerified") or "location_convenience" in capabilities or "accessibility" in capabilities)
 
     # 1. Relational claims
     has_patient_claim = bool(re.search(r"\bpacientes?\b", site_copy, re.IGNORECASE))
@@ -603,6 +604,13 @@ def check_semantic_claims(manifest: dict, html: str, review: Review) -> None:
         "Copy cannot claim 'atendimento personalizado' or 'atenção integral' without verified service evidence",
     )
 
+    has_welcoming_claim = bool(re.search(r"\b(?:atendimento\s+acolhedor|acolhimento(?:\s+e\s+precis[ãa]o)?)\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_welcoming_service",
+        not has_welcoming_claim or service_quality_verified,
+        "Copy cannot claim 'atendimento acolhedor' or 'acolhimento' without verified service quality evidence",
+    )
+
     # 3. Medical / process claims
     has_diagnostic_claim = bool(re.search(r"\bdiagn[óo]stico\s+individualizado\b", site_copy, re.IGNORECASE))
     review.check(
@@ -625,12 +633,19 @@ def check_semantic_claims(manifest: dict, html: str, review: Review) -> None:
         "Category 'Estética' does not imply facial harmonization or 'cuidado personalizado da sua face' without verified evidence",
     )
 
-    # 4. Facility claims
-    has_comfort_claim = bool(re.search(r"\bambiente\s+planejado\s+para\s+(?:o\s+seu\s+)?conforto\b", site_copy, re.IGNORECASE))
+    # 4. Facility and convenience claims
+    has_comfort_claim = bool(re.search(r"\b(?:ambiente\s+(?:planejado\s+para\s+(?:o\s+seu\s+)?conforto|confort[áa]vel)|cl[íi]nica\s+moderna|espa[çc]o\s+moderno)\b", site_copy, re.IGNORECASE))
     review.check(
         "semantic_claim_no_unsupported_facility_comfort",
         not has_comfort_claim or facility_verified,
-        "Copy cannot claim 'ambiente planejado para o seu conforto' without verified facility evidence",
+        "Copy cannot claim 'ambiente planejado para o seu conforto', 'ambiente confortável', or 'clínica moderna' without verified facility evidence",
+    )
+
+    has_convenience_claim = bool(re.search(r"\b(?:localiza[çc][ãa]o\s+acess[íi]vel|f[áa]cil\s+acesso|bem\s+localizad[ao]s?)\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_location_convenience",
+        not has_convenience_claim or convenience_verified,
+        "Copy cannot claim 'localização acessível', 'fácil acesso', or 'bem localizado' without verified convenience/accessibility evidence",
     )
 
     # 5. Location inference

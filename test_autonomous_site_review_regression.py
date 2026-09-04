@@ -1536,15 +1536,83 @@ def test_semantic_claim_centro_passes_when_neighborhood_is_centro():
     assert "semantic_claim_no_unsupported_center_location" not in failed_keys(payload)
 
 
+def test_semantic_claim_localizacao_acessivel_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Clínica com localização acessível")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_location_convenience" in failed_keys(payload)
+
+
+def test_semantic_claim_localizacao_acessivel_passes_with_evidence():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["factualEvidence"]["convenienceVerified"] = True
+    html = PASS_HTML.replace("Site teste", "Clínica com localização acessível")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_location_convenience" not in failed_keys(payload)
+
+
+def test_semantic_claim_facil_acesso_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Endereço de fácil acesso na cidade")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_location_convenience" in failed_keys(payload)
+
+
+def test_semantic_claim_bem_localizado_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Consultório bem localizado")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_location_convenience" in failed_keys(payload)
+
+
+def test_semantic_claim_ambiente_confortavel_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Um ambiente confortável para todos")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_facility_comfort" in failed_keys(payload)
+
+
+def test_semantic_claim_clinica_moderna_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Uma clínica moderna e equipada")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_facility_comfort" in failed_keys(payload)
+
+
+def test_semantic_claim_clinica_moderna_passes_with_evidence():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["factualEvidence"]["facilityVerified"] = True
+    html = PASS_HTML.replace("Site teste", "Uma clínica moderna e equipada")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_facility_comfort" not in failed_keys(payload)
+
+
+def test_semantic_claim_atendimento_acolhedor_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Atendimento acolhedor e atencioso")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_welcoming_service" in failed_keys(payload)
+
+
+def test_semantic_claim_atendimento_acolhedor_passes_with_evidence():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["factualEvidence"]["serviceQualityVerified"] = True
+    html = PASS_HTML.replace("Site teste", "Atendimento acolhedor e atencioso")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_welcoming_service" not in failed_keys(payload)
+
+
 def test_semantic_claim_review_quotes_do_not_trigger_false_positives():
     html = PASS_HTML.replace(
         "</body>",
-        "<blockquote>“Excelente atendimento com pacientes, nossa equipe adorou o ambiente planejado para o seu conforto!”</blockquote></body>",
+        "<blockquote>“Excelente atendimento com pacientes, nossa equipe adorou o ambiente planejado para o seu conforto, localização acessível e atendimento acolhedor!”</blockquote></body>",
     )
     code, payload = run_case(html=html)
     assert "semantic_claim_no_unsupported_patient_relationship" not in failed_keys(payload)
     assert "semantic_claim_no_unsupported_team" not in failed_keys(payload)
     assert "semantic_claim_no_unsupported_facility_comfort" not in failed_keys(payload)
+    assert "semantic_claim_no_unsupported_location_convenience" not in failed_keys(payload)
+    assert "semantic_claim_no_unsupported_welcoming_service" not in failed_keys(payload)
 
 
 if __name__ == "__main__":
