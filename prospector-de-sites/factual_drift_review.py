@@ -161,7 +161,7 @@ def ensure_git_commit_available(
     if repo_dir:
         try:
             proc = subprocess.run(
-                ["git", "rev-parse", "--verify", clean_ref],
+                ["git", "rev-parse", "--verify", f"{clean_ref}^{{commit}}"],
                 cwd=str(repo_dir),
                 capture_output=True,
                 text=True,
@@ -182,7 +182,7 @@ def ensure_git_commit_available(
                     check=False,
                 )
                 proc2 = subprocess.run(
-                    ["git", "rev-parse", "--verify", clean_ref],
+                    ["git", "rev-parse", "--verify", f"{clean_ref}^{{commit}}"],
                     cwd=str(repo_dir),
                     capture_output=True,
                     text=True,
