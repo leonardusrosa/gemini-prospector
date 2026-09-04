@@ -333,13 +333,14 @@ Inspect especially:
 Before marking autonomous review PASS or proceeding to deploy/proposal/outreach, the site and proposal must undergo two mandatory reviews using the installed skills by their slash-command names:
 
 1. `/impeccable`: review actual rendered desktop and mobile views and proposal layout. Distinguishes CRITICAL, REAL IMPROVEMENT, and OPTIONAL/TASTE. Apply all critical and real improvement findings.
-2. `/copywriting-marketing`: review all user-facing copy on site, proposal, CTAs, review headings, and assistant. Replaces robotic internal/audit jargon with natural customer-facing wording without mutating factual claims.
-3. `FACTUAL_RECHECK`: ensures copy adjustments did not introduce unsupported claims or mutate protected fields.
+2. `/copywriting-marketing`: review all user-facing copy on site, proposal, CTAs, review headings, and assistant. Replaces robotic internal/audit jargon with natural customer-facing wording. **Hard constraint**: IMPROVE THE EXPRESSION OF SUPPORTED PROPOSITIONS ONLY. Must not invent quality adjectives (*acolhedor, personalizado*), operational claims (*agendamento, horários reservados*), medical/process claims (*diagnóstico individualizado*), facility claims (*ambiente planejado para o seu conforto*), or relationship claims (*pacientes, clientes da clínica, nossa equipe*).
+3. `FACTUAL_RECHECK` & `SEMANTIC_CLAIM_AUDIT`: ensures copy adjustments did not introduce unsupported claims or mutate protected fields. Extracts added/strengthened assertions and verifies 0 unsupported propositions.
 
 Fail-closed semantics:
 - `IMPECCABLE_REVIEW: PASS | PASS_AFTER_CHANGES`
 - `COPYWRITING_MARKETING_REVIEW: PASS | PASS_AFTER_CHANGES`
 - `FACTUAL_RECHECK: PASS`
+- `SEMANTIC_CLAIM_AUDIT: PASS`
 
 If either skill is unavailable (`BLOCKED_SKILL_UNAVAILABLE`), fail closed. Do not substitute generic LLM judgment and do not claim publish-readiness.
 
@@ -369,6 +370,7 @@ ADVERSARIAL REVIEW: PASS/FAIL
 IMPECCABLE_REVIEW: PASS/PASS_AFTER_CHANGES/BLOCKED_SKILL_UNAVAILABLE
 COPYWRITING_MARKETING_REVIEW: PASS/PASS_AFTER_CHANGES/BLOCKED_SKILL_UNAVAILABLE
 FACTUAL_RECHECK: PASS/FAIL
+SEMANTIC_CLAIM_AUDIT: PASS/FAIL
 HERO IMAGE: PASS/FAIL
 HERO FRAME/CROP: PASS/FAIL/N/A
 MOTION: PASS/FAIL

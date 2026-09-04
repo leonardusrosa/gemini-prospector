@@ -74,8 +74,8 @@ Ao receber ordens como *"publica os 5 redesigns"* ou *"sobe o site da clinica-ex
    - Verificar se o arquivo do redesign existe em `sites/[slug]/[slug].html`.
    - **HARD GATE Pré-Publish:** O lead SÓ pode avançar para deploy se tiver passado pelas duas revisões obrigatórias instaladas:
      - `/impeccable`: `PASS` ou `PASS_AFTER_CHANGES` registrado.
-     - `/copywriting-marketing`: `PASS` ou `PASS_AFTER_CHANGES` registrado.
-     - `Factual re-check`: confirmado sem mutação de campos protegidos.
+     - `/copywriting-marketing`: `PASS` ou `PASS_AFTER_CHANGES` registrado sob a restrição de melhorar apenas a expressão de proposições suportadas.
+     - `Factual re-check & Auditoria Semântica`: confirmado sem mutação de campos protegidos e com 0 alegações não suportadas (`SEMANTIC_CLAIM_AUDIT: PASS`).
      - Se qualquer skill estiver indisponível (`BLOCKED_SKILL_UNAVAILABLE`), o deploy é BLOQUEADO.
 2. **Preparação de arquivos**:
    - Criar diretório `[repoPath]/[basePath]/[slug]/`.
@@ -119,7 +119,7 @@ A promoção de um lead para o status `publicado` no CRM local SÓ é permitida 
 6. correções do visual craft
 7. `/copywriting-marketing` review
 8. correções de copy e remoção de jargão
-9. factual re-check
+9. factual re-check + auditoria semântica de claims (0 alegações não suportadas)
 10. gates determinísticos (site/hero/reviews/conversão)
 11. proposal QA
 12. Vercel build

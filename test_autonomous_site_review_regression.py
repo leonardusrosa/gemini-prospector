@@ -28,6 +28,7 @@ BASE_MANIFEST = {
     "slug": "synthetic-review-fixture",
     "siteMode": "new_site_concept",
     "preview": True,
+    "semanticClaimAuditRequired": True,
     "gptTaste": {"required": True, "skillSha256Required": True},
     "heroVisual": {
         "required": True,
@@ -1438,10 +1439,112 @@ def test_prepublish_reviews_pass_after_changes_passes():
     manifest = json.loads(json.dumps(BASE_MANIFEST))
     manifest["schemaVersion"] = 2
     def transform(d, *args):
-        return d + "\nIMPECCABLE_REVIEW: PASS_AFTER_CHANGES\nCOPYWRITING_MARKETING_REVIEW: PASS_AFTER_CHANGES\nFACTUAL_RECHECK: PASS\n"
+        return d + "\nIMPECCABLE_REVIEW: PASS_AFTER_CHANGES\nCOPYWRITING_MARKETING_REVIEW: PASS_AFTER_CHANGES\nFACTUAL_RECHECK: PASS\nSEMANTIC_CLAIM_AUDIT: PASS\n"
     code, payload = run_case(manifest=manifest, design_transform=transform)
     assert code == 0
     assert not failed_keys(payload)
+
+
+def test_semantic_claim_pacientes_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Atendimento aos pacientes")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_patient_relationship" in failed_keys(payload)
+
+
+def test_semantic_claim_pacientes_passes_with_evidence():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["factualEvidence"]["patientRelationshipVerified"] = True
+    html = PASS_HTML.replace("Site teste", "Atendimento aos pacientes")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_patient_relationship" not in failed_keys(payload)
+
+
+def test_semantic_claim_clientes_da_clinica_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Avaliações dos clientes da clínica")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_client_relationship" in failed_keys(payload)
+
+
+def test_semantic_claim_nossa_equipe_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Conheça a nossa equipe")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_team" in failed_keys(payload)
+
+
+def test_semantic_claim_diagnostico_individualizado_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Procedimentos com diagnóstico individualizado")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_diagnostic_catalog" in failed_keys(payload)
+
+
+def test_semantic_claim_atendimento_personalizado_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Oferecemos atendimento personalizado")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_service_customization" in failed_keys(payload)
+
+
+def test_semantic_claim_agendar_consulta_fails_without_evidence():
+    html = PASS_HTML.replace("Contato WhatsApp", "Agendar consulta pelo WhatsApp")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_appointments" in failed_keys(payload)
+
+
+def test_semantic_claim_agendar_consulta_passes_with_evidence():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["appointmentsVerified"] = True
+    html = PASS_HTML.replace("Contato WhatsApp", "Agendar consulta pelo WhatsApp")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_appointments" not in failed_keys(payload)
+
+
+def test_semantic_claim_horarios_reservados_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Atendimento com horários reservados")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_appointments" in failed_keys(payload)
+
+
+def test_semantic_claim_ambiente_planejado_conforto_fails_without_evidence():
+    html = PASS_HTML.replace("Site teste", "Ambiente planejado para o seu conforto")
+    code, payload = run_case(html=html)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_facility_comfort" in failed_keys(payload)
+
+
+def test_semantic_claim_centro_de_cidade_fails_when_not_in_center():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["city"] = "Rio Claro"
+    manifest["address"]["neighborhood"] = "Saude"
+    html = PASS_HTML.replace("Site teste", "Atendimento no centro de Rio Claro")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code != 0
+    assert "semantic_claim_no_unsupported_center_location" in failed_keys(payload)
+
+
+def test_semantic_claim_centro_passes_when_neighborhood_is_centro():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["city"] = "Rio Claro"
+    manifest["address"]["neighborhood"] = "Centro"
+    html = PASS_HTML.replace("Site teste", "Atendimento no centro de Rio Claro")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_center_location" not in failed_keys(payload)
+
+
+def test_semantic_claim_review_quotes_do_not_trigger_false_positives():
+    html = PASS_HTML.replace(
+        "</body>",
+        "<blockquote>“Excelente atendimento com pacientes, nossa equipe adorou o ambiente planejado para o seu conforto!”</blockquote></body>",
+    )
+    code, payload = run_case(html=html)
+    assert "semantic_claim_no_unsupported_patient_relationship" not in failed_keys(payload)
+    assert "semantic_claim_no_unsupported_team" not in failed_keys(payload)
+    assert "semantic_claim_no_unsupported_facility_comfort" not in failed_keys(payload)
 
 
 if __name__ == "__main__":

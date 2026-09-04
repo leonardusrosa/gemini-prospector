@@ -534,6 +534,116 @@ def check_factual_traceability(manifest: dict, design_read: str, html: str, revi
     )
 
 
+def check_semantic_claims(manifest: dict, html: str, review: Review) -> None:
+    is_schema_v2 = int(manifest.get("schemaVersion", 1) or 1) >= 2
+    if not (is_schema_v2 or "prepublishReviews" in manifest or manifest.get("semanticClaimAuditRequired")):
+        return
+
+    # Strip non-visible markup: comments, scripts, styles, svgs
+    clean_html = re.sub(r"<!--[\s\S]*?-->", " ", html)
+    clean_html = re.sub(r"<(script|style)\b[^>]*>[\s\S]*?</\1>", " ", clean_html, flags=re.IGNORECASE)
+    clean_html = re.sub(r"<svg\b[^>]*>[\s\S]*?</svg>", " ", clean_html, flags=re.IGNORECASE)
+
+    # Verbatim review quotes inside blockquotes or review cards must not penalize wording written by real reviewers
+    site_copy = re.sub(r"<blockquote\b[^>]*>[\s\S]*?</blockquote>", " ", clean_html, flags=re.IGNORECASE)
+    site_copy = re.sub(r"<(?:article|div)\b[^>]*(?:data-role=[\"']review-carousel-item[\"']|data-review-entry-fingerprint)[^>]*>[\s\S]*?</(?:article|div)>", " ", site_copy, flags=re.IGNORECASE)
+    site_copy = re.sub(r"<p\b[^>]*class=[\"'][^\"']*review-card-text[^\"']*[\"'][^>]*>[\s\S]*?</p>", " ", site_copy, flags=re.IGNORECASE)
+
+    # Capabilities and verified evidence in manifest
+    factual_evidence = manifest.get("factualEvidence", {})
+    capabilities = set(factual_evidence.get("verifiedCapabilities", []))
+    address = manifest.get("address", {})
+    neighborhood = str(address.get("neighborhood", "")).strip().lower()
+    city = str(manifest.get("city", "") or address.get("city", "")).strip().lower()
+
+    patient_verified = bool(factual_evidence.get("patientRelationshipVerified") or "patient_relationships" in capabilities)
+    client_verified = bool(factual_evidence.get("clientRelationshipVerified") or "client_relationships" in capabilities)
+    team_verified = bool(factual_evidence.get("teamVerified") or factual_evidence.get("verifiedStaff") or "staff" in capabilities or manifest.get("heroVisual", {}).get("representsActualExpert"))
+    appointments_verified = bool(manifest.get("appointmentsVerified") or manifest.get("whatsapp", {}).get("appointmentBookingVerified") or "appointments" in capabilities or "online_booking" in capabilities)
+    diagnostic_catalog_verified = bool(factual_evidence.get("diagnosticCatalogVerified") or "diagnostic_catalog" in capabilities)
+    procedure_catalog_verified = bool(factual_evidence.get("procedureCatalogVerified") or "procedure_catalog" in capabilities)
+    facial_procedures_verified = bool(factual_evidence.get("facialHarmonizationVerified") or "facial_harmonization" in capabilities)
+    facility_verified = bool(factual_evidence.get("facilityVerified") or "facility_comfort" in capabilities)
+    service_quality_verified = bool(factual_evidence.get("serviceQualityVerified") or "service_quality" in capabilities)
+
+    # 1. Relational claims
+    has_patient_claim = bool(re.search(r"\bpacientes?\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_patient_relationship",
+        not has_patient_claim or patient_verified,
+        "Copy cannot claim or imply 'paciente(s)' without verified patient relationship evidence",
+    )
+
+    has_client_claim = bool(re.search(r"\bclientes\s+da\s+cl[íi]nica\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_client_relationship",
+        not has_client_claim or client_verified,
+        "Copy cannot claim 'clientes da clínica' without verified client relationship evidence; public review accounts are not automatically verified customers",
+    )
+
+    has_team_claim = bool(re.search(r"\b(?:nossa\s+equipe|nossos\s+profissionais)\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_team",
+        not has_team_claim or team_verified,
+        "Copy cannot claim 'nossa equipe' or 'nossos profissionais' without verified staff/team evidence",
+    )
+
+    # 2. Operational claims
+    has_booking_claim = bool(re.search(r"\b(?:agendar\s+(?:uma\s+)?consulta|agendamento\s+direto|hor[áa]rios\s+reservados)\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_appointments",
+        not has_booking_claim or appointments_verified,
+        "Copy cannot claim 'agendar consulta', 'agendamento direto', or 'horários reservados' without verified appointment capability",
+    )
+
+    has_personalized_claim = bool(re.search(r"\b(?:atendimento\s+personalizado|aten[çc][ãa]o\s+integral)\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_service_customization",
+        not has_personalized_claim or service_quality_verified,
+        "Copy cannot claim 'atendimento personalizado' or 'atenção integral' without verified service evidence",
+    )
+
+    # 3. Medical / process claims
+    has_diagnostic_claim = bool(re.search(r"\bdiagn[óo]stico\s+individualizado\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_diagnostic_catalog",
+        not has_diagnostic_claim or diagnostic_catalog_verified,
+        "Category 'Odontologia' does not imply detailed 'diagnóstico individualizado' without verified catalog evidence",
+    )
+
+    has_preventive_claim = bool(re.search(r"\bavalia[çc][ãa]o,\s+preven[çc][ãa]o\s+e\s+cuidados\s+cl[íi]nicos\s+gerais\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_procedure_catalog",
+        not has_preventive_claim or procedure_catalog_verified,
+        "Category 'Odontologia' does not imply detailed 'avaliação, prevenção e cuidados clínicos gerais' without verified procedure catalog",
+    )
+
+    has_facial_claim = bool(re.search(r"\bcuidado\s+personalizado\s+da\s+sua\s+face\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_facial_procedures",
+        not has_facial_claim or facial_procedures_verified,
+        "Category 'Estética' does not imply facial harmonization or 'cuidado personalizado da sua face' without verified evidence",
+    )
+
+    # 4. Facility claims
+    has_comfort_claim = bool(re.search(r"\bambiente\s+planejado\s+para\s+(?:o\s+seu\s+)?conforto\b", site_copy, re.IGNORECASE))
+    review.check(
+        "semantic_claim_no_unsupported_facility_comfort",
+        not has_comfort_claim or facility_verified,
+        "Copy cannot claim 'ambiente planejado para o seu conforto' without verified facility evidence",
+    )
+
+    # 5. Location inference
+    if city and neighborhood and neighborhood != "centro":
+        center_pattern = rf"\bcentro\s+de\s+{re.escape(city)}\b"
+        has_center_claim = bool(re.search(center_pattern, site_copy, re.IGNORECASE))
+        review.check(
+            "semantic_claim_no_unsupported_center_location",
+            not has_center_claim,
+            f"Address in '{neighborhood}' cannot be described as 'centro de {city.title()}' without independent verification",
+        )
+
+
 def check_motion_and_map(manifest: dict, html: str, design_read: str, review: Review) -> None:
     motion_cfg = section(manifest, "motion")
     if bool(motion_cfg.get("required", True)):
@@ -664,6 +774,16 @@ def check_mandatory_prepublish_reviews(manifest: dict, design_read: str, review:
         f"Pre-publish requires FACTUAL_RECHECK: PASS in design-read.md; found {factual_val or 'none'!r}",
     )
 
+    # 4. Semantic claim audit
+    semantic_audit_raw = extract_design_value(design_read, "SEMANTIC_CLAIM_AUDIT")
+    if is_schema_v2 or "prepublishReviews" in manifest or semantic_audit_raw:
+        semantic_val = (semantic_audit_raw or str(cfg.get("semanticClaimAudit") or "")).strip().upper()
+        review.check(
+            "prepublish_semantic_claim_audit",
+            semantic_val in {"PASS", "SUPPORTED"},
+            f"Pre-publish requires SEMANTIC_CLAIM_AUDIT: PASS in design-read.md; found {semantic_val or 'none'!r}",
+        )
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Prospector deterministic autonomous site review")
@@ -687,6 +807,7 @@ def main() -> int:
     check_hero_visual(manifest, html, design_read, review, base_dir=base_dir)
     check_google_reviews(manifest, html, design_read, review)
     check_factual_traceability(manifest, design_read, html, review)
+    check_semantic_claims(manifest, html, review)
     check_motion_and_map(manifest, html, design_read, review)
     check_socials_and_extras(manifest, html, review)
     check_mandatory_prepublish_reviews(manifest, design_read, review)

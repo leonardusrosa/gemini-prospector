@@ -548,16 +548,30 @@ Verifica qualidade de execução sobre o resultado renderizado (desktop, mobile 
 
 ### B. `/copywriting-marketing` (Conversão & Anti-Jargão de Auditoria)
 Revisa todo o texto voltado ao usuário no site, proposta, botões de CTA, navegação, cabeçalhos de avaliações, notas e assistente.
+- **Restrição estrita:** MELHORAR APENAS A EXPRESSÃO DE PROPOSIÇÕES SUPORTADAS. Nunca criar nova proposição de negócio, médica, operacional ou de relacionamento apenas porque soa melhor.
 - Detecte e elimine vazamento de linguagem interna de auditoria (ex.: *"Área de atuação informada nos registros públicos consultados"*, *"O que aparece no perfil público"*, *"Conteúdo limitado ao que foi verificado para esta primeira versão"*).
-- Substitua cabeçalhos robóticos por redação natural e convidativa (direção recomendada: *"O que dizem sobre a [Clínica]"*).
+- Substitua cabeçalhos robóticos por redação natural e convidativa (direção recomendada: *"O que dizem sobre a [Clínica]"*, *"Algumas avaliações públicas disponíveis no perfil da clínica"*).
 - Elimine ressalvas defensivas que assustam o visitante.
+- **Proibições sem evidência explícita:**
+  - Adjetivos de qualidade: *acolhedor*, *personalizado*, *especializado*, *premium*, *cuidadoso*.
+  - Alegações operacionais: *agendamento*, *horários reservados*, *atendimento individualizado*.
+  - Alegações médicas/processuais: *diagnóstico individualizado*, *prevenção e cuidados clínicos gerais*, *tratamentos personalizados*.
+  - Alegações de estrutura: *ambiente planejado para o seu conforto*, *espaço moderno e equipado*.
+  - Alegações relacionais: *pacientes*, *clientes da clínica*, *nossa equipe*.
+  - Inferência geográfica: endereço em bairro específico não autoriza *"centro de [cidade]"*.
+  - Autores de review público não são automaticamente pacientes/clientes verificados.
 - **Invariante factual:** a melhoria de persuasão NUNCA pode inventar serviços, credenciais, preços, horários, garantias ou alterar depoimentos reais. A evidência continua soberana.
 
-### C. Factual Re-check
-Após as alterações visuais e de copy, revalide a integridade dos dados protegidos. Nenhuma claim factual nova ou alteração de dados de contato/avaliação pode passar.
+### C. Factual Re-check + Auditoria Semântica de Claims
+Após as alterações visuais e de copy, a checagem de campos protegidos NÃO é suficiente:
+1. Calcule o diff de copy voltado ao usuário.
+2. Extraia toda asserção adicionada ou fortalecida.
+3. Classifique como `SUPPORTED`, `NONFACTUAL_UI_COPY` ou `UNSUPPORTED`.
+4. Qualquer alegação `UNSUPPORTED` causa reprovação imediata (`FACTUAL_RECHECK: FAIL` e `SEMANTIC_CLAIM_AUDIT: FAIL`).
+5. Revalide os campos protegidos (telefone, WhatsApp, endereço, rating, contagem de reviews, serviços verificados).
 
 ### D. Semântica Fail-Closed
-Estados permitidos: `PASS` ou `PASS_AFTER_CHANGES`. Se qualquer skill estiver indisponível (`BLOCKED_SKILL_UNAVAILABLE`), o site NÃO pode ser marcado como publish-ready.
+Estados permitidos: `PASS` ou `PASS_AFTER_CHANGES` (além de `SEMANTIC_CLAIM_AUDIT: PASS`). Se qualquer skill estiver indisponível (`BLOCKED_SKILL_UNAVAILABLE`), o site NÃO pode ser marcado como publish-ready.
 
 ### Site Core Rule QA (Obrigatório)
 

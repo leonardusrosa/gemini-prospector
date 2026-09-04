@@ -179,7 +179,27 @@ If the runtime cannot execute one layer, report it as unavailable and stop befor
 Before any lead is considered publish-ready, every prospect site and proposal must pass two mandatory skill reviews using the installed Antigravity/Codex skills by their slash-command names:
 
 1. `/impeccable`: visual craft, typography, spacing, hierarchy, layout rhythm, responsive presentation on rendered desktop and mobile views, and proposal layout. Distinguishes CRITICAL, REAL IMPROVEMENT, and OPTIONAL/TASTE.
-2. `/copywriting-marketing`: reviews all user-facing copy on site, proposal, CTAs, navigation, review headings, disclaimers, and assistant prompts. Eliminates robotic internal/audit jargon while preserving factual evidence invariants.
+2. `/copywriting-marketing`: reviews all user-facing copy on site, proposal, CTAs, navigation, review headings, disclaimers, and assistant prompts. Eliminates robotic internal/audit jargon while strictly constrained to **IMPROVE THE EXPRESSION OF SUPPORTED PROPOSITIONS ONLY**.
+
+### Copywriting constraint: No newly-created unsupported propositions
+
+The copywriter MUST NOT create a new business, medical, operational, or relational proposition merely because it sounds better or more natural.
+
+Risky newly-created propositions that fail without explicit evidence:
+- Quality adjectives: *acolhedor*, *personalizado*, *especializado*, *premium*, *cuidadoso*
+- Operational claims: *agendamento*, *horários reservados*, *atendimento individualizado*
+- Medical/process claims: *diagnóstico*, *prevenção*, *tratamento*, *avaliação clínica*
+- Facility claims: *confortável*, *moderno*, *equipado*, *planejado*
+- Relationship claims: *pacientes*, *clientes da clínica*, *nossa equipe*
+
+### Review identity and relationship semantics
+
+The following semantic inferences are strictly prohibited without evidence:
+- Public review author != automatically verified patient/client/customer (do not refer to reviewers as "nossos pacientes" or "clientes da clínica").
+- Business has WhatsApp != automatically accepts appointments or bookings via WhatsApp.
+- Business category "Odontologia" != detailed diagnostic/preventive/treatment catalog.
+- Business category "Estética" != facial procedures/harmonization/personalized facial care.
+- Address in a specific neighborhood != "centro da cidade".
 
 ### Fail-closed semantics
 
@@ -190,6 +210,19 @@ Allowed review states:
 
 If either skill is unavailable, the agent MUST NOT silently substitute generic LLM taste or claim equivalent PASS. The blocker must be reported explicitly, and the lead cannot advance to publish readiness.
 
+### Upgraded Factual Recheck & Semantic Claim Audit
+
+"Protected fields unchanged" is **NOT sufficient** for `FACTUAL_RECHECK: PASS`.
+
+`FACTUAL_RECHECK` must include a semantic claim audit after copy edits:
+1. Compute user-facing copy diff.
+2. Extract every added or materially strengthened assertion.
+3. Classify each assertion as:
+   - `SUPPORTED`: grounded in verified factual evidence (record source/reference).
+   - `NONFACTUAL_UI_COPY`: neutral navigation/layout phrasing that asserts no factual capabilities.
+   - `UNSUPPORTED`: any claim exceeding evidence.
+4. Any `UNSUPPORTED` claim causes immediate `FACTUAL_RECHECK: FAIL` and `SEMANTIC_CLAIM_AUDIT: FAIL`.
+
 ### Canonical publish sequence
 
 1. evidence verified
@@ -198,9 +231,9 @@ If either skill is unavailable, the agent MUST NOT silently substitute generic L
 4. browser QA desktop/mobile
 5. `/impeccable` review
 6. impeccable corrections
-7. `/copywriting-marketing` review
+7. `/copywriting-marketing` review (under supported propositions constraint)
 8. copy corrections
-9. factual re-check
+9. factual re-check + semantic claim audit (extract claims, classify, require 0 unsupported)
 10. deterministic site/review/hero/conversion gates
 11. proposal QA
 12. Vercel build

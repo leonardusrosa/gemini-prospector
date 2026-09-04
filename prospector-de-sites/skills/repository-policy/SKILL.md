@@ -272,24 +272,37 @@ Apply `CRITICAL` and genuine `REAL IMPROVEMENT` fixes before proceeding. Do not 
 
 After visual corrections, invoke `/copywriting-marketing` to review all user-facing copy on the site, proposal, CTA buttons, navigation, review headings/context, disclaimers, assistant launcher/greeting, and empty/disabled states.
 
+Constraint: **IMPROVE THE EXPRESSION OF SUPPORTED PROPOSITIONS ONLY**.
+The copywriter must not invent new business, medical, operational, or relational propositions merely because they sound better or more natural.
+
 Specifically detect and eliminate:
 - technically correct but unnatural wording;
-- internal audit/evidence jargon leaking into customer-facing copy (e.g. "Área de atuação informada nos registros públicos consultados", "O que aparece no perfil público", "Conteúdo limitado ao que foi verificado para esta primeira versão");
+- internal audit/evidence jargon leaking into customer-facing copy;
 - robotic or bureaucratic headings;
 - vague generic marketing clichés;
 - unnecessary defensive caveats in prominent positions;
 - awkward or passive CTAs;
 - overexplaining database or provenance mechanics;
-- copy reading like internal QA rather than a real business website.
+- copy reading like internal QA rather than a real business website;
+- **unsupported propositions**: quality adjectives (*acolhedor, personalizado, especializado, premium*), operational claims (*agendamento, horários reservados*), medical/process claims (*diagnóstico individualizado, prevenção e cuidados clínicos gerais*), facility claims (*ambiente planejado para o seu conforto*), and relationship claims (*pacientes, clientes da clínica, nossa equipe*).
 
-Preferred heading direction for reviews: natural customer-facing language such as "O que dizem sobre a [Clínica]" while keeping provenance/disclosure precise but unobtrusive.
+Preferred heading direction for reviews: natural customer-facing language such as "O que dizem sobre a [Clínica]" while keeping provenance/disclosure precise but unobtrusive (e.g. "Algumas avaliações públicas disponíveis no perfil da clínica."). Never label public reviewers as "pacientes" or "clientes" without verified relationship evidence.
 
 **Evidence guardrails**:
 Persuasive copy must NOT invent unsupported services, credentials, guarantees, prices, hours, fake medical claims, altered review quotes, or altered aggregate numbers. Factual evidence remains authoritative.
 
-### 3. Factual re-check after copy edits
+### 3. Factual re-check and Semantic Claim Audit
 
-After both review passes and edits, re-run protected factual comparison. Ensure copy edits did not introduce new factual claims or mutate protected fields.
+Protected-field comparison alone is NOT sufficient.
+
+After copy edits, run `FACTUAL_RECHECK` with a **semantic claim audit**:
+1. Compute user-facing copy diff.
+2. Extract every added or materially strengthened assertion.
+3. Classify each assertion as `SUPPORTED`, `NONFACTUAL_UI_COPY`, or `UNSUPPORTED`.
+4. For `SUPPORTED`, record evidence source/reference.
+5. Any `UNSUPPORTED` claim results in `FACTUAL_RECHECK: FAIL` and `SEMANTIC_CLAIM_AUDIT: FAIL`.
+
+Protected fields (phone, WhatsApp, address, rating, count, verified services) remain checked separately. Both must pass.
 
 ### 4. Fail-closed skill semantics
 
