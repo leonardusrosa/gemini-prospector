@@ -1445,6 +1445,50 @@ def test_prepublish_reviews_pass_after_changes_passes():
     assert not failed_keys(payload)
 
 
+def test_gpt_taste_design_decision_blocked_fails():
+    def transform(d, *args):
+        return d + "\nGPT_TASTE_DESIGN_DECISION: BLOCKED_SKILL_UNAVAILABLE\n"
+    code, payload = run_case(design_transform=transform)
+    assert code != 0
+    assert "gpt_taste_design_decision_not_blocked" in failed_keys(payload)
+
+
+def test_gpt_taste_design_decision_passes():
+    def transform(d, *args):
+        return d + "\nGPT_TASTE_DESIGN_DECISION: PASS_AFTER_DIRECTION_CHANGE\nGPT_TASTE_IMPLEMENTATION_REVIEW: PASS\n"
+    code, payload = run_case(design_transform=transform)
+    assert code == 0
+    assert not failed_keys(payload)
+
+
+def test_gpt_taste_impl_review_blocked_fails():
+    def transform(d, *args):
+        return d + "\nGPT_TASTE_IMPLEMENTATION_REVIEW: BLOCKED_SKILL_UNAVAILABLE\n"
+    code, payload = run_case(design_transform=transform)
+    assert code != 0
+    assert "gpt_taste_impl_review_not_blocked" in failed_keys(payload)
+
+
+def test_prepublish_reviews_impeccable_escalate_to_gpt_taste_fails():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["schemaVersion"] = 2
+    def transform(d, *args):
+        return d + "\nIMPECCABLE_REVIEW: ESCALATE_TO_GPT_TASTE\nCOPYWRITING_MARKETING_REVIEW: PASS\nFACTUAL_RECHECK: PASS\n"
+    code, payload = run_case(manifest=manifest, design_transform=transform)
+    assert code != 0
+    assert "impeccable_review_not_escalated" in failed_keys(payload)
+
+
+def test_prepublish_reviews_copywriting_escalate_to_gpt_taste_fails():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["schemaVersion"] = 2
+    def transform(d, *args):
+        return d + "\nIMPECCABLE_REVIEW: PASS\nCOPYWRITING_MARKETING_REVIEW: ESCALATE_TO_GPT_TASTE\nFACTUAL_RECHECK: PASS\n"
+    code, payload = run_case(manifest=manifest, design_transform=transform)
+    assert code != 0
+    assert "copywriting_marketing_review_not_escalated" in failed_keys(payload)
+
+
 def test_semantic_claim_pacientes_fails_without_evidence():
     html = PASS_HTML.replace("Site teste", "Atendimento aos pacientes")
     code, payload = run_case(html=html)

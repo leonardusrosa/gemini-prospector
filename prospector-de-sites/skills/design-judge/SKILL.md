@@ -10,19 +10,13 @@ This is the portable fallback design critic for Prospector.
 
 Use the current external `gpt-taste` skill when it is installed and readable. When it is not available in the active runtime, use this repository-owned judge instead. Never fabricate `GPT_TASTE_READ: PASS`.
 
-## 1. Role
+## 1. Role: Fallback Frontend Design Owner & Art Director
 
-The design judge is a critic/editor, not a factual source and not the production renderer.
+When external `gpt-taste` is unavailable, this design judge acts as the portable fallback Frontend Design Owner and Art Director.
 
-It evaluates whether a site/direction is:
+It owns visual direction, composition, layout architecture, hierarchy, typography direction, hero composition, section sequencing, density/whitespace, review-section presentation, visual personality, interaction style, responsive design intent, and anti-template/anti-slop judgment.
 
-- specific to the actual business;
-- visually coherent;
-- non-generic;
-- conversion-clear;
-- responsive by art direction rather than simple stacking;
-- feasible for accessibility/performance;
-- free of obvious AI/template tropes.
+It evaluates upstream OpenDesign exploratory candidates, makes the design decision (`DESIGN_JUDGE_DESIGN_DECISION: PASS | PASS_AFTER_DIRECTION_CHANGE`), and verifies execution after implementation.
 
 Prospector factual evidence and hard repository rules always outrank the design judge.
 

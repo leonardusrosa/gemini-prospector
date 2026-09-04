@@ -1,6 +1,6 @@
 ---
 name: redesign-premium
-description: Use esta skill ao criar um conceito de site novo para um prospecto sem site OU redesenhar o site existente de um cliente prospectado. Gera HTML/CSS/JS estático, factual, responsivo, contextualmente orientado e de alta conversão. Usa gpt-taste como direção criativa principal, design-taste-frontend como apoio anti-slop/contextual, uma camada obrigatória de motion/behavior e Impeccable apenas como QA final. Acione quando o usuário pedir "redesenhar site", "criar site do cliente", "conceito de site", "melhorar página", "refazer o site" ou equivalente.
+description: Use esta skill ao criar um conceito de site novo para um prospecto sem site OU redesenhar o site existente de um cliente prospectado. Gera HTML/CSS/JS estático, factual, responsivo, contextualmente orientado e de alta conversão. Usa gpt-taste como FRONTEND DESIGN OWNER / ART DIRECTOR, OpenDesign para exploração upstream, /impeccable como bounded execution QA e /copywriting-marketing para mensagem e conversão sob proposições suportadas. Acione quando o usuário pedir "redesenhar site", "criar site do cliente", "conceito de site", "melhorar página", "refazer o site" ou equivalente.
 ---
 
 # Redesign & Novo Conceito de Site
@@ -19,8 +19,8 @@ A arquitetura de saída continua estática: `sites/[slug]/[slug].html`, CSS inli
 Antes de qualquer design, construção, revisão ou QA de site, leia e obedeça `../website-core-rules/SKILL.md` e `~/.gemini/config/skills/gpt-taste/SKILL.md`.
 Elas têm precedência absoluta sobre hábitos de LLM e templates pré-concebidos:
 
-- **HARD GATE gpt-taste:** Leia o arquivo atual de `gpt-taste/SKILL.md`. Não confie em memória. O QA final FALHA se `GPT_TASTE_READ != PASS`.
-- **Design Read Obrigatório:** Crie/atualize `sites/[slug]/design-read.md` registrando a leitura de `gpt-taste`, `Design Variance`, `Motion`, `Density` e as decisões visuais antes de escrever código.
+- **HARD GATE gpt-taste (Frontend Design Owner / Art Director):** Leia o arquivo atual de `gpt-taste/SKILL.md`. Não confie em memória. O QA final FALHA se `GPT_TASTE_READ != PASS` ou se `GPT_TASTE_DESIGN_DECISION` estiver ausente/bloqueado.
+- **Design Read Obrigatório:** Crie/atualize `sites/[slug]/design-read.md` registrando a leitura de `gpt-taste`, `GPT_TASTE_DESIGN_DECISION`, `Design Variance`, `Motion`, `Density` e as decisões visuais antes de escrever código.
 - **SEM tags, pills, chips ou badges decorativos** (proibido metadata-first capsule UI em hero, cards ou qualquer seção).
 - **SEM emoji na UI pública** (use ícones reais em SVG/vetor).
 - **SEM travessões em copy pública (`—` ou `–`)** (reescreva a pontuação de forma natural com vírgulas, pontos ou quebras).
@@ -33,16 +33,17 @@ Elas têm precedência absoluta sobre hábitos de LLM e templates pré-concebido
 
 ## 1. Ordem Absoluta de Prioridades
 
-1. **Integridade factual** — zero invenções.
+1. **Integridade factual** — zero invenções. A evidência permanece soberana.
 2. **Identidade e ativos reais** — logo, fotos, profissional, local, produto, cores e conteúdo reais.
 3. **Referências/requisitos do usuário** — extrair princípios, não clonar skins.
-4. **`gpt-taste` = direção criativa PRIMÁRIA** — composição, layout variance, hierarquia, ritmo, art direction e motion concepts.
-5. **`design-taste-frontend` = apoio contextual/anti-slop** — detectar clichês e verificar adequação ao negócio.
-6. **Arquitetura estática do Prospector** — HTML/CSS/JS puro.
-7. **Motion & Behavior Pass** — obrigatório decidir comportamento, mesmo que `Motion = 0`.
-8. **`/impeccable` = QA visual e polimento de execução** — desktop, mobile e proposta; distingue CRITICAL, REAL IMPROVEMENT e OPTIONAL/TASTE.
-9. **`/copywriting-marketing` = revisão de copy e conversão** — elimina jargões de auditoria interna, frases robóticas e frieza burocrática, mantendo limites factuais estritos.
-10. **Factual Re-check** — revalida integridade de dados protegidos após edições de copy.
+4. **`gpt-taste` = FRONTEND DESIGN OWNER / ART DIRECTOR** — visual direction, composition, layout architecture, hierarquia, tipografia, hero composition, section sequencing, density/whitespace, apresentação da seção de reviews, personalidade visual, estilo de interação, intenção responsiva e julgamento anti-template/anti-slop. Pode exigir redesign estrutural quando a implementação não atingir a qualidade pretendida (não se limita a polimento menor).
+5. **OpenDesign = exploração/pesquisa upstream** — gera duas direções distintas e candidatos `DESIGN.md`; não tem autoridade final.
+6. **`design-taste-frontend` = apoio contextual/anti-slop** — detectar clichês e verificar adequação ao negócio.
+7. **Arquitetura estática do Prospector** — HTML/CSS/JS puro.
+8. **Motion & Behavior Pass** — obrigatório decidir comportamento, mesmo que `Motion = 0`.
+9. **`/impeccable` = QA bounded de execução** — craft pixel/espaçamento/responsivo/overflow/tap targets (desktop, mobile e proposta); distingue CRITICAL, REAL IMPROVEMENT e OPTIONAL/TASTE. NÃO é art director. Não redesenha o site; se julgar a direção fundamentalmente defeituosa, retorna `ESCALATE_TO_GPT_TASTE`.
+10. **`/copywriting-marketing` = revisão de mensagem e conversão** — elimina jargões de auditoria interna, frases robóticas e frieza burocrática, sob a restrição estrita: MELHORAR APENAS A EXPRESSÃO DE PROPOSIÇÕES SUPORTADAS. Recomendações que alterem a estrutura do layout voltam para o GPT-Taste.
+11. **Factual Re-check & Auditoria Semântica** — revalida integridade de dados protegidos e garante 0 alegações não suportadas após edições de copy.
 
 Quando as skills estiverem instaladas, leia seus `SKILL.md` atuais. Não presuma regras antigas de memória.
 
@@ -539,15 +540,23 @@ Dependências JS externas só quando justificadas e com fallback.
 
 Após implementação e renderização no navegador, e antes do review determinístico final e deploy, execute as duas revisões obrigatórias via slash commands:
 
-### A. `/impeccable` (Visual Craft & Layout)
-Verifica qualidade de execução sobre o resultado renderizado (desktop, mobile e proposta); não inicia outro redesign.
+### A. `/impeccable` (Bounded Execution QA)
+Verifica qualidade de execução sobre o resultado renderizado (desktop, mobile e proposta); **NÃO é art director e não inicia outro redesign**.
+- Owns: pixel/craft quality, espaçamento/ritmo, comportamento responsivo, ausência de overflow horizontal, crop e contraste WCAG AA, focus/hover states, tap targets, alinhamento, defeitos de ritmo visual, estados incompletos de UI e polimento moderado.
 - Classifique findings em `CRITICAL`, `REAL IMPROVEMENT` e `OPTIONAL/TASTE`.
 - Aplique obrigatoriamente `CRITICAL` e `REAL IMPROVEMENT`. Não redesenhe infinitamente por gosto opcional.
+- **NÃO DEVE:** substituir a direção visual escolhida por gosto pessoal, redesenhar o site inteiro ou sobrepor a direção de arte aprovada pelo GPT-Taste sem um defeito concreto de usabilidade ou qualidade.
+- Se acreditar que a direção de design em si é fundamentalmente defeituosa, deve retornar:
+  ```text
+  ESCALATE_TO_GPT_TASTE
+  ```
+  em vez de tentar redesenhá-la silenciosamente.
 - Teste pelo menos: 360, 390/393, 768, 1024, 1440.
-- Verifique: hero composition, tipografia, contraste WCAG AA, hierarquia, espaçamento/ritmo, cards/reviews, mapa embed, launcher do assistente, tap targets, zero overflow horizontal, hero crop correto, ausência de badges/pills decorativos, motion sem jank e fallback no-JS.
 
-### B. `/copywriting-marketing` (Conversão & Anti-Jargão de Auditoria)
+### B. `/copywriting-marketing` (Bounded Mensagem & Conversão)
 Revisa todo o texto voltado ao usuário no site, proposta, botões de CTA, navegação, cabeçalhos de avaliações, notas e assistente.
+- Owns: linguagem voltada ao cliente, headings, redação de CTAs, hierarquia de mensagens, clareza, persuasão, comunicação da proposta e remoção de jargão de auditoria.
+- **NÃO possui** o design visual. Pode recomendar mudanças de layout APENAS quando diretamente necessárias para a hierarquia da mensagem (ex.: CTA soterrado, hierarquia de títulos conflita com mensagem, proposta de valor essencial aparece tarde demais). Tais recomendações voltam ao GPT-Taste se alterarem a estrutura visual do frontend.
 - **Restrição estrita:** MELHORAR APENAS A EXPRESSÃO DE PROPOSIÇÕES SUPORTADAS. Nunca criar nova proposição de negócio, médica, operacional ou de relacionamento apenas porque soa melhor.
 - Detecte e elimine vazamento de linguagem interna de auditoria (ex.: *"Área de atuação informada nos registros públicos consultados"*, *"O que aparece no perfil público"*, *"Conteúdo limitado ao que foi verificado para esta primeira versão"*).
 - Substitua cabeçalhos robóticos por redação natural e convidativa (direção recomendada: *"O que dizem sobre a [Clínica]"*, *"Algumas avaliações públicas disponíveis no perfil da clínica"*).
@@ -562,7 +571,28 @@ Revisa todo o texto voltado ao usuário no site, proposta, botões de CTA, naveg
   - Autores de review público não são automaticamente pacientes/clientes verificados.
 - **Invariante factual:** a melhoria de persuasão NUNCA pode inventar serviços, credenciais, preços, horários, garantias ou alterar depoimentos reais. A evidência continua soberana.
 
-### C. Factual Re-check + Auditoria Semântica de Claims
+### C. Hierarquia de Resolução de Conflitos de Autoridade
+
+Em caso de divergência, a autoridade resolve estritamente nesta ordem:
+
+```text
+FACTUAL/EVIDENCE SAFETY
+>
+GPT-TASTE DESIGN DIRECTION
+>
+/COPYWRITING-MARKETING FOR MESSAGE/COPY
+>
+/IMPECCABLE FOR EXECUTION CRAFT
+```
+
+Exemplos:
+- **Impeccable não gosta do layout editorial mas não aponta defeito técnico:** a decisão do GPT-Taste prevalece.
+- **Copywriting diz que a hierarquia do headline enfraquece a conversão:** GPT-Taste avalia a alteração estrutural no visual.
+- **GPT-Taste quer uma alegação de serviço sem respaldo probatório:** a evidência vence; o design se adapta.
+- **Impeccable encontra overflow no mobile:** a correção técnica é obrigatória, independente de preferência estética.
+- **Soberania factual:** nenhuma skill (GPT-Taste, Impeccable, OpenDesign, Copywriting) pode ignorar a evidência factual.
+
+### D. Factual Re-check + Auditoria Semântica de Claims
 Após as alterações visuais e de copy, a checagem de campos protegidos NÃO é suficiente:
 1. Calcule o diff de copy voltado ao usuário.
 2. Extraia toda asserção adicionada ou fortalecida.
@@ -570,7 +600,7 @@ Após as alterações visuais e de copy, a checagem de campos protegidos NÃO é
 4. Qualquer alegação `UNSUPPORTED` causa reprovação imediata (`FACTUAL_RECHECK: FAIL` e `SEMANTIC_CLAIM_AUDIT: FAIL`).
 5. Revalide os campos protegidos (telefone, WhatsApp, endereço, rating, contagem de reviews, serviços verificados).
 
-### D. Semântica Fail-Closed
+### E. Semântica Fail-Closed
 Estados permitidos: `PASS` ou `PASS_AFTER_CHANGES` (além de `SEMANTIC_CLAIM_AUDIT: PASS`). Se qualquer skill estiver indisponível (`BLOCKED_SKILL_UNAVAILABLE`), o site NÃO pode ser marcado como publish-ready.
 
 ### Site Core Rule QA (Obrigatório)
@@ -595,14 +625,12 @@ Faça **1 passe consolidado de correção** e uma rechecagem.
 ### QA específico de hero proeminente
 
 Desktop:
-
 - o visual principal possui território próprio?
 - está sendo lavado por overlay?
 - copy está curta?
 - CTA é óbvio?
 
 Mobile:
-
 - visual principal ocupa a primeira metade quando esse é o conceito?
 - copy foi realmente reduzida?
 - CTA aparece cedo?
@@ -610,25 +638,34 @@ Mobile:
 
 ---
 
-## 16. Workflow Permanente
+## 16. Workflow Permanente (Sequência Canônica de 18 Passos)
 
 ```text
-RESEARCH
-→ FACTUAL SOURCE SET
-→ DESIGN READ
-→ SELECT HERO MODE
-→ DEFINE CREATIVE INTERVENTION SCOPE
-→ GPT-TASTE ART DIRECTION
-→ STATIC BUILD
-→ MOBILE-SPECIFIC PASS
-→ MOTION & BEHAVIOR PASS
-→ IMPECCABLE QA
-→ SCREENSHOT REVIEW
-→ HUMAN APPROVAL
+1. Coleta e verificação de evidências
+2. Pesquisa upstream OpenDesign + alternativas (2 direções)
+3. Decisão de direção de arte do GPT-Taste (Frontend Design Owner)
+4. Implementação estática HTML/CSS/JS pura
+5. Browser QA (desktop 1440x900 e mobile 390x844)
+6. Revisão de implementação pelo GPT-Taste (verificar execução)
+7. Correções de design se exigidas
+8. /impeccable: revisão de execução de craft (bounded QA)
+9. Correções do Impeccable
+10. /copywriting-marketing: revisão de mensagem/conversão
+11. Correções de copy
+12. Semantic claim audit + Factual re-check (0 alegações não suportadas)
+13. Gates determinísticos (site/hero/reviews/conversão)
+14. Proposal QA
+15. Vercel build
+16. Deploy
+17. Live browser QA
+18. Promoção local no CRM para publicado
 ```
 
-Durante benchmark/teste, pare para aprovação humana antes de deploy/outreach.
+> **Atenção:** O GPT-Taste intervém em dois momentos cruciais:
+> - **Antes da implementação:** dono da direção de arte (`GPT_TASTE_DESIGN_DECISION`).
+> - **Depois do browser QA:** verificação se a implementação realmente reflete a direção aprovada (`GPT_TASTE_IMPLEMENTATION_REVIEW`).
 
+Durante benchmark/teste, pare para aprovação humana antes de deploy/outreach.
 Depois de aprovação, o fluxo normal pode seguir para proposta/deploy conforme as outras skills.
 
 ---

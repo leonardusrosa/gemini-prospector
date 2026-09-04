@@ -22,9 +22,12 @@ def _marker(text: str, key: str) -> str | None:
 
 
 def _design_judge_reviewed(cfg: dict[str, Any], design_read: str) -> bool:
+    gpt_decision = (_marker(design_read, "GPT_TASTE_DESIGN_DECISION") or str(cfg.get("gptTasteDesignDecision") or "")).strip().upper()
+    if gpt_decision in {"PASS", "PASS_AFTER_DIRECTION_CHANGE"}:
+        return True
     legacy = cfg.get("gptTasteSelectionReviewed") is True and _marker(
         design_read, "OPEN_DESIGN_GPT_TASTE_REVIEW"
-    ) == "PASS"
+    ) in {"PASS", "PASS_AFTER_DIRECTION_CHANGE"}
     portable = cfg.get("designJudgeSelectionReviewed") is True and _marker(
         design_read, "OPEN_DESIGN_DESIGN_JUDGE_REVIEW"
     ) == "PASS"
@@ -97,10 +100,17 @@ def validate_open_design_direction(
                 if not candidate.is_file():
                     errors.append(f"OpenDesign DESIGN.md file is missing: {design_md_path}")
 
+        decision_raw = (_marker(design_read, "GPT_TASTE_DESIGN_DECISION") or str(cfg.get("gptTasteDesignDecision") or "")).strip().upper()
+        if decision_raw == "BLOCKED_SKILL_UNAVAILABLE":
+            errors.append("GPT_TASTE_DESIGN_DECISION is BLOCKED_SKILL_UNAVAILABLE; publish-readiness requires gpt-taste creative review.")
+        elif decision_raw and decision_raw not in {"PASS", "PASS_AFTER_DIRECTION_CHANGE"}:
+            errors.append(f"GPT_TASTE_DESIGN_DECISION must be PASS or PASS_AFTER_DIRECTION_CHANGE; found {decision_raw!r}.")
+
         if not _design_judge_reviewed(cfg, design_read):
             errors.append(
                 "OpenDesign used state requires a verified design selection review: "
-                "either legacy gptTasteSelectionReviewed + OPEN_DESIGN_GPT_TASTE_REVIEW: PASS "
+                "either GPT_TASTE_DESIGN_DECISION: PASS/PASS_AFTER_DIRECTION_CHANGE "
+                "or legacy gptTasteSelectionReviewed + OPEN_DESIGN_GPT_TASTE_REVIEW: PASS "
                 "or designJudgeSelectionReviewed + OPEN_DESIGN_DESIGN_JUDGE_REVIEW: PASS."
             )
 

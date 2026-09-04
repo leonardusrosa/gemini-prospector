@@ -8,16 +8,20 @@ description: Mandatory creative-direction pass for new Prospector website/landin
 
 Use this skill for every new first-version public website or landing page created by Prospector under review-manifest schema v2 or later.
 
-OpenDesign is a **creative-direction tool**, not the factual source, production renderer, or final QA authority.
+OpenDesign is an **upstream exploration and research mechanism**, NOT the final design authority, factual source, production renderer, or deploy gate.
 
-The intended stack is:
+The canonical flow is:
 
 ```text
 Prospector research/evidence
-    -> OpenDesign: 2 distinct art directions + DESIGN.md
-    -> gpt-taste: critique/select/refine
+    -> OpenDesign upstream exploration: 2 distinct directions + DESIGN.md candidates
+    -> GPT-Taste (Frontend Design Owner): art-direction decision & candidate selection
     -> Prospector: production HTML/CSS/JS implementation
-    -> autonomous/browser/deploy QA
+    -> Browser QA
+    -> GPT-Taste implementation review
+    -> /impeccable execution craft review
+    -> /copywriting-marketing message review
+    -> Deterministic gates & deploy QA
 ```
 
 ## 1. Authority and precedence
@@ -27,8 +31,8 @@ The following always outrank OpenDesign output:
 1. verified factual evidence and source truth;
 2. `repository-policy` and `website-core-rules`;
 3. verified real assets and user requirements;
-4. current `gpt-taste` guidance;
-5. OpenDesign art direction;
+4. current `gpt-taste` art direction (Frontend Design Owner);
+5. OpenDesign exploratory candidates;
 6. implementation convenience.
 
 OpenDesign may propose composition, typography, rhythm, image treatment, motion, spacing, component grammar, and visual hierarchy. It may not establish or modify factual claims.
@@ -219,28 +223,42 @@ Anti-slop exclusions
 
 Do not put factual business claims in `DESIGN.md` unless they are separately traceable to Prospector evidence.
 
-## 7. gpt-taste is the selector/editor
+## 7. GPT-Taste is Frontend Design Owner / Art Director
 
-After OpenDesign produces the two directions, read the current installed `gpt-taste/SKILL.md` and critique both directions.
+OpenDesign generates candidates, but `gpt-taste` is the explicit creative owner and art director of prospect-site frontend design.
 
-Score qualitatively against:
+After OpenDesign exploration produces two distinct candidates:
+1. Read the current installed `gpt-taste/SKILL.md`.
+2. Critique both directions against:
+   - business specificity;
+   - visual originality without novelty-for-novelty's-sake;
+   - hierarchy;
+   - hero quality and full-bleed invariant compliance;
+   - section rhythm and density/whitespace;
+   - typography direction;
+   - review-section presentation;
+   - mobile composition;
+   - conversion clarity;
+   - accessibility/performance feasibility;
+   - anti-template / anti-AI-slop judgment;
+   - implementation maintainability.
+3. GPT-Taste reviews the alternatives and:
+   - **selects one**;
+   - **rejects both and requests another direction** when necessary;
+   - **combines compatible ideas** when justified;
+   - **records the final design rationale**.
 
-- business specificity;
-- visual originality without novelty-for-novelty's-sake;
-- hierarchy;
-- hero quality;
-- section rhythm;
-- typography;
-- image use;
-- mobile composition;
-- conversion clarity;
-- accessibility/performance feasibility;
-- AI-slop/trope risk;
-- implementation maintainability.
+Canonical state:
+```text
+GPT_TASTE_DESIGN_DECISION:
+PASS
+PASS_AFTER_DIRECTION_CHANGE
+BLOCKED_SKILL_UNAVAILABLE
+```
 
-Select one direction or synthesize a clearly documented hybrid.
+**HARD GATE:** No frontend may proceed to final implementation without a recorded GPT-Taste design decision.
 
-Do not let OpenDesign self-select and self-approve its own output.
+OpenDesign must never self-select or self-approve its own output.
 
 ## 8. Required design-read evidence
 
@@ -256,6 +274,7 @@ OPEN_DESIGN_DIRECTIONS_GENERATED: 2
 OPEN_DESIGN_SELECTED_DIRECTION: <name>
 OPEN_DESIGN_DESIGN_MD: open-design/DESIGN.md
 OPEN_DESIGN_IMPLEMENTATION_ROLE: DIRECTION_ONLY
+GPT_TASTE_DESIGN_DECISION: PASS
 OPEN_DESIGN_GPT_TASTE_REVIEW: PASS
 ```
 

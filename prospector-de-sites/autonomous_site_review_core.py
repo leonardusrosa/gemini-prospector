@@ -84,6 +84,40 @@ def check_gpt_taste(manifest: dict, design_read: str, review: Review) -> None:
             actual_sha = hashlib.sha256(actual_path.read_bytes()).hexdigest()
             review.check("gpt_taste_sha_matches", actual_sha == gpt_sha, "Recorded GPT_TASTE_SHA256 must match current file")
 
+    # Pre-implementation art-direction owner decision
+    decision_raw = extract_design_value(design_read, "GPT_TASTE_DESIGN_DECISION") or str(gpt_cfg.get("designDecision") or "")
+    if decision_raw:
+        decision_val = decision_raw.strip().upper()
+        if decision_val == "BLOCKED_SKILL_UNAVAILABLE":
+            review.check(
+                "gpt_taste_design_decision_not_blocked",
+                False,
+                "GPT-Taste design decision is BLOCKED_SKILL_UNAVAILABLE; publish-readiness requires gpt-taste creative review",
+            )
+        else:
+            review.check(
+                "gpt_taste_design_decision_pass",
+                decision_val in {"PASS", "PASS_AFTER_DIRECTION_CHANGE"},
+                f"GPT_TASTE_DESIGN_DECISION must be PASS or PASS_AFTER_DIRECTION_CHANGE; found {decision_val!r}",
+            )
+
+    # Post-implementation execution verification review
+    impl_raw = extract_design_value(design_read, "GPT_TASTE_IMPLEMENTATION_REVIEW") or str(gpt_cfg.get("implementationReview") or "")
+    if impl_raw:
+        impl_val = impl_raw.strip().upper()
+        if impl_val == "BLOCKED_SKILL_UNAVAILABLE":
+            review.check(
+                "gpt_taste_impl_review_not_blocked",
+                False,
+                "GPT-Taste implementation review is BLOCKED_SKILL_UNAVAILABLE; publish-readiness requires gpt-taste execution verification",
+            )
+        else:
+            review.check(
+                "gpt_taste_impl_review_pass",
+                impl_val in {"PASS", "PASS_AFTER_CHANGES"},
+                f"GPT_TASTE_IMPLEMENTATION_REVIEW must be PASS or PASS_AFTER_CHANGES; found {impl_val!r}",
+            )
+
 
 def check_hero_visual(manifest: dict, html: str, design_read: str, review: Review, base_dir: Path | None = None) -> None:
     hero_cfg = section(manifest, "heroVisual")
@@ -750,6 +784,7 @@ def check_mandatory_prepublish_reviews(manifest: dict, design_read: str, review:
 
     valid_states = {"PASS", "PASS_AFTER_CHANGES"}
     blocked_state = "BLOCKED_SKILL_UNAVAILABLE"
+    escalate_state = "ESCALATE_TO_GPT_TASTE"
 
     # 1. /impeccable review
     impeccable_val = (impeccable_raw or str(cfg.get("impeccable") or "")).strip().upper()
@@ -758,6 +793,12 @@ def check_mandatory_prepublish_reviews(manifest: dict, design_read: str, review:
             "impeccable_review_not_blocked",
             False,
             "Mandatory /impeccable review is BLOCKED_SKILL_UNAVAILABLE; publish-readiness requires the skill to be available and run",
+        )
+    elif impeccable_val == escalate_state:
+        review.check(
+            "impeccable_review_not_escalated",
+            False,
+            "IMPECCABLE_REVIEW returned ESCALATE_TO_GPT_TASTE; fundamental design direction issue requires GPT-Taste resolution before publication",
         )
     else:
         review.check(
@@ -773,6 +814,12 @@ def check_mandatory_prepublish_reviews(manifest: dict, design_read: str, review:
             "copywriting_marketing_review_not_blocked",
             False,
             "Mandatory /copywriting-marketing review is BLOCKED_SKILL_UNAVAILABLE; publish-readiness requires the skill to be available and run",
+        )
+    elif copywriting_val == escalate_state:
+        review.check(
+            "copywriting_marketing_review_not_escalated",
+            False,
+            "COPYWRITING_MARKETING_REVIEW returned ESCALATE_TO_GPT_TASTE; structural layout change required by copy hierarchy must be evaluated by GPT-Taste",
         )
     else:
         review.check(

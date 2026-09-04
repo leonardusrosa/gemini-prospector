@@ -143,13 +143,79 @@ Vendor-specific integrations may exist, but they are adapters, not repository tr
 
 When a task can be completed by a repository script or deterministic gate, prefer that over an agent's prose judgment.
 
-## 7. Design-runtime rule
+## 7. Frontend Design Governance — GPT-Taste as Design Owner
 
-OpenDesign is a creative-direction MCP layer, not a production authority. A runtime may use OpenDesign through any compatible MCP client.
+### 7.1 Design Authority: GPT-Taste = Frontend Design Owner / Art Director
+
+`gpt-taste` is the explicit creative owner and art director of prospect-site frontend design.
+
+GPT-Taste owns:
+- visual direction
+- composition
+- layout architecture
+- hierarchy
+- typography direction
+- hero composition
+- section sequencing
+- density / whitespace
+- review-section presentation
+- visual personality
+- interaction style
+- responsive design intent
+- anti-template / anti-AI-slop judgment
+
+GPT-Taste may require structural redesign when the chosen implementation does not meet the intended design quality. Its authority is not limited to minor polish.
 
 For expert/expert-placeholder heroes, `expert-hero-full-bleed` remains a hard invariant regardless of the agent, OpenDesign direction, design model, or runtime.
 
-The design judge must apply the canonical Prospector design criteria. If an external `gpt-taste` skill is available, use the current installed version as the preferred critic. Its absence must never cause an agent to silently fabricate a `GPT_TASTE_READ: PASS` marker.
+Runtimes without installed external `gpt-taste` use the repository-owned fallback (`prospector-de-sites/skills/design-judge/SKILL.md`) under the portability contract. An agent must never silently fabricate a `GPT_TASTE_READ: PASS` marker.
+
+### 7.2 OpenDesign Role: Upstream Exploration & Research
+
+OpenDesign is an upstream exploration and research mechanism, NOT final design authority.
+
+Its role:
+- research
+- references
+- two genuinely distinct directions
+- `DESIGN.md` candidates
+
+After OpenDesign exploration, GPT-Taste reviews the alternatives and:
+- selects one
+- rejects both and requests another direction when necessary
+- combines compatible ideas when justified
+- records the final design rationale
+
+Canonical state:
+```text
+GPT_TASTE_DESIGN_DECISION:
+PASS
+PASS_AFTER_DIRECTION_CHANGE
+BLOCKED_SKILL_UNAVAILABLE
+```
+
+No frontend may proceed to final implementation without a recorded GPT-Taste design decision.
+
+### 7.3 Conflict Resolution Authority Hierarchy
+
+When skills or perspectives conflict, authority resolves strictly in this order:
+
+```text
+FACTUAL/EVIDENCE SAFETY
+>
+GPT-TASTE DESIGN DIRECTION
+>
+/COPYWRITING-MARKETING FOR MESSAGE/COPY
+>
+/IMPECCABLE FOR EXECUTION CRAFT
+```
+
+Rules & Examples:
+- **Impeccable dislikes the editorial layout but finds no defect:** GPT-Taste decision wins.
+- **Copywriting says headline hierarchy weakens conversion:** GPT-Taste evaluates structural visual change.
+- **GPT-Taste wants a service claim not supported by evidence:** Evidence wins; design adapts.
+- **Impeccable finds mobile overflow:** Fix is mandatory regardless of design preference.
+- **Factual sovereignty:** Neither GPT-Taste, `/impeccable`, OpenDesign, nor `/copywriting-marketing` may override factual evidence. Evidence remains sovereign. Any creative recommendation requiring an unsupported claim must be rejected or rewritten within verified evidence.
 
 ## 8. Outreach and irreversible actions
 
@@ -174,12 +240,56 @@ DEPLOY QA
 
 If the runtime cannot execute one layer, report it as unavailable and stop before claiming a full production PASS.
 
-## 10. Mandatory pre-publish reviews: /impeccable and /copywriting-marketing
+## 10. Mandatory Specialist Reviews: /impeccable and /copywriting-marketing
 
-Before any lead is considered publish-ready, every prospect site and proposal must pass two mandatory skill reviews using the installed Antigravity/Codex skills by their slash-command names:
+Before any lead is considered publish-ready, every prospect site and proposal must pass two mandatory specialist skill reviews using the installed Antigravity/Codex skills by their slash-command names:
 
-1. `/impeccable`: visual craft, typography, spacing, hierarchy, layout rhythm, responsive presentation on rendered desktop and mobile views, and proposal layout. Distinguishes CRITICAL, REAL IMPROVEMENT, and OPTIONAL/TASTE.
-2. `/copywriting-marketing`: reviews all user-facing copy on site, proposal, CTAs, navigation, review headings, disclaimers, and assistant prompts. Eliminates robotic internal/audit jargon while strictly constrained to **IMPROVE THE EXPRESSION OF SUPPORTED PROPOSITIONS ONLY**.
+### 10.1 `/impeccable`: Bounded Execution QA
+
+`/impeccable` is NOT the art director. It reviews execution craft after implementation.
+
+Owns:
+- pixel/craft quality
+- spacing consistency
+- responsive behavior
+- overflow
+- crop
+- contrast
+- focus/hover states
+- tap targets
+- alignment
+- visual rhythm defects
+- unfinished UI states
+- minor/moderate polish
+
+It may request local corrections.
+
+It should NOT:
+- replace the chosen visual direction because of personal taste;
+- redesign the whole site;
+- override GPT-Taste's approved art direction absent a concrete usability or quality defect.
+
+If `/impeccable` believes the design direction itself is fundamentally defective, it must return:
+```text
+ESCALATE_TO_GPT_TASTE
+```
+rather than silently redesigning it.
+
+### 10.2 `/copywriting-marketing`: Bounded Message & Conversion Review
+
+`/copywriting-marketing` owns:
+- customer-facing language
+- headings
+- CTA wording
+- message hierarchy
+- clarity
+- persuasion
+- proposal communication
+- removal of audit/internal jargon
+
+It does NOT own visual design.
+
+It may recommend layout changes only when directly necessary for copy hierarchy (e.g. CTA buried, headline hierarchy conflicts with message, important value proposition appears too late). Such recommendations go back to GPT-Taste if they materially alter frontend structure.
 
 ### Copywriting constraint: No newly-created unsupported propositions
 
@@ -223,25 +333,63 @@ If either skill is unavailable, the agent MUST NOT silently substitute generic L
    - `UNSUPPORTED`: any claim exceeding evidence.
 4. Any `UNSUPPORTED` claim causes immediate `FACTUAL_RECHECK: FAIL` and `SEMANTIC_CLAIM_AUDIT: FAIL`.
 
-### Canonical publish sequence
+### Canonical Publish Sequence (18 Steps)
 
-1. evidence verified
-2. design workflow complete
-3. implementation complete
-4. browser QA desktop/mobile
-5. `/impeccable` review
-6. impeccable corrections
-7. `/copywriting-marketing` review (under supported propositions constraint)
-8. copy corrections
-9. factual re-check + semantic claim audit (extract claims, classify, require 0 unsupported)
-10. deterministic site/review/hero/conversion gates
-11. proposal QA
-12. Vercel build
-13. deploy
-14. live browser verification
-15. local CRM promotion to `publicado`
+The canonical sequence for lead production and publication is strictly:
 
-A lead cannot advance to `publicado` before steps 1–14 are complete.
+1. evidence collection / verification
+2. OpenDesign research + alternatives
+3. GPT-Taste art-direction decision
+4. implementation
+5. browser QA
+6. GPT-Taste implementation review
+7. design corrections if required
+8. `/impeccable` execution review
+9. impeccable corrections
+10. `/copywriting-marketing` review
+11. copy corrections
+12. semantic + factual re-check
+13. deterministic gates
+14. proposal QA
+15. Vercel build
+16. deploy
+17. live QA
+18. local CRM promotion
+
+Important:
+GPT-Taste appears twice:
+- **A. Before implementation:** art-direction owner (`GPT_TASTE_DESIGN_DECISION`).
+- **B. After implementation:** verify that execution actually reflects approved direction (`GPT_TASTE_IMPLEMENTATION_REVIEW`).
+
+A lead cannot advance to `publicado` before steps 1–17 are complete.
+
+### Reporting Format
+
+All future pipeline reports must record:
+
+```text
+OPENDESIGN:
+directions:
+
+GPT-TASTE:
+design owner invoked:
+direction selected:
+implementation review:
+state:
+
+IMPECCABLE:
+findings:
+state:
+
+COPYWRITING-MARKETING:
+findings:
+state:
+
+FACTUAL RECHECK:
+state:
+```
+
+Do not claim a full design PASS if GPT-Taste was not actually available.
 
 ## 11. New runtime support
 

@@ -171,24 +171,45 @@ Important current contracts include:
 
 Runtime adapters must point agents to these skills rather than copying them.
 
-## Design judge portability
+## Frontend Design Governance — GPT-Taste as Design Owner
 
-An external current `gpt-taste` skill remains the preferred critic when the active runtime actually has it.
+`gpt-taste` is the explicit creative owner and art director of prospect-site frontend design.
 
-Prospector no longer requires one vendor/runtime to provide it. Runtimes without external gpt-taste use the repository-owned:
+GPT-Taste owns:
+- visual direction, composition, layout architecture, hierarchy, typography direction;
+- hero composition, section sequencing, density/whitespace;
+- review-section presentation, visual personality, interaction style;
+- responsive design intent and anti-template / anti-AI-slop judgment.
+
+OpenDesign functions as an upstream exploration mechanism:
+```text
+research -> references -> 2 distinct directions -> DESIGN.md candidates
+```
+It is NOT final design authority. After OpenDesign exploration, GPT-Taste selects or refines the direction (`GPT_TASTE_DESIGN_DECISION: PASS | PASS_AFTER_DIRECTION_CHANGE`).
+
+Specialist reviewers operate within bounded roles:
+- `/impeccable`: Bounded execution QA (craft, spacing, responsive, overflow, tap targets; returns `ESCALATE_TO_GPT_TASTE` on fundamental design flaws).
+- `/copywriting-marketing`: Bounded message & conversion under the strict constraint: IMPROVE THE EXPRESSION OF SUPPORTED PROPOSITIONS ONLY.
+
+### Conflict resolution authority hierarchy
+
+```text
+FACTUAL/EVIDENCE SAFETY > GPT-TASTE DESIGN DIRECTION > /COPYWRITING-MARKETING > /IMPECCABLE
+```
+
+### Design judge portability
+
+An external current `gpt-taste` skill remains the preferred design owner when the active runtime actually has it. Runtimes without external gpt-taste use the repository-owned fallback:
 
 ```text
 prospector-de-sites/skills/design-judge/SKILL.md
 ```
 
-The deterministic autonomous-review launcher accepts either:
-
+The deterministic launcher accepts either:
 ```text
 real external gpt-taste + real path/hash
 ```
-
 or:
-
 ```text
 DESIGN_JUDGE_READ: PASS
 DESIGN_JUDGE_SOURCE: repository
@@ -196,25 +217,34 @@ DESIGN_JUDGE_PATH: prospector-de-sites/skills/design-judge/SKILL.md
 DESIGN_JUDGE_SHA256: <current sha256>
 ```
 
-It never permits a runtime to fake `GPT_TASTE_READ: PASS` merely because the external skill is unavailable.
+It never permits an agent to fake `GPT_TASTE_READ: PASS` when unavailable.
 
-## Site creation flow
+## Canonical Site Creation Flow (18 Steps)
 
-For schema v2+ first versions, the intended workflow is:
+For schema v2+ first versions, the canonical publish sequence is:
 
 ```text
-Prospector factual research/evidence
-→ runtime capability probe
-→ OpenDesign direction pass when available
-→ design critique/selection
-→ Prospector-owned HTML/CSS/JS implementation
-→ deterministic QA
-→ browser/visual QA
-→ deploy gates
-→ human-reviewed proposal/outreach
+1. evidence collection / verification
+2. OpenDesign research + alternatives
+3. GPT-Taste art-direction decision
+4. implementation
+5. browser QA
+6. GPT-Taste implementation review
+7. design corrections if required
+8. /impeccable execution review
+9. impeccable corrections
+10. /copywriting-marketing review
+11. copy corrections
+12. semantic + factual re-check
+13. deterministic gates
+14. proposal QA
+15. Vercel build
+16. deploy
+17. live QA
+18. local CRM promotion
 ```
 
-OpenDesign is art direction only. It does not become a factual source, production renderer, or deploy authority.
+OpenDesign is upstream exploration only. It does not become a factual source, production renderer, or deploy authority.
 
 ## Expert hero rule
 

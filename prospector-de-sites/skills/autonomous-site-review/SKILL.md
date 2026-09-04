@@ -328,36 +328,106 @@ Inspect especially:
 - unsupported factual claims;
 - console/network failures.
 
-## 13. HARD GATE: Mandatory pre-publish reviews (/impeccable + /copywriting-marketing)
+## 13. HARD GATE: Mandatory Pre-publish Reviews & Frontend Design Governance
 
-Before marking autonomous review PASS or proceeding to deploy/proposal/outreach, the site and proposal must undergo two mandatory reviews using the installed skills by their slash-command names:
+Before marking autonomous review PASS or proceeding to deploy/proposal/outreach, the site and proposal must satisfy the frontend design governance and pass specialist reviews:
 
-1. `/impeccable`: review actual rendered desktop and mobile views and proposal layout. Distinguishes CRITICAL, REAL IMPROVEMENT, and OPTIONAL/TASTE. Apply all critical and real improvement findings.
-2. `/copywriting-marketing`: review all user-facing copy on site, proposal, CTAs, review headings, and assistant. Replaces robotic internal/audit jargon with natural customer-facing wording. **Hard constraint**: IMPROVE THE EXPRESSION OF SUPPORTED PROPOSITIONS ONLY. Must not invent quality adjectives (*acolhedor, personalizado*), operational claims (*agendamento, horários reservados*), medical/process claims (*diagnóstico individualizado*), facility claims (*ambiente planejado para o seu conforto*), or relationship claims (*pacientes, clientes da clínica, nossa equipe*).
-3. `FACTUAL_RECHECK` & `SEMANTIC_CLAIM_AUDIT`: ensures copy adjustments did not introduce unsupported claims or mutate protected fields. Extracts added/strengthened assertions and verifies 0 unsupported propositions.
+1. **GPT-Taste (Frontend Design Owner / Art Director):**
+   - Pre-implementation art-direction decision: `GPT_TASTE_DESIGN_DECISION: PASS | PASS_AFTER_DIRECTION_CHANGE`. If `BLOCKED_SKILL_UNAVAILABLE`, fail closed.
+   - Post-implementation execution verification: `GPT_TASTE_IMPLEMENTATION_REVIEW: PASS | PASS_AFTER_CHANGES`. If `BLOCKED_SKILL_UNAVAILABLE`, fail closed.
+2. `/impeccable`: review actual rendered desktop and mobile views and proposal layout. Bounded execution QA only (pixel/craft, spacing, responsive, overflow, crop, contrast, focus/hover, tap targets, alignment, rhythm). Distinguishes CRITICAL, REAL IMPROVEMENT, and OPTIONAL/TASTE. Apply all critical and real improvement findings. If the design direction itself is fundamentally defective, returns `ESCALATE_TO_GPT_TASTE` rather than silently redesigning.
+3. `/copywriting-marketing`: review all user-facing copy on site, proposal, CTAs, review headings, and assistant. Replaces robotic internal/audit jargon with natural customer-facing wording. Does not own visual design; structural layout recommendations return to GPT-Taste. **Hard constraint**: IMPROVE THE EXPRESSION OF SUPPORTED PROPOSITIONS ONLY. Must not invent quality adjectives (*acolhedor, personalizado*), operational claims (*agendamento, horários reservados*), medical/process claims (*diagnóstico individualizado*), facility claims (*ambiente planejado para o seu conforto*), or relationship claims (*pacientes, clientes da clínica, nossa equipe*).
+4. `FACTUAL_RECHECK` & `SEMANTIC_CLAIM_AUDIT`: ensures copy adjustments did not introduce unsupported claims or mutate protected fields. Extracts added/strengthened assertions and verifies 0 unsupported propositions.
 
-Fail-closed semantics:
+### Conflict Resolution Authority Hierarchy
+
+```text
+FACTUAL/EVIDENCE SAFETY
+>
+GPT-TASTE DESIGN DIRECTION
+>
+/COPYWRITING-MARKETING FOR MESSAGE/COPY
+>
+/IMPECCABLE FOR EXECUTION CRAFT
+```
+
+- Impeccable dislikes editorial layout but finds no defect: GPT-Taste decision wins.
+- Copywriting says headline hierarchy weakens conversion: GPT-Taste evaluates structural visual change.
+- GPT-Taste wants an unsupported claim: Evidence wins; design adapts.
+- Impeccable finds mobile overflow: Fix is mandatory regardless of design preference.
+- Factual sovereignty: Neither GPT-Taste, Impeccable, OpenDesign, nor Copywriting may override factual evidence.
+
+### Fail-closed semantics
+
+- `GPT_TASTE_DESIGN_DECISION: PASS | PASS_AFTER_DIRECTION_CHANGE`
+- `GPT_TASTE_IMPLEMENTATION_REVIEW: PASS | PASS_AFTER_CHANGES`
 - `IMPECCABLE_REVIEW: PASS | PASS_AFTER_CHANGES`
 - `COPYWRITING_MARKETING_REVIEW: PASS | PASS_AFTER_CHANGES`
 - `FACTUAL_RECHECK: PASS`
 - `SEMANTIC_CLAIM_AUDIT: PASS`
 
-If either skill is unavailable (`BLOCKED_SKILL_UNAVAILABLE`), fail closed. Do not substitute generic LLM judgment and do not claim publish-readiness.
+If any required skill is unavailable (`BLOCKED_SKILL_UNAVAILABLE`), fail closed. Do not substitute generic LLM judgment and do not claim publish-readiness.
 
-## 14. No self-approval by written checklist
+## 14. Canonical Publish Sequence (18 Steps)
+
+1. evidence collection / verification
+2. OpenDesign research + alternatives
+3. GPT-Taste art-direction decision
+4. implementation
+5. browser QA
+6. GPT-Taste implementation review
+7. design corrections if required
+8. `/impeccable` execution review
+9. impeccable corrections
+10. `/copywriting-marketing` review
+11. copy corrections
+12. semantic + factual re-check
+13. deterministic gates
+14. proposal QA
+15. Vercel build
+16. deploy
+17. live QA
+18. local CRM promotion
+
+## 15. No self-approval by written checklist
 
 A report written by the implementing agent is not sufficient evidence. PASS requires observable proof from deterministic gates, source evidence, browser QA, and deployment checks.
 
-## 15. Final gate report
+## 16. Final gate report & Governance reporting
 
-Use this output block:
+Use this report format for reviews:
+
+```text
+OPENDESIGN:
+directions:
+
+GPT-TASTE:
+design owner invoked:
+direction selected:
+implementation review:
+state:
+
+IMPECCABLE:
+findings:
+state:
+
+COPYWRITING-MARKETING:
+findings:
+state:
+
+FACTUAL RECHECK:
+state:
+```
+
+Autonomous review summary block:
 
 ```text
 AUTONOMOUS SITE REVIEW
 OPEN DESIGN DIRECTION: PASS/UNAVAILABLE/SKIPPED_BY_OPERATOR/N/A
 OPEN DESIGN MCP PROBE: PASS/FAIL/N/A
 OPEN DESIGN DIRECTIONS: <n>/N/A
-OPEN DESIGN GPT-TASTE REVIEW: PASS/FAIL/N/A
+GPT_TASTE_DESIGN_DECISION: PASS/PASS_AFTER_DIRECTION_CHANGE/BLOCKED_SKILL_UNAVAILABLE
+GPT_TASTE_IMPLEMENTATION_REVIEW: PASS/PASS_AFTER_CHANGES/BLOCKED_SKILL_UNAVAILABLE
 GPT_TASTE_READ: PASS/FAIL
 GPT_TASTE_SHA_MATCH: PASS/FAIL
 EXPERT HERO FULL-BLEED: PASS/FAIL/N/A

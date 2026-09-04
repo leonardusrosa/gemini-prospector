@@ -89,6 +89,24 @@ def _portable_design_judge_check(manifest: dict, design_read: str, review: core.
             "Recorded DESIGN_JUDGE_SHA256 must match the canonical repository design judge",
         )
 
+    # Portable design decision and implementation review checks
+    decision_raw = _design_value(design_read, "DESIGN_JUDGE_DESIGN_DECISION") or _design_value(design_read, "GPT_TASTE_DESIGN_DECISION") or str(cfg.get("designDecision") or "")
+    if decision_raw:
+        decision_val = decision_raw.strip().upper()
+        review.check(
+            "design_judge_design_decision_pass",
+            decision_val in {"PASS", "PASS_AFTER_DIRECTION_CHANGE"},
+            f"DESIGN_JUDGE_DESIGN_DECISION must be PASS or PASS_AFTER_DIRECTION_CHANGE; found {decision_val!r}",
+        )
+    impl_raw = _design_value(design_read, "DESIGN_JUDGE_IMPLEMENTATION_REVIEW") or _design_value(design_read, "GPT_TASTE_IMPLEMENTATION_REVIEW") or str(cfg.get("implementationReview") or "")
+    if impl_raw:
+        impl_val = impl_raw.strip().upper()
+        review.check(
+            "design_judge_impl_review_pass",
+            impl_val in {"PASS", "PASS_AFTER_CHANGES"},
+            f"DESIGN_JUDGE_IMPLEMENTATION_REVIEW must be PASS or PASS_AFTER_CHANGES; found {impl_val!r}",
+        )
+
 
 core._legacy_check_gpt_taste = core.check_gpt_taste
 core.check_gpt_taste = _portable_design_judge_check

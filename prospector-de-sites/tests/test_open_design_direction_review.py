@@ -114,6 +114,45 @@ def test_used_passes_with_persisted_design_md():
         assert validate_open_design_direction(manifest, used_design_read(), root) == []
 
 
+def test_used_passes_with_gpt_taste_design_decision():
+    manifest = base_manifest()
+    manifest["openDesignDirection"]["gptTasteSelectionReviewed"] = False
+    manifest["openDesignDirection"]["gptTasteDesignDecision"] = "PASS"
+    design = used_design_read().replace("OPEN_DESIGN_GPT_TASTE_REVIEW: PASS", "GPT_TASTE_DESIGN_DECISION: PASS")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        od = root / "open-design"
+        od.mkdir()
+        (od / "DESIGN.md").write_text("# Design\n", encoding="utf-8")
+        assert validate_open_design_direction(manifest, design, root) == []
+
+
+def test_used_passes_with_gpt_taste_pass_after_direction_change():
+    manifest = base_manifest()
+    manifest["openDesignDirection"]["gptTasteSelectionReviewed"] = False
+    manifest["openDesignDirection"]["gptTasteDesignDecision"] = "PASS_AFTER_DIRECTION_CHANGE"
+    design = used_design_read().replace("OPEN_DESIGN_GPT_TASTE_REVIEW: PASS", "GPT_TASTE_DESIGN_DECISION: PASS_AFTER_DIRECTION_CHANGE")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        od = root / "open-design"
+        od.mkdir()
+        (od / "DESIGN.md").write_text("# Design\n", encoding="utf-8")
+        assert validate_open_design_direction(manifest, design, root) == []
+
+
+def test_used_fails_with_gpt_taste_blocked_skill_unavailable():
+    manifest = base_manifest()
+    manifest["openDesignDirection"]["gptTasteDesignDecision"] = "BLOCKED_SKILL_UNAVAILABLE"
+    design = used_design_read() + "\nGPT_TASTE_DESIGN_DECISION: BLOCKED_SKILL_UNAVAILABLE\n"
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        od = root / "open-design"
+        od.mkdir()
+        (od / "DESIGN.md").write_text("# Design\n", encoding="utf-8")
+        errors = validate_open_design_direction(manifest, design, root)
+        assert any("BLOCKED_SKILL_UNAVAILABLE" in e for e in errors)
+
+
 if __name__ == "__main__":
     tests = [name for name in globals() if name.startswith("test_")]
     for name in sorted(tests):

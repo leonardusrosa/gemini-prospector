@@ -72,9 +72,10 @@ Ao receber ordens como *"publica os 5 redesigns"* ou *"sobe o site da clinica-ex
 1. **Validação local e gates pré-publicação (OBRIGATÓRIO)**:
    - Verificar se `prospector-config.json` possui o bloco `deploy` preenchido.
    - Verificar se o arquivo do redesign existe em `sites/[slug]/[slug].html`.
-   - **HARD GATE Pré-Publish:** O lead SÓ pode avançar para deploy se tiver passado pelas duas revisões obrigatórias instaladas:
-     - `/impeccable`: `PASS` ou `PASS_AFTER_CHANGES` registrado.
-     - `/copywriting-marketing`: `PASS` ou `PASS_AFTER_CHANGES` registrado sob a restrição de melhorar apenas a expressão de proposições suportadas.
+   - **HARD GATE Pré-Publish:** O lead SÓ pode avançar para deploy se tiver passado pela governança de design e pelas revisões obrigatórias:
+     - `GPT-Taste`: `GPT_TASTE_DESIGN_DECISION` (`PASS` ou `PASS_AFTER_DIRECTION_CHANGE`) e `GPT_TASTE_IMPLEMENTATION_REVIEW` (`PASS` ou `PASS_AFTER_CHANGES`) registrados.
+     - `/impeccable`: `PASS` ou `PASS_AFTER_CHANGES` registrado (bounded execution QA; se retornado `ESCALATE_TO_GPT_TASTE`, o deploy é BLOQUEADO).
+     - `/copywriting-marketing`: `PASS` ou `PASS_AFTER_CHANGES` registrado sob a restrição estrita de melhorar apenas a expressão de proposições suportadas.
      - `Factual re-check & Auditoria Semântica`: confirmado sem mutação de campos protegidos e com 0 alegações não suportadas (`SEMANTIC_CLAIM_AUDIT: PASS`).
      - Se qualquer skill estiver indisponível (`BLOCKED_SKILL_UNAVAILABLE`), o deploy é BLOQUEADO.
 2. **Preparação de arquivos**:
@@ -108,23 +109,26 @@ Após o push com sucesso:
    - Se na primeira checagem retornar 404, aguarde 5 segundos e tente novamente (até 3 tentativas).
    - Se após o intervalo a URL ainda não responder com o conteúdo esperado, relate o status como: `push concluído, deploy ainda não verificado` e NÃO marque como `publicado` definitivo.
 
-## 5. Atualização do CRM e Dashboard (Passo 15 da Sequência Canônica)
+## 5. Atualização do CRM e Dashboard (Passo 18 da Sequência Canônica)
 
-A promoção de um lead para o status `publicado` no CRM local SÓ é permitida após a conclusão de todos os 14 passos anteriores:
-1. evidência verificada
-2. design workflow concluído
-3. implementação estática
-4. browser QA desktop/mobile
-5. `/impeccable` review
-6. correções do visual craft
-7. `/copywriting-marketing` review
-8. correções de copy e remoção de jargão
-9. factual re-check + auditoria semântica de claims (0 alegações não suportadas)
-10. gates determinísticos (site/hero/reviews/conversão)
-11. proposal QA
-12. Vercel build
-13. deploy
-14. verificação em navegador da URL pública live
+A promoção de um lead para o status `publicado` no CRM local SÓ é permitida após a conclusão de todos os 17 passos anteriores:
+1. coleta e verificação de evidências
+2. pesquisa upstream OpenDesign + alternativas (2 direções)
+3. decisão de direção de arte do GPT-Taste (Frontend Design Owner)
+4. implementação estática HTML/CSS/JS pura
+5. browser QA desktop/mobile
+6. revisão de implementação pelo GPT-Taste (verificar execução)
+7. correções de design se exigidas
+8. `/impeccable`: revisão de execução de craft (bounded QA)
+9. correções do Impeccable
+10. `/copywriting-marketing`: revisão de mensagem/conversão
+11. correções de copy
+12. semantic claim audit + factual re-check (0 alegações não suportadas)
+13. gates determinísticos (site/hero/reviews/conversão)
+14. proposal QA
+15. Vercel build
+16. deploy
+17. verificação em navegador da URL pública live
 
 Quando a URL for verificada com sucesso em produção:
 
