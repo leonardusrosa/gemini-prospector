@@ -1,10 +1,201 @@
 {
-  "version": "1.0.0",
-  "description": "Prospector Design Resource Registry for Framework V3.1",
+  "version": "1.1.0",
+  "description": "Prospector Design Resource Registry for Framework V3.1.1",
   "policy": {
     "externalAssetRole": "RAW_MATERIAL_ONLY",
     "creativeAuthority": "GPT_TASTE",
     "rule": "External asset never sets site direction. Order: Evidence -> GPT-Taste direction -> query registry -> pick raw material -> rework -> build."
   },
-  "resources": []
+  "resources": [
+    {
+      "id": "native-hero-split-editorial",
+      "source": "native",
+      "category": "hero",
+      "description": "Split editorial hero with oversized heading and contextual side image",
+      "tags": ["hero", "editorial", "split-screen"]
+    },
+    {
+      "id": "native-hero-full-bleed-expert",
+      "source": "native",
+      "category": "hero",
+      "description": "Full-bleed hero with professional photo and overlay text",
+      "tags": ["hero", "full-bleed", "expert"]
+    },
+    {
+      "id": "native-hero-asymmetric-grid",
+      "source": "native",
+      "category": "hero",
+      "description": "Asymmetric grid hero with staggered content blocks",
+      "tags": ["hero", "asymmetric", "grid"]
+    },
+    {
+      "id": "native-services-bento-grid",
+      "source": "native",
+      "category": "services",
+      "description": "Bento grid service cards with icon and short copy",
+      "tags": ["services", "bento", "grid", "cards"]
+    },
+    {
+      "id": "native-reviews-carousel",
+      "source": "native",
+      "category": "reviews",
+      "description": "Patient/client review carousel with star rating and quote",
+      "tags": ["reviews", "carousel", "social-proof"]
+    },
+    {
+      "id": "native-reviews-masonry-wall",
+      "source": "native",
+      "category": "reviews",
+      "description": "Masonry-style review wall with verified badge indicators",
+      "tags": ["reviews", "masonry", "social-proof"]
+    },
+    {
+      "id": "native-cta-sticky-bar",
+      "source": "native",
+      "category": "cta",
+      "description": "Sticky bottom CTA bar with phone and scheduling action",
+      "tags": ["cta", "sticky", "conversion"]
+    },
+    {
+      "id": "native-footer-minimal",
+      "source": "native",
+      "category": "footer",
+      "description": "Minimal footer with contact, address, and legal links",
+      "tags": ["footer", "minimal"]
+    },
+    {
+      "id": "native-gallery-lightbox",
+      "source": "native",
+      "category": "gallery",
+      "description": "Before/after gallery with lightbox viewer",
+      "tags": ["gallery", "lightbox", "before-after"]
+    },
+    {
+      "id": "native-map-contextual",
+      "source": "native",
+      "category": "location",
+      "description": "Contextual location section with embedded map and neighborhood info",
+      "tags": ["map", "location", "contextual"]
+    },
+    {
+      "id": "preline-hero-centered",
+      "source": "preline",
+      "category": "hero",
+      "sourceUrl": "https://preline.co/examples/hero-sections.html",
+      "license": "MIT + Preline UI Fair Use License",
+      "commercialUse": "CONFIRMED",
+      "attribution": null,
+      "adaptationMode": "ADAPT_TO_VANILLA",
+      "description": "Centered hero with gradient background and dual CTA",
+      "tags": ["hero", "centered", "gradient"]
+    },
+    {
+      "id": "preline-features-icon-grid",
+      "source": "preline",
+      "category": "features",
+      "sourceUrl": "https://preline.co/examples/features-sections.html",
+      "license": "MIT + Preline UI Fair Use License",
+      "commercialUse": "CONFIRMED",
+      "attribution": null,
+      "adaptationMode": "ADAPT_TO_VANILLA",
+      "description": "Icon grid feature section with 3-column layout",
+      "tags": ["features", "grid", "icons"]
+    },
+    {
+      "id": "preline-testimonials-grid",
+      "source": "preline",
+      "category": "reviews",
+      "sourceUrl": "https://preline.co/examples/testimonials-sections.html",
+      "license": "MIT + Preline UI Fair Use License",
+      "commercialUse": "CONFIRMED",
+      "attribution": null,
+      "adaptationMode": "ADAPT_TO_VANILLA",
+      "description": "Testimonial grid with avatar, name, and quote cards",
+      "tags": ["reviews", "testimonials", "grid"]
+    },
+    {
+      "id": "preline-cta-banner",
+      "source": "preline",
+      "category": "cta",
+      "sourceUrl": "https://preline.co/examples/cta-sections.html",
+      "license": "MIT + Preline UI Fair Use License",
+      "commercialUse": "CONFIRMED",
+      "attribution": null,
+      "adaptationMode": "ADAPT_TO_VANILLA",
+      "description": "Full-width CTA banner with contrast background",
+      "tags": ["cta", "banner", "conversion"]
+    },
+    {
+      "id": "preline-stats-counter",
+      "source": "preline",
+      "category": "stats",
+      "sourceUrl": "https://preline.co/examples/stats-sections.html",
+      "license": "MIT + Preline UI Fair Use License",
+      "commercialUse": "CONFIRMED",
+      "attribution": null,
+      "adaptationMode": "ADAPT_TO_VANILLA",
+      "description": "Stats counter section with large numbers and labels",
+      "tags": ["stats", "counter", "metrics"]
+    },
+    {
+      "id": "preline-faq-accordion",
+      "source": "preline",
+      "category": "faq",
+      "sourceUrl": "https://preline.co/examples/faq-sections.html",
+      "license": "MIT + Preline UI Fair Use License",
+      "commercialUse": "CONFIRMED",
+      "attribution": null,
+      "adaptationMode": "ADAPT_TO_VANILLA",
+      "description": "FAQ accordion with smooth expand/collapse",
+      "tags": ["faq", "accordion"]
+    },
+    {
+      "id": "aura-hero-editorial-dark",
+      "source": "aura",
+      "category": "hero",
+      "sourceUrl": "https://auraui.com/motionfx/hero-editorial-dark",
+      "license": "UNKNOWN",
+      "commercialUse": "UNCONFIRMED",
+      "attribution": null,
+      "adaptationMode": "REFERENCE_ONLY",
+      "description": "Dark editorial hero with large serif heading and motion background",
+      "tags": ["hero", "dark", "editorial", "motion"]
+    },
+    {
+      "id": "aura-gallery-parallax",
+      "source": "aura",
+      "category": "gallery",
+      "sourceUrl": "https://auraui.com/motionfx/gallery-parallax",
+      "license": "UNKNOWN",
+      "commercialUse": "UNCONFIRMED",
+      "attribution": null,
+      "adaptationMode": "REFERENCE_ONLY",
+      "description": "Parallax scrolling gallery with staggered reveal",
+      "tags": ["gallery", "parallax", "scroll"]
+    },
+    {
+      "id": "aura-section-bento",
+      "source": "aura",
+      "category": "features",
+      "sourceUrl": "https://auraui.com/motionfx/bento-grid",
+      "license": "UNKNOWN",
+      "commercialUse": "UNCONFIRMED",
+      "attribution": null,
+      "adaptationMode": "REFERENCE_ONLY",
+      "description": "Bento grid layout with varied cell sizes and hover effects",
+      "tags": ["bento", "grid", "features"]
+    },
+    {
+      "id": "aura-testimonial-marquee",
+      "source": "aura",
+      "category": "reviews",
+      "sourceUrl": "https://auraui.com/motionfx/testimonial-marquee",
+      "license": "UNKNOWN",
+      "commercialUse": "UNCONFIRMED",
+      "attribution": null,
+      "adaptationMode": "REFERENCE_ONLY",
+      "description": "Marquee-style auto-scrolling testimonial ribbon",
+      "tags": ["reviews", "marquee", "animation"]
+    }
+  ]
 }

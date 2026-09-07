@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Design Framework V3.1 regression test suite.
+"""Design Framework V3.1.1 regression test suite.
 
 Validates:
 1. Schema v3 future leads do not require OpenDesign.
@@ -18,6 +18,17 @@ Validates:
 13. New Brazilian discovery is blocked (NEW_DISCOVERY_BR = DISABLED).
 14. Existing Brazilian leads can be updated and closed.
 15. Factual re-check & semantic claim audit fail on unsupported claims.
+16. V3.1.1: US cities (Springfield, Prosper, Prescott, Miami) NOT flagged as BR.
+17. V3.1.1: Raw '55' phone without E.164 does NOT imply BR.
+18. V3.1.1: Verified E.164 +55 without country blocked as BR inference.
+19. V3.1.1: Explicit country=US overrides misleading city substrings.
+20. V3.1.1: marketTier auto-computed (TIER_A, TIER_B, OTHER).
+21. V3.1.1: Fresh DB schema includes marketTier column.
+22. V3.1.1: salvar_lead exposes marketTier and MARKET_DEFAULTS auto-fill.
+23. V3.1.1: DNA token similarity (Jaccard) catches reordered tokens.
+24. V3.1.1: DNA token similarity allows truly distinct values.
+25. V3.1.1: Aura resources stay UNCONFIRMED/REFERENCE_ONLY.
+26. V3.1.1: External resources without license fail provenance gate.
 """
 
 from __future__ import annotations
@@ -45,6 +56,7 @@ from autonomous_site_review_core import (
     check_preline,
     check_mandatory_prepublish_reviews,
     check_semantic_claims,
+    _dna_token_similarity,
 )
 from open_design_direction_review import validate_open_design_direction
 
@@ -448,9 +460,207 @@ def test_semantic_factual_gates_still_block_bad_claims():
     assert any("SEMANTIC_CLAIM_AUDIT" in err for err in _errors(rev))
 
 
+# ============================
+# V3.1.1 TESTS — Market Policy
+# ============================
+
+def test_us_cities_not_flagged_as_brazilian():
+    """Explicit country=US must override any misleading phone/city heuristic."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = Path(tmp) / "prospector.db"
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("prospector_mcp", str(ROOT.parent / "prospector-mcp.py"))
+        pm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pm)
+        pm.DB = str(db_path)
+        pm.PASTA = str(tmp)
+
+        us_cities = [
+            {"slug": "springfield-il", "nome": "Springfield Dental", "cidade": "Springfield, IL", "country": "US", "phoneCountryCode": "1"},
+            {"slug": "prosper-tx", "nome": "Prosper Auto Detail", "cidade": "Prosper, TX", "country": "US", "phoneCountryCode": "1"},
+            {"slug": "prescott-az", "nome": "Prescott Wellness", "cidade": "Prescott, AZ", "country": "US"},
+            {"slug": "miami-fl", "nome": "Miami Smile Center", "cidade": "Miami, FL, US", "country": "US", "whatsapp": "+13055550199"},
+        ]
+        for lead_data in us_cities:
+            res = pm.f_salvar(lead_data)
+            assert res.get("ok") is True, f"US lead {lead_data['slug']} should NOT be blocked: {res}"
+            lead = pm.f_obter(lead_data["slug"])
+            assert lead["marketTier"] == "TIER_A", f"US lead {lead_data['slug']} should be TIER_A, got {lead['marketTier']}"
+
+
+def test_raw_55_phone_without_e164_does_not_imply_br():
+    """Raw number starting '55' (without +) must NOT imply BR when country is missing."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = Path(tmp) / "prospector.db"
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("prospector_mcp", str(ROOT.parent / "prospector-mcp.py"))
+        pm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pm)
+        pm.DB = str(db_path)
+        pm.PASTA = str(tmp)
+
+        # Raw 55 phone without verified E.164 prefix, no country
+        res = pm.f_salvar({"slug": "raw-55-lead", "nome": "Test Raw", "cidade": "Dallas, TX", "whatsapp": "5512345678"})
+        assert res.get("ok") is True, f"Raw '55' phone without + and no country must NOT be blocked: {res}"
+
+
+def test_verified_e164_plus55_without_country_blocked():
+    """Verified E.164 number starting +55 without explicit country must be blocked as BR inference."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = Path(tmp) / "prospector.db"
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("prospector_mcp", str(ROOT.parent / "prospector-mcp.py"))
+        pm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pm)
+        pm.DB = str(db_path)
+        pm.PASTA = str(tmp)
+
+        res = pm.f_salvar({"slug": "e164-br", "nome": "E164 Test", "whatsapp": "+5519999990000"})
+        assert "erro" in res, "E.164 +55 number without country should be blocked as inferred BR"
+        assert "NEW_DISCOVERY_BR" in res["erro"]
+
+
+def test_explicit_us_overrides_misleading_city():
+    """country=US overrides even if city string contains 'sp' or 'brasil' substrings."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = Path(tmp) / "prospector.db"
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("prospector_mcp", str(ROOT.parent / "prospector-mcp.py"))
+        pm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pm)
+        pm.DB = str(db_path)
+        pm.PASTA = str(tmp)
+
+        # City containing "sp" but country is US
+        res = pm.f_salvar({"slug": "cusp-city", "nome": "Cusp Dental", "cidade": "Cusp Springs, MO", "country": "US"})
+        assert res.get("ok") is True, f"US lead with 'sp' in city must NOT be blocked: {res}"
+
+
+def test_market_tier_computed_correctly():
+    """marketTier auto-computation: US=TIER_A, PT=TIER_B, JP=OTHER."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = Path(tmp) / "prospector.db"
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("prospector_mcp", str(ROOT.parent / "prospector-mcp.py"))
+        pm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pm)
+        pm.DB = str(db_path)
+        pm.PASTA = str(tmp)
+
+        cases = [
+            ({"slug": "us-lead", "nome": "US Lead", "country": "US"}, "TIER_A"),
+            ({"slug": "ca-lead", "nome": "CA Lead", "country": "CA"}, "TIER_A"),
+            ({"slug": "pt-lead", "nome": "PT Lead", "country": "PT"}, "TIER_B"),
+            ({"slug": "mx-lead", "nome": "MX Lead", "country": "MX"}, "TIER_B"),
+            ({"slug": "jp-lead", "nome": "JP Lead", "country": "JP"}, "OTHER"),
+        ]
+        for lead_data, expected_tier in cases:
+            res = pm.f_salvar(lead_data)
+            assert res.get("ok") is True, f"Lead {lead_data['slug']} save failed: {res}"
+            lead = pm.f_obter(lead_data["slug"])
+            assert lead["marketTier"] == expected_tier, (
+                f"Lead {lead_data['slug']} (country={lead_data['country']}): "
+                f"expected {expected_tier}, got {lead['marketTier']}"
+            )
+
+
+def test_market_tier_fresh_db_schema():
+    """Fresh DB schema includes marketTier column."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = Path(tmp) / "prospector.db"
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("prospector_mcp", str(ROOT.parent / "prospector-mcp.py"))
+        pm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pm)
+        pm.DB = str(db_path)
+        pm.PASTA = str(tmp)
+
+        conn = pm.conexao()
+        cursor = conn.execute("PRAGMA table_info(leads)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
+        assert "marketTier" in columns, f"marketTier column missing from fresh DB schema. Columns: {columns}"
+
+
+def test_salvar_lead_exposes_market_tier():
+    """salvar_lead MCP tool accepts marketTier parameter and persists it."""
+    with tempfile.TemporaryDirectory() as tmp:
+        db_path = Path(tmp) / "prospector.db"
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("prospector_mcp", str(ROOT.parent / "prospector-mcp.py"))
+        pm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pm)
+        pm.DB = str(db_path)
+        pm.PASTA = str(tmp)
+
+        res = pm.f_salvar({"slug": "explicit-tier", "nome": "Explicit Tier", "country": "US", "marketTier": "TIER_A"})
+        assert res.get("ok") is True
+        lead = pm.f_obter("explicit-tier")
+        assert lead["marketTier"] == "TIER_A"
+        assert lead["currency"] == "USD", "MARKET_DEFAULTS should auto-fill USD for US"
+
+
+# ============================
+# V3.1.1 TESTS — Diversity Gate
+# ============================
+
+def test_dna_token_similarity_catches_reorder():
+    """Reordered tokens like 'gentle-reveal-subtle-parallax' vs 'subtle-reveal-gentle-parallax' should match >= 0.7."""
+    sim = _dna_token_similarity("gentle-reveal-subtle-parallax", "subtle-reveal-gentle-parallax")
+    assert sim >= 0.7, f"Reordered tokens should have similarity >= 0.7, got {sim:.3f}"
+
+
+def test_dna_token_similarity_allows_distinct():
+    """Truly distinct values like 'oversized-serif-display' vs 'refined-humanist-sans' should NOT match."""
+    sim = _dna_token_similarity("oversized-serif-display", "refined-humanist-sans")
+    assert sim < 0.7, f"Distinct values should have similarity < 0.7, got {sim:.3f}"
+
+
+# ============================
+# V3.1.1 TESTS — Resource Registry
+# ============================
+
+def test_aura_unconfirmed_stays_reference_only():
+    """Aura resources with commercialUse=UNCONFIRMED must have adaptationMode=REFERENCE_ONLY."""
+    registry_path = ROOT / "design-resources" / "registry.json"
+    assert registry_path.is_file(), f"Registry not found at {registry_path}"
+    data = json.loads(registry_path.read_text(encoding="utf-8"))
+    for res in data.get("resources", []):
+        if res.get("source") == "aura":
+            assert res.get("commercialUse") == "UNCONFIRMED", (
+                f"Aura resource {res['id']} must have commercialUse=UNCONFIRMED, got {res.get('commercialUse')}"
+            )
+            assert res.get("adaptationMode") == "REFERENCE_ONLY", (
+                f"Aura resource {res['id']} must have adaptationMode=REFERENCE_ONLY, got {res.get('adaptationMode')}"
+            )
+
+
+def test_external_resource_cannot_pass_without_license():
+    """External resources (non-native) without license or commercialUse must fail provenance gate."""
+    manifest = {
+        "schemaVersion": 3,
+        "slug": "unlicensed-site",
+        "resourceProvenance": {
+            "source": "aura",
+            "sourceUrl": "https://auraui.com/example",
+            "commercialUse": "UNCONFIRMED",
+        },
+    }
+    design = (
+        "RESOURCE_PROVENANCE:\n"
+        "source: aura\n"
+        "sourceUrl: https://auraui.com/example\n"
+        "commercialUse: UNCONFIRMED\n"
+    )
+    rev = Review()
+    check_resource_provenance(manifest, design, rev)
+    assert not _passed(rev), "External resource with UNCONFIRMED commercialUse must fail provenance gate"
+
+
 if __name__ == "__main__":
     test_funcs = [k for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn_name in test_funcs:
         globals()[fn_name]()
         print(f"[PASS] {fn_name}")
-    print(f"\nAll {len(test_funcs)} Design Framework V3.1 test cases passed successfully.")
+    print(f"\nAll {len(test_funcs)} Design Framework V3.1.1 test cases passed successfully.")
+

@@ -168,6 +168,25 @@ def check_design_dna(manifest: dict, design_read: str, review: Review) -> None:
         )
 
 
+_DNA_STOP_WORDS = frozenset({"with", "and", "style", "type", "based", "the", "a", "of", "for"})
+
+
+def _dna_token_similarity(a: str, b: str) -> float:
+    """Jaccard similarity of tokenized DNA field values.
+
+    Splits on dash, underscore, space. Removes stop words.
+    Returns 0.0 if either side is empty.
+    """
+    import re as _re
+    tokens_a = {t for t in _re.split(r"[-_\s]+", a.strip().lower()) if t and t not in _DNA_STOP_WORDS}
+    tokens_b = {t for t in _re.split(r"[-_\s]+", b.strip().lower()) if t and t not in _DNA_STOP_WORDS}
+    if not tokens_a or not tokens_b:
+        return 0.0
+    intersection = tokens_a & tokens_b
+    union = tokens_a | tokens_b
+    return len(intersection) / len(union) if union else 0.0
+
+
 def check_design_diversity(manifest: dict, design_read: str, review: Review, base_dir: Path | None = None) -> None:
     is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
     manifest_dna = manifest.get("designDna") or {}
@@ -213,7 +232,12 @@ def check_design_diversity(manifest: dict, design_read: str, review: Review, bas
                 if other_slug == manifest.get("slug"):
                     continue
                 other_dna = {k: str(v).strip().lower() for k, v in site.get("dna", {}).items()}
-                overlap_count = sum(1 for f in DNA_FIELDS if current_dna.get(f) and current_dna.get(f) == other_dna.get(f))
+                # Token similarity (Jaccard >= 0.7) instead of exact string match
+                overlap_count = sum(
+                    1 for f in DNA_FIELDS
+                    if current_dna.get(f) and other_dna.get(f)
+                    and _dna_token_similarity(current_dna[f], other_dna[f]) >= 0.7
+                )
                 if overlap_count >= 5:
                     review.check(
                         "design_diversity_no_substantial_duplicate",
