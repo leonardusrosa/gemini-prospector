@@ -1,0 +1,62 @@
+[
+  {
+    "slug": "clinica-prado-odontologia-rio-claro",
+    "dna": {
+      "heroGrammar": "full-bleed-placeholder",
+      "paletteFamily": "clinical-navy-gold",
+      "typographyCharacter": "editorial-serif-sans",
+      "layoutGrammar": "classic-vertical-stacked",
+      "motionLanguage": "subtle-scroll-reveal",
+      "reviewTreatment": "verified-quote-cards",
+      "signatureModule": "neighborhood-presence-map"
+    }
+  },
+  {
+    "slug": "iost-ortodontia-aline-iost-rio-claro",
+    "dna": {
+      "heroGrammar": "full-bleed-expert",
+      "paletteFamily": "warm-rose-neutral",
+      "typographyCharacter": "refined-humanist-sans",
+      "layoutGrammar": "editorial-alternating",
+      "motionLanguage": "fluid-header-reveal",
+      "reviewTreatment": "interactive-carousel-12-slide",
+      "signatureModule": "invisalign-aligner-showcase"
+    }
+  },
+  {
+    "slug": "instituto-ferreira-odontologia-rio-claro",
+    "dna": {
+      "heroGrammar": "full-bleed-expert",
+      "paletteFamily": "monochrome-slate",
+      "typographyCharacter": "modern-geometric-sans",
+      "layoutGrammar": "asymmetric-split",
+      "motionLanguage": "minimal-reduced-motion",
+      "reviewTreatment": "traversed-grid",
+      "signatureModule": "implant-technology-explainer"
+    }
+  },
+  {
+    "slug": "clinica-dra-francine-goulart-rio-claro",
+    "dna": {
+      "heroGrammar": "full-bleed-expert",
+      "paletteFamily": "warm-champagne",
+      "typographyCharacter": "luxury-serif-display",
+      "layoutGrammar": "layered-depth-cards",
+      "motionLanguage": "staggered-fade",
+      "reviewTreatment": "quote-carousel",
+      "signatureModule": "harmonization-visualizer"
+    }
+  },
+  {
+    "slug": "clinica-dentaria-previlege-lisboa",
+    "dna": {
+      "heroGrammar": "full-bleed-contextual",
+      "paletteFamily": "lisbon-terracotta-azure",
+      "typographyCharacter": "european-editorial-sans",
+      "layoutGrammar": "wide-bleed-pacing",
+      "motionLanguage": "scroll-driven-accent",
+      "reviewTreatment": "verified-patient-wall",
+      "signatureModule": "lisboa-access-explorer"
+    }
+  }
+]

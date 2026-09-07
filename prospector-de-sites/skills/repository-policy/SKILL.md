@@ -163,68 +163,62 @@ Repository CI must include deterministic regressions proving at least these stat
 
 Do not remove or weaken these regressions to make a tenant pass.
 
-## 11. OpenDesign creative-direction policy
+## 11. Frontend Design Governance — GPT-Taste as Creative Director
 
-For **new first-version public websites and landing pages created under review-manifest schema v2 or later**, read and obey `../open-design-direction/SKILL.md` before production HTML is written.
+### 1. GPT-Taste Creative Direction
+`gpt-taste` is the creative director and frontend design owner for all prospect sites.
+- Generates 3 structurally distinct concepts before code (varying layout/architecture, not just color/copy).
+- Selects 1 concept with recorded rationale.
+- Pre-code gate: `GPT_TASTE_DESIGN_DECISION: PASS | PASS_AFTER_DIRECTION_CHANGE | BLOCKED_SKILL_UNAVAILABLE`. No code before PASS.
+- Post-browser-QA gate: `GPT_TASTE_IMPLEMENTATION_REVIEW: PASS | PASS_AFTER_CHANGES | BLOCKED_SKILL_UNAVAILABLE`.
+- If unavailable: fail closed. Never fabricate a fallback PASS.
 
-OpenDesign is an upstream exploration and research mechanism, NOT final design authority.
+### 2. OpenDesign Legacy Status
+OpenDesign is no longer part of the production pipeline for schema v3+ sites. Retained solely for backwards compatibility with legacy schema v2 manifests. Future sites do not create OpenDesign artifacts.
 
-### GPT-Taste: Frontend Design Owner / Art Director
-
-`gpt-taste` is the explicit creative owner and art director of prospect-site frontend design.
-
-GPT-Taste owns:
-- visual direction
-- composition
-- layout architecture
-- hierarchy
-- typography direction
-- hero composition
-- section sequencing
-- density / whitespace
-- review-section presentation
-- visual personality
-- interaction style
-- responsive design intent
-- anti-template / anti-AI-slop judgment
-
-GPT-Taste may require structural redesign when the chosen implementation does not meet intended design quality. Its authority is not limited to minor polish.
-
-### OpenDesign Role
-
-OpenDesign functions as an upstream exploration mechanism:
-```text
-research
--> references
--> two genuinely distinct directions
--> DESIGN.md candidates
-```
-
-After OpenDesign exploration, GPT-Taste reviews the alternatives and:
-- selects one;
-- rejects both and requests another direction when necessary;
-- combines compatible ideas when justified;
-- records the final design rationale.
-
-Canonical state:
+### 3. Hard Canonical Review States
+Every schema v3+ site must record:
 ```text
 GPT_TASTE_DESIGN_DECISION:
-PASS
-PASS_AFTER_DIRECTION_CHANGE
-BLOCKED_SKILL_UNAVAILABLE
+PASS | PASS_AFTER_DIRECTION_CHANGE | BLOCKED_SKILL_UNAVAILABLE
+
+GPT_TASTE_IMPLEMENTATION_REVIEW:
+PASS | PASS_AFTER_CHANGES | BLOCKED_SKILL_UNAVAILABLE
+
+IMPECCABLE_REVIEW:
+PASS | PASS_AFTER_CHANGES | ESCALATE_TO_GPT_TASTE | BLOCKED_SKILL_UNAVAILABLE
+
+COPYWRITING_MARKETING_REVIEW:
+PASS | PASS_AFTER_CHANGES | ESCALATE_TO_GPT_TASTE | BLOCKED_SKILL_UNAVAILABLE
+
+FACTUAL_RECHECK:
+PASS | FAIL
+
+SIGNATURE_SECTION:
+PASS | FAIL
 ```
 
-No frontend may proceed to final implementation without a recorded GPT-Taste design decision.
+### 4. Cinematic & Anti-Template Design Standard
+Websites must feel distinctive and cinematic when appropriate: full-bleed visual planes, oversized editorial typography, asymmetric layouts, layered depth, split-screen sections, and interactive spaces.
+Banned default: repetitive cookie-cutter stacks (hero -> intro -> 3 service cards -> reviews -> map -> contact).
+Motion: purposeful, accessible (`prefers-reduced-motion`), mobile-safe, zero layout shift.
 
-If the MCP cannot be reached, record `OPEN_DESIGN_DIRECTION: UNAVAILABLE`, the actual probe failure, and `OPEN_DESIGN_FALLBACK: GPT_TASTE_ONLY`. Never claim OpenDesign PASS when another model or an ordinary prompt produced the direction.
+### 5. Design DNA & Diversity Enforcement
+Every new site tracks 7 DNA fields: `heroGrammar`, `paletteFamily`, `typographyCharacter`, `layoutGrammar`, `motionLanguage`, `reviewTreatment`, `signatureModule`.
+Diversity gate: compare against last 3-5 published sites.
+`DESIGN_DIVERSITY: PASS | NEEDS_DIRECTION_CHANGE`. If repeat look is detected, GPT-Taste must alter structural direction.
 
-An explicit operator skip must be recorded as `SKIPPED_BY_OPERATOR`; it must not be silently treated as a successful OpenDesign pass.
+### 6. Signature Module Requirement
+Every new site must include at least one standout interactive or high-impact module:
+`SIGNATURE_SECTION: PASS | FAIL`, type, purpose, evidenceSafety.
+Required HTML hook: `<section data-role="signature-section" ...>`.
+Healthcare safety: no fake medical results, guarantees, or unauthorized patient before/after imagery.
 
-### Schema v2 enforcement
-
-New first-version schema v2+ manifests must include `openDesignDirection` with truthful MCP status. The deterministic autonomous reviewer must verify the manifest/design-read contract without changing legacy schema v1 sites.
-
-This integration improves first-pass art direction while preserving the existing fail-closed factual and production pipeline.
+### 7. Design Resource Registry & Provenance
+External assets (Aura compositions, 21st.dev components, Preline primitives) are raw material, never design owners.
+Every reused resource logs:
+`RESOURCE_PROVENANCE: source, sourceUrl, license, commercialUse (CONFIRMED), attribution, adaptationMode`.
+If custom/native: `RESOURCE_PROVENANCE: NATIVE`. Unconfirmed commercial use BLOCKS.
 
 ## 12. Expert hero full-bleed invariant
 
@@ -406,60 +400,81 @@ Rules & Examples:
 - **Impeccable finds mobile overflow:** Fix is mandatory regardless of design preference.
 - **Factual sovereignty:** Neither GPT-Taste, `/impeccable`, OpenDesign, nor `/copywriting-marketing` may override factual evidence. Evidence remains sovereign.
 
-### 6. Acceptance order (Canonical 18-step publish sequence)
+### 6. Acceptance order (Canonical 19-step publish sequence)
 
 The canonical sequence for lead publication is strictly:
 
 1. evidence collection / verification
-2. OpenDesign research + alternatives
-3. GPT-Taste art-direction decision
-4. implementation
-5. browser QA
-6. GPT-Taste implementation review
-7. design corrections if required
-8. `/impeccable` execution review
-9. impeccable corrections
-10. `/copywriting-marketing` review
-11. copy corrections
-12. semantic + factual re-check
-13. deterministic gates
-14. proposal QA
-15. Vercel build
-16. deploy
-17. live QA
-18. local CRM promotion
+2. GPT-Taste: 3 diverse structural concepts
+3. GPT-Taste: concept selection & rationale
+4. Design DNA recording + diversity check
+5. Signature module selection & safety check
+6. Resource registry lookup (if applicable)
+7. implementation / build
+8. browser QA
+9. GPT-Taste implementation review
+10. GPT-Taste corrections (if required)
+11. `/impeccable` execution review
+12. impeccable corrections (if required)
+13. `/copywriting-marketing` review
+14. copy corrections (if required)
+15. semantic + factual re-check
+16. deterministic gates + proposal QA
+17. Vercel build + deploy
+18. live QA
+19. local CRM promotion to `publicado`
 
 Important:
 GPT-Taste appears twice:
 - **A. Before implementation:** art-direction owner (`GPT_TASTE_DESIGN_DECISION`).
 - **B. After implementation:** verify that execution actually reflects approved direction (`GPT_TASTE_IMPLEMENTATION_REVIEW`).
 
-A lead cannot advance to `publicado` before steps 1–17 are complete.
+A lead cannot advance to `publicado` before steps 1–18 are complete.
 
 ### 7. Reporting format
 
 Future pipeline reports must record:
 
 ```text
-OPENDESIGN:
-directions:
+FRAMEWORK:
+OpenDesign production dependency: LEGACY_ONLY
+GPT-Taste owner: PASS
+Cinematic rule: PASS
+Design DNA: PASS (7 fields recorded)
+Signature module: PASS (data-role="signature-section")
 
-GPT-TASTE:
-design owner invoked:
-direction selected:
-implementation review:
-state:
+RESOURCES:
+Aura: [referenced/native]
+21st: [adapted/none]
+Preline: [primitive/none]
+Pagedone: DISABLED
+Resource provenance gate: PASS
 
-IMPECCABLE:
-findings:
-state:
+MARKET:
+New BR discovery: DISABLED
+Existing BR leads: VALID
+Tier A/B: [Tier]
 
-COPYWRITING-MARKETING:
-findings:
-state:
+TESTS:
+core: PASS
+sites: PASS
+doctor: PASS
+self-test: PASS
 
-FACTUAL RECHECK:
-state:
+GIT:
+commit: [hash]
+worktree: CLEAN
+
+OUTREACH:
+messages: 0
 ```
 
-Do not claim a full design PASS if GPT-Taste was not actually available.
+## 14. Global Market Acquisition Policy
+
+- **Target Markets**: United States, Canada, Europe, Latin America (LATAM).
+- **Brazil Discovery**: `NEW_DISCOVERY_BR = DISABLED`. Reject all new Brazilian leads. Existing Brazilian leads remain fully valid for updates, funnel advancement, follow-up, and closure.
+- **Market Tiers**:
+  - Tier A: US, CA, GB, IE, NL, CH, DE, AT, DK, SE, NO
+  - Tier B: ES, CL, MX, PA, CR, UY, PT
+  - Other countries permitted only on explicit user request.
+- **Market Metadata**: `country`, `locale`, `currency`, `phoneCountryCode`, `marketTier`. Locale is derived from country evidence, not language alone.

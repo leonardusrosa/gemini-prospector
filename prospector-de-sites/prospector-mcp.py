@@ -23,7 +23,7 @@ DB = os.path.join(PASTA, 'prospector.db')
 CAMPOS = ['slug','nome','nicho','cidade','nota','avaliacoes','email','telefone','whatsapp',
           'siteAntigo','motivo','status','urlNova','dataProposta','valor','obs',
           'contratoStatus','contratoEm','manutencao','pago','docCliente','endCliente',
-          'websiteStatus','siteMode','country','locale','language','phoneCountryCode']
+          'websiteStatus','siteMode','country','locale','language','phoneCountryCode','currency']
 STATUS_VALIDOS = ['novo','redesenhado','publicado','proposta','respondeu','fechado','descartado']
 
 def conexao():
@@ -35,9 +35,9 @@ def conexao():
         valor REAL, obs TEXT, contratoStatus TEXT DEFAULT 'pendente', contratoEm TEXT,
         manutencao REAL, pago INTEGER DEFAULT 0, docCliente TEXT, endCliente TEXT,
         websiteStatus TEXT DEFAULT 'existing_weak', siteMode TEXT DEFAULT 'redesign',
-        country TEXT, locale TEXT, language TEXT, phoneCountryCode TEXT,
+        country TEXT, locale TEXT, language TEXT, phoneCountryCode TEXT, currency TEXT,
         atualizado TEXT)''')
-    for col, tipo in [('contratoStatus',"TEXT DEFAULT 'pendente'"),('contratoEm','TEXT'),('manutencao','REAL'),('pago','INTEGER DEFAULT 0'),('docCliente','TEXT'),('endCliente','TEXT'),('websiteStatus',"TEXT DEFAULT 'existing_weak'"),('siteMode',"TEXT DEFAULT 'redesign'"),('country','TEXT'),('locale','TEXT'),('language','TEXT'),('phoneCountryCode','TEXT')]:
+    for col, tipo in [('contratoStatus',"TEXT DEFAULT 'pendente'"),('contratoEm','TEXT'),('manutencao','REAL'),('pago','INTEGER DEFAULT 0'),('docCliente','TEXT'),('endCliente','TEXT'),('websiteStatus',"TEXT DEFAULT 'existing_weak'"),('siteMode',"TEXT DEFAULT 'redesign'"),('country','TEXT'),('locale','TEXT'),('language','TEXT'),('phoneCountryCode','TEXT'),('currency','TEXT')]:
         try: c.execute('ALTER TABLE leads ADD COLUMN %s %s' % (col, tipo))
         except sqlite3.OperationalError: pass
     try:
@@ -45,9 +45,9 @@ def conexao():
         for r in rows:
             sl, cid, end, wpp, tel = r
             if (wpp and str(wpp).startswith('351')) or (tel and str(tel).startswith('351')) or (cid and 'portugal' in str(cid).lower()):
-                c.execute("UPDATE leads SET country='PT', locale='pt-PT', language='pt', phoneCountryCode='351' WHERE slug=?", (sl,))
+                c.execute("UPDATE leads SET country='PT', locale='pt-PT', language='pt', phoneCountryCode='351', currency='EUR' WHERE slug=?", (sl,))
             elif (wpp and str(wpp).startswith('55')) or (tel and str(tel).startswith('55')) or (cid and any(k in str(cid).lower() for k in ['sp','rj','mg','pr','rs','sc','brasil','são paulo','campinas','rio claro'])):
-                c.execute("UPDATE leads SET country='BR', locale='pt-BR', language='pt', phoneCountryCode='55' WHERE slug=?", (sl,))
+                c.execute("UPDATE leads SET country='BR', locale='pt-BR', language='pt', phoneCountryCode='55', currency='BRL' WHERE slug=?", (sl,))
     except Exception:
         pass
     c.execute('''CREATE TABLE IF NOT EXISTS outreach_history (
@@ -62,6 +62,22 @@ def _linhas(rows, cols):
 
 def _agora():
     return datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+
+def _is_brazilian_lead(dados):
+    country = str(dados.get('country') or '').strip().upper()
+    if country == 'BR':
+        return True
+    phone_code = str(dados.get('phoneCountryCode') or '').strip()
+    if phone_code == '55':
+        return True
+    for field in ('whatsapp', 'telefone'):
+        val = str(dados.get(field) or '').strip()
+        if val.startswith('55') or val.startswith('+55'):
+            return True
+    cidade = str(dados.get('cidade') or '').lower()
+    if any(k in cidade for k in ['sp','rj','mg','pr','rs','sc','brasil','brazil','são paulo','campinas','rio claro']):
+        return True
+    return False
 
 # ---------- Lógica (compartilhada entre MCP e autoteste) ----------
 
@@ -84,7 +100,12 @@ def f_salvar(dados):
         return {'erro': 'slug é obrigatório (ex.: maria-silva)'}
     if dados.get('status') and dados['status'] not in STATUS_VALIDOS:
         return {'erro': 'status inválido. Use: %s' % ', '.join(STATUS_VALIDOS)}
-    atual = f_obter(dados['slug']) or {}
+    existente = f_obter(dados['slug'])
+    # Market Policy V3: NEW_DISCOVERY_BR = DISABLED.
+    # New Brazilian leads cannot be created. Existing Brazilian leads remain valid and can be updated.
+    if existente is None and _is_brazilian_lead(dados):
+        return {'erro': 'NEW_DISCOVERY_BR is DISABLED under Market Policy V3. New Brazilian prospects cannot be created in CRM.'}
+    atual = existente or {}
     atual.update({k: v for k, v in dados.items() if k in CAMPOS and v is not None})
     atual.setdefault('status', 'novo'); atual.setdefault('contratoStatus', 'pendente'); atual.setdefault('pago', 0)
     c = conexao()
@@ -130,23 +151,39 @@ def f_fechar(slug, valor, manutencao=None):
     return {'ok': True, 'lead': slug, 'valor': valor, 'manutencao': manutencao}
 
 def f_followups(dias=3):
-    limite = (datetime.date.today() - datetime.timedelta(days=dias)).isoformat()
     c = conexao(); cur = c.cursor()
-    cur.execute("SELECT slug,nome,email,whatsapp,telefone,dataProposta,obs FROM leads WHERE status='proposta' AND dataProposta<=? ", (limite,))
-    r = _linhas(cur.fetchall(), ['slug','nome','email','whatsapp','telefone','dataProposta','obs']); c.close()
-    return [x for x in r if 'follow-up' not in (x.get('obs') or '').lower()]
+    cur.execute('''SELECT %s FROM leads
+        WHERE status='proposta'
+          AND date(dataProposta) <= date('now', '-%d day')
+          AND (obs IS NULL OR obs NOT LIKE '%%%%Follow-up enviado em%%%%')
+        ORDER BY dataProposta ASC''' % (','.join(CAMPOS), dias))
+    r = _linhas(cur.fetchall(), CAMPOS); c.close(); return r
 
 def f_financeiro():
     c = conexao(); cur = c.cursor()
-    cur.execute("SELECT COALESCE(SUM(valor),0), COALESCE(SUM(CASE WHEN pago=1 THEN valor ELSE 0 END),0), COALESCE(SUM(manutencao),0), COUNT(*) FROM leads WHERE status='fechado'")
-    total, recebido, mrr, n = cur.fetchone(); c.close()
-    return {'fechados': n, 'total_fechado': total, 'recebido': recebido,
-            'a_receber': total - recebido, 'mrr_manutencoes': mrr, 'projecao_12m': total + mrr*12}
+    cur.execute("SELECT COUNT(*), SUM(valor), SUM(manutencao) FROM leads WHERE status='fechado'")
+    fechados, val_fechado, mrr = cur.fetchone()
+    cur.execute("SELECT SUM(valor) FROM leads WHERE status='fechado' AND pago=1")
+    recebido = cur.fetchone()[0] or 0
+    cur.execute("SELECT COUNT(*), SUM(valor) FROM leads WHERE status='proposta'")
+    prop_qtd, prop_val = cur.fetchone()
+    c.close()
+    val_fechado = val_fechado or 0; mrr = mrr or 0
+    return {
+        'clientesFechados': fechados or 0,
+        'receitaProjetos': round(val_fechado, 2),
+        'recebido': round(recebido, 2),
+        'aReceber': round(val_fechado - recebido, 2),
+        'mrrManutencao': round(mrr, 2),
+        'arrManutencao': round(mrr * 12, 2),
+        'projecao12Meses': round(val_fechado + (mrr * 12), 2),
+        'propostasEmAberto': prop_qtd or 0,
+        'pipelineAberto': round(prop_val or 0, 2)
+    }
 
 def f_dashboard():
-    """Regenera o dashboard.html (snapshot) a partir do banco, se houver template na pasta."""
     tpl_path = None
-    for cand in ['dashboard-template.html', 'dashboard.html']:
+    for cand in ['dashboard.html', 'prospector-de-sites/dashboard.html', 'prospector-de-sites/dashboard/dashboard-template.html']:
         p = os.path.join(PASTA, cand)
         if os.path.exists(p): tpl_path = p; break
     if not tpl_path: return {'erro': 'dashboard.html/template não encontrado na pasta %s' % PASTA}
@@ -164,7 +201,7 @@ def f_dashboard():
 if ARGS.teste:
     import tempfile
     PASTA = tempfile.mkdtemp(); DB = os.path.join(PASTA, 'prospector.db')
-    print('1 salvar:', f_salvar({'slug':'teste-mcp','nome':'Teste MCP','email':'t@t.com','nicho':'nutricionista','cidade':'SP'}))
+    print('1 salvar:', f_salvar({'slug':'teste-mcp','nome':'Teste MCP','email':'t@t.com','nicho':'nutricionista','cidade':'Lisboa','country':'PT','currency':'EUR'}))
     print('2 listar:', len(f_listar()), 'lead(s)')
     print('3 status:', f_status('teste-mcp','proposta'))
     import sqlite3 as s3
@@ -173,6 +210,7 @@ if ARGS.teste:
     print('5 fechar:', f_fechar('teste-mcp', 700, 100))
     print('6 financeiro:', f_financeiro())
     print('7 status inválido (deve dar erro):', f_status('teste-mcp','banana'))
+    print('8 novo lead BR bloqueado:', f_salvar({'slug':'novo-br','cidade':'Rio Claro SP','country':'BR'}))
     print('AUTOTESTE OK')
     sys.exit(0)
 
@@ -193,7 +231,8 @@ def obter_lead(slug: str) -> str:
 @mcp.tool()
 def salvar_lead(slug: str, nome: str = '', nicho: str = '', cidade: str = '', nota: float = 0,
                 avaliacoes: int = 0, email: str = '', telefone: str = '', whatsapp: str = '',
-                siteAntigo: str = '', motivo: str = '', urlNova: str = '', obs: str = '') -> str:
+                siteAntigo: str = '', motivo: str = '', urlNova: str = '', obs: str = '',
+                country: str = '', locale: str = '', currency: str = '', phoneCountryCode: str = '') -> str:
     """Cria ou atualiza um lead no CRM (usar após prospectar ou ao corrigir dados). Slug no formato nome-sobrenome."""
     d = {k: v for k, v in locals().items() if v not in ('', 0)}
     return json.dumps(f_salvar(d), ensure_ascii=False)

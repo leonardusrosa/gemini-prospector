@@ -55,14 +55,18 @@ def validate_open_design_direction(
     if schema_version < 2 and site_mode not in FIRST_VERSION_MODES:
         return errors
 
-    if site_mode in FIRST_VERSION_MODES and schema_version >= 2:
+    # Schema v3+: OpenDesign is removed from the production workflow
+    if schema_version >= 3 and not cfg:
+        return errors
+
+    if site_mode in FIRST_VERSION_MODES and schema_version == 2:
         if not isinstance(cfg, dict):
-            return ["schema v2+ first versions require openDesignDirection configuration."]
+            return ["schema v2 first versions require openDesignDirection configuration."]
     elif not isinstance(cfg, dict):
         return errors
 
-    if cfg.get("required") is not True:
-        errors.append("openDesignDirection.required must be true for schema v2+ first versions.")
+    if cfg.get("required") is not True and schema_version == 2:
+        errors.append("openDesignDirection.required must be true for schema v2 first versions.")
 
     if str(cfg.get("mcpServerName") or "").strip() != "open-design":
         errors.append("openDesignDirection.mcpServerName must be 'open-design'.")

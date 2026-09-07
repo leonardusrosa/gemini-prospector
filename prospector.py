@@ -87,10 +87,36 @@ def static_capabilities() -> dict:
             "transport": "stdio",
         },
         "skills": {"available": skills.is_dir(), "path": str(skills)},
+        "gptTaste": {
+            "role": "required_design_owner",
+            "available": True,
+            "description": "Sole frontend creative authority / art director under Framework V3.1",
+        },
         "openDesign": {
+            "role": "legacy",
             "installedCandidate": bool(open_design_candidate),
             "path": open_design_candidate,
+            "runtimeProbeRequired": False,
+            "note": "Legacy only for schema v2 sites. Future schema v3+ sites do not require OpenDesign.",
+        },
+        "auraIndex": {
+            "role": "optional_resource",
+            "available": (ROOT / "tools" / "aura_index.py").is_file(),
+            "path": str(ROOT / "tools" / "aura_index.py"),
+        },
+        "21stDev": {
+            "role": "optional_resource",
             "runtimeProbeRequired": True,
+            "note": "Optional component / interaction primitive resource.",
+        },
+        "preline": {
+            "role": "optional_resource",
+            "available": (CORE / "design-resources" / "preline" / "catalog.json").is_file(),
+            "path": str(CORE / "design-resources" / "preline" / "catalog.json"),
+        },
+        "pagedone": {
+            "role": "disabled",
+            "note": "Disabled to avoid runtime and dependency bloat; 21st and Preline cover needs.",
         },
         "browser": {
             "playwrightMcpLaunchable": bool(which("npx")),

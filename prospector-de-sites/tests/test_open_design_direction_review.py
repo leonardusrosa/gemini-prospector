@@ -153,6 +153,16 @@ def test_used_fails_with_gpt_taste_blocked_skill_unavailable():
         assert any("BLOCKED_SKILL_UNAVAILABLE" in e for e in errors)
 
 
+def test_future_lead_schema_v3_does_not_require_open_design():
+    manifest = {
+        "schemaVersion": 3,
+        "siteMode": "new_site_concept",
+        "slug": "future-client-studio",
+    }
+    # Future lead without openDesignDirection configuration passes cleanly
+    assert validate_open_design_direction(manifest, "", None) == []
+
+
 if __name__ == "__main__":
     tests = [name for name in globals() if name.startswith("test_")]
     for name in sorted(tests):

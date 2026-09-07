@@ -143,255 +143,198 @@ Vendor-specific integrations may exist, but they are adapters, not repository tr
 
 When a task can be completed by a repository script or deterministic gate, prefer that over an agent's prose judgment.
 
-## 7. Frontend Design Governance — GPT-Taste as Design Owner
+## 7. Frontend Design Governance — GPT-Taste as Creative Director
 
-### 7.1 Design Authority: GPT-Taste = Frontend Design Owner / Art Director
+### 7.1 Design Authority: GPT-Taste = Creative Director / Frontend Design Owner
 
-`gpt-taste` is the explicit creative owner and art director of prospect-site frontend design.
+`gpt-taste` is the sole creative director and art director of prospect-site frontend design.
 
 GPT-Taste owns:
-- visual direction
-- composition
-- layout architecture
-- hierarchy
-- typography direction
-- hero composition
-- section sequencing
-- density / whitespace
-- review-section presentation
-- visual personality
-- interaction style
-- responsive design intent
-- anti-template / anti-AI-slop judgment
+- 3 structural concepts generated before any code (differing in structure/layout, not just color/copy)
+- selection of 1 chosen concept
+- visual direction, composition, layout architecture, hierarchy, typography, density/whitespace
+- signature module selection and review-section presentation
+- visual personality, cinematic pacing, anti-template/anti-AI-slop judgment
 
-GPT-Taste may require structural redesign when the chosen implementation does not meet the intended design quality. Its authority is not limited to minor polish.
-
-For expert/expert-placeholder heroes, `expert-hero-full-bleed` remains a hard invariant regardless of the agent, OpenDesign direction, design model, or runtime.
-
-Runtimes without installed external `gpt-taste` use the repository-owned fallback (`prospector-de-sites/skills/design-judge/SKILL.md`) under the portability contract. An agent must never silently fabricate a `GPT_TASTE_READ: PASS` marker.
-
-### 7.2 OpenDesign Role: Upstream Exploration & Research
-
-OpenDesign is an upstream exploration and research mechanism, NOT final design authority.
-
-Its role:
-- research
-- references
-- two genuinely distinct directions
-- `DESIGN.md` candidates
-
-After OpenDesign exploration, GPT-Taste reviews the alternatives and:
-- selects one
-- rejects both and requests another direction when necessary
-- combines compatible ideas when justified
-- records the final design rationale
-
-Canonical state:
+Pre-code requirement:
+No code may be written before a recorded decision:
 ```text
-GPT_TASTE_DESIGN_DECISION:
-PASS
-PASS_AFTER_DIRECTION_CHANGE
-BLOCKED_SKILL_UNAVAILABLE
+GPT_TASTE_DESIGN_DECISION: PASS | PASS_AFTER_DIRECTION_CHANGE | BLOCKED_SKILL_UNAVAILABLE
 ```
 
-No frontend may proceed to final implementation without a recorded GPT-Taste design decision.
+Post-browser-QA requirement:
+After implementation and browser QA, GPT-Taste inspects the actual build:
+```text
+GPT_TASTE_IMPLEMENTATION_REVIEW: PASS | PASS_AFTER_CHANGES | BLOCKED_SKILL_UNAVAILABLE
+```
 
-### 7.3 Conflict Resolution Authority Hierarchy
+If GPT-Taste is unavailable: STOP. Never fabricate a fallback PASS.
+
+### 7.2 OpenDesign Status: Legacy Only
+
+OpenDesign is no longer part of the production site-generation workflow for schema v3+ sites.
+Retained only for backwards compatibility with legacy schema v2 manifests. Future sites do not generate `DESIGN.md` or OpenDesign artifacts.
+
+### 7.3 Cinematic & Distinctive Design Objective
+
+Target:
+- Distinctive, cinematic when useful, conversion-clear, mobile-safe, fast, anti-template.
+- Good patterns: full-bleed visual fields, oversized editorial type, asymmetric grids, layered depth, editorial pacing, split-screen sections, rich galleries, interactive spaces.
+- Avoid default cookie-cutter repetition: hero -> intro -> 3 service cards -> reviews -> map -> contact.
+- Motion rules: no motion for motion's sake; respect `prefers-reduced-motion`, accessibility, and zero layout shift.
+
+### 7.4 Design DNA & Diversity Enforcement
+
+Every new site records 7 design DNA fields:
+1. `heroGrammar`
+2. `paletteFamily`
+3. `typographyCharacter`
+4. `layoutGrammar`
+5. `motionLanguage`
+6. `reviewTreatment`
+7. `signatureModule`
+
+Before build, compare new DNA against the last 3-5 published sites:
+```text
+DESIGN_DIVERSITY: PASS | NEEDS_DIRECTION_CHANGE
+```
+If a repeat look is detected, GPT-Taste must alter structural direction.
+
+### 7.5 Signature Module Requirement
+
+Every new site version must implement at least one interactive or high-impact signature module:
+```text
+SIGNATURE_SECTION: PASS | FAIL
+type: [slider | visual-compare | service-finder | calculator | map-explorer | gallery-explorer | timeline | visualizer | interactive-matrix | interactive-story]
+purpose: [user value explanation]
+evidenceSafety: [confirmed safe / no unsupported claims]
+```
+Required HTML hook:
+```html
+<section data-role="signature-section" ...>
+```
+Healthcare safety invariant: no fabricated medical outcomes or clinical guarantees. Visualizers must be marked illustrative unless directly backed by source evidence.
+
+### 7.6 Design Resource Registry & Provenance
+
+External UI assets (Aura compositions, 21st.dev components, Preline primitives) are raw material, never the design owner.
+External libraries cannot set site direction.
+Priority: Native build -> Aura reference -> 21st interaction -> Preline primitive -> other.
+Every reused resource must log provenance with verified commercial use:
+```text
+RESOURCE_PROVENANCE:
+source: [aura | 21st | preline | custom]
+sourceUrl: [url]
+license: [license name]
+commercialUse: CONFIRMED
+attribution: [text or null]
+adaptationMode: [ADAPT_TO_VANILLA | USE_DIRECTLY | REFERENCE_ONLY]
+```
+If purely custom/native: `RESOURCE_PROVENANCE: NATIVE`. Unconfirmed commercial use BLOCKS.
+
+### 7.7 Conflict Resolution Hierarchy
 
 When skills or perspectives conflict, authority resolves strictly in this order:
-
 ```text
-FACTUAL/EVIDENCE SAFETY
->
-GPT-TASTE DESIGN DIRECTION
->
-/COPYWRITING-MARKETING FOR MESSAGE/COPY
->
-/IMPECCABLE FOR EXECUTION CRAFT
+FACTUAL/EVIDENCE SAFETY > GPT-TASTE DESIGN DIRECTION > /COPYWRITING-MARKETING > /IMPECCABLE
 ```
+Evidence remains sovereign over all creative and copy choices.
 
-Rules & Examples:
-- **Impeccable dislikes the editorial layout but finds no defect:** GPT-Taste decision wins.
-- **Copywriting says headline hierarchy weakens conversion:** GPT-Taste evaluates structural visual change.
-- **GPT-Taste wants a service claim not supported by evidence:** Evidence wins; design adapts.
-- **Impeccable finds mobile overflow:** Fix is mandatory regardless of design preference.
-- **Factual sovereignty:** Neither GPT-Taste, `/impeccable`, OpenDesign, nor `/copywriting-marketing` may override factual evidence. Evidence remains sovereign. Any creative recommendation requiring an unsupported claim must be rejected or rewritten within verified evidence.
+## 8. Global Market Acquisition Policy
 
-## 8. Outreach and irreversible actions
+- Target Markets: United States, Canada, Europe, Latin America (LATAM).
+- **Brazil Discovery**: `NEW_DISCOVERY_BR = DISABLED`. Reject all new Brazilian leads.
+- Existing Brazilian leads remain valid for updates, funnel advancement, follow-up, and closure.
+- Market Tiers:
+  - Tier A: US, CA, GB, IE, NL, CH, DE, AT, DK, SE, NO
+  - Tier B: ES, CL, MX, PA, CR, UY, PT
+  - Other countries permitted only on explicit user request.
+- Stored market metadata: `country`, `locale`, `currency`, `phoneCountryCode`, `marketTier`. Locale is derived from country evidence, not language alone.
 
-No agent/runtime may send outreach, contact a prospect, execute an irreversible client action, or mark a deal closed without the same approval required by the canonical skills.
+## 9. Outreach and Irreversible Actions
 
+Zero outreach without explicit user authorization. No messages or calls may be sent automatically.
 Changing CLI/agent does not weaken human-approval requirements.
-
-## 9. QA is runtime-independent
-
-A different agent is not a reason to skip gates.
-
-When applicable, run the repository-owned validators and the publish repository's build gates. A self-authored report is never sufficient evidence of PASS.
-
-At minimum, a site production decision must distinguish:
-
-```text
-STATIC / DETERMINISTIC QA
-BROWSER / VISUAL QA
-FACTUAL EVIDENCE QA
-DEPLOY QA
-```
-
-If the runtime cannot execute one layer, report it as unavailable and stop before claiming a full production PASS.
 
 ## 10. Mandatory Specialist Reviews: /impeccable and /copywriting-marketing
 
-Before any lead is considered publish-ready, every prospect site and proposal must pass two mandatory specialist skill reviews using the installed Antigravity/Codex skills by their slash-command names:
-
 ### 10.1 `/impeccable`: Bounded Execution QA
 
-`/impeccable` is NOT the art director. It reviews execution craft after implementation.
-
-Owns:
-- pixel/craft quality
-- spacing consistency
-- responsive behavior
-- overflow
-- crop
-- contrast
-- focus/hover states
-- tap targets
-- alignment
-- visual rhythm defects
-- unfinished UI states
-- minor/moderate polish
-
-It may request local corrections.
-
-It should NOT:
-- replace the chosen visual direction because of personal taste;
-- redesign the whole site;
-- override GPT-Taste's approved art direction absent a concrete usability or quality defect.
-
-If `/impeccable` believes the design direction itself is fundamentally defective, it must return:
-```text
-ESCALATE_TO_GPT_TASTE
-```
-rather than silently redesigning it.
+Reviews craft after implementation: spacing bugs, overflow, crop, contrast, focus/hover states, tap targets, alignment, and responsive craft.
+Does NOT art-direct or redesign. If design direction is fundamentally broken: `ESCALATE_TO_GPT_TASTE`.
 
 ### 10.2 `/copywriting-marketing`: Bounded Message & Conversion Review
 
-`/copywriting-marketing` owns:
-- customer-facing language
-- headings
-- CTA wording
-- message hierarchy
-- clarity
-- persuasion
-- proposal communication
-- removal of audit/internal jargon
+Reviews customer-facing copy, headline hierarchy, CTA wording, persuasion, and jargon removal.
+MUST NOT invent new unsupported business, medical, operational, or relational propositions.
 
-It does NOT own visual design.
+### 10.3 Factual Re-Check & Semantic Claim Audit
 
-It may recommend layout changes only when directly necessary for copy hierarchy (e.g. CTA buried, headline hierarchy conflicts with message, important value proposition appears too late). Such recommendations go back to GPT-Taste if they materially alter frontend structure.
+`FACTUAL_RECHECK` executes a semantic claim audit after copy edits:
+1. Extract all added or modified assertions.
+2. Classify as `SUPPORTED`, `NONFACTUAL_UI_COPY`, or `UNSUPPORTED`.
+3. Any `UNSUPPORTED` claim causes immediate `FACTUAL_RECHECK: FAIL` and `SEMANTIC_CLAIM_AUDIT: FAIL`.
 
-### Copywriting constraint: No newly-created unsupported propositions
+## 11. Canonical 19-Step Publish Sequence
 
-The copywriter MUST NOT create a new business, medical, operational, or relational proposition merely because it sounds better or more natural.
+No lead may advance to `publicado` in CRM before all steps pass:
+1. Evidence collection & verification
+2. GPT-Taste: 3 diverse structural concepts
+3. GPT-Taste: concept selection & rationale
+4. Design DNA recording + diversity check
+5. Signature module selection & safety check
+6. Resource registry lookup (if applicable)
+7. Implementation / build
+8. Browser QA
+9. GPT-Taste implementation review
+10. GPT-Taste corrections (if required)
+11. `/impeccable` execution review
+12. Impeccable corrections (if required)
+13. `/copywriting-marketing` review
+14. Copywriting corrections (if required)
+15. Semantic + factual recheck
+16. Deterministic gates + proposal QA
+17. Vercel build + deploy
+18. Live QA
+19. Local CRM promotion to `publicado`
 
-Risky newly-created propositions that fail without explicit evidence:
-- Quality adjectives: *acolhedor*, *personalizado*, *especializado*, *premium*, *cuidadoso*
-- Operational claims: *agendamento*, *horários reservados*, *atendimento individualizado*
-- Medical/process claims: *diagnóstico*, *prevenção*, *tratamento*, *avaliação clínica*
-- Facility claims: *confortável*, *moderno*, *equipado*, *planejado*
-- Relationship claims: *pacientes*, *clientes da clínica*, *nossa equipe*
-
-### Review identity and relationship semantics
-
-The following semantic inferences are strictly prohibited without evidence:
-- Public review author != automatically verified patient/client/customer (do not refer to reviewers as "nossos pacientes" or "clientes da clínica").
-- Business has WhatsApp != automatically accepts appointments or bookings via WhatsApp.
-- Business category "Odontologia" != detailed diagnostic/preventive/treatment catalog.
-- Business category "Estética" != facial procedures/harmonization/personalized facial care.
-- Address in a specific neighborhood != "centro da cidade".
-
-### Fail-closed semantics
-
-Allowed review states:
-- `PASS`
-- `PASS_AFTER_CHANGES`
-- `BLOCKED_SKILL_UNAVAILABLE`
-
-If either skill is unavailable, the agent MUST NOT silently substitute generic LLM taste or claim equivalent PASS. The blocker must be reported explicitly, and the lead cannot advance to publish readiness.
-
-### Upgraded Factual Recheck & Semantic Claim Audit
-
-"Protected fields unchanged" is **NOT sufficient** for `FACTUAL_RECHECK: PASS`.
-
-`FACTUAL_RECHECK` must include a semantic claim audit after copy edits:
-1. Compute user-facing copy diff.
-2. Extract every added or materially strengthened assertion.
-3. Classify each assertion as:
-   - `SUPPORTED`: grounded in verified factual evidence (record source/reference).
-   - `NONFACTUAL_UI_COPY`: neutral navigation/layout phrasing that asserts no factual capabilities.
-   - `UNSUPPORTED`: any claim exceeding evidence.
-4. Any `UNSUPPORTED` claim causes immediate `FACTUAL_RECHECK: FAIL` and `SEMANTIC_CLAIM_AUDIT: FAIL`.
-
-### Canonical Publish Sequence (18 Steps)
-
-The canonical sequence for lead production and publication is strictly:
-
-1. evidence collection / verification
-2. OpenDesign research + alternatives
-3. GPT-Taste art-direction decision
-4. implementation
-5. browser QA
-6. GPT-Taste implementation review
-7. design corrections if required
-8. `/impeccable` execution review
-9. impeccable corrections
-10. `/copywriting-marketing` review
-11. copy corrections
-12. semantic + factual re-check
-13. deterministic gates
-14. proposal QA
-15. Vercel build
-16. deploy
-17. live QA
-18. local CRM promotion
-
-Important:
-GPT-Taste appears twice:
-- **A. Before implementation:** art-direction owner (`GPT_TASTE_DESIGN_DECISION`).
-- **B. After implementation:** verify that execution actually reflects approved direction (`GPT_TASTE_IMPLEMENTATION_REVIEW`).
-
-A lead cannot advance to `publicado` before steps 1–17 are complete.
-
-### Reporting Format
-
-All future pipeline reports must record:
+## 12. Pipeline Reporting Format
 
 ```text
-OPENDESIGN:
-directions:
+FRAMEWORK:
+OpenDesign production dependency: LEGACY_ONLY
+GPT-Taste owner: PASS
+Cinematic rule: PASS
+Design DNA: PASS (7 fields recorded)
+Signature module: PASS (data-role="signature-section")
 
-GPT-TASTE:
-design owner invoked:
-direction selected:
-implementation review:
-state:
+RESOURCES:
+Aura: [referenced/native]
+21st: [adapted/none]
+Preline: [primitive/none]
+Pagedone: DISABLED
+Resource provenance gate: PASS
 
-IMPECCABLE:
-findings:
-state:
+MARKET:
+New BR discovery: DISABLED
+Existing BR leads: VALID
+Tier A/B: [Tier]
 
-COPYWRITING-MARKETING:
-findings:
-state:
+TESTS:
+core: PASS
+sites: PASS
+doctor: PASS
+self-test: PASS
 
-FACTUAL RECHECK:
-state:
+GIT:
+commit: [hash]
+worktree: CLEAN
+
+OUTREACH:
+messages: 0
 ```
 
-Do not claim a full design PASS if GPT-Taste was not actually available.
-
-## 11. New runtime support
+## 13. New runtime support
 
 To support another CLI:
 

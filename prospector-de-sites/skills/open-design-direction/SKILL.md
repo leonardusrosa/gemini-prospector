@@ -1,16 +1,18 @@
 ---
 name: open-design-direction
 instruction_language: en
-description: Mandatory creative-direction pass for new Prospector website/landing-page first versions when the local OpenDesign MCP is available. Uses OpenDesign to generate distinct art directions and a business-specific DESIGN.md, while Prospector remains authoritative for facts, implementation, QA, and deployment.
+description: LEGACY ONLY. Historical creative-direction pass for legacy review-manifest schema v2 sites. Future schema v3+ sites do not require OpenDesign. Retained solely for backward compatibility.
 ---
 
-# OpenDesign Direction Pass
+# OpenDesign Direction Pass (LEGACY ONLY)
 
-Use this skill for every new first-version public website or landing page created by Prospector under review-manifest schema v2 or later.
+> [!WARNING]
+> **STATUS: LEGACY ONLY (SCHEMA V2 COMPATIBILITY)**
+> Under Design Framework V3.1, OpenDesign is no longer part of the canonical production site-generation workflow.
+> Future schema v3+ sites do not need it, do not require an OpenDesign pass, and do not generate `DESIGN.md`.
+> Retained solely for backward compatibility of already-published or legacy schema v2 sites.
 
-OpenDesign is an **upstream exploration and research mechanism**, NOT the final design authority, factual source, production renderer, or deploy gate.
-
-The canonical flow is:
+The historical flow for schema v2 was:
 
 ```text
 Prospector research/evidence

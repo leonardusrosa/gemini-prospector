@@ -1,6 +1,6 @@
 ---
 name: redesign-premium
-description: Use esta skill ao criar um conceito de site novo para um prospecto sem site OU redesenhar o site existente de um cliente prospectado. Gera HTML/CSS/JS estático, factual, responsivo, contextualmente orientado e de alta conversão. Usa gpt-taste como FRONTEND DESIGN OWNER / ART DIRECTOR, OpenDesign para exploração upstream, /impeccable como bounded execution QA e /copywriting-marketing para mensagem e conversão sob proposições suportadas. Acione quando o usuário pedir "redesenhar site", "criar site do cliente", "conceito de site", "melhorar página", "refazer o site" ou equivalente.
+description: Use esta skill ao criar um conceito de site novo para um prospecto sem site OU redesenhar o site existente de um cliente prospectado. Gera HTML/CSS/JS estático, factual, responsivo, contextualmente orientado, cinematográfico e de alta conversão. Usa gpt-taste como CREATIVE DIRECTOR / FRONTEND DESIGN OWNER (3 conceitos estruturais divergentes antes do código), módulo de assinatura obrigatório, /impeccable como bounded execution QA e /copywriting-marketing para mensagem e conversão sob proposições suportadas. Acione quando o usuário pedir "redesenhar site", "criar site do cliente", "conceito de site", "melhorar página", "refazer o site" ou equivalente.
 ---
 
 # Redesign & Novo Conceito de Site
@@ -19,8 +19,8 @@ A arquitetura de saída continua estática: `sites/[slug]/[slug].html`, CSS inli
 Antes de qualquer design, construção, revisão ou QA de site, leia e obedeça `../website-core-rules/SKILL.md` e `~/.gemini/config/skills/gpt-taste/SKILL.md`.
 Elas têm precedência absoluta sobre hábitos de LLM e templates pré-concebidos:
 
-- **HARD GATE gpt-taste (Frontend Design Owner / Art Director):** Leia o arquivo atual de `gpt-taste/SKILL.md`. Não confie em memória. O QA final FALHA se `GPT_TASTE_READ != PASS` ou se `GPT_TASTE_DESIGN_DECISION` estiver ausente/bloqueado.
-- **Design Read Obrigatório:** Crie/atualize `sites/[slug]/design-read.md` registrando a leitura de `gpt-taste`, `GPT_TASTE_DESIGN_DECISION`, `Design Variance`, `Motion`, `Density` e as decisões visuais antes de escrever código.
+- **HARD GATE gpt-taste (Creative Director / Frontend Design Owner):** Leia o arquivo atual de `gpt-taste/SKILL.md`. Não confie em memória. O QA final FALHA se `GPT_TASTE_READ != PASS` ou se `GPT_TASTE_DESIGN_DECISION` estiver ausente/bloqueado.
+- **Design Read Obrigatório:** Crie/atualize `sites/[slug]/design-read.md` registrando a leitura de `gpt-taste`, 3 conceitos estruturais, conceito escolhido, `GPT_TASTE_DESIGN_DECISION`, Design DNA (7 campos), checagem de diversidade e módulo de assinatura antes de escrever código.
 - **SEM tags, pills, chips ou badges decorativos** (proibido metadata-first capsule UI em hero, cards ou qualquer seção).
 - **SEM emoji na UI pública** (use ícones reais em SVG/vetor).
 - **SEM travessões em copy pública (`—` ou `–`)** (reescreva a pontuação de forma natural com vírgulas, pontos ou quebras).
@@ -36,14 +36,15 @@ Elas têm precedência absoluta sobre hábitos de LLM e templates pré-concebido
 1. **Integridade factual** — zero invenções. A evidência permanece soberana.
 2. **Identidade e ativos reais** — logo, fotos, profissional, local, produto, cores e conteúdo reais.
 3. **Referências/requisitos do usuário** — extrair princípios, não clonar skins.
-4. **`gpt-taste` = FRONTEND DESIGN OWNER / ART DIRECTOR** — visual direction, composition, layout architecture, hierarquia, tipografia, hero composition, section sequencing, density/whitespace, apresentação da seção de reviews, personalidade visual, estilo de interação, intenção responsiva e julgamento anti-template/anti-slop. Pode exigir redesign estrutural quando a implementação não atingir a qualidade pretendida (não se limita a polimento menor).
-5. **OpenDesign = exploração/pesquisa upstream** — gera duas direções distintas e candidatos `DESIGN.md`; não tem autoridade final.
-6. **`design-taste-frontend` = apoio contextual/anti-slop** — detectar clichês e verificar adequação ao negócio.
-7. **Arquitetura estática do Prospector** — HTML/CSS/JS puro.
-8. **Motion & Behavior Pass** — obrigatório decidir comportamento, mesmo que `Motion = 0`.
-9. **`/impeccable` = QA bounded de execução** — craft pixel/espaçamento/responsivo/overflow/tap targets (desktop, mobile e proposta); distingue CRITICAL, REAL IMPROVEMENT e OPTIONAL/TASTE. NÃO é art director. Não redesenha o site; se julgar a direção fundamentalmente defeituosa, retorna `ESCALATE_TO_GPT_TASTE`.
-10. **`/copywriting-marketing` = revisão de mensagem e conversão** — elimina jargões de auditoria interna, frases robóticas e frieza burocrática, sob a restrição estrita: MELHORAR APENAS A EXPRESSÃO DE PROPOSIÇÕES SUPORTADAS. Recomendações que alterem a estrutura do layout voltam para o GPT-Taste.
-11. **Factual Re-check & Auditoria Semântica** — revalida integridade de dados protegidos e garante 0 alegações não suportadas após edições de copy.
+4. **`gpt-taste` = CREATIVE DIRECTOR / FRONTEND DESIGN OWNER** — gera 3 conceitos estruturais divergentes antes do código, escolhe 1, define arquitetura visual, tipografia, hero, ritmo de seções, densidade, apresentação de reviews, módulo de assinatura e julgamento anti-template.
+5. **Módulo de Assinatura Obrigatório (`data-role="signature-section"`)** — elemento de destaque interativo ou de alto impacto visual e utilidade real.
+6. **Design DNA & Diversidade** — 7 dimensões comparadas aos últimos 3-5 sites publicados. Evitar repetição da mesma gramática visual.
+7. **Registro de Recursos de Design (Aura / 21st / Preline)** — materiais brutos auxiliares, nunca donos do design. Proveniência com uso comercial confirmado obrigatória.
+8. **OpenDesign = LEGACY ONLY (apenas schema v2)** — não faz parte do fluxo para schema v3+.
+9. **Arquitetura estática do Prospector** — HTML/CSS/JS puro sem build toolchain.
+10. **`/impeccable` = QA bounded de execução** — craft pixel/espaçamento/responsivo/overflow/tap targets. NÃO é art director.
+11. **`/copywriting-marketing` = revisão de mensagem e conversão** — MELHORAR APENAS A EXPRESSÃO DE PROPOSIÇÕES SUPORTADAS.
+12. **Factual Re-check & Auditoria Semântica** — 0 alegações não suportadas após edições de copy.
 
 Quando as skills estiverem instaladas, leia seus `SKILL.md` atuais. Não presuma regras antigas de memória.
 
@@ -638,27 +639,28 @@ Mobile:
 
 ---
 
-## 16. Workflow Permanente (Sequência Canônica de 18 Passos)
+## 16. Workflow Permanente (Sequência Canônica de 19 Passos)
 
 ```text
 1. Coleta e verificação de evidências
-2. Pesquisa upstream OpenDesign + alternativas (2 direções)
-3. Decisão de direção de arte do GPT-Taste (Frontend Design Owner)
-4. Implementação estática HTML/CSS/JS pura
-5. Browser QA (desktop 1440x900 e mobile 390x844)
-6. Revisão de implementação pelo GPT-Taste (verificar execução)
-7. Correções de design se exigidas
-8. /impeccable: revisão de execução de craft (bounded QA)
-9. Correções do Impeccable
-10. /copywriting-marketing: revisão de mensagem/conversão
-11. Correções de copy
-12. Semantic claim audit + Factual re-check (0 alegações não suportadas)
-13. Gates determinísticos (site/hero/reviews/conversão)
-14. Proposal QA
-15. Vercel build
-16. Deploy
-17. Live browser QA
-18. Promoção local no CRM para publicado
+2. GPT-Taste: 3 conceitos estruturais divergentes
+3. GPT-Taste: seleção da direção de arte
+4. Registro de Design DNA + checagem de diversidade
+5. Escolha do módulo de assinatura (data-role="signature-section")
+6. Consulta ao registro de recursos (se aplicável)
+7. Implementação estática HTML/CSS/JS pura
+8. Browser QA (desktop 1440x900 e mobile 390x844)
+9. Revisão de implementação pelo GPT-Taste (verificar execução)
+10. Correções de design (se exigidas)
+11. /impeccable: revisão de execução de craft (bounded QA)
+12. Correções do Impeccable
+13. /copywriting-marketing: revisão de mensagem/conversão
+14. Correções de copy
+15. Semantic claim audit + Factual re-check (0 alegações não suportadas)
+16. Gates determinísticos (site/hero/reviews/conversão) + Proposal QA
+17. Vercel build
+18. Deploy + Live browser QA
+19. Promoção local no CRM para publicado
 ```
 
 > **Atenção:** O GPT-Taste intervém em dois momentos cruciais:

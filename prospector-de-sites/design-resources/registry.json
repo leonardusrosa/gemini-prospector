@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "description": "Prospector Design Resource Registry for Framework V3.1",
+  "policy": {
+    "externalAssetRole": "RAW_MATERIAL_ONLY",
+    "creativeAuthority": "GPT_TASTE",
+    "rule": "External asset never sets site direction. Order: Evidence -> GPT-Taste direction -> query registry -> pick raw material -> rework -> build."
+  },
+  "resources": []
+}

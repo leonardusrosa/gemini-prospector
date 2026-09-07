@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "source": "Aura",
+  "policy": {
+    "commercialUseVerificationRequired": true,
+    "noMassCopy": true,
+    "rule": "index many, import few, reuse parts, do not ship Aura page unchanged"
+  },
+  "items": []
+}

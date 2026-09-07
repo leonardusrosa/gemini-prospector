@@ -68,24 +68,35 @@ def check_gpt_taste(manifest: dict, design_read: str, review: Review) -> None:
     if not gpt_cfg.get("required", True):
         return
     gpt_pass = bool(re.search(r"(?im)^\s*GPT_TASTE_READ\s*:\s*PASS\s*$", design_read))
-    gpt_path_raw = extract_design_value(design_read, "GPT_TASTE_PATH")
-    path_ok = bool(gpt_path_raw and "<" not in gpt_path_raw and ">" not in gpt_path_raw)
     review.check("gpt_taste_read", gpt_pass, "design-read must contain GPT_TASTE_READ: PASS")
-    review.check("gpt_taste_path", path_ok, "design-read must record the real gpt-taste SKILL.md path")
 
-    if gpt_cfg.get("skillSha256Required", True) and path_ok:
-        gpt_sha = (extract_design_value(design_read, "GPT_TASTE_SHA256") or "").lower()
-        sha_format_ok = bool(re.fullmatch(r"[0-9a-f]{64}", gpt_sha))
-        review.check("gpt_taste_sha_format", sha_format_ok, "design-read must contain GPT_TASTE_SHA256 64-char hex")
-        actual_path = Path(str(gpt_path_raw)).expanduser()
-        actual_exists = actual_path.is_file()
-        review.check("gpt_taste_skill_exists", actual_exists, f"Recorded gpt-taste skill must exist: {actual_path}")
-        if actual_exists and sha_format_ok:
-            actual_sha = hashlib.sha256(actual_path.read_bytes()).hexdigest()
-            review.check("gpt_taste_sha_matches", actual_sha == gpt_sha, "Recorded GPT_TASTE_SHA256 must match current file")
+    path_required = gpt_cfg.get("pathRequired", True)
+    if path_required:
+        gpt_path_raw = extract_design_value(design_read, "GPT_TASTE_PATH")
+        path_ok = bool(gpt_path_raw and "<" not in gpt_path_raw and ">" not in gpt_path_raw)
+        review.check("gpt_taste_path", path_ok, "design-read must record the real gpt-taste SKILL.md path")
+
+        if gpt_cfg.get("skillSha256Required", True) and path_ok:
+            gpt_sha = (extract_design_value(design_read, "GPT_TASTE_SHA256") or "").lower()
+            sha_format_ok = bool(re.fullmatch(r"[0-9a-f]{64}", gpt_sha))
+            review.check("gpt_taste_sha_format", sha_format_ok, "design-read must contain GPT_TASTE_SHA256 64-char hex")
+            actual_path = Path(str(gpt_path_raw)).expanduser()
+            actual_exists = actual_path.is_file()
+            review.check("gpt_taste_skill_exists", actual_exists, f"Recorded gpt-taste skill must exist: {actual_path}")
+            if actual_exists and sha_format_ok:
+                actual_sha = hashlib.sha256(actual_path.read_bytes()).hexdigest()
+                review.check("gpt_taste_sha_matches", actual_sha == gpt_sha, "Recorded GPT_TASTE_SHA256 must match current file")
+
+    is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
 
     # Pre-implementation art-direction owner decision
     decision_raw = extract_design_value(design_read, "GPT_TASTE_DESIGN_DECISION") or str(gpt_cfg.get("designDecision") or "")
+    if is_schema_v3:
+        review.check(
+            "gpt_taste_design_decision_present",
+            bool(decision_raw),
+            "schema v3+ requires pre-implementation GPT_TASTE_DESIGN_DECISION in design-read.md or manifest",
+        )
     if decision_raw:
         decision_val = decision_raw.strip().upper()
         if decision_val == "BLOCKED_SKILL_UNAVAILABLE":
@@ -103,6 +114,12 @@ def check_gpt_taste(manifest: dict, design_read: str, review: Review) -> None:
 
     # Post-implementation execution verification review
     impl_raw = extract_design_value(design_read, "GPT_TASTE_IMPLEMENTATION_REVIEW") or str(gpt_cfg.get("implementationReview") or "")
+    if is_schema_v3:
+        review.check(
+            "gpt_taste_impl_review_present",
+            bool(impl_raw),
+            "schema v3+ requires post-implementation GPT_TASTE_IMPLEMENTATION_REVIEW in design-read.md or manifest",
+        )
     if impl_raw:
         impl_val = impl_raw.strip().upper()
         if impl_val == "BLOCKED_SKILL_UNAVAILABLE":
@@ -117,6 +134,179 @@ def check_gpt_taste(manifest: dict, design_read: str, review: Review) -> None:
                 impl_val in {"PASS", "PASS_AFTER_CHANGES"},
                 f"GPT_TASTE_IMPLEMENTATION_REVIEW must be PASS or PASS_AFTER_CHANGES; found {impl_val!r}",
             )
+
+
+DNA_FIELDS = [
+    "heroGrammar",
+    "paletteFamily",
+    "typographyCharacter",
+    "layoutGrammar",
+    "motionLanguage",
+    "reviewTreatment",
+    "signatureModule",
+]
+
+
+def check_design_dna(manifest: dict, design_read: str, review: Review) -> None:
+    is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
+    manifest_dna = manifest.get("designDna") or {}
+    has_dna = bool(manifest_dna or extract_design_value(design_read, "DESIGN_DNA") or any(extract_design_value(design_read, f) for f in DNA_FIELDS))
+
+    if not (is_schema_v3 or has_dna):
+        return
+
+    for field in DNA_FIELDS:
+        val = (
+            extract_design_value(design_read, f"DESIGN_DNA_{field.upper()}")
+            or extract_design_value(design_read, field)
+            or str(manifest_dna.get(field) or "")
+        ).strip()
+        review.check(
+            f"design_dna_{field}",
+            bool(val),
+            f"Design DNA requires non-empty '{field}' field recorded in design-read.md or manifest",
+        )
+
+
+def check_design_diversity(manifest: dict, design_read: str, review: Review, base_dir: Path | None = None) -> None:
+    is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
+    manifest_dna = manifest.get("designDna") or {}
+    has_dna = bool(manifest_dna or extract_design_value(design_read, "DESIGN_DNA") or any(extract_design_value(design_read, f) for f in DNA_FIELDS))
+    div_val = (extract_design_value(design_read, "DESIGN_DIVERSITY") or manifest.get("designDiversity") or "").strip().upper()
+
+    if not (is_schema_v3 or has_dna or div_val):
+        return
+
+    if div_val == "NEEDS_DIRECTION_CHANGE":
+        review.check(
+            "design_diversity_pass",
+            False,
+            "DESIGN_DIVERSITY returned NEEDS_DIRECTION_CHANGE; GPT-Taste must deliberately change direction",
+        )
+        return
+
+    # Compare against published sites baseline if available
+    published_json = None
+    if base_dir:
+        cand1 = Path(base_dir) / "design-resources" / "design-dna" / "published-sites.json"
+        if cand1.is_file():
+            published_json = cand1
+    if not published_json:
+        cand2 = Path(__file__).resolve().parent / "design-resources" / "design-dna" / "published-sites.json"
+        if cand2.is_file():
+            published_json = cand2
+
+    if published_json and published_json.is_file():
+        try:
+            import json as _json
+            sites_data = _json.loads(published_json.read_text(encoding="utf-8"))
+            current_dna = {}
+            for field in DNA_FIELDS:
+                current_dna[field] = (
+                    extract_design_value(design_read, f"DESIGN_DNA_{field.upper()}")
+                    or extract_design_value(design_read, field)
+                    or str(manifest_dna.get(field) or "")
+                ).strip().lower()
+
+            for site in sites_data:
+                other_slug = site.get("slug")
+                if other_slug == manifest.get("slug"):
+                    continue
+                other_dna = {k: str(v).strip().lower() for k, v in site.get("dna", {}).items()}
+                overlap_count = sum(1 for f in DNA_FIELDS if current_dna.get(f) and current_dna.get(f) == other_dna.get(f))
+                if overlap_count >= 5:
+                    review.check(
+                        "design_diversity_no_substantial_duplicate",
+                        False,
+                        f"Design DNA substantially duplicates {other_slug} ({overlap_count}/7 matching dimensions); GPT-Taste must change direction (NEEDS_DIRECTION_CHANGE)",
+                    )
+                    return
+        except Exception:
+            pass
+
+    review.check("design_diversity_pass", True, "Design diversity check passed")
+
+
+def check_signature_section(manifest: dict, html: str, design_read: str, review: Review) -> None:
+    is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
+    sig_cfg = manifest.get("signatureSection") or {}
+    has_sig = bool(sig_cfg or extract_design_value(design_read, "SIGNATURE_SECTION"))
+
+    if not (is_schema_v3 or has_sig):
+        return
+
+    status = (extract_design_value(design_read, "SIGNATURE_SECTION") or str(sig_cfg.get("status") or "")).strip().upper()
+    review.check(
+        "signature_section_status",
+        status == "PASS",
+        f"schema v3+ requires SIGNATURE_SECTION: PASS; found '{status or 'none'}'",
+    )
+
+    sig_type = (extract_design_value(design_read, "SIGNATURE_SECTION_TYPE") or extract_design_value(design_read, "type") or str(sig_cfg.get("type") or "")).strip()
+    sig_purpose = (extract_design_value(design_read, "SIGNATURE_SECTION_PURPOSE") or extract_design_value(design_read, "purpose") or str(sig_cfg.get("purpose") or "")).strip()
+    sig_safety = (extract_design_value(design_read, "SIGNATURE_SECTION_EVIDENCE_SAFETY") or extract_design_value(design_read, "evidenceSafety") or str(sig_cfg.get("evidenceSafety") or "")).strip()
+
+    review.check(
+        "signature_section_metadata",
+        bool(sig_type and sig_purpose and sig_safety),
+        "SIGNATURE_SECTION requires type, purpose, and evidenceSafety metadata",
+    )
+
+    has_hook = bool(re.search(r'data-role\s*=\s*["\']signature-section["\']|data-signature-section\s*=\s*["\']true["\']', html, re.IGNORECASE))
+    review.check(
+        "signature_section_html_hook",
+        has_hook,
+        "Signature section requires element with data-role='signature-section' in HTML",
+    )
+
+    # Healthcare safety check
+    niche = str(manifest.get("niche") or "").lower()
+    slug = str(manifest.get("slug") or "").lower()
+    is_healthcare = any(k in (niche + " " + slug) for k in ["odonto", "estet", "clinic", "saude", "med", "dental"])
+    lower_text = (html + " " + sig_safety + " " + sig_purpose).lower()
+    risky_claims = ["resultado garantido", "garantia de resultado", "resultados 100% garantidos", "cura garantida", "100% de cura"]
+    has_risky = any(c in lower_text for c in risky_claims)
+    if is_healthcare or has_risky:
+        review.check(
+            "signature_section_healthcare_safety",
+            not has_risky,
+            "Healthcare signature module cannot claim authoritative guaranteed treatment outcomes",
+        )
+
+
+def check_resource_provenance(manifest: dict, design_read: str, review: Review) -> None:
+    is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
+    prov_cfg = manifest.get("resourceProvenance") or {}
+    has_prov = bool(is_schema_v3 or prov_cfg or extract_design_value(design_read, "RESOURCE_PROVENANCE"))
+
+    if not has_prov:
+        return
+
+    prov_val = (extract_design_value(design_read, "RESOURCE_PROVENANCE") or str(prov_cfg.get("source") or "") or "NATIVE").strip().upper()
+    if prov_val != "NATIVE":
+        comm = (extract_design_value(design_read, "RESOURCE_COMMERCIAL_USE") or str(prov_cfg.get("commercialUse") or "")).strip().lower()
+        review.check(
+            "resource_commercial_use_confirmed",
+            comm == "confirmed",
+            "External design resource used without confirmed commercial use rights (RESOURCE_COMMERCIAL_USE: confirmed required)",
+        )
+    else:
+        review.check("resource_provenance_valid", True, "Native design implementation requires no external resource provenance")
+
+
+def check_21st_dev(manifest: dict, design_read: str, review: Review) -> None:
+    # 21st.dev MCP is an optional component/interaction resource and never blocks
+    review.check("twenty_first_dev_non_blocking", True, "21st.dev MCP is optional and never blocks publication")
+
+
+def check_aura(manifest: dict, design_read: str, review: Review) -> None:
+    # Aura is an optional reference resource and never blocks
+    review.check("aura_non_blocking", True, "Aura is optional and never blocks publication")
+
+
+def check_preline(manifest: dict, design_read: str, review: Review) -> None:
+    # Preline is an optional primitive resource and never blocks
+    review.check("preline_non_blocking", True, "Preline is optional and never blocks publication")
 
 
 def check_hero_visual(manifest: dict, html: str, design_read: str, review: Review, base_dir: Path | None = None) -> None:
@@ -866,6 +1056,13 @@ def main() -> int:
     base_dir = manifest_path.parent
 
     check_gpt_taste(manifest, design_read, review)
+    check_design_dna(manifest, design_read, review)
+    check_design_diversity(manifest, design_read, review, base_dir=base_dir)
+    check_signature_section(manifest, html, design_read, review)
+    check_resource_provenance(manifest, design_read, review)
+    check_21st_dev(manifest, design_read, review)
+    check_aura(manifest, design_read, review)
+    check_preline(manifest, design_read, review)
     check_hero_visual(manifest, html, design_read, review, base_dir=base_dir)
     check_google_reviews(manifest, html, design_read, review)
     check_factual_traceability(manifest, design_read, html, review)

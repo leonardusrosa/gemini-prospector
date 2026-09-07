@@ -11,19 +11,29 @@ Encontrar negócios bem avaliados e consolidados (nota alta, muitas avaliações
 
 ---
 
-## 1. Resolução de País e Metadados de Mercado
+## 1. Política de Mercado Global & Metadados
+
+> [!IMPORTANT]
+> **NOVA DESCOBERTA NO BRASIL DESATIVADA (`NEW_DISCOVERY_BR = DISABLED`)**
+> A prospecção ativa de novos leads no Brasil está desativada. Novos leads brasileiros são rejeitados pelo CRM. Leads brasileiros pré-existentes permanecem válidos no banco de dados para evolução no funil, acompanhamento e fechamento.
+
+### Mercados Alvo Primários
+- **Tier A**: Estados Unidos (`US`), Canadá (`CA`), Reino Unido (`GB`), Irlanda (`IE`), Países Baixos (`NL`), Suíça (`CH`), Alemanha (`DE`), Áustria (`AT`), Dinamarca (`DK`), Suécia (`SE`), Noruega (`NO`).
+- **Tier B**: Espanha (`ES`), Chile (`CL`), México (`MX`), Panamá (`PA`), Costa Rica (`CR`), Uruguai (`UY`), Portugal (`PT`).
+- Outros países são permitidos apenas sob pedido explícito do usuário.
 
 A resolução do país do lead segue a ordem rigorosa de evidências:
-1. **País explícito na busca/pedido do usuário** (ex: `"em Lisboa, Portugal"`, `"em Coimbra PT"`, `"em Campinas SP, Brasil"`).
+1. **País explícito na busca/pedido do usuário** (ex: `"em Miami, US"`, `"em Lisboa, Portugal"`, `"em Santiago, Chile"`).
 2. **Metadados de endereço do Google Maps / Places** (`country`, `formatted_address`).
-3. **Contexto de cidade/região inequívoco** (ex: Lisboa, Porto, Braga → `PT`; São Paulo, Rio Claro, Curitiba → `BR`).
+3. **Contexto de cidade/região inequívoco** (ex: Miami → `US`, Lisboa → `PT`, Madrid → `ES`, Santiago → `CL`).
 4. **Configuração padrão** (`market.defaultCountry` em `prospector-config.json`) apenas quando não houver pistas locais suficientes.
 
-Metadados canônicos por lead:
-- `country`: Código ISO 3166-1 alpha-2 (`BR`, `PT`, etc.)
-- `locale`: `pt-BR`, `pt-PT`
-- `language`: `pt`
-- `phoneCountryCode`: `55`, `351`
+Metadados canônicos persistidos por lead:
+- `country`: Código ISO 3166-1 alpha-2 (`US`, `PT`, `ES`, etc.)
+- `locale`: Derivado da evidência do país (`en-US`, `pt-PT`, `es-ES`, etc.), nunca apenas da língua.
+- `currency`: Moeda canônica (`USD`, `EUR`, etc.)
+- `phoneCountryCode`: DDI (`1`, `351`, `34`, etc.)
+- `marketTier`: `TIER_A`, `TIER_B`, ou `OTHER`
 
 ---
 

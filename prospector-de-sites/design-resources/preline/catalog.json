@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0",
+  "source": "Preline UI",
+  "role": "UI_BEHAVIOR_ACCESSIBLE_PRIMITIVES",
+  "globalDependency": false,
+  "policy": {
+    "rule": "pick primitive -> adapt -> keep only needed JS/CSS. Track license and attribution."
+  },
+  "primitives": [
+    {
+      "id": "preline-carousel",
+      "name": "Accessible Carousel Slider",
+      "type": "slider",
+      "category": "behavior",
+      "vanillaAdaptable": true,
+      "commercialUse": "confirmed",
+      "license": "MIT",
+      "adaptationCost": "LOW"
+    },
+    {
+      "id": "preline-accordion",
+      "name": "Accessible Accordion",
+      "type": "disclosure",
+      "category": "behavior",
+      "vanillaAdaptable": true,
+      "commercialUse": "confirmed",
+      "license": "MIT",
+      "adaptationCost": "LOW"
+    },
+    {
+      "id": "preline-tabs",
+      "name": "Accessible Tabs",
+      "type": "tabs",
+      "category": "behavior",
+      "vanillaAdaptable": true,
+      "commercialUse": "confirmed",
+      "license": "MIT",
+      "adaptationCost": "LOW"
+    },
+    {
+      "id": "preline-range-slider",
+      "name": "Range Slider Primitive",
+      "type": "input",
+      "category": "signature-primitive",
+      "vanillaAdaptable": true,
+      "commercialUse": "confirmed",
+      "license": "MIT",
+      "adaptationCost": "LOW"
+    }
+  ]
+}

@@ -90,7 +90,14 @@ def _portable_design_judge_check(manifest: dict, design_read: str, review: core.
         )
 
     # Portable design decision and implementation review checks
+    is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
     decision_raw = _design_value(design_read, "DESIGN_JUDGE_DESIGN_DECISION") or _design_value(design_read, "GPT_TASTE_DESIGN_DECISION") or str(cfg.get("designDecision") or "")
+    if is_schema_v3:
+        review.check(
+            "design_judge_design_decision_present",
+            bool(decision_raw),
+            "schema v3+ requires pre-implementation DESIGN_JUDGE_DESIGN_DECISION or GPT_TASTE_DESIGN_DECISION",
+        )
     if decision_raw:
         decision_val = decision_raw.strip().upper()
         review.check(
@@ -99,6 +106,12 @@ def _portable_design_judge_check(manifest: dict, design_read: str, review: core.
             f"DESIGN_JUDGE_DESIGN_DECISION must be PASS or PASS_AFTER_DIRECTION_CHANGE; found {decision_val!r}",
         )
     impl_raw = _design_value(design_read, "DESIGN_JUDGE_IMPLEMENTATION_REVIEW") or _design_value(design_read, "GPT_TASTE_IMPLEMENTATION_REVIEW") or str(cfg.get("implementationReview") or "")
+    if is_schema_v3:
+        review.check(
+            "design_judge_impl_review_present",
+            bool(impl_raw),
+            "schema v3+ requires post-implementation DESIGN_JUDGE_IMPLEMENTATION_REVIEW or GPT_TASTE_IMPLEMENTATION_REVIEW",
+        )
     if impl_raw:
         impl_val = impl_raw.strip().upper()
         review.check(
