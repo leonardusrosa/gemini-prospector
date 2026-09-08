@@ -257,11 +257,13 @@ Evidence remains sovereign over all creative and copy choices.
 3. **Aura Media Index & Selective Vendoring**:
    - Metadata recorded in `design-resources/aura/media-index.json`.
    - Inspection != download. `inspect-bundled-media` records metadata only.
-   - `vendor-selected-media` runs ONLY when `commercialUse=CONFIRMED`. No automatic bulk media download.
+   - `vendor-selected-media` runs ONLY when `sourceVerification=VERIFIED_SOURCE` AND `commercialUse=CONFIRMED` with valid license evidence (`licenseEvidenceUrl` or `licenseEvidenceRecord`). No automatic bulk media download.
 
-4. **Media Provenance & Local Vendoring**:
-   - External hero media requires: `HERO_MEDIA_SOURCE`, `HERO_MEDIA_SOURCE_PAGE`, `HERO_MEDIA_ORIGINAL_URL`, `HERO_MEDIA_TYPE`, `HERO_MEDIA_LICENSE`, `HERO_MEDIA_COMMERCIAL_USE`, `HERO_MEDIA_TEMPLATE_BUNDLED`, `HERO_MEDIA_ADAPTATION_MODE`, `HERO_MEDIA_LOCAL_PATH`.
-   - `commercialUse` must be `CONFIRMED`. If `UNCONFIRMED` -> `REFERENCE_ONLY` and no copied asset in production.
+4. **Media Provenance & Local Vendoring (V3.2.1 Fail-Closed)**:
+   - External hero media requires: `HERO_MEDIA_SOURCE`, `HERO_MEDIA_SOURCE_PAGE`, `HERO_MEDIA_ORIGINAL_URL`, `HERO_MEDIA_TYPE`, `HERO_MEDIA_SOURCE_VERIFICATION`, `HERO_MEDIA_LICENSE`, `HERO_MEDIA_COMMERCIAL_USE`, `HERO_MEDIA_TEMPLATE_BUNDLED`, `HERO_MEDIA_ADAPTATION_MODE`, `HERO_MEDIA_LOCAL_PATH`.
+   - Vendoring external media requires BOTH `sourceVerification=VERIFIED_SOURCE` and `commercialUse=CONFIRMED`. For Aura, `licenseEvidenceUrl` or `licenseEvidenceRecord` is mandatory.
+   - If `UNVERIFIED_SOURCE` or `UNCONFIRMED`: must remain `REFERENCE_ONLY` with NO copied asset shipped in production.
+   - Illustrative hero image `alt` must never claim real workshop/facility/clinic (e.g. use "Illustrative automotive paint correction scene"); real facility claims require verified first-party imagery.
    - Final production: NO Aura CDN dependency. Assets must be vendored locally into `assets/`. Original URL is provenance only. External Aura CDN URLs in HTML trigger FAIL.
 
 5. **Video Technical Rules**:
@@ -277,9 +279,10 @@ Evidence remains sovereign over all creative and copy choices.
    - Use generic navigation semantics: "Reviews", "Testimonials", "What People Say".
    - Factual source attribution belongs strictly inside section content.
 
-7. **Versioning**:
+7. **Versioning & Dynamic Grandfathering**:
    - `heroMediaPolicyVersion: 1` required for new or actively regenerated sites.
-   - Older published sites without this marker remain grandfathered.
+   - Older published sites remain grandfathered ONLY while untouched.
+   - If an old site is actively regenerated later (e.g. `activeRegeneration: true`, `status: redesenhado`), `heroMediaPolicyVersion = 1` becomes strictly required.
    - Future schema v3+ sites missing this marker trigger FAIL.
 
 ## 8. Global Market Acquisition Policy

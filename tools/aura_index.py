@@ -187,9 +187,23 @@ def validate_media_entry(entry: dict[str, Any]) -> dict[str, Any]:
     motion_type = str(entry.get("motionType") or "ambient-loop").strip()
     mobile_suitability = str(entry.get("mobileSuitability") or "full-width-video").strip()
     license_str = str(entry.get("license") or "custom").strip()
+    source_verification = str(entry.get("sourceVerification") or "UNVERIFIED_SOURCE").strip().upper()
+    if source_verification not in {"VERIFIED_SOURCE", "UNVERIFIED_SOURCE"}:
+        source_verification = "UNVERIFIED_SOURCE"
+
     commercial_use = str(entry.get("commercialUse") or "unconfirmed").strip().lower()
     if commercial_use not in {"confirmed", "unconfirmed", "prohibited"}:
         commercial_use = "unconfirmed"
+
+    license_evidence_url = str(entry.get("licenseEvidenceUrl") or "").strip()
+    license_evidence_record = str(entry.get("licenseEvidenceRecord") or "").strip()
+
+    # Fail-closed: commercialUse cannot be confirmed if sourceVerification is UNVERIFIED_SOURCE
+    # or if license evidence (URL or record) is missing
+    if commercial_use == "confirmed":
+        if source_verification != "VERIFIED_SOURCE" or not (license_evidence_url or license_evidence_record):
+            commercial_use = "unconfirmed"
+
     template_bundled = bool(entry.get("templateBundled", True))
     code_status = str(entry.get("codeStatus") or "INDEXED_METADATA_ONLY").strip().upper()
 
@@ -205,7 +219,10 @@ def validate_media_entry(entry: dict[str, Any]) -> dict[str, Any]:
         "motionType": motion_type,
         "mobileSuitability": mobile_suitability,
         "license": license_str,
+        "sourceVerification": source_verification,
         "commercialUse": commercial_use,
+        "licenseEvidenceUrl": license_evidence_url,
+        "licenseEvidenceRecord": license_evidence_record,
         "templateBundled": template_bundled,
         "codeStatus": code_status,
     }
@@ -215,13 +232,13 @@ def load_aura_media_index(path: Path | None = None) -> dict[str, Any]:
     target = path or DEFAULT_MEDIA_INDEX_PATH
     if not target.is_file():
         return {
-            "version": "1.0.0",
+            "version": "1.1.0",
             "source": "Aura",
             "policy": {
-                "inspectOnly": true,
-                "noAutomaticBulkDownload": true,
-                "commercialUseVerificationRequired": true,
-                "rule": "inspect-bundled-media saves metadata only; vendor-selected-media runs ONLY when commercialUse=CONFIRMED"
+                "inspectOnly": True,
+                "noAutomaticBulkDownload": True,
+                "commercialUseVerificationRequired": True,
+                "rule": "inspect-bundled-media saves metadata only; vendor-selected-media runs ONLY when sourceVerification=VERIFIED_SOURCE and commercialUse=CONFIRMED"
             },
             "items": []
         }
@@ -275,11 +292,26 @@ def cmd_vendor_selected_media(
     if not item:
         return False, f"Template {template_id!r} not found in media-index.json."
 
+    source_ver = str(item.get("sourceVerification", "UNVERIFIED_SOURCE")).upper()
     commercial = str(item.get("commercialUse", "unconfirmed")).lower()
+    has_lic = bool(item.get("licenseEvidenceUrl") or item.get("licenseEvidenceRecord"))
+
+    if source_ver != "VERIFIED_SOURCE":
+        return False, (
+            f"Source verification for template {template_id!r} is {source_ver!r} (not 'VERIFIED_SOURCE'). "
+            "Cannot vendor media asset. Shipped assets require verified source."
+        )
+
     if commercial != "confirmed":
         return False, (
             f"Commercial use for template {template_id!r} is {commercial!r} (not 'confirmed'). "
             "Cannot vendor media asset. Shipped assets must have confirmed commercial rights."
+        )
+
+    if not has_lic:
+        return False, (
+            f"Template {template_id!r} missing licenseEvidenceUrl or licenseEvidenceRecord. "
+            "Cannot vendor media asset without documented license evidence."
         )
 
     output_dir.mkdir(parents=True, exist_ok=True)

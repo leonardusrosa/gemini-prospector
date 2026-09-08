@@ -14,10 +14,14 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 from aura_index import (
     validate_metadata_entry,
+    validate_media_entry,
     merge_index_items,
     cmd_index,
     cmd_import_selected,
+    cmd_inspect_bundled_media,
+    cmd_vendor_selected_media,
     load_aura_index,
+    load_aura_media_index,
 )
 
 
@@ -122,3 +126,102 @@ def test_prohibited_commercial_use_denies_import():
         ok, msg = cmd_import_selected("restricted-card", "<div>Test</div>", index_path=idx_p, import_dir=imp_dir)
         assert not ok
         assert "Import denied" in msg
+
+
+def test_media_entry_unverified_source_reverts_commercial_use():
+    """Unverified source cannot claim confirmed commercial use."""
+    raw = {
+        "templateId": "test-tmpl",
+        "templateUrl": "https://example.com",
+        "commercialUse": "confirmed",
+        "sourceVerification": "UNVERIFIED_SOURCE",
+        "licenseEvidenceUrl": "https://example.com/license",
+    }
+    norm = validate_media_entry(raw)
+    assert norm["sourceVerification"] == "UNVERIFIED_SOURCE"
+    assert norm["commercialUse"] == "unconfirmed"
+
+
+def test_media_entry_missing_license_evidence_reverts_commercial_use():
+    """Verified source without licenseEvidenceUrl or licenseEvidenceRecord cannot claim confirmed commercial use."""
+    raw = {
+        "templateId": "test-tmpl",
+        "templateUrl": "https://example.com",
+        "commercialUse": "confirmed",
+        "sourceVerification": "VERIFIED_SOURCE",
+        # Missing license evidence
+    }
+    norm = validate_media_entry(raw)
+    assert norm["sourceVerification"] == "VERIFIED_SOURCE"
+    assert norm["commercialUse"] == "unconfirmed"
+
+
+def test_media_entry_verified_source_with_license_evidence_confirmed():
+    """Verified source with license evidence retains confirmed commercial use."""
+    raw = {
+        "templateId": "test-tmpl",
+        "templateUrl": "https://example.com",
+        "commercialUse": "confirmed",
+        "sourceVerification": "VERIFIED_SOURCE",
+        "licenseEvidenceUrl": "https://example.com/terms",
+    }
+    norm = validate_media_entry(raw)
+    assert norm["sourceVerification"] == "VERIFIED_SOURCE"
+    assert norm["commercialUse"] == "confirmed"
+
+
+def test_vendor_selected_media_unverified_source_fails():
+    """cmd_vendor_selected_media strictly refuses unverified source."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_p = Path(tmp)
+        idx_p = tmp_p / "media-index.json"
+        out_p = tmp_p / "assets"
+
+        entry = {
+            "templateId": "unverified-tmpl",
+            "templateUrl": "https://example.com",
+            "sourceVerification": "UNVERIFIED_SOURCE",
+            "commercialUse": "unconfirmed",
+        }
+        cmd_inspect_bundled_media([entry], media_index_path=idx_p)
+
+        ok, msg = cmd_vendor_selected_media("unverified-tmpl", out_p, media_index_path=idx_p)
+        assert not ok
+        assert "not 'VERIFIED_SOURCE'" in msg
+
+
+def test_vendor_selected_media_verified_confirmed_succeeds():
+    """cmd_vendor_selected_media succeeds when source is verified, commercial use confirmed, and license evidence present."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_p = Path(tmp)
+        idx_p = tmp_p / "media-index.json"
+        out_p = tmp_p / "assets"
+
+        # Create dummy media file
+        media_f = tmp_p / "sample.mp4"
+        media_f.write_bytes(b"dummy video")
+        poster_f = tmp_p / "poster.webp"
+        poster_f.write_bytes(b"dummy poster")
+
+        entry = {
+            "templateId": "verified-tmpl",
+            "templateUrl": "https://example.com/tmpl",
+            "sourceVerification": "VERIFIED_SOURCE",
+            "commercialUse": "confirmed",
+            "licenseEvidenceUrl": "https://example.com/license",
+            "heroMediaType": "video",
+        }
+        cmd_inspect_bundled_media([entry], media_index_path=idx_p)
+
+        ok, msg = cmd_vendor_selected_media(
+            "verified-tmpl",
+            out_p,
+            media_file=media_f,
+            poster_file=poster_f,
+            media_index_path=idx_p,
+        )
+        assert ok
+        assert "Successfully vendored" in msg
+        assert (out_p / "hero-video.mp4").is_file()
+        assert (out_p / "hero-poster.webp").is_file()
+

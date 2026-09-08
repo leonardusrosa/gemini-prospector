@@ -1,28 +1,11 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "source": "Aura",
   "policy": {
     "inspectOnly": true,
     "noAutomaticBulkDownload": true,
     "commercialUseVerificationRequired": true,
-    "rule": "inspect-bundled-media saves metadata only; vendor-selected-media runs ONLY when commercialUse=CONFIRMED"
+    "rule": "inspect-bundled-media saves metadata only; vendor-selected-media runs ONLY when sourceVerification=VERIFIED_SOURCE and commercialUse=CONFIRMED with license evidence"
   },
-  "items": [
-    {
-      "templateId": "aura-auto-detail-cinema",
-      "templateUrl": "https://aura.build/templates/auto-detail-cinema",
-      "heroMediaPresent": true,
-      "heroMediaType": "video",
-      "heroAssetUrl": "https://aura.build/assets/auto-detail-hero.mp4",
-      "posterUrl": "https://aura.build/assets/auto-detail-poster.webp",
-      "subject": "automotive paint correction and detailing",
-      "aspectRatio": "16:9",
-      "motionType": "ambient-loop",
-      "mobileSuitability": "full-width-video",
-      "license": "MIT + Aura Template Commercial License",
-      "commercialUse": "confirmed",
-      "templateBundled": true,
-      "codeStatus": "INDEXED_METADATA_ONLY"
-    }
-  ]
+  "items": []
 }

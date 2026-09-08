@@ -598,8 +598,18 @@ def check_hero_media_plane(manifest: dict, html: str, design_read: str, review: 
     slug = str(manifest.get("slug") or "").strip().lower()
     is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
 
-    # If it's a new or actively regenerated schema v3 site not in grandfathered set, policy marker is required
-    if is_schema_v3 and slug and slug not in GRANDFATHERED_V3_SITES:
+    # An old site is grandfathered ONLY while untouched.
+    # If an old site is actively regenerated later, heroMediaPolicyVersion = 1 becomes strictly required.
+    is_actively_regenerated = bool(
+        manifest.get("activeRegeneration")
+        or manifest.get("regenerated")
+        or str(manifest.get("status", "")).lower() == "redesenhado"
+        or (extract_design_value(design_read, "ACTIVE_REGENERATION") or "").strip().upper() in {"TRUE", "YES", "1"}
+        or (extract_design_value(design_read, "REGENERATION") or "").strip().upper() in {"ACTIVE", "TRUE", "YES"}
+    )
+    is_grandfathered = (slug in GRANDFATHERED_V3_SITES) and not is_actively_regenerated
+
+    if is_schema_v3 and slug and not is_grandfathered:
         review.check(
             "hero_media_policy_version_present",
             raw_policy is not None,
@@ -693,23 +703,41 @@ def check_hero_media_plane(manifest: dict, html: str, design_read: str, review: 
             "Hero video requires prefers-reduced-motion fallback (video hidden/disabled, poster displayed full-width)",
         )
 
-    # 6. Media Provenance check
+    # 6. Media Provenance check (V3.2.1 Fail-Closed)
     prov_src = (extract_design_value(design_read, "HERO_MEDIA_SOURCE") or str(manifest.get("heroMedia", {}).get("source") or "")).strip().upper()
-    if prov_src and prov_src not in {"NATIVE", "FIRST_PARTY", "USER_PROVIDED"}:
+    if prov_src and prov_src not in {"NATIVE", "FIRST_PARTY", "USER_PROVIDED", "GENERATED"}:
         comm_use = (extract_design_value(design_read, "HERO_MEDIA_COMMERCIAL_USE") or str(manifest.get("heroMedia", {}).get("commercialUse") or "")).strip().lower()
+        src_ver = (extract_design_value(design_read, "HERO_MEDIA_SOURCE_VERIFICATION") or str(manifest.get("heroMedia", {}).get("sourceVerification") or "")).strip().upper()
+        lic_url = (extract_design_value(design_read, "HERO_MEDIA_LICENSE_EVIDENCE_URL") or str(manifest.get("heroMedia", {}).get("licenseEvidenceUrl") or "")).strip()
+        lic_rec = (extract_design_value(design_read, "HERO_MEDIA_LICENSE_EVIDENCE_RECORD") or str(manifest.get("heroMedia", {}).get("licenseEvidenceRecord") or "")).strip()
         adaptation = (extract_design_value(design_read, "HERO_MEDIA_ADAPTATION_MODE") or str(manifest.get("heroMedia", {}).get("adaptationMode") or "")).strip().upper()
-        if comm_use != "confirmed":
+        has_shipped_file = bool(extract_design_value(design_read, "HERO_MEDIA_LOCAL_PATH") or manifest.get("heroMedia", {}).get("localPath"))
+
+        # Both sourceVerification == VERIFIED_SOURCE and commercialUse == CONFIRMED are strictly required to vendor
+        is_verified_source = (src_ver == "VERIFIED_SOURCE")
+        is_comm_confirmed = (comm_use == "confirmed")
+        has_lic_evidence = bool(lic_url or lic_rec)
+
+        if prov_src == "AURA" and is_comm_confirmed:
+            review.check(
+                "hero_media_aura_license_evidence",
+                has_lic_evidence,
+                "Aura media declaring commercialUse=confirmed requires licenseEvidenceUrl or licenseEvidenceRecord",
+            )
+
+        can_vendor = is_verified_source and is_comm_confirmed and (prov_src != "AURA" or has_lic_evidence)
+
+        if not can_vendor:
             is_ref_only = (adaptation == "REFERENCE_ONLY")
-            has_shipped_file = bool(extract_design_value(design_read, "HERO_MEDIA_LOCAL_PATH") or manifest.get("heroMedia", {}).get("localPath"))
             review.check(
                 "hero_media_commercial_use_confirmed",
                 is_ref_only and not has_shipped_file,
-                f"External hero media requires confirmed commercial rights (HERO_MEDIA_COMMERCIAL_USE: confirmed required; found {comm_use!r})",
+                f"External hero media requires verified source and confirmed commercial rights to vendor (found sourceVerification={src_ver!r}, commercialUse={comm_use!r}, shipped={has_shipped_file}); unverified media must remain REFERENCE_ONLY without shipped asset",
             )
         else:
-            review.check("hero_media_commercial_use_confirmed", True, "External hero media commercial use confirmed")
+            review.check("hero_media_commercial_use_confirmed", True, "External hero media verified source and commercial use confirmed")
     else:
-        review.check("hero_media_commercial_use_confirmed", True, "Native/first-party hero media confirmed")
+        review.check("hero_media_commercial_use_confirmed", True, "Native/first-party/generated hero media confirmed")
 
 
 def check_google_reviews(manifest: dict, html: str, design_read: str, review: Review) -> None:

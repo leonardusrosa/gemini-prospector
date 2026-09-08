@@ -990,7 +990,7 @@ def test_v32_external_aura_video_commercial_unconfirmed_fails_shipping():
     """
     rev = Review()
     check_hero_media_plane(manifest, html, design_read, rev)
-    assert any("External hero media requires confirmed commercial rights" in err for err in _errors(rev))
+    assert any("External hero media requires verified source and confirmed commercial rights" in err for err in _errors(rev))
 
 
 def test_v32_same_aura_video_reference_only_not_shipped_passes():
@@ -1036,21 +1036,25 @@ def test_v32_aura_cdn_in_final_media_src_fails():
 
 
 def test_v32_local_vendored_confirmed_media_passes():
-    """local vendored confirmed media -> PASS"""
+    """local vendored confirmed media with verified source and license evidence -> PASS"""
     manifest = {
         "schemaVersion": 3,
         "heroMediaPolicyVersion": 1,
         "slug": "test-v32",
         "heroMedia": {
             "source": "AURA",
+            "sourceVerification": "VERIFIED_SOURCE",
             "commercialUse": "confirmed",
+            "licenseEvidenceUrl": "https://aura.build/license",
             "adaptationMode": "ADAPT_TO_VANILLA",
             "localPath": "assets/hero-video.mp4"
         }
     }
     design_read = (
         "HERO_MEDIA_SOURCE: AURA\n"
+        "HERO_MEDIA_SOURCE_VERIFICATION: VERIFIED_SOURCE\n"
         "HERO_MEDIA_COMMERCIAL_USE: confirmed\n"
+        "HERO_MEDIA_LICENSE_EVIDENCE_URL: https://aura.build/license\n"
         "HERO_MEDIA_ADAPTATION_MODE: ADAPT_TO_VANILLA\n"
         "HERO_MEDIA_LOCAL_PATH: assets/hero-video.mp4\n"
     )
@@ -1063,6 +1067,132 @@ def test_v32_local_vendored_confirmed_media_passes():
     rev = Review()
     check_hero_media_plane(manifest, html, design_read, rev)
     assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v321_aura_unverified_source_fails_vendoring():
+    """V3.2.1: Aura media with UNVERIFIED_SOURCE cannot vendor shipped asset"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-v32",
+        "heroMedia": {
+            "source": "AURA",
+            "sourceVerification": "UNVERIFIED_SOURCE",
+            "commercialUse": "confirmed",
+            "licenseEvidenceUrl": "https://aura.build/license",
+            "adaptationMode": "USE_DIRECTLY",
+            "localPath": "assets/hero-video.mp4"
+        }
+    }
+    design_read = (
+        "HERO_MEDIA_SOURCE: AURA\n"
+        "HERO_MEDIA_SOURCE_VERIFICATION: UNVERIFIED_SOURCE\n"
+        "HERO_MEDIA_COMMERCIAL_USE: confirmed\n"
+        "HERO_MEDIA_LICENSE_EVIDENCE_URL: https://aura.build/license\n"
+        "HERO_MEDIA_ADAPTATION_MODE: USE_DIRECTLY\n"
+        "HERO_MEDIA_LOCAL_PATH: assets/hero-video.mp4\n"
+    )
+    html = """
+    <style>@media (prefers-reduced-motion: reduce) { video { display: none; } }</style>
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <video autoplay muted playsinline poster="assets/poster.webp"><source src="assets/hero-video.mp4"></video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, design_read, rev)
+    assert any("External hero media requires verified source and confirmed commercial rights" in err for err in _errors(rev))
+
+
+def test_v321_aura_missing_license_evidence_fails():
+    """V3.2.1: Aura media declaring confirmed commercial use without license evidence fails"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-v32",
+        "heroMedia": {
+            "source": "AURA",
+            "sourceVerification": "VERIFIED_SOURCE",
+            "commercialUse": "confirmed",
+            "adaptationMode": "USE_DIRECTLY",
+            "localPath": "assets/hero-video.mp4"
+        }
+    }
+    design_read = (
+        "HERO_MEDIA_SOURCE: AURA\n"
+        "HERO_MEDIA_SOURCE_VERIFICATION: VERIFIED_SOURCE\n"
+        "HERO_MEDIA_COMMERCIAL_USE: confirmed\n"
+        "HERO_MEDIA_ADAPTATION_MODE: USE_DIRECTLY\n"
+        "HERO_MEDIA_LOCAL_PATH: assets/hero-video.mp4\n"
+    )
+    html = """
+    <style>@media (prefers-reduced-motion: reduce) { video { display: none; } }</style>
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <video autoplay muted playsinline poster="assets/poster.webp"><source src="assets/hero-video.mp4"></video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, design_read, rev)
+    assert any("Aura media declaring commercialUse=confirmed requires licenseEvidenceUrl or licenseEvidenceRecord" in err for err in _errors(rev))
+
+
+def test_v321_native_generated_media_passes():
+    """V3.2.1: Native/generated media passes without external Aura license requirements"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "dallas-detailing-and-buffing",
+        "heroMedia": {
+            "source": "GENERATED",
+            "sourceVerification": "VERIFIED_SOURCE",
+            "license": "GENERATED_ASSET",
+            "commercialUse": "confirmed",
+            "adaptationMode": "NATIVE",
+            "localPath": "assets/hero-video.mp4"
+        }
+    }
+    design_read = (
+        "HERO_MEDIA_SOURCE: GENERATED\n"
+        "HERO_MEDIA_SOURCE_VERIFICATION: VERIFIED_SOURCE\n"
+        "HERO_MEDIA_LICENSE: GENERATED_ASSET\n"
+        "HERO_MEDIA_COMMERCIAL_USE: confirmed\n"
+        "HERO_MEDIA_ADAPTATION_MODE: NATIVE\n"
+        "HERO_MEDIA_LOCAL_PATH: assets/hero-video.mp4\n"
+    )
+    html = """
+    <style>@media (prefers-reduced-motion: reduce) { video { display: none; } }</style>
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <video autoplay muted playsinline poster="assets/hero-poster.webp"><source src="assets/hero-video.mp4"></video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, design_read, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v321_dynamic_grandfathering_untouched_exempt():
+    """V3.2.1: Untouched grandfathered site does not require heroMediaPolicyVersion"""
+    manifest = {
+        "schemaVersion": 3,
+        "slug": "clinica-dentaria-previlege-lisboa"  # in GRANDFATHERED_V3_SITES
+    }
+    html = "<section>Normal old section</section>"
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    # Should not fail for hero_media_policy_version_present
+    assert not any("heroMediaPolicyVersion" in err for err in _errors(rev))
+
+
+def test_v321_dynamic_grandfathering_actively_regenerated_requires_policy():
+    """V3.2.1: Grandfathered site being actively regenerated REQUIRES heroMediaPolicyVersion = 1"""
+    manifest = {
+        "schemaVersion": 3,
+        "slug": "clinica-dentaria-previlege-lisboa",  # in GRANDFATHERED_V3_SITES
+        "activeRegeneration": True
+    }
+    html = "<section>Redesigned section</section>"
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert any("New or actively regenerated schema v3+ site 'clinica-dentaria-previlege-lisboa' requires heroMediaPolicyVersion = 1" in err for err in _errors(rev))
 
 
 def test_v32_expert_full_width_image_passes():
