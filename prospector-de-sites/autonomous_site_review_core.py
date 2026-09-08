@@ -147,7 +147,67 @@ DNA_FIELDS = [
 ]
 
 
-def check_design_dna(manifest: dict, design_read: str, review: Review) -> None:
+def derive_dom_structural_fingerprint(html: str) -> dict:
+    """Derives a deterministic structural fingerprint from the rendered DOM."""
+    if not html:
+        return {
+            "heroStructure": "OTHER",
+            "cardGridUsage": "NONE",
+            "sectionFlowFingerprint": [],
+            "signatureInteractive": False,
+        }
+
+    # 1. heroStructure
+    hero_match = re.search(r"<section\b[^>]*data-role=['\"]hero['\"][^>]*>([\s\S]*?)</section>", html, re.IGNORECASE)
+    hero_html = hero_match.group(1) if hero_match else ""
+    hero_tag = hero_match.group(0) if hero_match else ""
+
+    hero_layout = (extract_attr(hero_tag, "data-hero-layout") or "").lower()
+    if "full-bleed" in hero_layout or "full-bleed" in hero_html.lower() or "full-bleed" in hero_tag.lower():
+        hero_structure = "FULL_BLEED"
+    elif "layered" in hero_layout or "layered" in hero_html.lower():
+        hero_structure = "LAYERED"
+    elif "hero-grid" in hero_html.lower() or re.search(r"grid-template-columns\s*:\s*(?:1fr\s+1fr|1\.1fr|repeat\(2)", html, re.IGNORECASE):
+        hero_structure = "SPLIT"
+    elif "text-align:\s*center" in hero_html.lower():
+        hero_structure = "CENTERED"
+    else:
+        hero_structure = "OTHER"
+
+    # 2. cardGridUsage
+    cards = re.findall(r"class=['\"][^'\"]*\b(?:service-card|review-card|feature-card|spec-card|info-card)\b", html, re.IGNORECASE)
+    card_count = len(cards)
+    if card_count == 0:
+        card_grid_usage = "NONE"
+    elif card_count <= 4:
+        card_grid_usage = "LOW"
+    else:
+        card_grid_usage = "HEAVY"
+
+    # 3. sectionFlowFingerprint
+    sections = []
+    for m in re.finditer(r"<section\b([^>]*)>", html, re.IGNORECASE):
+        attrs = m.group(1)
+        role = extract_attr("<section " + attrs + ">", "data-role")
+        sec_id = extract_attr("<section " + attrs + ">", "id")
+        identifier = role or sec_id or "section"
+        if identifier not in sections:
+            sections.append(identifier)
+
+    # 4. signatureInteractive
+    sig_match = re.search(r"<section\b[^>]*data-role=['\"]signature-section['\"][^>]*>([\s\S]*?)</section>", html, re.IGNORECASE)
+    sig_html = sig_match.group(1) if sig_match else ""
+    is_interactive = bool(re.search(r"<input\b|<button\b|data-interactive=['\"]true['\"]|id=['\"]compareRange['\"]|class=['\"][^'\"]*compare-handle|class=['\"][^'\"]*calc-|class=['\"][^'\"]*slider", sig_html, re.IGNORECASE))
+
+    return {
+        "heroStructure": hero_structure,
+        "cardGridUsage": card_grid_usage,
+        "sectionFlowFingerprint": sections,
+        "signatureInteractive": is_interactive,
+    }
+
+
+def check_design_dna(manifest: dict, design_read: str, review: Review, html: str = "") -> None:
     is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
     manifest_dna = manifest.get("designDna") or {}
     has_dna = bool(manifest_dna or extract_design_value(design_read, "DESIGN_DNA") or any(extract_design_value(design_read, f) for f in DNA_FIELDS))
@@ -166,6 +226,38 @@ def check_design_dna(manifest: dict, design_read: str, review: Review) -> None:
             bool(val),
             f"Design DNA requires non-empty '{field}' field recorded in design-read.md or manifest",
         )
+
+    # Deterministic DOM structural sanity check
+    if html:
+        dom_fp = derive_dom_structural_fingerprint(html)
+        declared_sig = (
+            extract_design_value(design_read, "DESIGN_DNA_SIGNATURE_MODULE")
+            or extract_design_value(design_read, "signatureModule")
+            or str(manifest_dna.get("signatureModule") or "")
+        ).lower()
+        if any(term in declared_sig for term in ["interactive", "slider", "compare", "calculator"]):
+            review.check(
+                "design_dna_structural_signature_interactive",
+                dom_fp["signatureInteractive"] is True,
+                f"Design DNA declares interactive signature '{declared_sig}', but DOM contains no interactive controls",
+            )
+        if declared_sig:
+            review.check(
+                "design_dna_structural_signature_present",
+                "signature-section" in dom_fp["sectionFlowFingerprint"],
+                "Design DNA declares signatureModule, but sectionFlowFingerprint lacks 'signature-section'",
+            )
+        declared_hero = (
+            extract_design_value(design_read, "DESIGN_DNA_HERO_GRAMMAR")
+            or extract_design_value(design_read, "heroGrammar")
+            or str(manifest_dna.get("heroGrammar") or "")
+        ).lower()
+        if "full-bleed" in declared_hero:
+            review.check(
+                "design_dna_structural_hero_full_bleed",
+                dom_fp["heroStructure"] in {"FULL_BLEED", "LAYERED"},
+                f"Design DNA declares full-bleed hero '{declared_hero}', but DOM structure is {dom_fp['heroStructure']}",
+            )
 
 
 _DNA_STOP_WORDS = frozenset({"with", "and", "style", "type", "based", "the", "a", "of", "for"})
@@ -387,6 +479,17 @@ def check_hero_visual(manifest: dict, html: str, design_read: str, review: Revie
                 image_context == "illustrative",
                 "Illustrative hero requires data-image-context=\"illustrative\"",
             )
+            hero_html = hero_section.group(1) if hero_section else html
+            has_visible_disclosure = bool(re.search(
+                r"\b(?:illustrative\s+(?:concept\s+)?image|imagem\s+ilustrativa|imagem\s+conceitual|ilustrativ[ao]|not\s+a\s+photo\s+of\s+(?:the\s+shop|this\s+shop)|não\s+representa\s+a\s+clínica)\b",
+                hero_html,
+                re.IGNORECASE,
+            ))
+            review.check(
+                "hero_image_visible_disclosure",
+                has_visible_disclosure,
+                "Generated/contextual hero with illustrativeDisclosureRequired=true must have visible disclosure text near image (e.g. 'Illustrative concept image — not a photo of the shop.')",
+            )
 
     if kind == "expert-placeholder":
         template_id = str(hero_cfg.get("templateId") or "").strip()
@@ -565,6 +668,27 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
         # Ban unsupported patient status claim in review subtitle
         has_patient_claim = bool(re.search(r"(?i)\bopini(?:ão|ões)\s+de\s+pacientes\b", text_only))
         review.check("google_reviews_no_unsupported_patient_claim", not has_patient_claim, "Public review section subtitle cannot claim verified patient status ('Opiniões de pacientes') without source verification. Use 'Avaliações públicas sobre o atendimento' instead.")
+
+        # Rating consistency: if aggregateRating < 5.0, copy cannot claim "[count] five-star reviews" or "all five-star reviews"
+        agg_rating_num = 5.0
+        if expected_rating is not None:
+            try:
+                agg_rating_num = float(str(expected_rating).replace(",", "."))
+            except ValueError:
+                agg_rating_num = 5.0
+
+        if agg_rating_num < 5.0:
+            full_text_only = re.sub(r"<[^>]+>", " ", html)
+            has_invalid_fivestar = bool(re.search(
+                r"\b(?:\d+\s+(?:verified\s+)?(?:five-star|5-star)\s+reviews?|all\s+(?:five-star|5-star)\s+reviews?)\b",
+                full_text_only,
+                re.IGNORECASE,
+            ))
+            review.check(
+                "rating_consistency_no_unsupported_all_fivestar",
+                not has_invalid_fivestar,
+                f"Aggregate rating is {agg_rating_num} (< 5.0); copy cannot claim '[count] five-star reviews' or 'all five-star reviews'. Use '{agg_rating_num} Google rating across {expected_count or 'N'} reviews' instead.",
+            )
 
         if state in {"VERIFIED_STRONG", "VERIFIED_TEXT_LIMITED"}:
             review_mode = extract_attr(tag_str, "data-review-mode")
@@ -823,11 +947,15 @@ def check_semantic_claims(manifest: dict, html: str, review: Review) -> None:
         "Copy cannot claim or imply 'paciente(s)' without verified patient relationship evidence",
     )
 
-    has_client_claim = bool(re.search(r"\bclientes\s+da\s+cl[íi]nica\b", site_copy, re.IGNORECASE))
+    has_client_claim = bool(re.search(
+        r"\b(?:clientes\s+da\s+cl[íi]nica|verified\s+customer\s+reviews?|verified\s+client\s+reviews?|verified\s+customers?|verified\s+clients?|customer\s+loyalty|client\s+loyalty)\b",
+        site_copy,
+        re.IGNORECASE,
+    ))
     review.check(
         "semantic_claim_no_unsupported_client_relationship",
         not has_client_claim or client_verified,
-        "Copy cannot claim 'clientes da clínica' without verified client relationship evidence; public review accounts are not automatically verified customers",
+        "Copy cannot claim 'clientes da clínica', 'verified customers', 'verified clients', or customer/client loyalty without verified relationship evidence; public review accounts are not automatically verified customers",
     )
 
     has_team_claim = bool(re.search(r"\b(?:nossa\s+equipe|nossos\s+profissionais)\b", site_copy, re.IGNORECASE))
@@ -1080,7 +1208,7 @@ def main() -> int:
     base_dir = manifest_path.parent
 
     check_gpt_taste(manifest, design_read, review)
-    check_design_dna(manifest, design_read, review)
+    check_design_dna(manifest, design_read, review, html=html)
     check_design_diversity(manifest, design_read, review, base_dir=base_dir)
     check_signature_section(manifest, html, design_read, review)
     check_resource_provenance(manifest, design_read, review)

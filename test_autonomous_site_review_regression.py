@@ -1659,6 +1659,128 @@ def test_semantic_claim_review_quotes_do_not_trigger_false_positives():
     assert "semantic_claim_no_unsupported_welcoming_service" not in failed_keys(payload)
 
 
+def test_generated_hero_with_disclosure_required_missing_visible_disclosure_fails():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "contextual",
+        "sourceType": "generated",
+        "representsActualBusiness": False,
+        "representsActualExpert": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    # Remove any disclosure word from PASS_HTML hero
+    html = PASS_HTML.replace('alt="Imagem ilustrativa de consultório"', 'alt="Consultório"')
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 1
+    assert "hero_image_visible_disclosure" in failed_keys(payload)
+
+
+def test_generated_hero_with_visible_disclosure_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["heroVisual"] = {
+        "required": True,
+        "kind": "contextual",
+        "sourceType": "generated",
+        "representsActualBusiness": False,
+        "representsActualExpert": False,
+        "illustrativeDisclosureRequired": True,
+    }
+    html = PASS_HTML.replace('</section>', '<div class="hero-caption">Illustrative concept image — not a photo of the shop.</div></section>')
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "hero_image_visible_disclosure" not in failed_keys(payload)
+
+
+def test_rating_consistency_aggregate_under_5_with_fivestar_claims_fails():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "state": "VERIFIED_STRONG",
+        "aggregateRating": 4.9,
+        "ratingCount": 268,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+        "observedEntries": [],
+        "reviews": [
+            {"id": "r1", "author": "Alice", "rating": 5, "text": "Great work", "dateLabel": "1 month ago", "source": "google_maps", "placeIdOrCid": "place123", "verified": True, "hasText": True},
+            {"id": "r2", "author": "Bob", "rating": 5, "text": "Very clean", "dateLabel": "2 weeks ago", "source": "google_maps", "placeIdOrCid": "place123", "verified": True, "hasText": True},
+            {"id": "r3", "author": "Charlie", "rating": 5, "text": "Excellent service", "dateLabel": "3 days ago", "source": "google_maps", "placeIdOrCid": "place123", "verified": True, "hasText": True},
+        ]
+    }
+    html = PASS_HTML.replace(
+        "Site teste",
+        "Site teste - Backed by 268 five-star reviews"
+    ).replace(
+        '<section data-motion="reveal">A</section>',
+        '<section data-role="reviews" data-review-rating="4.9" data-review-count="268" data-review-mode="verified-text">Avaliações públicas</section>'
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "rating_consistency_no_unsupported_all_fivestar" in failed_keys(payload)
+
+
+def test_rating_consistency_aggregate_under_5_with_truthful_claims_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = {
+        "checked": True,
+        "state": "VERIFIED_STRONG",
+        "aggregateRating": 4.9,
+        "ratingCount": 268,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+        "observedEntries": [],
+        "reviews": [
+            {"id": "r1", "author": "Alice", "rating": 5, "text": "Great work", "dateLabel": "1 month ago", "source": "google_maps", "placeIdOrCid": "place123", "verified": True, "hasText": True},
+            {"id": "r2", "author": "Bob", "rating": 5, "text": "Very clean", "dateLabel": "2 weeks ago", "source": "google_maps", "placeIdOrCid": "place123", "verified": True, "hasText": True},
+            {"id": "r3", "author": "Charlie", "rating": 5, "text": "Excellent service", "dateLabel": "3 days ago", "source": "google_maps", "placeIdOrCid": "place123", "verified": True, "hasText": True},
+        ]
+    }
+    html = PASS_HTML.replace(
+        "Site teste",
+        "Site teste - Backed by a 4.9 Google rating across 268 reviews."
+    ).replace(
+        '<section data-motion="reveal">A</section>',
+        '<section data-role="reviews" data-review-rating="4.9" data-review-count="268" data-review-mode="verified-text">Avaliações públicas</section>'
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "rating_consistency_no_unsupported_all_fivestar" not in failed_keys(payload)
+
+
+def test_english_semantic_claims_verified_customer_reviews_fails_without_evidence():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    html = PASS_HTML.replace("Site teste", "Verified Customer Reviews and strong customer loyalty")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_client_relationship" in failed_keys(payload)
+
+
+def test_english_semantic_claims_verified_customer_reviews_passes_with_evidence():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["factualEvidence"]["clientRelationshipVerified"] = True
+    html = PASS_HTML.replace("Site teste", "Verified Customer Reviews and strong customer loyalty")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_client_relationship" not in failed_keys(payload)
+
+
+def test_design_dna_structural_signature_interactive_mismatch_fails():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["schemaVersion"] = 3
+    manifest["designDna"] = {
+        "heroGrammar": "dark-precision",
+        "paletteFamily": "obsidian-liquid",
+        "typographyCharacter": "industrial",
+        "layoutGrammar": "spec-cards",
+        "motionLanguage": "precision-meter",
+        "reviewTreatment": "spotlights",
+        "signatureModule": "interactive-slider-comparison",
+    }
+    # HTML with non-interactive signature section
+    html = PASS_HTML.replace(
+        '<section data-motion="reveal">B</section>',
+        '<section data-role="signature-section"><p>Static image only without slider or controls</p></section>'
+    )
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "design_dna_structural_signature_interactive" in failed_keys(payload)
+
+
 if __name__ == "__main__":
     tests = [name for name in globals() if name.startswith("test_")]
     for name in sorted(tests):

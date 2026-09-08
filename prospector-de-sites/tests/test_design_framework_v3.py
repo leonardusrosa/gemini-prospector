@@ -57,6 +57,7 @@ from autonomous_site_review_core import (
     check_mandatory_prepublish_reviews,
     check_semantic_claims,
     _dna_token_similarity,
+    derive_dom_structural_fingerprint,
 )
 from open_design_direction_review import validate_open_design_direction
 
@@ -654,7 +655,64 @@ def test_external_resource_cannot_pass_without_license():
     )
     rev = Review()
     check_resource_provenance(manifest, design, rev)
-    assert not _passed(rev), "External resource with UNCONFIRMED commercialUse must fail provenance gate"
+def test_dom_structural_fingerprint_derivation():
+    """DOM structural fingerprint correctly classifies hero, cards, sections, and signature."""
+    html = """
+    <section data-role="hero" data-hero-layout="full-bleed-background"><h1>Title</h1></section>
+    <section data-role="signature-section"><input type="range" id="compareRange"><div class="compare-handle"></div></section>
+    <section id="services"><div class="service-card">S1</div><div class="service-card">S2</div></section>
+    <section data-role="reviews"><div class="review-card">R1</div></section>
+    """
+    fp = derive_dom_structural_fingerprint(html)
+    assert fp["heroStructure"] == "FULL_BLEED"
+    assert fp["signatureInteractive"] is True
+    assert fp["cardGridUsage"] == "LOW"
+    assert fp["sectionFlowFingerprint"] == ["hero", "signature-section", "services", "reviews"]
+
+
+def test_dom_structural_signature_mismatch_fails():
+    """Declaring an interactive signature module with non-interactive DOM fails."""
+    manifest = {
+        "schemaVersion": 3,
+        "slug": "mismatch-site",
+        "designDna": {
+            "heroGrammar": "split-editorial",
+            "paletteFamily": "dark",
+            "typographyCharacter": "sans",
+            "layoutGrammar": "spec-cards",
+            "motionLanguage": "reveal",
+            "reviewTreatment": "curated",
+            "signatureModule": "interactive-slider-comparison",
+        }
+    }
+    design = "\n".join([f"DESIGN_DNA_{k.upper()}: {v}" for k, v in manifest["designDna"].items()])
+    html = '<section data-role="signature-section"><p>Static only image</p></section>'
+    rev = Review()
+    check_design_dna(manifest, design, rev, html=html)
+    assert not _passed(rev)
+    assert any("interactive signature" in err for err in _errors(rev))
+
+
+def test_dom_structural_signature_match_passes():
+    """Declaring an interactive signature module with interactive DOM passes."""
+    manifest = {
+        "schemaVersion": 3,
+        "slug": "match-site",
+        "designDna": {
+            "heroGrammar": "split-editorial",
+            "paletteFamily": "dark",
+            "typographyCharacter": "sans",
+            "layoutGrammar": "spec-cards",
+            "motionLanguage": "reveal",
+            "reviewTreatment": "curated",
+            "signatureModule": "interactive-slider-comparison",
+        }
+    }
+    design = "\n".join([f"DESIGN_DNA_{k.upper()}: {v}" for k, v in manifest["designDna"].items()])
+    html = '<section data-role="signature-section"><input type="range" id="compareRange"></section>'
+    rev = Review()
+    check_design_dna(manifest, design, rev, html=html)
+    assert _passed(rev)
 
 
 if __name__ == "__main__":

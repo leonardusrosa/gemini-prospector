@@ -466,6 +466,15 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
             warnings.append(f"reviews[{index}] ignored: missing/invalid {', '.join(missing)}.")
             continue
 
+        # Translation metadata validation if provided
+        translation_state = review.get("translationState")
+        if translation_state is not None:
+            valid_states = {"ORIGINAL", "SURFACE_TRANSLATED", "UNKNOWN"}
+            if str(translation_state).strip().upper() not in valid_states:
+                warnings.append(
+                    f"reviews[{index}] translationState must be one of {sorted(valid_states)}; got {translation_state!r}."
+                )
+
         fp = (str(author).strip().casefold(), str(text).strip().casefold())
         if fp in fingerprints:
             warnings.append(f"reviews[{index}] ignored: duplicate review.")
