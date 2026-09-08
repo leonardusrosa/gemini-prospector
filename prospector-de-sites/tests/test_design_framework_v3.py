@@ -58,6 +58,8 @@ from autonomous_site_review_core import (
     check_semantic_claims,
     check_hero_media_plane,
     check_navbar_labels,
+    check_public_site_visible_copy,
+    check_hero_eyebrow,
     _dna_token_similarity,
     derive_dom_structural_fingerprint,
 )
@@ -1251,6 +1253,95 @@ def test_v32_dallas_final_derived_hero_not_split():
     fp = derive_dom_structural_fingerprint(html)
     assert fp["heroStructure"] in {"FULL_BLEED", "LAYERED"}, f"Dallas hero must be FULL_BLEED or LAYERED; got {fp['heroStructure']}"
     assert fp["heroStructure"] != "SPLIT"
+
+
+def test_public_site_hero_eyebrow_meta_label_fails():
+    """Hero eyebrow 'Private Website Concept • Addison, Texas' => FAIL"""
+    html = """
+    <section data-role="hero">
+      <div class="hero-eyebrow">Private Website Concept &bull; Addison, Texas</div>
+      <h1>Real Heading</h1>
+    </section>
+    """
+    manifest = {"slug": "test-client"}
+    rev1 = Review()
+    check_public_site_visible_copy(html, rev1)
+    assert any("Public prospect site UI cannot contain prospecting label" in err for err in _errors(rev1))
+
+    rev2 = Review()
+    check_hero_eyebrow(html, manifest, rev2)
+    assert any("Hero eyebrow cannot contain prospecting label" in err for err in _errors(rev2))
+
+
+def test_public_site_hero_eyebrow_factual_passes():
+    """Hero eyebrow 'Auto Detailing • Addison, TX' => PASS if factual evidence supports it"""
+    html = """
+    <section data-role="hero">
+      <div class="hero-eyebrow">Auto Detailing &bull; Addison, TX</div>
+      <h1>Surface Perfection</h1>
+    </section>
+    """
+    manifest = {
+        "slug": "test-client",
+        "factualEvidence": {
+            "verifiedServices": [{"claim": "Auto Detailing", "verified": True}]
+        }
+    }
+    rev1 = Review()
+    check_public_site_visible_copy(html, rev1)
+    assert _passed(rev1), f"Expected pass, got: {_errors(rev1)}"
+
+    rev2 = Review()
+    check_hero_eyebrow(html, manifest, rev2)
+    assert _passed(rev2), f"Expected pass, got: {_errors(rev2)}"
+
+
+def test_public_site_no_eyebrow_passes():
+    """No eyebrow => PASS"""
+    html = """
+    <section data-role="hero">
+      <h1>Surface Perfection Without Eyebrow</h1>
+    </section>
+    """
+    manifest = {"slug": "test-client"}
+    rev = Review()
+    check_hero_eyebrow(html, manifest, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_public_site_proposal_meta_label_exception_passes():
+    """proposal.html: 'Website Concept for Dallas Detailing And Buffing' => PASS (proposal exception)"""
+    proposal_html = """
+    <!DOCTYPE html>
+    <html>
+    <head><title>Proposal</title></head>
+    <body>
+      <div class="status-note">Private Preview</div>
+      <h1>Website Concept for Dallas Detailing And Buffing</h1>
+    </body>
+    </html>
+    """
+    manifest = {"slug": "dallas-detailing-and-buffing", "siteMode": "proposal"}
+    rev1 = Review()
+    check_public_site_visible_copy(proposal_html, rev1, is_proposal=True)
+    assert _passed(rev1), f"Expected pass, got: {_errors(rev1)}"
+
+    rev2 = Review()
+    check_hero_eyebrow(proposal_html, manifest, rev2, is_proposal=True)
+    assert _passed(rev2), f"Expected pass, got: {_errors(rev2)}"
+
+
+def test_public_site_visible_copy_forbidden_label_fails():
+    """Visible copy containing 'demo site', 'mockup', 'prepared for', etc. => FAIL"""
+    for forbidden in ["demo site", "mockup", "prototype", "prepared for Wilson", "official website concept"]:
+        bad_html = f"""
+        <section class="banner">
+          <p>This is a {forbidden} for preview purposes.</p>
+        </section>
+        """
+        rev = Review()
+        check_public_site_visible_copy(bad_html, rev, is_proposal=False)
+        assert any("Public prospect site UI cannot contain prospecting label" in err for err in _errors(rev)), f"Failed to block: {forbidden}"
 
 
 if __name__ == "__main__":

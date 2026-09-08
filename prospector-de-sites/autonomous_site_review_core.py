@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html as html_lib
 import re
 import sys
 from pathlib import Path
@@ -585,6 +586,125 @@ def check_navbar_labels(html: str, review: Review) -> None:
         found_vendor is None,
         f"Navbar links cannot contain vendor names (found '{found_vendor}'); use generic labels like 'Reviews', 'Testimonials', 'What People Say'",
     )
+
+
+FORBIDDEN_PUBLIC_META_LABELS = (
+    "private website concept",
+    "website concept",
+    "private preview",
+    "demo site",
+    "website mockup",
+    "mockup",
+    "prototype",
+    "official website concept",
+    "digital presence concept",
+    "workshop concept",
+    "prospect site",
+    "sample website",
+    "prepared for",
+    "built for",
+    "ai-generated concept",
+)
+
+
+def extract_visible_ui_text(html: str) -> str:
+    """Extracts visible user-facing text from HTML, removing comments, scripts, styles, svg, and tags."""
+    text = re.sub(r"<!--[\s\S]*?-->", " ", html)
+    text = re.sub(r"<(?:script|style|svg)\b[^>]*>[\s\S]*?<\/(?:script|style|svg)>", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html_lib.unescape(text)
+    return " ".join(text.split())
+
+
+def check_public_site_visible_copy(html: str, review: Review, is_proposal: bool = False) -> None:
+    """Enforces that public prospect sites do not expose prospecting or process labels in visible UI.
+
+    Proposals (proposta.html / proposal.html) are sales artifacts and exempt from this rule.
+    """
+    if is_proposal:
+        review.check("public_site_no_meta_labels", True, "Proposal page exempt from meta label ban")
+        return
+
+    visible_text = extract_visible_ui_text(html).lower()
+    for phrase in FORBIDDEN_PUBLIC_META_LABELS:
+        pattern = r"\b" + re.escape(phrase) + r"\b"
+        if re.search(pattern, visible_text):
+            review.check(
+                "public_site_no_meta_labels",
+                False,
+                f"Public prospect site UI cannot contain prospecting label '{phrase}' in visible copy",
+            )
+            return
+    review.check("public_site_no_meta_labels", True, "Public prospect site visible UI contains no forbidden meta labels")
+
+
+def check_hero_eyebrow(html: str, manifest: dict, review: Review, is_proposal: bool = False) -> None:
+    """Enforces the Hero Eyebrow Rule:
+    Eyebrow must be factual business/location/service info or omitted entirely.
+    Must never contain prospecting meta labels or unverified hype words.
+    """
+    if is_proposal:
+        return
+
+    match = re.search(
+        r"<(?:div|span|p|h[1-6])\b[^>]*?(?:class=[\"'][^\"']*\bhero-eyebrow\b[^\"']*[\"']|data-role=[\"']hero-eyebrow[\"'])[^>]*>([\s\S]*?)<\/(?:div|span|p|h[1-6])>",
+        html,
+        re.IGNORECASE,
+    )
+    if not match:
+        review.check("hero_eyebrow_valid", True, "No hero eyebrow present (omitted is valid)")
+        return
+
+    eyebrow_raw = match.group(1)
+    eyebrow_text = extract_visible_ui_text(eyebrow_raw).strip()
+    if not eyebrow_text:
+        review.check("hero_eyebrow_valid", True, "Hero eyebrow is empty (valid)")
+        return
+
+    eyebrow_lower = eyebrow_text.lower()
+    for phrase in FORBIDDEN_PUBLIC_META_LABELS:
+        pattern = r"\b" + re.escape(phrase) + r"\b"
+        if re.search(pattern, eyebrow_lower):
+            review.check(
+                "hero_eyebrow_no_meta_labels",
+                False,
+                f"Hero eyebrow cannot contain prospecting label '{phrase}'; found: {eyebrow_text!r}",
+            )
+            return
+
+    unverified_hype = [
+        "premium",
+        "award-winning",
+        "award winning",
+        "trusted",
+        "specialist",
+        "leading",
+        "#1",
+        "luxury",
+        "expert",
+        "certified",
+    ]
+    verified_services = [str(s.get("claim", "")).lower() for s in manifest.get("factualEvidence", {}).get("verifiedServices", [])]
+    business_name = str(manifest.get("businessName", "")).lower()
+    niche = str(manifest.get("niche", "")).lower()
+
+    for hype in unverified_hype:
+        if re.search(r"\b" + re.escape(hype) + r"\b", eyebrow_lower):
+            is_verified = (
+                any(hype in s for s in verified_services)
+                or (hype in business_name)
+                or (hype in niche)
+                or bool(manifest.get("factualEvidence", {}).get(f"{hype}Verified"))
+            )
+            if not is_verified:
+                review.check(
+                    "hero_eyebrow_factual",
+                    False,
+                    f"Hero eyebrow contains unverified hype word '{hype}'; found: {eyebrow_text!r}. Eyebrow must be factual or omitted.",
+                )
+                return
+
+    review.check("hero_eyebrow_valid", True, f"Hero eyebrow is factual: {eyebrow_text!r}")
 
 
 def check_hero_media_plane(manifest: dict, html: str, design_read: str, review: Review, base_dir: Path | None = None) -> None:
@@ -1440,6 +1560,9 @@ def main() -> int:
     check_hero_visual(manifest, html, design_read, review, base_dir=base_dir)
     check_hero_media_plane(manifest, html, design_read, review, base_dir=base_dir)
     check_navbar_labels(html, review)
+    is_proposal = "proposta" in html_path.name.lower() or "proposal" in html_path.name.lower() or manifest.get("siteMode") == "proposal"
+    check_public_site_visible_copy(html, review, is_proposal=is_proposal)
+    check_hero_eyebrow(html, manifest, review, is_proposal=is_proposal)
     check_google_reviews(manifest, html, design_read, review)
     check_factual_traceability(manifest, design_read, html, review)
     check_semantic_claims(manifest, html, review)

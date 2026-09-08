@@ -285,6 +285,14 @@ Evidence remains sovereign over all creative and copy choices.
    - If an old site is actively regenerated later (e.g. `activeRegeneration: true`, `status: redesenhado`), `heroMediaPolicyVersion = 1` becomes strictly required.
    - Future schema v3+ sites missing this marker trigger FAIL.
 
+8. **Public-Site Meta Label Ban & Hero Eyebrow Rule**:
+   - Public prospect sites must read like finished websites.
+   - NEVER show prospecting, internal production, or process labels in visible site UI.
+   - Forbidden labels include: `Private Website Concept`, `Website Concept`, `Private Preview`, `Demo Site`, `Website Mockup`, `Mockup`, `Prototype`, `Official Website Concept`, `Digital Presence Concept`, `Workshop Concept`, `Prospect Site`, `Sample Website`, `Prepared for...`, `Built for...`, `AI-generated concept`.
+   - Applies to all visible UI: hero eyebrow, hero badges, navbar, top bar, announcement bar, footer, CTA labels, and floating labels.
+   - **Hero Eyebrow Rule**: Must be factual business/location/service info (e.g. `Addison, Texas`, `Auto Detailing • Addison, TX`) or omitted entirely. Never invent unverified hype (`premium`, `award-winning`, `trusted`, `leading`, `#1`, `luxury`, `expert`, `certified`).
+   - **Proposal Exception**: Sales proposals (`proposta.html` / `proposal.html`) are explicitly sales artifacts and may include `Website Concept for [Business]` and `Private Preview`. Must remain `noindex, nofollow`.
+
 ## 8. Global Market Acquisition Policy
 
 - Target Markets: United States, Canada, Europe, Latin America (LATAM).
