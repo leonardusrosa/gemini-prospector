@@ -58,5 +58,17 @@
       "reviewTreatment": "verified-patient-wall",
       "signatureModule": "lisboa-access-explorer"
     }
+  },
+  {
+    "slug": "dallas-detailing-and-buffing",
+    "dna": {
+      "heroGrammar": "dark-automotive-precision",
+      "paletteFamily": "obsidian-liquid-carbon",
+      "typographyCharacter": "bold-industrial-condensed",
+      "layoutGrammar": "staggered-spec-cards-bleed",
+      "motionLanguage": "precision-meter-reveal",
+      "reviewTreatment": "verified-dallas-spotlights",
+      "signatureModule": "interactive-finish-comparison"
+    }
   }
 ]

@@ -29,3 +29,5 @@ private/contracts/
 *.env
 *.key
 *.pem
+
+.playwright-mcp/
