@@ -397,8 +397,11 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
     if not isinstance(data, dict):
         return EvidenceResult(PROFILE_CONFLICT, False, ["Evidence root must be an object."], [], 0)
 
+    root_schema_version = data.get("schemaVersion")
     if "googleReviews" in data and isinstance(data.get("googleReviews"), dict):
         data = data["googleReviews"]
+        if "schemaVersion" not in data and root_schema_version is not None:
+            data["schemaVersion"] = root_schema_version
 
     profile_name = data.get("profileName")
     profile_url = data.get("profileUrl")
@@ -466,13 +469,30 @@ def validate_evidence(data: Dict[str, Any], minimum_reviews: int = 3) -> Evidenc
             warnings.append(f"reviews[{index}] ignored: missing/invalid {', '.join(missing)}.")
             continue
 
-        # Translation metadata validation if provided
-        translation_state = review.get("translationState")
-        if translation_state is not None:
+        # Translation metadata validation
+        is_v3 = int(data.get("schemaVersion", 1) or 1) >= 3
+        if is_v3 and bool(str(text or "").strip()):
             valid_states = {"ORIGINAL", "SURFACE_TRANSLATED", "UNKNOWN"}
-            if str(translation_state).strip().upper() not in valid_states:
+            translation_state = str(review.get("translationState") or "").strip().upper()
+            if not translation_state or translation_state not in valid_states:
+                errors.append(
+                    f"reviews[{index}] translationState must be one of {sorted(valid_states)} for schema v3 textual reviews; got {review.get('translationState')!r}."
+                )
+            source_locale = review.get("sourceLocale")
+            if not isinstance(source_locale, str) or not source_locale.strip():
+                errors.append(f"reviews[{index}] sourceLocale is required for schema v3 textual reviews.")
+            displayed_text = review.get("displayedText")
+            if not isinstance(displayed_text, str) or not displayed_text.strip():
+                errors.append(f"reviews[{index}] displayedText is required for schema v3 textual reviews.")
+            if translation_state == "ORIGINAL":
+                orig_text = review.get("originalText")
+                if not isinstance(orig_text, str) or not orig_text.strip():
+                    errors.append(f"reviews[{index}] translationState='ORIGINAL' requires non-empty originalText.")
+        elif review.get("translationState") is not None:
+            valid_states = {"ORIGINAL", "SURFACE_TRANSLATED", "UNKNOWN"}
+            if str(review.get("translationState")).strip().upper() not in valid_states:
                 warnings.append(
-                    f"reviews[{index}] translationState must be one of {sorted(valid_states)}; got {translation_state!r}."
+                    f"reviews[{index}] translationState must be one of {sorted(valid_states)}; got {review.get('translationState')!r}."
                 )
 
         fp = (str(author).strip().casefold(), str(text).strip().casefold())

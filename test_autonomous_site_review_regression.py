@@ -1781,6 +1781,149 @@ def test_design_dna_structural_signature_interactive_mismatch_fails():
     assert "design_dna_structural_signature_interactive" in failed_keys(payload)
 
 
+def test_fake_full_bleed_layout_with_split_grid_reports_split():
+    html = """
+    <section data-role="hero" data-hero-layout="full-bleed-background">
+      <div class="hero-grid">
+        <div class="hero-text-col"><h1>Title</h1></div>
+        <div class="hero-media-col"><div class="hero-media"><img src="img.jpg"></div></div>
+      </div>
+    </section>
+    """
+    from autonomous_site_review_core import derive_dom_structural_fingerprint
+    fp = derive_dom_structural_fingerprint(html)
+    assert fp["heroStructure"] == "SPLIT"
+
+
+def test_english_semantic_claims_our_team_fails_without_evidence():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    html = PASS_HTML.replace("Site teste", "Meet our detailing team and specialist team")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_team" in failed_keys(payload)
+
+
+def test_english_semantic_claims_our_team_passes_with_evidence():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["factualEvidence"]["teamVerified"] = True
+    html = PASS_HTML.replace("Site teste", "Meet our detailing team and specialist team")
+    code, payload = run_case(html=html, manifest=manifest)
+    assert "semantic_claim_no_unsupported_team" not in failed_keys(payload)
+
+
+def test_schema_v3_textual_review_missing_translation_provenance_fails():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["schemaVersion"] = 3
+    manifest["googleReviews"] = {
+        "checked": True,
+        "state": "VERIFIED_STRONG",
+        "aggregateRating": 4.9,
+        "ratingCount": 268,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+        "observedEntries": [],
+        "reviews": [
+            {
+                "id": "r1",
+                "author": "Alice",
+                "rating": 5,
+                "text": "Great work",
+                "dateLabel": "1 month ago",
+                "source": "google_maps",
+                "placeIdOrCid": "place123",
+                "verified": True,
+                "hasText": True,
+            },
+            {
+                "id": "r2",
+                "author": "Bob",
+                "rating": 5,
+                "text": "Very clean",
+                "dateLabel": "2 weeks ago",
+                "source": "google_maps",
+                "placeIdOrCid": "place123",
+                "verified": True,
+                "hasText": True,
+            },
+            {
+                "id": "r3",
+                "author": "Charlie",
+                "rating": 5,
+                "text": "Excellent service",
+                "dateLabel": "3 days ago",
+                "source": "google_maps",
+                "placeIdOrCid": "place123",
+                "verified": True,
+                "hasText": True,
+            },
+        ]
+    }
+    code, payload = run_case(html=PASS_HTML, manifest=manifest)
+    assert "google_reviews_translation_provenance" in failed_keys(payload)
+
+
+def test_schema_v3_textual_review_with_translation_provenance_passes():
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["schemaVersion"] = 3
+    manifest["googleReviews"] = {
+        "checked": True,
+        "state": "VERIFIED_STRONG",
+        "aggregateRating": 4.9,
+        "ratingCount": 268,
+        "reviewSectionRequired": True,
+        "reviewSectionRendered": True,
+        "observedEntries": [],
+        "reviews": [
+            {
+                "id": "r1",
+                "author": "Alice",
+                "rating": 5,
+                "text": "Great work",
+                "dateLabel": "1 month ago",
+                "source": "google_maps",
+                "placeIdOrCid": "place123",
+                "verified": True,
+                "hasText": True,
+                "sourceLocale": "en-US",
+                "displayedText": "Great work",
+                "originalText": "Great work",
+                "translationState": "ORIGINAL",
+            },
+            {
+                "id": "r2",
+                "author": "Bob",
+                "rating": 5,
+                "text": "Muito limpo",
+                "dateLabel": "2 weeks ago",
+                "source": "google_maps",
+                "placeIdOrCid": "place123",
+                "verified": True,
+                "hasText": True,
+                "sourceLocale": "unknown",
+                "displayedText": "Muito limpo",
+                "originalText": None,
+                "translationState": "SURFACE_TRANSLATED",
+            },
+            {
+                "id": "r3",
+                "author": "Charlie",
+                "rating": 5,
+                "text": "Excellent service",
+                "dateLabel": "3 days ago",
+                "source": "google_maps",
+                "placeIdOrCid": "place123",
+                "verified": True,
+                "hasText": True,
+                "sourceLocale": "en",
+                "displayedText": "Excellent service",
+                "originalText": "Excellent service",
+                "translationState": "ORIGINAL",
+            },
+        ]
+    }
+    code, payload = run_case(html=PASS_HTML, manifest=manifest)
+    assert "google_reviews_translation_provenance" not in failed_keys(payload)
+
+
 if __name__ == "__main__":
     tests = [name for name in globals() if name.startswith("test_")]
     for name in sorted(tests):

@@ -715,6 +715,121 @@ def test_dom_structural_signature_match_passes():
     assert _passed(rev)
 
 
+def test_fake_full_bleed_attribute_with_split_grid_reports_split():
+    """Fake data-hero-layout='full-bleed-background' with a split grid reports SPLIT."""
+    html = """
+    <section data-role="hero" data-hero-layout="full-bleed-background">
+      <div class="hero-grid">
+        <div class="hero-text-col"><h1>Title</h1></div>
+        <div class="hero-media-col"><div class="hero-media"><img src="car.jpg"></div></div>
+      </div>
+    </section>
+    """
+    fp = derive_dom_structural_fingerprint(html)
+    assert fp["heroStructure"] == "SPLIT"
+
+    # Declaring full-bleed with split DOM fails
+    manifest_fb = {
+        "schemaVersion": 3,
+        "slug": "split-site",
+        "designDna": {
+            "heroGrammar": "full-bleed-cinematic",
+            "paletteFamily": "dark",
+            "typographyCharacter": "sans",
+            "layoutGrammar": "spec-cards",
+            "motionLanguage": "reveal",
+            "reviewTreatment": "curated",
+            "signatureModule": "interactive-slider",
+        }
+    }
+    design_fb = "\n".join([f"DESIGN_DNA_{k.upper()}: {v}" for k, v in manifest_fb["designDna"].items()])
+    html_with_sig = html + '<section data-role="signature-section"><input type="range" id="compareRange"></section>'
+    rev_fb = Review()
+    check_design_dna(manifest_fb, design_fb, rev_fb, html=html_with_sig)
+    assert not _passed(rev_fb)
+    assert any("full-bleed hero" in err for err in _errors(rev_fb))
+
+    # Declaring split hero with split DOM passes
+    manifest_sp = {
+        "schemaVersion": 3,
+        "slug": "split-site",
+        "designDna": {
+            "heroGrammar": "split-automotive-precision",
+            "paletteFamily": "dark",
+            "typographyCharacter": "sans",
+            "layoutGrammar": "spec-cards",
+            "motionLanguage": "reveal",
+            "reviewTreatment": "curated",
+            "signatureModule": "interactive-slider",
+        }
+    }
+    design_sp = "\n".join([f"DESIGN_DNA_{k.upper()}: {v}" for k, v in manifest_sp["designDna"].items()])
+    rev_sp = Review()
+    check_design_dna(manifest_sp, design_sp, rev_sp, html=html_with_sig)
+    assert _passed(rev_sp)
+
+
+def test_schema_v3_review_translation_provenance_validation():
+    """Schema v3 requires valid translationState, sourceLocale, and displayedText."""
+    from google_reviews_evidence import validate_evidence
+    evidence_missing = {
+        "schemaVersion": 3,
+        "profileName": "Test Shop",
+        "profileUrl": "https://maps.google.com/?cid=123",
+        "placeIdOrCid": "place123",
+        "sourceSurface": "direct_google_maps",
+        "collectionMethod": "browser_direct_maps",
+        "collectedAt": "2026-09-08T12:00:00Z",
+        "aggregateRating": 4.9,
+        "ratingCount": 10,
+        "profileHeaderObserved": True,
+        "reviewsPanelOpened": True,
+        "aggregateObservation": {
+            "ratingText": "4.9",
+            "countText": "10 reviews",
+            "surfaceUrl": "https://maps.google.com/?cid=123",
+        },
+        "reviews": [
+            {
+                "id": "r1",
+                "author": "Alice",
+                "rating": 5,
+                "text": "Great service",
+                "dateLabel": "1 month ago",
+                "source": "google_maps",
+                "placeIdOrCid": "place123",
+                "verified": True,
+                "hasText": True,
+                # Missing translation provenance
+            }
+        ]
+    }
+    res = validate_evidence(evidence_missing)
+    assert any("translationState" in err or "sourceLocale" in err for err in res.errors)
+
+    # Adding valid translation provenance passes
+    evidence_valid = dict(evidence_missing)
+    evidence_valid["reviews"] = [
+        {
+            "id": "r1",
+            "author": "Alice",
+            "rating": 5,
+            "text": "Great service",
+            "dateLabel": "1 month ago",
+            "source": "google_maps",
+            "placeIdOrCid": "place123",
+            "verified": True,
+            "hasText": True,
+            "sourceLocale": "en-US",
+            "displayedText": "Great service",
+            "originalText": "Great service",
+            "translationState": "ORIGINAL",
+        }
+    ]
+    res_valid = validate_evidence(evidence_valid)
+    assert not any("translationState" in err or "sourceLocale" in err for err in res_valid.errors)
+
+
 if __name__ == "__main__":
     test_funcs = [k for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn_name in test_funcs:

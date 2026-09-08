@@ -162,17 +162,27 @@ def derive_dom_structural_fingerprint(html: str) -> dict:
     hero_html = hero_match.group(1) if hero_match else ""
     hero_tag = hero_match.group(0) if hero_match else ""
 
-    hero_layout = (extract_attr(hero_tag, "data-hero-layout") or "").lower()
-    if "full-bleed" in hero_layout or "full-bleed" in hero_html.lower() or "full-bleed" in hero_tag.lower():
-        hero_structure = "FULL_BLEED"
-    elif "layered" in hero_layout or "layered" in hero_html.lower():
-        hero_structure = "LAYERED"
-    elif "hero-grid" in hero_html.lower() or re.search(r"grid-template-columns\s*:\s*(?:1fr\s+1fr|1\.1fr|repeat\(2)", html, re.IGNORECASE):
+    # Real structure analysis: do not trust data-hero-layout to classify FULL_BLEED.
+    # If: hero-grid + 2 columns + framed hero-media => SPLIT regardless of data-hero-layout.
+    has_hero_grid = bool(re.search(r"class=['\"][^'\"]*\bhero-grid\b", hero_html, re.IGNORECASE))
+    has_2_cols = bool(
+        re.search(r"grid-template-columns\s*:\s*(?:1fr\s+1fr|1\.1fr|0\.9fr|repeat\(2|2fr\s+1fr|1fr\s+2fr)", html, re.IGNORECASE)
+        or (re.search(r"class=['\"][^'\"]*\bhero-text-col\b", hero_html, re.IGNORECASE) and re.search(r"class=['\"][^'\"]*\bhero-media-col\b", hero_html, re.IGNORECASE))
+    )
+    has_framed_media = bool(re.search(r"class=['\"][^'\"]*\b(?:hero-media|hero-media-col)\b", hero_html, re.IGNORECASE))
+
+    if (has_hero_grid and (has_2_cols or has_framed_media)) or (has_2_cols and has_framed_media) or "hero-grid" in hero_html.lower():
         hero_structure = "SPLIT"
-    elif "text-align:\s*center" in hero_html.lower():
-        hero_structure = "CENTERED"
     else:
-        hero_structure = "OTHER"
+        hero_layout = (extract_attr(hero_tag, "data-hero-layout") or "").lower()
+        if "layered" in hero_layout or "layered" in hero_html.lower():
+            hero_structure = "LAYERED"
+        elif "full-bleed" in hero_layout or "full-bleed" in hero_html.lower() or "full-bleed" in hero_tag.lower():
+            hero_structure = "FULL_BLEED"
+        elif re.search(r"text-align\s*:\s*center", hero_html, re.IGNORECASE):
+            hero_structure = "CENTERED"
+        else:
+            hero_structure = "OTHER"
 
     # 2. cardGridUsage
     cards = re.findall(r"class=['\"][^'\"]*\b(?:service-card|review-card|feature-card|spec-card|info-card)\b", html, re.IGNORECASE)
@@ -252,12 +262,19 @@ def check_design_dna(manifest: dict, design_read: str, review: Review, html: str
             or extract_design_value(design_read, "heroGrammar")
             or str(manifest_dna.get("heroGrammar") or "")
         ).lower()
-        if "full-bleed" in declared_hero:
-            review.check(
-                "design_dna_structural_hero_full_bleed",
-                dom_fp["heroStructure"] in {"FULL_BLEED", "LAYERED"},
-                f"Design DNA declares full-bleed hero '{declared_hero}', but DOM structure is {dom_fp['heroStructure']}",
-            )
+        if "hero" in dom_fp["sectionFlowFingerprint"]:
+            if "full-bleed" in declared_hero:
+                review.check(
+                    "design_dna_structural_hero_full_bleed",
+                    dom_fp["heroStructure"] in {"FULL_BLEED", "LAYERED"},
+                    f"Design DNA declares full-bleed hero '{declared_hero}', but DOM structure is {dom_fp['heroStructure']}",
+                )
+            if "split" in declared_hero:
+                review.check(
+                    "design_dna_structural_hero_split",
+                    dom_fp["heroStructure"] == "SPLIT",
+                    f"Design DNA declares split hero '{declared_hero}', but DOM structure is {dom_fp['heroStructure']}",
+                )
 
 
 _DNA_STOP_WORDS = frozenset({"with", "and", "style", "type", "based", "the", "a", "of", "for"})
@@ -690,6 +707,25 @@ def check_google_reviews(manifest: dict, html: str, design_read: str, review: Re
                 f"Aggregate rating is {agg_rating_num} (< 5.0); copy cannot claim '[count] five-star reviews' or 'all five-star reviews'. Use '{agg_rating_num} Google rating across {expected_count or 'N'} reviews' instead.",
             )
 
+        # Translation provenance validation for schema v3 textual reviews
+        is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3
+        if is_schema_v3 and len(google_verified_reviews) > 0:
+            valid_translation_states = {"ORIGINAL", "SURFACE_TRANSLATED", "UNKNOWN"}
+            all_provenance_ok = True
+            for r_id, r in google_verified_reviews.items():
+                t_state = str(r.get("translationState") or "").strip().upper()
+                s_locale = str(r.get("sourceLocale") or "").strip()
+                d_text = str(r.get("displayedText") or "").strip()
+                orig_text = str(r.get("originalText") or "").strip() if r.get("originalText") is not None else None
+                if t_state not in valid_translation_states or not s_locale or not d_text or (t_state == "ORIGINAL" and not orig_text):
+                    all_provenance_ok = False
+                    break
+            review.check(
+                "google_reviews_translation_provenance",
+                all_provenance_ok,
+                "All schema v3 textual reviews must record valid translationState ('ORIGINAL', 'SURFACE_TRANSLATED', 'UNKNOWN'), sourceLocale, displayedText, and originalText (mandatory when ORIGINAL)",
+            )
+
         if state in {"VERIFIED_STRONG", "VERIFIED_TEXT_LIMITED"}:
             review_mode = extract_attr(tag_str, "data-review-mode")
             review.check(
@@ -958,11 +994,15 @@ def check_semantic_claims(manifest: dict, html: str, review: Review) -> None:
         "Copy cannot claim 'clientes da clínica', 'verified customers', 'verified clients', or customer/client loyalty without verified relationship evidence; public review accounts are not automatically verified customers",
     )
 
-    has_team_claim = bool(re.search(r"\b(?:nossa\s+equipe|nossos\s+profissionais)\b", site_copy, re.IGNORECASE))
+    has_team_claim = bool(re.search(
+        r"\b(?:nossa\s+equipe|nossos\s+profissionais|our\s+team|our\s+detailing\s+team|specialist\s+team|professional\s+team|their\s+team)\b",
+        site_copy,
+        re.IGNORECASE,
+    ))
     review.check(
         "semantic_claim_no_unsupported_team",
         not has_team_claim or team_verified,
-        "Copy cannot claim 'nossa equipe' or 'nossos profissionais' without verified staff/team evidence",
+        "Copy cannot claim 'nossa equipe', 'our team', 'our detailing team', 'specialist team', 'professional team', or 'their team' without verified staff/team evidence",
     )
 
     # 2. Operational claims
