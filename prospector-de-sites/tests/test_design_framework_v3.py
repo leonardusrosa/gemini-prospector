@@ -61,6 +61,7 @@ from autonomous_site_review_core import (
     check_public_site_visible_copy,
     check_hero_eyebrow,
     check_review_source_branding,
+    check_service_claim_traceability,
     _dna_token_similarity,
     derive_dom_structural_fingerprint,
 )
@@ -1444,12 +1445,153 @@ def test_public_review_source_label_proposal_exception_passes():
     assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
 
 
+def test_v322_verified_headlight_restoration_passes():
+    """Verified: 'Headlight Restoration' with conservative copy => PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "factualEvidence": {
+            "verifiedServices": [{"claim": "Headlight Restoration", "verified": True}]
+        }
+    }
+    html = """
+    <section id="services">
+      <h3>Headlight Restoration</h3>
+      <p>Headlight restoration services.</p>
+    </section>
+    """
+    rev = Review()
+    check_service_claim_traceability(manifest, html, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v322_unsupported_headlight_expansion_fails():
+    """Unsupported expansion: 'restoring nighttime projection and road visibility' => FAIL"""
+    manifest = {
+        "schemaVersion": 3,
+        "factualEvidence": {
+            "verifiedServices": [{"claim": "Headlight Restoration", "verified": True}]
+        }
+    }
+    html = """
+    <section id="services">
+      <h3>Headlight Restoration</h3>
+      <p>Chemical clarification restoring nighttime projection and road visibility.</p>
+    </section>
+    """
+    rev = Review()
+    check_service_claim_traceability(manifest, html, rev)
+    assert not _passed(rev)
+    assert any("restoring nighttime projection and road visibility" in err for err in _errors(rev))
+
+
+def test_v322_verified_paint_correction_passes():
+    """Verified: 'Paint Correction and Buffing' with conservative copy => PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "factualEvidence": {
+            "verifiedServices": [{"claim": "Paint Correction and Buffing", "verified": True}]
+        }
+    }
+    html = """
+    <section id="services">
+      <h3>Paint Correction and Buffing</h3>
+      <p>Paint correction and buffing services.</p>
+    </section>
+    """
+    rev = Review()
+    check_service_claim_traceability(manifest, html, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v322_unsupported_swirl_elimination_fails():
+    """Unsupported: 'eliminates deep swirl marks' => FAIL"""
+    manifest = {
+        "schemaVersion": 3,
+        "factualEvidence": {
+            "verifiedServices": [{"claim": "Paint Correction and Buffing", "verified": True}]
+        }
+    }
+    html = """
+    <section id="services">
+      <h3>Paint Correction and Buffing</h3>
+      <p>Multistage machine polishing to eliminates deep swirl marks.</p>
+    </section>
+    """
+    rev = Review()
+    check_service_claim_traceability(manifest, html, rev)
+    assert not _passed(rev)
+    assert any("eliminates deep swirl marks" in err for err in _errors(rev))
+
+
+def test_v322_verified_engine_bay_passes():
+    """Verified: 'Engine Bay Detailing' with conservative copy => PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "factualEvidence": {
+            "verifiedServices": [{"claim": "Engine Bay Detailing", "verified": True}]
+        }
+    }
+    html = """
+    <section id="services">
+      <h3>Engine Bay Detailing</h3>
+      <p>Engine bay detailing.</p>
+    </section>
+    """
+    rev = Review()
+    check_service_claim_traceability(manifest, html, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v322_unsupported_engine_bay_materials_fails():
+    """Unsupported: 'vehicle-safe formulas and satin dressing' => FAIL"""
+    manifest = {
+        "schemaVersion": 3,
+        "factualEvidence": {
+            "verifiedServices": [{"claim": "Engine Bay Detailing", "verified": True}]
+        }
+    }
+    html = """
+    <section id="services">
+      <h3>Engine Bay Detailing</h3>
+      <p>Degreasing with vehicle-safe formulas and satin dressing.</p>
+    </section>
+    """
+    rev = Review()
+    check_service_claim_traceability(manifest, html, rev)
+    assert not _passed(rev)
+    assert any("vehicle-safe formulas and satin dressing" in err for err in _errors(rev))
+
+
+def test_v322_review_quote_facts_exemption_passes():
+    """Review quote facts inside review cards cannot automatically fail as business claims => PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "factualEvidence": {
+            "verifiedServices": [{"claim": "Paint Correction and Buffing", "verified": True}]
+        }
+    }
+    html = """
+    <section id="services">
+      <h3>Paint Correction and Buffing</h3>
+      <p>Paint correction and buffing services.</p>
+    </section>
+    <section id="reviews">
+      <div data-role="review-carousel-item">
+        <p class="review-card-text">Wilson eliminates deep swirl marks with ease, best detailer in town!</p>
+      </div>
+    </section>
+    """
+    rev = Review()
+    check_service_claim_traceability(manifest, html, rev)
+    assert _passed(rev), f"Expected pass for review quote, got: {_errors(rev)}"
+
+
 if __name__ == "__main__":
     test_funcs = [k for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn_name in test_funcs:
         globals()[fn_name]()
         print(f"[PASS] {fn_name}")
-    print(f"\nAll {len(test_funcs)} Design Framework V3.2 test cases passed successfully.")
+    print(f"\nAll {len(test_funcs)} Design Framework V3.2.2 test cases passed successfully.")
 
 
 

@@ -306,6 +306,22 @@ Evidence remains sovereign over all creative and copy choices.
    - **Internal Provenance Preserved**: Exact source platform (e.g. Google Maps Place Profile, verified review IDs, URLs, author names) remains strictly recorded internally in `review-manifest.json`, evidence files, `design-read.md`, internal QA, CRM, and proposals (`proposta.html`).
    - **Deterministic Gate**: Fails on `google`, `google maps`, `facebook reviews`, `yelp`, `tripadvisor`, `trustpilot` when used as review-source branding in visible copy or review UI. Unrelated business facts (e.g. Google Maps directions embed, official Facebook profile link in footer) do not fail unless in review/rating UI.
 
+10. **Service Claim Traceability & Claim-Granularity Invariant (V3.2.2)**:
+   - A broad verified service category does NOT authorize invented procedure details, equipment, materials, or results/outcomes:
+     ```text
+     verified broad service category != verified procedure details != verified equipment != verified materials != verified result/outcome
+     ```
+   - Every service description proposition must be:
+     - directly supported by verified evidence OR
+     - conservative restatement of the verified category (e.g. `Headlight Restoration` -> `Headlight restoration services.`).
+   - Forbidden unsupported expansions unless independently verified:
+     - equipment: `professional tools`, `rotary buffers`
+     - materials: `vehicle-safe formulas`, `satin dressing`, `leather conditioning`
+     - procedures: `carpet extraction`, `surface decontamination`, `ultra-fine wet sanding`, `iron particle decontamination`
+     - results/outcomes: `eliminates deep swirl marks`, `swirl elimination`, `show-car clear coats`, `restoring nighttime projection and road visibility`
+     - facility workflows: `serviced on-site at our facility` unless on-site workflow is explicitly verified.
+   - **Review Quote Exemption**: Real reviewer words inside review cards/quotes are exempted from penalization, but review quote facts cannot automatically become business-level service claims in headers, hero copy, or service descriptions.
+
 ## 8. Global Market Acquisition Policy
 
 - Target Markets: United States, Canada, Europe, Latin America (LATAM).

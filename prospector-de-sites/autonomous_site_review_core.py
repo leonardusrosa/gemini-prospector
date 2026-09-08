@@ -1467,6 +1467,97 @@ def check_semantic_claims(manifest: dict, html: str, review: Review) -> None:
         )
 
 
+def check_service_claim_traceability(manifest: dict, html: str, review: Review, is_proposal: bool = False) -> None:
+    """Enforces claim-granularity rule (V3.2.2):
+    verified broad service category
+    !=
+    verified procedure details
+    !=
+    verified equipment
+    !=
+    verified materials
+    !=
+    verified result/outcome
+
+    Every service description proposition must be:
+    - directly supported by evidence OR
+    - conservative restatement of the verified category.
+
+    Review quote facts cannot automatically become business-level service claims.
+    """
+    if is_proposal:
+        return
+
+    # Strip non-visible markup: comments, scripts, styles, svgs
+    clean_html = re.sub(r"<!--[\s\S]*?-->", " ", html)
+    clean_html = re.sub(r"<(script|style)\b[^>]*>[\s\S]*?</\1>", " ", clean_html, flags=re.IGNORECASE)
+    clean_html = re.sub(r"<svg\b[^>]*>[\s\S]*?</svg>", " ", clean_html, flags=re.IGNORECASE)
+
+    # Strip real customer review quotes inside blockquotes or review cards so real reviewer text is exempted
+    site_copy = re.sub(r"<blockquote\b[^>]*>[\s\S]*?</blockquote>", " ", clean_html, flags=re.IGNORECASE)
+    site_copy = re.sub(r"<(?:article|div)\b[^>]*(?:data-role=[\"']review-carousel-item[\"']|data-review-entry-fingerprint)[^>]*>[\s\S]*?</(?:article|div)>", " ", site_copy, flags=re.IGNORECASE)
+    site_copy = re.sub(r"<p\b[^>]*class=[\"'][^\"']*review-card-text[^\"']*[\"'][^>]*>[\s\S]*?</p>", " ", site_copy, flags=re.IGNORECASE)
+
+    factual_evidence = manifest.get("factualEvidence", {})
+    explicit_claims = set(c.lower() for c in factual_evidence.get("explicitClaims", []))
+
+    rules = [
+        (
+            r"\b(?:restor(?:ing|e|es)\s+)?(?:nighttime\s+projection|road\s+visibility)(?:\s+restoration)?\b",
+            "service_claim_no_unsupported_headlight_expansion",
+            "Category 'Headlight Restoration' does not authorize invented outcome 'restoring nighttime projection and road visibility' without explicit evidence",
+            "road visibility",
+        ),
+        (
+            r"\b(?:eliminat(?:e|es|ing)\s+(?:deep\s+)?swirl\s+marks?|deep\s+scratch\s+removal|swirl\s+elimination)\b",
+            "service_claim_no_unsupported_swirl_elimination",
+            "Category 'Paint Correction and Buffing' does not authorize unverified outcome 'eliminates deep swirl marks' or 'swirl elimination' without explicit evidence",
+            "swirl elimination",
+        ),
+        (
+            r"\b(?:vehicle-safe\s+formulas?|satin\s+dressing)\b",
+            "service_claim_no_unsupported_engine_materials",
+            "Category 'Engine Bay Detailing' does not authorize unverified materials 'vehicle-safe formulas and satin dressing' without explicit evidence",
+            "vehicle-safe formulas",
+        ),
+        (
+            r"\b(?:professional\s+tools|rotary\s+buffers?)\b",
+            "service_claim_no_unsupported_equipment",
+            "Broad service category does not authorize unverified equipment claims like 'professional tools' or 'rotary buffers'",
+            "professional tools",
+        ),
+        (
+            r"\b(?:carpet\s+extraction|leather\s+conditioning|surface\s+decontamination)\b",
+            "service_claim_no_unsupported_detailing_procedures",
+            "Broad service category does not authorize unverified procedure details like 'carpet extraction', 'leather conditioning', or 'surface decontamination'",
+            "carpet extraction",
+        ),
+        (
+            r"\b(?:show-car\s+clear\s+coats?|orange\s+peel\s+texture)\b",
+            "service_claim_no_unsupported_color_sanding_outcomes",
+            "Category 'Color Sanding' does not authorize unverified outcome claims like 'show-car clear coats'",
+            "show-car",
+        ),
+        (
+            r"\b(?:iron\s+particle(?:\s+decontamination)?)\b",
+            "service_claim_no_unsupported_wheel_caliper_procedures",
+            "Category 'Wheel and Brake Caliper Care' does not authorize unverified procedure claim 'iron particle decontamination'",
+            "iron particle",
+        ),
+        (
+            r"\b(?:serviced\s+on-site\s+at\s+our\s+Addison\s+facility)\b",
+            "service_claim_no_unsupported_onsite_workflow",
+            "Cannot claim 'Every vehicle is serviced on-site at our Addison facility' unless on-site workflow is explicitly verified",
+            "on-site",
+        ),
+    ]
+
+    for pattern, key, message, claim_token in rules:
+        if re.search(pattern, site_copy, re.IGNORECASE):
+            is_verified = any(claim_token in c for c in explicit_claims)
+            review.check(key, is_verified, message)
+
+
 def check_motion_and_map(manifest: dict, html: str, design_read: str, review: Review) -> None:
     motion_cfg = section(manifest, "motion")
     if bool(motion_cfg.get("required", True)):
@@ -1657,6 +1748,7 @@ def main() -> int:
     check_google_reviews(manifest, html, design_read, review)
     check_factual_traceability(manifest, design_read, html, review)
     check_semantic_claims(manifest, html, review)
+    check_service_claim_traceability(manifest, html, review, is_proposal=is_proposal)
     check_motion_and_map(manifest, html, design_read, review)
     check_socials_and_extras(manifest, html, review)
     check_mandatory_prepublish_reviews(manifest, design_read, review)
