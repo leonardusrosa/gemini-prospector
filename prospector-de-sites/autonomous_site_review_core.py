@@ -707,6 +707,96 @@ def check_hero_eyebrow(html: str, manifest: dict, review: Review, is_proposal: b
     review.check("hero_eyebrow_valid", True, f"Hero eyebrow is factual: {eyebrow_text!r}")
 
 
+REVIEW_SOURCE_BRANDING_PATTERNS = [
+    # Vendor + Rating/Review(s) / Avaliações (e.g. Google Rating, Google Reviews, Facebook Reviews, Yelp Reviews)
+    r"\b(?:google(?:\s+maps)?|facebook|yelp|tripadvisor|trustpilot)\s+(?:ratings?|reviews?|stars?|avalia[cç][oõ]es)\b",
+    # Rating/Review(s) + on/from/via + Vendor
+    r"\b(?:ratings?|reviews?|avalia[cç][oõ]es)\s+(?:on|from|via|in|at|by|do|no)\s+(?:google(?:\s+maps)?|facebook|yelp|tripadvisor|trustpilot)\b",
+    # Rating score + optional star + vendor (e.g. 4.9 ★ Google, 4.9 Google)
+    r"\b(?:[1-5]\.[0-9])\s*(?:★|&#9733;|stars?)?\s*(?:google(?:\s+maps)?|facebook|yelp|tripadvisor|trustpilot)\b",
+    # Review count + vendor + review/rating/star (e.g. 268 Google Reviews, 268 Yelp Reviews)
+    r"\b(?:[0-9]{1,6})\s*(?:★|&#9733;|stars?)?\s*(?:google(?:\s+maps)?|facebook|yelp|tripadvisor|trustpilot)\s+(?:ratings?|reviews?|stars?|avalia[cç][oõ]es)\b",
+    # Public + Vendor + Reviews
+    r"\bpublic\s+(?:google(?:\s+maps)?|facebook|yelp|tripadvisor|trustpilot)\s+reviews?\b",
+    # Google Maps Reviews
+    r"\bgoogle\s+maps\s+reviews?\b",
+]
+
+
+def check_review_source_branding(html: str, review: Review, is_proposal: bool = False) -> None:
+    """Enforces Public Review Source Label Ban:
+    Main public website UI must not expose review platform branding (Google, Google Maps, Facebook Reviews, Yelp, etc.).
+    Uses source-neutral labels (e.g. 'Rating', 'Reviews', 'What People Say').
+    """
+    if is_proposal:
+        review.check("review_source_neutral", True, "Proposal page exempt from review source label ban")
+        return
+
+    visible_text = extract_visible_ui_text(html)
+
+    # 1. Check general branding patterns in visible text
+    for pat in REVIEW_SOURCE_BRANDING_PATTERNS:
+        m = re.search(pat, visible_text, re.IGNORECASE)
+        if m:
+            review.check(
+                "review_source_neutral",
+                False,
+                f"Public website UI cannot expose review vendor branding '{m.group(0)}' in visible copy; use source-neutral labels (e.g. 'Rating', 'Reviews')",
+            )
+            return
+
+    # 2. Check inside review section headers, eyebrows, descriptions, or tally bars
+    sec_match = re.search(r"<(?:section|div)\b[^>]*(?:data-role=['\"]reviews['\"]|id=['\"]reviews['\"])[^>]*>([\s\S]*?)<\/(?:section|div)>", html, re.IGNORECASE)
+    if sec_match:
+        sec_inner = sec_match.group(1)
+        header_m = re.search(r"<(?:div|header)\b[^>]*class=['\"][^'\"]*section-header[^'\"]*['\"][^>]*>([\s\S]*?)<\/(?:div|header)>", sec_inner, re.IGNORECASE)
+        stat_m = re.search(r"<(?:div)\b[^>]*class=['\"][^'\"]*reviews-stat-bar[^'\"]*['\"][^>]*>([\s\S]*?)<\/div>", sec_inner, re.IGNORECASE)
+        chunks = []
+        if header_m:
+            chunks.append(extract_visible_ui_text(header_m.group(1)))
+        if stat_m:
+            chunks.append(extract_visible_ui_text(stat_m.group(1)))
+
+        vendors = ["google", "facebook", "yelp", "tripadvisor", "trustpilot"]
+        for chunk in chunks:
+            for v in vendors:
+                if re.search(r"\b" + re.escape(v) + r"\b", chunk, re.IGNORECASE):
+                    review.check(
+                        "review_source_neutral",
+                        False,
+                        f"Review section header/stats cannot contain review vendor '{v}'; use source-neutral labels (e.g. 'Reviews', 'What People Say')",
+                    )
+                    return
+
+    # 3. Check badge labels in hero badges or stats
+    badge_matches = re.finditer(r"<(?:div|span|p)\b[^>]*class=['\"][^'\"]*badge-label[^'\"]*['\"][^>]*>([\s\S]*?)<\/(?:div|span|p)>", html, re.IGNORECASE)
+    for bm in badge_matches:
+        label_text = extract_visible_ui_text(bm.group(1)).strip()
+        for v in ["google", "google maps", "facebook reviews", "yelp", "tripadvisor", "trustpilot"]:
+            if re.search(r"\b" + re.escape(v) + r"\b", label_text, re.IGNORECASE):
+                review.check(
+                    "review_source_neutral",
+                    False,
+                    f"Badge label cannot contain review vendor branding '{label_text}'; use source-neutral labels (e.g. 'Rating', 'Reviews')",
+                )
+                return
+
+    # 4. Check review card tags / badges
+    card_tag_matches = re.finditer(r"<(?:div|span|p)\b[^>]*class=['\"][^'\"]*(?:review-tag|review-badge)[^'\"]*['\"][^>]*>([\s\S]*?)<\/(?:div|span|p)>", html, re.IGNORECASE)
+    for ctm in card_tag_matches:
+        tag_text = extract_visible_ui_text(ctm.group(1)).strip()
+        for v in ["google", "facebook", "yelp", "tripadvisor", "trustpilot"]:
+            if re.search(r"\b" + re.escape(v) + r"\b", tag_text, re.IGNORECASE):
+                review.check(
+                    "review_source_neutral",
+                    False,
+                    f"Review card tag cannot contain review vendor '{tag_text}'; use source-neutral labels (e.g. 'Public Review')",
+                )
+                return
+
+    review.check("review_source_neutral", True, "Public website UI uses source-neutral review and rating labels")
+
+
 def check_hero_media_plane(manifest: dict, html: str, design_read: str, review: Review, base_dir: Path | None = None) -> None:
     """Enforces V3.2 Universal Full-Width Hero Media Plane invariants when heroMediaPolicyVersion >= 1."""
     raw_policy = manifest.get("heroMediaPolicyVersion")
@@ -1563,6 +1653,7 @@ def main() -> int:
     is_proposal = "proposta" in html_path.name.lower() or "proposal" in html_path.name.lower() or manifest.get("siteMode") == "proposal"
     check_public_site_visible_copy(html, review, is_proposal=is_proposal)
     check_hero_eyebrow(html, manifest, review, is_proposal=is_proposal)
+    check_review_source_branding(html, review, is_proposal=is_proposal)
     check_google_reviews(manifest, html, design_read, review)
     check_factual_traceability(manifest, design_read, html, review)
     check_semantic_claims(manifest, html, review)

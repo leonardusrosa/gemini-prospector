@@ -293,6 +293,19 @@ Evidence remains sovereign over all creative and copy choices.
    - **Hero Eyebrow Rule**: Must be factual business/location/service info (e.g. `Addison, Texas`, `Auto Detailing • Addison, TX`) or omitted entirely. Never invent unverified hype (`premium`, `award-winning`, `trusted`, `leading`, `#1`, `luxury`, `expert`, `certified`).
    - **Proposal Exception**: Sales proposals (`proposta.html` / `proposal.html`) are explicitly sales artifacts and may include `Website Concept for [Business]` and `Private Preview`. Must remain `noindex, nofollow`.
 
+9. **Public Review Source Label Ban & Neutral Labeling**:
+   - Public website UI must NEVER expose review platform or vendor branding.
+   - Forbidden visible labels: `Google`, `Google Rating`, `Google Reviews`, `Google Maps`, `Google Maps Reviews`, `Facebook Reviews`, `Yelp Reviews`, `Tripadvisor Reviews`, `Trustpilot Reviews`.
+   - Scope: hero badges, hero stats, navbar, section headings, section eyebrow, CTA, footer, trust strip, floating labels, and review cards.
+   - Source-neutral replacements required:
+     - Hero badges / stats: `4.9 ★` / `Rating`, `268` / `Reviews`, `Addison, TX` / `Location` (or `4.9 / 5` / `Public Rating`, `268` / `Public Reviews`).
+     - Review section eyebrow: `REVIEWS`.
+     - Review section heading: `WHAT PEOPLE ARE SAYING` (or generic equivalent).
+     - Review section description: `Selected public reviews associated with the business profile.`
+     - Review card tags: `Public Review`.
+   - **Internal Provenance Preserved**: Exact source platform (e.g. Google Maps Place Profile, verified review IDs, URLs, author names) remains strictly recorded internally in `review-manifest.json`, evidence files, `design-read.md`, internal QA, CRM, and proposals (`proposta.html`).
+   - **Deterministic Gate**: Fails on `google`, `google maps`, `facebook reviews`, `yelp`, `tripadvisor`, `trustpilot` when used as review-source branding in visible copy or review UI. Unrelated business facts (e.g. Google Maps directions embed, official Facebook profile link in footer) do not fail unless in review/rating UI.
+
 ## 8. Global Market Acquisition Policy
 
 - Target Markets: United States, Canada, Europe, Latin America (LATAM).

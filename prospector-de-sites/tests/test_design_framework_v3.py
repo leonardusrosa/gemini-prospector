@@ -60,6 +60,7 @@ from autonomous_site_review_core import (
     check_navbar_labels,
     check_public_site_visible_copy,
     check_hero_eyebrow,
+    check_review_source_branding,
     _dna_token_similarity,
     derive_dom_structural_fingerprint,
 )
@@ -1344,11 +1345,111 @@ def test_public_site_visible_copy_forbidden_label_fails():
         assert any("Public prospect site UI cannot contain prospecting label" in err for err in _errors(rev)), f"Failed to block: {forbidden}"
 
 
+def test_public_review_source_label_google_rating_fails():
+    """4.9 ★ Google Rating => FAIL"""
+    html = """
+    <div class="hero-badges">
+      <div class="badge-item">
+        <span class="badge-value">4.9 &#9733;</span>
+        <span class="badge-label">Google Rating</span>
+      </div>
+    </div>
+    """
+    rev = Review()
+    check_review_source_branding(html, rev)
+    assert any("Public website UI cannot expose review vendor branding" in err for err in _errors(rev))
+
+
+def test_public_review_source_label_google_reviews_fails():
+    """268 Google Reviews => FAIL"""
+    html = """
+    <div class="hero-badges">
+      <div class="badge-item">
+        <span class="badge-value">268</span>
+        <span class="badge-label">Google Reviews</span>
+      </div>
+    </div>
+    """
+    rev = Review()
+    check_review_source_branding(html, rev)
+    assert any("Public website UI cannot expose review vendor branding" in err for err in _errors(rev))
+
+
+def test_public_review_source_label_neutral_rating_passes():
+    """4.9 ★ Rating => PASS"""
+    html = """
+    <div class="hero-badges">
+      <div class="badge-item">
+        <span class="badge-value">4.9 &#9733;</span>
+        <span class="badge-label">Rating</span>
+      </div>
+    </div>
+    """
+    rev = Review()
+    check_review_source_branding(html, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_public_review_source_label_neutral_reviews_passes():
+    """268 Reviews => PASS"""
+    html = """
+    <div class="hero-badges">
+      <div class="badge-item">
+        <span class="badge-value">268</span>
+        <span class="badge-label">Reviews</span>
+      </div>
+    </div>
+    """
+    rev = Review()
+    check_review_source_branding(html, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_public_review_source_other_vendors_fail():
+    """Facebook Reviews, Yelp, Tripadvisor, Trustpilot in review UI => FAIL"""
+    for snippet in [
+        "<p>4.8 stars Facebook Reviews</p>",
+        "<div>Check our Yelp reviews</div>",
+        "<span>Tripadvisor Reviews</span>",
+        "<div>Trustpilot Reviews: Excellent</div>",
+    ]:
+        rev = Review()
+        check_review_source_branding(snippet, rev)
+        assert any("Public website UI cannot expose review vendor branding" in err for err in _errors(rev)), f"Expected fail for: {snippet}"
+
+
+def test_public_review_source_label_unrelated_business_facts_pass():
+    """Unrelated business facts mentioning vendor => PASS"""
+    html = """
+    <section id="location">
+      <p>Directions to our Addison shop are easily found via GPS navigation or Google Maps navigation link.</p>
+      <iframe src="https://www.google.com/maps/embed?pb=12345"></iframe>
+    </section>
+    """
+    rev = Review()
+    check_review_source_branding(html, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_public_review_source_label_proposal_exception_passes():
+    """Proposal exception allows mentioning Google Reviews if useful for sales context"""
+    html = """
+    <section>
+      <h1>Website Concept for Dallas Detailing</h1>
+      <p>Backed by 268 Google Reviews with a 4.9 average.</p>
+    </section>
+    """
+    rev = Review()
+    check_review_source_branding(html, rev, is_proposal=True)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
 if __name__ == "__main__":
     test_funcs = [k for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn_name in test_funcs:
         globals()[fn_name]()
         print(f"[PASS] {fn_name}")
     print(f"\nAll {len(test_funcs)} Design Framework V3.2 test cases passed successfully.")
+
 
 
