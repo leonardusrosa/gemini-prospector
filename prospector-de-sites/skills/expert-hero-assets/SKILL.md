@@ -1,11 +1,11 @@
 ---
 name: expert-hero-assets
-description: Use automaticamente como subskill durante redesign/criação quando `redesign-premium` classificar o hero como `expert_fullscreen` e existir uma foto real, clara e verificada do profissional. Gera/produz assets de hero separados para desktop e mobile preservando identidade, preferindo geração/edição nativa disponível no Google Antigravity antes de qualquer API externa paga. Acione também quando o usuário pedir hero com expert à direita no desktop ou expert no topo no mobile.
+description: Use automaticamente como subskill durante redesign/criação quando o hero for expert e existir uma foto real, clara e verificada do profissional. Especialização da Universal Full-Width Hero Media Plane Rule (V3.2). Gera/produz assets de hero separados para desktop (ultrawide) e mobile preservando identidade, preferindo geração/edição nativa disponível antes de qualquer API externa paga.
 ---
 
 # Expert Hero Assets
 
-Esta skill é uma etapa de produção visual do `redesign-premium`, não um substituto da direção de design.
+Esta skill é uma etapa de produção visual do `redesign-premium`, especializada na produção de assets para a **Universal Full-Width Hero Media Plane Rule (V3.2)** quando há expert verificado.
 
 Leia e siga integralmente:
 

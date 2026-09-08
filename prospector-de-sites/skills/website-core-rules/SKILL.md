@@ -112,6 +112,14 @@ Evitar:
 
 Preserve nomes próprios, marcas, siglas e produtos. Evite frases, headings e CTAs inteiros em ALL CAPS. Microtexto curto pode receber uppercase por CSS somente com justificativa visual clara.
 
+### Navegação neutra de fonte (Source-Neutral Navigation)
+
+Links de navegação no header/navbar NUNCA podem conter nomes de fornecedores ou plataformas de reviews.
+
+- Proibido no menu/navbar: `Google Reviews`, `Google Maps Reviews`, `Facebook Reviews`, `Yelp Reviews`.
+- Permitido e recomendado: `Reviews`, `Depoimentos`, `Avaliações`, `O que dizem`, `What People Say`, `Testimonials`.
+- A menção explícita e factual à plataforma (ex: "Selected public reviews from the business's Google Maps profile.") pertence estritamente ao interior da seção de reviews.
+
 ## 5. CTA
 
 ### Hero: exatamente um botão
@@ -355,7 +363,7 @@ Antes de publicar:
 - nenhum segredo/token/chave no HTML público
 - nenhuma URL local, UI de editor/debug ou endpoint administrativo publicado
 
-## 14. Hero específico
+## 14. Hero específico e Universal Media Plane (V3.2)
 
 Hero começa com composição e tipografia, não uma coleção de ornaments.
 
@@ -371,6 +379,49 @@ Evite:
 
 Trust facts, quando necessários, devem ser integrados editorialmente.
 
+### Regra Universal do Plano de Mídia Full-Width (heroMediaPolicyVersion >= 1)
+
+Todo hero sob a política V3.2+ deve ter seu **plano de mídia visual em largura total**:
+
+- Desktop: largura visual do plano de mídia >= 98% da largura da viewport/hero container.
+- Mobile: largura visual do plano de mídia >= 98% da viewport.
+- Estrutura derivada no DOM deve ser `FULL_BLEED` ou `LAYERED`. Estrutura derivada `SPLIT` é estritamente proibida e causa reprovação automática.
+- Padrões proibidos: coluna de texto ao lado de card de imagem emoldurada (`text | framed-image`), `portrait-card`, vídeo encaixotado ou painel visual inserido como card.
+- O texto da copy pode aparecer sobreposto à mídia (com overlay funcional de contraste), ao lado do sujeito no mesmo plano de mídia, na porção inferior, ou em camadas assimétricas. Mas a mídia visual é o próprio plano do hero.
+
+### Prioridade de Tipo de Mídia
+
+1. **Expert real existe e verificado:** preferir IMAGEM REAL DO EXPERT (composição dedicada ultrawide no desktop e crop próprio no mobile), a menos que haja vídeo first-party verificado de alta qualidade e o GPT-Taste o julgue superior.
+2. **Sem expert verificado:** preferir VÍDEO. Ordem estrita de fontes:
+   1. vídeo first-party verificado do negócio;
+   2. vídeo já empacotado no hero/template selecionado da Aura;
+   3. vídeo do catálogo Aura Assets;
+   4. outro vídeo licenciado comercialmente;
+   5. imagem first-party verificada;
+   6. imagem empacotada no template selecionado;
+   7. imagem do catálogo Aura Assets;
+   8. outra imagem licenciada;
+   9. mídia gerada (último recurso).
+
+Se o GPT-Taste selecionar um hero da Aura cujo vídeo empacotado seja integral à composição: **mantenha o hero e a mídia como uma única unidade de design**. Nunca troque um vídeo integrado forte por imagem genérica de stock.
+
+### Invariantes Técnicos de Hero em Vídeo
+
+- Atributos obrigatórios na tag `<video>` decorativa: `autoplay`, `muted`, `playsinline`, `loop` (quando atmosférico) e `poster`.
+- Proibido qualquer atributo de `controls` ou dependência de áudio.
+- Poster obrigatório: deve manter a mesma composição visual do vídeo.
+- `prefers-reduced-motion: reduce`: VÍDEO DESATIVADO, POSTER ATIVADO (via CSS/JS).
+- Conexão lenta / Save-Data: preferir poster estático.
+- Fallback No-JS: poster deve renderizar normalmente.
+- Mobile: vídeo permitido quando performático; caso contrário, poster; mas o hero **nunca** cai para layout split/emoldurado.
+- Performance: sem CLS, sem overflow horizontal, copy legível imediatamente, poster otimizado em WebP/AVIF.
+
+### Vendorização Local Obrigatória
+
+- Em produção final, **ZERO dependência de CDN da Aura**.
+- Todos os assets devem ser copiados e servidos localmente na pasta `assets/` do site (ex: `assets/hero-video.mp4`, `assets/hero-poster.webp`).
+- URLs externas de CDN em tags `<video>` ou `<img>` finais reprovam o gate estático.
+
 ## 15. QA obrigatório antes de Screenshot Review e deploy
 
 ```text
@@ -382,6 +433,23 @@ Invented quotes/testimonials/attributions: NONE
 All retained quotes traceable to verified source: PASS
 Image semantics match section/card labels: PASS
 Image source/provenance appropriate: PASS
+
+HERO MEDIA PLANE & UNIVERSAL FULL-WIDTH (V3.2)
+heroMediaPolicyVersion declared (1 for new/regenerated): PASS
+Universal full-width media plane desktop (>= 98%): PASS
+Universal full-width media plane mobile (>= 98%): PASS
+Derived DOM hero structure is FULL_BLEED or LAYERED (never SPLIT): PASS
+Forbidden default split/framed-image layout: NONE
+If video hero: autoplay muted playsinline poster: PASS
+If video hero: no controls, no audio dependency: PASS
+If video hero: reduced-motion fallback to full-width poster: PASS
+If video hero: no-JS fallback renders poster: PASS
+Hero media vendored locally (zero external Aura CDN URLs): PASS
+Media provenance verified with confirmed commercial use: PASS
+
+SOURCE-NEUTRAL NAVIGATION
+Navbar contains vendor names (e.g. Google Reviews): NONE
+Navbar links use generic semantic labels (Reviews, Testimonials): PASS
 
 EXPERT HERO
 Real expert source image verified when applicable: PASS
@@ -428,7 +496,7 @@ CTA wording matches context and destination: PASS
 
 HERO VISUAL & EXPERT TEMPLATE
 Hero visual present in first version (no text-only/gradient-only hero): PASS
-Hero visual source: REAL_EXPERT | CANONICAL_TEMPLATE | CONTEXTUAL_ILLUSTRATIVE
+Hero visual source: REAL_EXPERT | CANONICAL_TEMPLATE | CONTEXTUAL_ILLUSTRATIVE | VIDEO
 If template: templateId valid in canonical manifest: PASS
 If template: representsActualExpert=false, representsActualBusiness=false: PASS
 If template: data-image-context="illustrative" on element: PASS

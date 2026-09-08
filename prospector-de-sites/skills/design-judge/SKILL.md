@@ -16,7 +16,7 @@ When external `gpt-taste` is unavailable, this design judge acts as the portable
 
 It owns visual direction, composition, layout architecture, hierarchy, typography direction, hero composition, section sequencing, density/whitespace, review-section presentation, visual personality, interaction style, responsive design intent, and anti-template/anti-slop judgment.
 
-It evaluates upstream OpenDesign exploratory candidates, makes the design decision (`DESIGN_JUDGE_DESIGN_DECISION: PASS | PASS_AFTER_DIRECTION_CHANGE`), and verifies execution after implementation.
+It evaluates upstream structural concepts (or legacy OpenDesign candidates), makes the design decision (`DESIGN_JUDGE_DESIGN_DECISION: PASS | PASS_AFTER_DIRECTION_CHANGE`), and verifies execution after implementation.
 
 Prospector factual evidence and hard repository rules always outrank the design judge.
 
@@ -50,19 +50,21 @@ Reject or revise when these appear without strong business-specific justificatio
 - placeholder metrics/testimonials;
 - ornamental numbering with no semantic order.
 
-## 4. Hero review
+## 4. Hero review & Universal Full-Width Media Plane (V3.2)
 
 Verify:
 
+- **Universal full-width media plane (heroMediaPolicyVersion >= 1)**: desktop visual media plane width >= 98%, mobile visual media plane width >= 98%.
+- **Derived hero structure**: must be `FULL_BLEED` or `LAYERED`. Structure `SPLIT` triggers automatic failure.
+- **No framed hero media**: reject any layout placing the hero visual inside an inset card, component box, or split column.
+- **Video hero invariants**: when video is used, it must be decorative/atmospheric with `autoplay`, `muted`, `playsinline`, `loop`, and a valid `poster`. No `controls`, no audio. Under `prefers-reduced-motion: reduce`, video is disabled and poster shown.
+- **Local assets**: all hero media must be locally vendored in `assets/`; no external CDN URLs in HTML.
 - one clear primary CTA;
 - meaningful business context in the first fold;
 - image/source honesty;
-- correct expert hero invariant when applicable;
+- correct expert hero invariant when applicable (expert image full-width, real identity preserved);
 - copy does not cover the expert's face/critical anatomy;
-- no framed/inset expert portrait when `expert-hero-full-bleed` applies;
 - mobile composition remains intentional.
-
-For expert/expert-placeholder heroes, the hard full-bleed rule overrides any editorial/split direction.
 
 ## 5. Section rhythm
 
@@ -117,18 +119,18 @@ Check:
 - fixed-control collisions;
 - intentional removal/reordering of secondary content.
 
-## 9. OpenDesign selection
+## 9. Concept selection (and legacy OpenDesign)
 
-When OpenDesign produces two directions, compare them on:
+When 3 diverse structural concepts are evaluated (or legacy OpenDesign produces directions), compare them on:
 
 ```text
 business specificity
 originality
-hero quality
+hero quality & full-width compliance
 hierarchy
 section rhythm
 typography
-image use
+image/media use
 mobile art direction
 conversion clarity
 accessibility/performance feasibility
@@ -136,7 +138,7 @@ anti-slop risk
 implementation maintainability
 ```
 
-OpenDesign must not self-select/self-approve.
+Concepts must not self-select/self-approve. The active design judge or GPT-Taste must record an explicit evaluation.
 
 ## 10. Evidence markers
 

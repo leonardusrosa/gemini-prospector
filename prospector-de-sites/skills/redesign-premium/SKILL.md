@@ -148,29 +148,28 @@ Antes e depois da implementação, responda internamente:
 
 ---
 
-## 4. Classificação do Hero
+## 4. Classificação do Hero & Regra Universal de Plano de Mídia (V3.2)
 
-Antes de desenhar, escolha um modo conceitual. Modos sugeridos:
+Sob a política V3.2 (`heroMediaPolicyVersion >= 1`), **o plano de mídia visual do hero deve ser SEMPRE full-width (>= 98% da viewport no desktop e no mobile)**.
 
-- `expert_fullscreen`
-- `venue_fullscreen`
-- `product_fullscreen`
-- `brand_typographic`
-- `editorial_split`
-- `conversion_split`
-- `minimal_identity`
+A estrutura derivada no DOM deve ser `FULL_BLEED` ou `LAYERED`. A estrutura `SPLIT` (coluna de texto + card de imagem emoldurada) é estritamente proibida para todos os heros.
 
-São estratégias, não templates rígidos.
+Modos conceituais compatíveis com full-width:
 
-### Seleção por ativo
+- `expert_fullscreen`: expert real em composição ultrawide de largura total.
+- `video_cinema_fullscreen`: vídeo atmosférico/decorativo full-width com copy sobreposta.
+- `venue_fullscreen`: ambiente/instalação real em plano de mídia full-width.
+- `product_fullscreen`: produto real em plano de mídia full-width.
+- `layered_cinema`: camadas visuais integradas sobre plano de mídia full-width.
 
-- negócio centrado em profissional real + retrato forte → `expert_fullscreen`
-- restaurante/hotel/imóvel com ambiente forte → `venue_fullscreen`
-- produto físico forte → `product_fullscreen`
-- identidade forte e imagem fraca → `brand_typographic`
-- serviço institucional → split quando fizer sentido
-
-Não force `expert_fullscreen` sem profissional real e central ao negócio.
+### Prioridade de Tipo de Mídia (V3.2):
+- **Expert real verificado:** preferir IMAGEM REAL DO EXPERT (composição ultrawide).
+- **Sem expert verificado:** preferir VÍDEO.
+- Hierarquia de fontes: 1. vídeo first-party -> 2. vídeo empacotado em template Aura -> 3. Aura Assets vídeo -> 4. outro vídeo licenciado -> 5. foto first-party -> 6. imagem de template Aura -> 7. Aura Assets imagem -> 8. outra imagem licenciada -> 9. gerada/contextual (último recurso).
+- Se template Aura for selecionado pelo GPT-Taste por seu vídeo integrado, mantenha hero + mídia como uma unidade coesa.
+- Invariantes de vídeo: `autoplay`, `muted`, `playsinline`, `loop`, `poster` obrigatório. Sem `controls`, sem áudio. Em `prefers-reduced-motion: reduce`: vídeo oculto, poster em exibição.
+- Local vendoring: zero CDN Aura em produção; assets na pasta `assets/`.
+- Navbar: estritamente neutro de fornecedor ("Reviews", "Testimonials", "What People Say"). Nunca "Google Reviews".
 
 ---
 

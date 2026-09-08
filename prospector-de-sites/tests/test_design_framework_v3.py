@@ -56,6 +56,8 @@ from autonomous_site_review_core import (
     check_preline,
     check_mandatory_prepublish_reviews,
     check_semantic_claims,
+    check_hero_media_plane,
+    check_navbar_labels,
     _dna_token_similarity,
     derive_dom_structural_fingerprint,
 )
@@ -830,10 +832,302 @@ def test_schema_v3_review_translation_provenance_validation():
     assert not any("translationState" in err or "sourceLocale" in err for err in res_valid.errors)
 
 
+# ==========================================
+# Design Framework V3.2 Test Cases
+# ==========================================
+
+def test_v32_split_hero_policy_v1_fails():
+    """split hero + policy v1 -> FAIL"""
+    manifest = {"schemaVersion": 3, "heroMediaPolicyVersion": 1, "slug": "test-v32"}
+    html = """
+    <section data-role="hero" data-hero-layout="split-columns">
+      <div class="hero-grid">
+        <div class="hero-text-col"><h1>Title</h1></div>
+        <div class="hero-media-col"><div class="hero-media"><img src="assets/hero.jpg"></div></div>
+      </div>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert any("forbids SPLIT hero structure" in err for err in _errors(rev))
+
+
+def test_v32_framed_hero_video_fails():
+    """framed hero video -> FAIL"""
+    manifest = {"schemaVersion": 3, "heroMediaPolicyVersion": 1, "slug": "test-v32"}
+    html = """
+    <section data-role="hero" data-hero-layout="split-columns">
+      <div class="hero-grid">
+        <div class="hero-text-col"><h1>Title</h1></div>
+        <div class="hero-media-col"><div class="hero-media"><video autoplay muted playsinline poster="assets/poster.webp"><source src="assets/video.mp4"></video></div></div>
+      </div>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert any("forbids SPLIT hero structure" in err or "requires desktop visual media plane >= 98%" in err for err in _errors(rev))
+
+
+def test_v32_full_width_image_desktop_framed_mobile_fails():
+    """full-width image desktop + framed mobile -> FAIL"""
+    manifest = {"schemaVersion": 3, "heroMediaPolicyVersion": 1, "slug": "test-v32"}
+    html = """
+    <style>
+      .hero-full-bleed { width: 100%; }
+      @media (max-width: 768px) {
+        .hero-media { border: 1px solid #ccc; }
+        .hero-media img { height: 250px; }
+      }
+    </style>
+    <section data-role="hero" data-hero-layout="full-bleed-background" data-hero-mobile-layout="framed" class="hero-full-bleed">
+      <img src="assets/hero.webp">
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert any("cannot fall back to framed media on mobile" in err for err in _errors(rev))
+
+
+def test_v32_full_width_video_passes():
+    """full-width video: autoplay muted playsinline poster -> PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-v32",
+        "heroMedia": {"source": "NATIVE"}
+    }
+    html = """
+    <style>
+      .hero-full-bleed { width: 100%; }
+      @media (prefers-reduced-motion: reduce) {
+        .hero-video-bg { display: none !important; }
+        .hero-poster-fallback { display: block !important; }
+      }
+    </style>
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <div class="hero-media-plane">
+        <video class="hero-video-bg" autoplay muted loop playsinline poster="assets/hero-poster.webp">
+          <source src="assets/hero-video.webm" type="video/webm">
+          <source src="assets/hero-video.mp4" type="video/mp4">
+        </video>
+        <img class="hero-poster-fallback" src="assets/hero-poster.webp" alt="Hero poster">
+      </div>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "HERO_MEDIA_SOURCE: NATIVE\nHERO_MEDIA_COMMERCIAL_USE: confirmed", rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v32_video_missing_poster_fails():
+    """video missing poster -> FAIL"""
+    manifest = {"schemaVersion": 3, "heroMediaPolicyVersion": 1, "slug": "test-v32"}
+    html = """
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <video class="hero-video-bg" autoplay muted playsinline>
+        <source src="assets/video.mp4">
+      </video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert any("Hero video requires poster attribute" in err for err in _errors(rev))
+
+
+def test_v32_video_missing_playsinline_fails():
+    """video missing playsinline -> FAIL"""
+    manifest = {"schemaVersion": 3, "heroMediaPolicyVersion": 1, "slug": "test-v32"}
+    html = """
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <video class="hero-video-bg" autoplay muted poster="assets/poster.webp">
+        <source src="assets/video.mp4">
+      </video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert any("Hero video requires playsinline attribute" in err for err in _errors(rev))
+
+
+def test_v32_video_reduced_motion_no_poster_fallback_fails():
+    """reduced-motion no poster fallback -> FAIL"""
+    manifest = {"schemaVersion": 3, "heroMediaPolicyVersion": 1, "slug": "test-v32"}
+    html = """
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <video class="hero-video-bg" autoplay muted playsinline poster="assets/poster.webp">
+        <source src="assets/video.mp4">
+      </video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert any("Hero video requires prefers-reduced-motion fallback" in err for err in _errors(rev))
+
+
+def test_v32_external_aura_video_commercial_unconfirmed_fails_shipping():
+    """external Aura video commercialUse=UNCONFIRMED -> FAIL shipping"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-v32",
+        "heroMedia": {
+            "source": "AURA",
+            "commercialUse": "unconfirmed",
+            "localPath": "assets/hero-video.mp4"
+        }
+    }
+    design_read = (
+        "HERO_MEDIA_SOURCE: AURA\n"
+        "HERO_MEDIA_COMMERCIAL_USE: unconfirmed\n"
+        "HERO_MEDIA_LOCAL_PATH: assets/hero-video.mp4\n"
+        "HERO_MEDIA_ADAPTATION_MODE: USE_DIRECTLY\n"
+    )
+    html = """
+    <style>@media (prefers-reduced-motion: reduce) { video { display: none; } }</style>
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <video autoplay muted playsinline poster="assets/poster.webp"><source src="assets/hero-video.mp4"></video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, design_read, rev)
+    assert any("External hero media requires confirmed commercial rights" in err for err in _errors(rev))
+
+
+def test_v32_same_aura_video_reference_only_not_shipped_passes():
+    """same Aura video REFERENCE_ONLY + not shipped -> PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-v32",
+        "heroMedia": {
+            "source": "AURA",
+            "commercialUse": "unconfirmed",
+            "adaptationMode": "REFERENCE_ONLY"
+        }
+    }
+    design_read = (
+        "HERO_MEDIA_SOURCE: AURA\n"
+        "HERO_MEDIA_COMMERCIAL_USE: unconfirmed\n"
+        "HERO_MEDIA_ADAPTATION_MODE: REFERENCE_ONLY\n"
+    )
+    html = """
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <img src="assets/native-poster.webp" alt="Native hero">
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, design_read, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v32_aura_cdn_in_final_media_src_fails():
+    """Aura CDN in final media src -> FAIL"""
+    manifest = {"schemaVersion": 3, "heroMediaPolicyVersion": 1, "slug": "test-v32"}
+    html = """
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <video autoplay muted playsinline poster="https://cdn.aura.build/assets/poster.jpg">
+        <source src="https://cdn.aura.build/assets/video.mp4">
+      </video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert any("Aura CDN in final media src/poster is forbidden" in err for err in _errors(rev))
+
+
+def test_v32_local_vendored_confirmed_media_passes():
+    """local vendored confirmed media -> PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-v32",
+        "heroMedia": {
+            "source": "AURA",
+            "commercialUse": "confirmed",
+            "adaptationMode": "ADAPT_TO_VANILLA",
+            "localPath": "assets/hero-video.mp4"
+        }
+    }
+    design_read = (
+        "HERO_MEDIA_SOURCE: AURA\n"
+        "HERO_MEDIA_COMMERCIAL_USE: confirmed\n"
+        "HERO_MEDIA_ADAPTATION_MODE: ADAPT_TO_VANILLA\n"
+        "HERO_MEDIA_LOCAL_PATH: assets/hero-video.mp4\n"
+    )
+    html = """
+    <style>@media (prefers-reduced-motion: reduce) { video { display: none; } }</style>
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <video autoplay muted playsinline poster="assets/hero-poster.webp"><source src="assets/hero-video.mp4"></video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, design_read, rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v32_expert_full_width_image_passes():
+    """expert full-width image -> PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-v32",
+        "heroMedia": {"source": "FIRST_PARTY", "type": "image"}
+    }
+    html = """
+    <section data-role="hero" data-hero-layout="full-bleed-background" class="hero-full-bleed">
+      <img src="assets/expert-hero.webp" alt="Dr. Expert">
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "HERO_MEDIA_SOURCE: FIRST_PARTY\nHERO_MEDIA_COMMERCIAL_USE: confirmed", rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v32_navbar_google_reviews_fails():
+    """navbar 'Google Reviews' -> FAIL"""
+    html = """
+    <header>
+      <nav>
+        <a href="#services">Services</a>
+        <a href="#reviews">Google Reviews</a>
+      </nav>
+    </header>
+    """
+    rev = Review()
+    check_navbar_labels(html, rev)
+    assert any("Navbar links cannot contain vendor names" in err for err in _errors(rev))
+
+
+def test_v32_navbar_reviews_passes():
+    """navbar 'Reviews' -> PASS"""
+    html = """
+    <header>
+      <nav>
+        <a href="#services">Services</a>
+        <a href="#reviews">Reviews</a>
+      </nav>
+    </header>
+    """
+    rev = Review()
+    check_navbar_labels(html, rev)
+    assert _passed(rev)
+
+
+def test_v32_dallas_final_derived_hero_not_split():
+    """Dallas final derived hero: not SPLIT"""
+    dallas_html_path = ROOT.parent / "sites" / "dallas-detailing-and-buffing" / "dallas-detailing-and-buffing.html"
+    assert dallas_html_path.is_file(), f"Dallas HTML not found at {dallas_html_path}"
+    html = dallas_html_path.read_text(encoding="utf-8")
+    fp = derive_dom_structural_fingerprint(html)
+    assert fp["heroStructure"] in {"FULL_BLEED", "LAYERED"}, f"Dallas hero must be FULL_BLEED or LAYERED; got {fp['heroStructure']}"
+    assert fp["heroStructure"] != "SPLIT"
+
+
 if __name__ == "__main__":
     test_funcs = [k for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn_name in test_funcs:
         globals()[fn_name]()
         print(f"[PASS] {fn_name}")
-    print(f"\nAll {len(test_funcs)} Design Framework V3.1.1 test cases passed successfully.")
+    print(f"\nAll {len(test_funcs)} Design Framework V3.2 test cases passed successfully.")
+
 

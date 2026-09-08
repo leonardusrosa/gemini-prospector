@@ -1,14 +1,14 @@
 ---
 name: expert-hero-full-bleed
 instruction_language: en
-description: Canonical hard rule for any Prospector hero whose primary visual is a real expert or canonical expert placeholder. The expert media must be a full-width background composition on both desktop and mobile, regardless of OpenDesign direction, design-judge preference, or template aesthetics.
+description: Canonical hard rule for any Prospector hero whose primary visual is a real expert or canonical expert placeholder. Specialization of the Universal Full-Width Hero Media Plane Rule (V3.2). The expert media must be an art-directed full-width composition on desktop and a dedicated full-width composition on mobile.
 ---
 
 # Expert Hero Full-Bleed Rule
 
-This rule is mandatory whenever `heroVisual.kind` is `expert` or `expert-placeholder`.
+This rule is mandatory whenever `heroVisual.kind` is `expert` or `expert-placeholder`. It is a specialization of the **Universal Full-Width Hero Media Plane Rule (V3.2)**.
 
-It outranks OpenDesign art direction, any design-judge stylistic preference, `redesign-premium` hero mode suggestions, template defaults, and implementation convenience.
+It outranks any stylistic preference, `redesign-premium` hero mode suggestions, template defaults, and implementation convenience. OpenDesign is legacy only and does not direct schema v3+ sites; GPT-Taste is the creative director.
 
 ## 1. Non-negotiable visual invariant
 
@@ -23,7 +23,7 @@ The expert image must never be presented as:
 - a floating portrait over a plain background;
 - a thumbnail beside the headline.
 
-OpenDesign may change typography, spacing, copy placement, palette, section rhythm, motion, and the exact negative-space strategy. It may not change this expert-background invariant.
+GPT-Taste may change typography, spacing, copy placement, palette, section rhythm, motion, and the exact negative-space strategy. It may not change this expert-background invariant. Real identity must always be preserved.
 
 ## 2. Desktop requirement
 
@@ -67,7 +67,7 @@ For canonical placeholder templates, preserve the template's factual/illustrativ
 
 ## 4. Design-judge responsibility
 
-The active design judge is not allowed to trade this rule away for a visually attractive OpenDesign direction.
+The active design judge is not allowed to trade this rule away for an attractive split/framed direction.
 
 The preferred critic is the current external `gpt-taste` skill when it is genuinely available. Agent runtimes without it use the repository-owned `../design-judge/SKILL.md` under the `agent-runtime` portability contract.
 
@@ -97,9 +97,10 @@ Do not write the gpt-taste marker unless the external skill was actually read an
 
 This remains true even when the rejected framed/split solution scores better on originality or editorial aesthetics.
 
-## 5. OpenDesign constraints
+## 5. Creative Direction Constraints (Legacy OpenDesign Note)
 
-Every OpenDesign brief for an expert-led prospect must explicitly state:
+OpenDesign is legacy only (retained for schema v2). For schema v3+, GPT-Taste is the creative director.
+In all cases, the hard hero constraint applies to any pre-code concept:
 
 ```text
 HARD HERO CONSTRAINT:
@@ -108,7 +109,7 @@ Do not propose framed portraits, side image cards, split-column portrait panels,
 or inset expert photography.
 ```
 
-If one of the two generated directions violates this constraint, it does not count as a valid direction and must be regenerated or revised before the active design judge compares the options.
+If a generated concept violates this constraint, it does not count as a valid concept and must be rejected before concept selection.
 
 ## 6. Manifest contract
 
@@ -179,4 +180,4 @@ Repository regression coverage must include at least:
 - repository design judge + valid full-bleed => PASS;
 - non-expert hero => this rule is not applicable.
 
-Do not weaken this rule to preserve an OpenDesign direction. Revise the direction instead.
+Do not weaken this rule to preserve an attractive split layout. Revise the concept to full-bleed instead.

@@ -240,6 +240,48 @@ FACTUAL/EVIDENCE SAFETY > GPT-TASTE DESIGN DIRECTION > /COPYWRITING-MARKETING > 
 ```
 Evidence remains sovereign over all creative and copy choices.
 
+### 7.8 Universal Full-Width Hero Media Plane & Media Invariants (V3.2)
+
+1. **Universal Hero Geometry Invariant**:
+   - For every site with `heroMediaPolicyVersion >= 1`, the visual media plane must span full width on both desktop (>= 98% hero/viewport width) and mobile (>= 98% hero/viewport width).
+   - Forbidden default: split text | framed-image card, portrait-card, boxed video, or inset visual panel.
+   - Derived structure must be `FULL_BLEED` or `LAYERED`. Structure `SPLIT` triggers deterministic FAIL.
+   - Text may appear overlaid over media, beside subject in same media plane, lower portion, corner, layered, or asymmetric.
+
+2. **Media Type Priority**:
+   - Verified expert exists: prefer REAL EXPERT IMAGE unless verified expert video is available and GPT-Taste judges it better.
+   - No verified expert: prefer VIDEO.
+   - Sourcing hierarchy: 1. verified 1st party video -> 2. video bundled with selected hero/template -> 3. Aura Assets video -> 4. other licensed video -> 5. verified 1st party image -> 6. template image -> 7. Aura Assets image -> 8. other licensed image -> 9. generated media (last resort).
+   - If GPT-Taste selects an Aura hero because its bundled video is integral, keep hero + media as ONE unified design unit.
+
+3. **Aura Media Index & Selective Vendoring**:
+   - Metadata recorded in `design-resources/aura/media-index.json`.
+   - Inspection != download. `inspect-bundled-media` records metadata only.
+   - `vendor-selected-media` runs ONLY when `commercialUse=CONFIRMED`. No automatic bulk media download.
+
+4. **Media Provenance & Local Vendoring**:
+   - External hero media requires: `HERO_MEDIA_SOURCE`, `HERO_MEDIA_SOURCE_PAGE`, `HERO_MEDIA_ORIGINAL_URL`, `HERO_MEDIA_TYPE`, `HERO_MEDIA_LICENSE`, `HERO_MEDIA_COMMERCIAL_USE`, `HERO_MEDIA_TEMPLATE_BUNDLED`, `HERO_MEDIA_ADAPTATION_MODE`, `HERO_MEDIA_LOCAL_PATH`.
+   - `commercialUse` must be `CONFIRMED`. If `UNCONFIRMED` -> `REFERENCE_ONLY` and no copied asset in production.
+   - Final production: NO Aura CDN dependency. Assets must be vendored locally into `assets/`. Original URL is provenance only. External Aura CDN URLs in HTML trigger FAIL.
+
+5. **Video Technical Rules**:
+   - Atmospheric decorative hero video requires: `autoplay`, `muted`, `playsinline`, `loop` (when appropriate), and `poster` attribute.
+   - No audio dependency, no browser media controls.
+   - Reduced motion (`prefers-reduced-motion: reduce`): VIDEO OFF, POSTER ON.
+   - No-JS fallback: poster image must still render.
+   - Mobile: video allowed when performant, otherwise poster, but hero remains full-width. Never fall back to framed media.
+   - Video performance: gate outcomes (poster optimized, no CLS, no horizontal overflow, readable before video starts, mobile/reduced-motion fallback works).
+
+6. **Source-Neutral Navigation**:
+   - Navigation links must NEVER use vendor/source names (e.g. forbidden: "Google Reviews", "Google Maps Reviews", "Facebook Reviews", "Yelp Reviews").
+   - Use generic navigation semantics: "Reviews", "Testimonials", "What People Say".
+   - Factual source attribution belongs strictly inside section content.
+
+7. **Versioning**:
+   - `heroMediaPolicyVersion: 1` required for new or actively regenerated sites.
+   - Older published sites without this marker remain grandfathered.
+   - Future schema v3+ sites missing this marker trigger FAIL.
+
 ## 8. Global Market Acquisition Policy
 
 - Target Markets: United States, Canada, Europe, Latin America (LATAM).

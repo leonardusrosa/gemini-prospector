@@ -164,14 +164,14 @@ def derive_dom_structural_fingerprint(html: str) -> dict:
 
     # Real structure analysis: do not trust data-hero-layout to classify FULL_BLEED.
     # If: hero-grid + 2 columns + framed hero-media => SPLIT regardless of data-hero-layout.
-    has_hero_grid = bool(re.search(r"class=['\"][^'\"]*\bhero-grid\b", hero_html, re.IGNORECASE))
+    has_hero_grid = bool(re.search(r"(?<![\w-])hero-grid(?![\w-])", hero_html, re.IGNORECASE))
     has_2_cols = bool(
-        re.search(r"grid-template-columns\s*:\s*(?:1fr\s+1fr|1\.1fr|0\.9fr|repeat\(2|2fr\s+1fr|1fr\s+2fr)", html, re.IGNORECASE)
-        or (re.search(r"class=['\"][^'\"]*\bhero-text-col\b", hero_html, re.IGNORECASE) and re.search(r"class=['\"][^'\"]*\bhero-media-col\b", hero_html, re.IGNORECASE))
+        re.search(r"(?:\.hero|\.hero-grid)[^{]*\{[^}]*grid-template-columns\s*:\s*(?:1fr\s+1fr|1\.1fr|0\.9fr|repeat\(2|2fr\s+1fr|1fr\s+2fr)", html, re.IGNORECASE)
+        or (re.search(r"(?<![\w-])hero-text-col(?![\w-])", hero_html, re.IGNORECASE) and re.search(r"(?<![\w-])hero-media-col(?![\w-])", hero_html, re.IGNORECASE))
     )
-    has_framed_media = bool(re.search(r"class=['\"][^'\"]*\b(?:hero-media|hero-media-col)\b", hero_html, re.IGNORECASE))
+    has_framed_media = bool(re.search(r"(?<![\w-])(?:hero-media|hero-media-col|framed-media|framed-image|framed-video|boxed-video)(?![\w-])", hero_html, re.IGNORECASE))
 
-    if (has_hero_grid and (has_2_cols or has_framed_media)) or (has_2_cols and has_framed_media) or "hero-grid" in hero_html.lower():
+    if (has_hero_grid and (has_2_cols or has_framed_media)) or (has_2_cols and has_framed_media) or bool(re.search(r"(?<![\w-])hero-grid(?![\w-])", hero_html, re.IGNORECASE)):
         hero_structure = "SPLIT"
     else:
         hero_layout = (extract_attr(hero_tag, "data-hero-layout") or "").lower()
@@ -556,6 +556,160 @@ def check_hero_visual(manifest: dict, html: str, design_read: str, review: Revie
         # Check no object-fit: cover for preserve-complete-frame
         has_cover_css = bool(re.search(r"(?:\.hero-bg-img|img\[data-role=['\"]hero-image['\"])[^{}]*\{[^}]*object-fit\s*:\s*cover", html, re.IGNORECASE))
         review.check("hero_template_no_cover", not has_cover_css, "preserve-complete-frame template cannot use object-fit: cover (use object-fit: contain or width: 100%; height: auto)")
+
+
+GRANDFATHERED_V3_SITES = frozenset({
+    "autocora-cms-qa",
+    "clinica-dentaria-previlege-lisboa",
+    "clinica-dra-francine-goulart-rio-claro",
+    "clinica-prado-odontologia-rio-claro",
+    "instituto-ferreira-odontologia-rio-claro",
+    "iost-ortodontia-aline-iost-rio-claro",
+})
+
+
+def check_navbar_labels(html: str, review: Review) -> None:
+    """Verifies that navigation links are source-neutral (no vendor names like 'Google Reviews')."""
+    nav_matches = re.findall(r"<(?:nav|header)\b[^>]*>([\s\S]*?)</(?:nav|header)>", html, re.IGNORECASE)
+    nav_text = " ".join(nav_matches) if nav_matches else ""
+
+    forbidden_nav_vendors = [
+        "google reviews",
+        "google maps reviews",
+        "facebook reviews",
+        "yelp reviews",
+    ]
+    found_vendor = next((v for v in forbidden_nav_vendors if v in nav_text.lower()), None)
+    review.check(
+        "navbar_source_neutral",
+        found_vendor is None,
+        f"Navbar links cannot contain vendor names (found '{found_vendor}'); use generic labels like 'Reviews', 'Testimonials', 'What People Say'",
+    )
+
+
+def check_hero_media_plane(manifest: dict, html: str, design_read: str, review: Review, base_dir: Path | None = None) -> None:
+    """Enforces V3.2 Universal Full-Width Hero Media Plane invariants when heroMediaPolicyVersion >= 1."""
+    raw_policy = manifest.get("heroMediaPolicyVersion")
+    if raw_policy is None:
+        dr_policy = extract_design_value(design_read, "HERO_MEDIA_POLICY_VERSION")
+        if dr_policy:
+            raw_policy = dr_policy
+
+    slug = str(manifest.get("slug") or "").strip().lower()
+    is_schema_v3 = int(manifest.get("schemaVersion", 1) or 1) >= 3 or manifest.get("designGovernanceVersion") == 3
+
+    # If it's a new or actively regenerated schema v3 site not in grandfathered set, policy marker is required
+    if is_schema_v3 and slug and slug not in GRANDFATHERED_V3_SITES:
+        review.check(
+            "hero_media_policy_version_present",
+            raw_policy is not None,
+            f"New or actively regenerated schema v3+ site '{slug}' requires heroMediaPolicyVersion = 1",
+        )
+
+    if raw_policy is None:
+        return
+
+    try:
+        policy_ver = int(raw_policy)
+    except (ValueError, TypeError):
+        policy_ver = 0
+
+    if policy_ver < 1:
+        return
+
+    # 1. Derived structure invariant: SPLIT is strictly forbidden
+    dom_fp = derive_dom_structural_fingerprint(html)
+    structure = dom_fp.get("heroStructure", "OTHER")
+
+    review.check(
+        "hero_media_plane_not_split",
+        structure != "SPLIT",
+        f"heroMediaPolicyVersion >= 1 forbids SPLIT hero structure; visual media plane must be full-width (found {structure})",
+    )
+
+    # 2. Desktop full-width invariant
+    has_framed_box = bool(re.search(r"(?<![\w-])(?:hero-media|hero-media-col|framed-media|framed-video|boxed-video)(?![\w-])", html, re.IGNORECASE))
+    is_full_width_desktop = structure in {"FULL_BLEED", "LAYERED"} or (structure == "CENTERED" and not has_framed_box)
+
+    review.check(
+        "hero_desktop_full_width",
+        is_full_width_desktop,
+        f"heroMediaPolicyVersion >= 1 requires desktop visual media plane >= 98% width (FULL_BLEED or LAYERED; found {structure})",
+    )
+
+    # 3. Mobile full-width invariant: cannot fall back to framed media on mobile
+    has_mobile_framed = bool(re.search(r"@media\s*\([^{]*max-width[^{]*\)[^{]*\{[\s\S]*?(?:framed-media|hero-media[^{]*\{[^}]*border|hero-media\s*img[^{]*\{[^}]*height\s*:\s*(?:2|3)\d\dpx)", html, re.IGNORECASE) and "hero-grid" in html)
+    has_mobile_explicit_framed = bool(re.search(r'data-hero-mobile-layout=["\'](?:framed|split|card)["\']', html, re.IGNORECASE))
+    is_mobile_full_width = is_full_width_desktop and not (has_mobile_framed or has_mobile_explicit_framed)
+
+    review.check(
+        "hero_mobile_full_width",
+        is_mobile_full_width,
+        "heroMediaPolicyVersion >= 1 requires mobile visual media plane >= 98% width; cannot fall back to framed media on mobile",
+    )
+
+    review.check(
+        "hero_media_plane_pass",
+        is_full_width_desktop and is_mobile_full_width and structure != "SPLIT",
+        "Universal full-width media plane gate passed",
+    )
+
+    # 4. Check for external Aura CDN in HTML
+    hero_match = re.search(r"<section\b[^>]*data-role=['\"]hero['\"][^>]*>([\s\S]*?)</section>", html, re.IGNORECASE)
+    hero_html = hero_match.group(1) if hero_match else html
+
+    has_aura_cdn = bool(re.search(r'(?:src|poster)\s*=\s*["\']https?://[^"\']*(?:aura\.build|cdn\.aura|aura-assets)[^"\']*["\']', hero_html, re.IGNORECASE))
+    review.check(
+        "hero_media_no_aura_cdn",
+        not has_aura_cdn,
+        "Aura CDN in final media src/poster is forbidden; assets must be locally vendored in assets/",
+    )
+
+    # 5. Video technical invariants (if video present in hero)
+    video_match = re.search(r"<video\b([^>]*)>", hero_html, re.IGNORECASE)
+    if video_match:
+        attrs = video_match.group(1).lower()
+        has_autoplay = "autoplay" in attrs
+        has_muted = "muted" in attrs
+        has_playsinline = "playsinline" in attrs
+        has_poster = "poster=" in attrs
+        has_controls = "controls" in attrs
+
+        review.check("hero_video_technical_autoplay", has_autoplay, "Hero video requires autoplay attribute")
+        review.check("hero_video_technical_muted", has_muted, "Hero video requires muted attribute")
+        review.check("hero_video_technical_playsinline", has_playsinline, "Hero video requires playsinline attribute")
+        review.check("hero_video_poster_present", has_poster, "Hero video requires poster attribute with local poster image")
+        review.check("hero_video_no_controls", not has_controls, "Decorative hero video cannot have controls attribute")
+
+        # Reduced motion fallback check:
+        # Needs CSS prefers-reduced-motion block that addresses video and displays poster
+        has_reduced_motion = bool(
+            re.search(r"@media\s*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)[^{]*\{[\s\S]*?(?:video|\.hero-video|\.hero-video-bg)[^{}]*\{[^}]*display\s*:\s*none", html, re.IGNORECASE)
+            or (re.search(r"@media\s*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)", html, re.IGNORECASE) and "video" in html.lower() and "poster" in html.lower())
+        )
+        review.check(
+            "hero_video_reduced_motion_fallback",
+            has_reduced_motion,
+            "Hero video requires prefers-reduced-motion fallback (video hidden/disabled, poster displayed full-width)",
+        )
+
+    # 6. Media Provenance check
+    prov_src = (extract_design_value(design_read, "HERO_MEDIA_SOURCE") or str(manifest.get("heroMedia", {}).get("source") or "")).strip().upper()
+    if prov_src and prov_src not in {"NATIVE", "FIRST_PARTY", "USER_PROVIDED"}:
+        comm_use = (extract_design_value(design_read, "HERO_MEDIA_COMMERCIAL_USE") or str(manifest.get("heroMedia", {}).get("commercialUse") or "")).strip().lower()
+        adaptation = (extract_design_value(design_read, "HERO_MEDIA_ADAPTATION_MODE") or str(manifest.get("heroMedia", {}).get("adaptationMode") or "")).strip().upper()
+        if comm_use != "confirmed":
+            is_ref_only = (adaptation == "REFERENCE_ONLY")
+            has_shipped_file = bool(extract_design_value(design_read, "HERO_MEDIA_LOCAL_PATH") or manifest.get("heroMedia", {}).get("localPath"))
+            review.check(
+                "hero_media_commercial_use_confirmed",
+                is_ref_only and not has_shipped_file,
+                f"External hero media requires confirmed commercial rights (HERO_MEDIA_COMMERCIAL_USE: confirmed required; found {comm_use!r})",
+            )
+        else:
+            review.check("hero_media_commercial_use_confirmed", True, "External hero media commercial use confirmed")
+    else:
+        review.check("hero_media_commercial_use_confirmed", True, "Native/first-party hero media confirmed")
 
 
 def check_google_reviews(manifest: dict, html: str, design_read: str, review: Review) -> None:
@@ -1256,6 +1410,8 @@ def main() -> int:
     check_aura(manifest, design_read, review)
     check_preline(manifest, design_read, review)
     check_hero_visual(manifest, html, design_read, review, base_dir=base_dir)
+    check_hero_media_plane(manifest, html, design_read, review, base_dir=base_dir)
+    check_navbar_labels(html, review)
     check_google_reviews(manifest, html, design_read, review)
     check_factual_traceability(manifest, design_read, html, review)
     check_semantic_claims(manifest, html, review)

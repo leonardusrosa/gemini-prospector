@@ -11,17 +11,27 @@ Esta regra é obrigatória para qualquer site público, conceito inicial ou prev
 
 Hero apenas tipográfico, hero com card abstrato, mock dashboard, formas decorativas, gradientes ou ícones **NÃO** satisfaz esta regra.
 
-O hero deve conter uma imagem que ajude a comunicar imediatamente o negócio e o contexto do lead.
+O hero deve conter uma mídia visual (vídeo ou imagem) que ajude a comunicar imediatamente o negócio e o contexto do lead, sempre em **plano de mídia full-width (largura >= 98% da viewport no desktop e no mobile)**.
 
-Use a seguinte ordem estrita de preferência:
+### Ordem de Prioridade de Mídia (V3.2):
 
-1. **Foto real e verificável do expert/profissional** quando houver fonte factual utilizável (ex: site original, CRO/CRM/OAB com foto oficial verificada, perfil de autoridade confirmado);
-2. **Foto first-party verificável do local, equipe, produto ou contexto real do negócio** (ex: fotos de fachada/consultório validadas via Google Maps / Place Details);
-3. **Imagem fornecida pelo usuário/cliente**;
-4. **Template canônico do catálogo `hero-expert`** (`prospector-de-sites/templates/hero-expert/manifest.json`), quando o negócio for liderado por especialista e não houver foto real verificada;
-5. **Imagem contextual ilustrativa de nicho**, criada especificamente quando não houver material factual nem template de nicho no catálogo.
+A. **Quando há expert real e verificado:**
+- Preferência: **Foto real e verificável do expert/profissional** em composição ultrawide full-width dedicada (a menos que haja vídeo first-party do especialista e o GPT-Taste julgue superior).
 
-Um hero **NUNCA** pode se tornar apenas tipográfico ou abstrato meramente porque um template ou foto real não está disponível.
+B. **Quando NÃO há expert verificado:**
+- Preferência: **VÍDEO decorativo/atmosférico full-width**.
+- Ordem de busca de vídeo/mídia:
+  1. Vídeo first-party verificado do negócio;
+  2. Vídeo empacotado no hero/template Aura selecionado;
+  3. Vídeo do catálogo Aura Assets;
+  4. Outro vídeo com licença comercial confirmada;
+  5. Foto first-party verificada de instalações/serviços reais;
+  6. Imagem empacotada no hero/template Aura;
+  7. Imagem do catálogo Aura Assets;
+  8. Outra imagem licenciada;
+  9. Imagem gerada/contextual (último recurso).
+
+Um hero **NUNCA** pode ser apenas tipográfico nem estruturado como default split (coluna de texto + card de imagem emoldurada).
 
 ## 2. Catálogo Canônico de Templates Hero-Expert
 

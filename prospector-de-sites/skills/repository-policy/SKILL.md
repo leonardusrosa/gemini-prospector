@@ -478,3 +478,12 @@ messages: 0
   - Tier B: ES, CL, MX, PA, CR, UY, PT
   - Other countries permitted only on explicit user request.
 - **Market Metadata**: `country`, `locale`, `currency`, `phoneCountryCode`, `marketTier`. Locale is derived from country evidence, not language alone.
+
+## 15. Universal Full-Width Hero Media Plane & Source-Neutral Nav Policy (V3.2)
+
+- **Version Marker**: `heroMediaPolicyVersion: 1` is strictly required for all new or actively regenerated sites. Older published sites without this marker remain grandfathered.
+- **Full-Width Geometry**: The hero visual media plane must span >= 98% of the hero/viewport width on both desktop and mobile.
+- **Derived Structure**: DOM structure must evaluate to `FULL_BLEED` or `LAYERED`. Structure `SPLIT` triggers deterministic FAIL.
+- **Video Hero Standards**: Video must have `autoplay`, `muted`, `playsinline`, `loop`, and `poster`. Decorative video must have no `controls` or audio dependency. `prefers-reduced-motion: reduce` must disable video and show the full-width poster.
+- **Local Media Vendoring**: External Aura CDN URLs in HTML trigger deterministic FAIL. All media must be locally vendored in `assets/`.
+- **Source-Neutral Navigation**: Navbar links must never display vendor/source names (e.g. `Google Reviews`). Use generic labels (`Reviews`, `Testimonials`, `What People Say`). Vendor attribution belongs strictly inside section content.
