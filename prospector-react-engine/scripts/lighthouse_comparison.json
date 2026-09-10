@@ -1,0 +1,59 @@
+{
+  "engineA": {
+    "categories": {
+      "performance": 91,
+      "accessibility": 96,
+      "bestPractices": 96,
+      "seo": 63
+    },
+    "metrics": {
+      "fcpMs": 2504,
+      "fcpDisplay": "2.5 s",
+      "lcpMs": 2729,
+      "lcpDisplay": "2.7 s",
+      "cls": 0,
+      "clsDisplay": "0",
+      "tbtMs": 0,
+      "tbtDisplay": "0 ms",
+      "speedIndexMs": 4107,
+      "speedIndexDisplay": "4.1 s"
+    },
+    "network": {
+      "requestCount": 8,
+      "totalTransferKB": 946.4,
+      "htmlTransferKB": 11.1,
+      "cssTransferKB": 1.2,
+      "jsTransferKB": 0,
+      "mediaTransferKB": 873.4
+    }
+  },
+  "engineB": {
+    "categories": {
+      "performance": 94,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 100
+    },
+    "metrics": {
+      "fcpMs": 972,
+      "fcpDisplay": "1.0 s",
+      "lcpMs": 3075,
+      "lcpDisplay": "3.1 s",
+      "cls": 0,
+      "clsDisplay": "0",
+      "tbtMs": 32,
+      "tbtDisplay": "30 ms",
+      "speedIndexMs": 2186,
+      "speedIndexDisplay": "2.2 s"
+    },
+    "network": {
+      "requestCount": 16,
+      "totalTransferKB": 1487.1,
+      "htmlTransferKB": 9.8,
+      "cssTransferKB": 8,
+      "jsTransferKB": 174.6,
+      "mediaTransferKB": 1294.6
+    }
+  },
+  "timestamp": "2026-09-10T21:00:46.965Z"
+}

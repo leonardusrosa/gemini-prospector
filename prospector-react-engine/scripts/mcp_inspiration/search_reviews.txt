@@ -1,0 +1,59 @@
+8 result(s) across 21st.dev (metadata only).
+
+### [component] Editorial Testimonial  [id: 9637]
+by jatin-yadav05
+An editorial-style testimonial with a bold typographic.
+preview: https://cdn.21st.dev/jatin-yadav05/editorial-testimonial/default/preview.1765306115293.png
+install: npx shadcn@latest add "https://21st.dev/r/jatin-yadav05/editorial-testimonial?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 9637 })
+
+### [component] Testimonial  [id: 6286]
+by uilayout.contact
+Professional testimonial components featuring customer reviews, client feedback, social proof displays, and trust-building layouts designed to showcase credibility and increase customer confidence
+preview: https://cdn.21st.dev/user_2zAsvSHo1IeJGKtSjJ3uR1N1Cd7/testimonial-1/default/preview.1785945622193.png
+install: npx shadcn@latest add "https://21st.dev/r/uilayout.contact/testimonial-1?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 6286 })
+
+### [component] Testimonial 2  [id: 18912]
+by ncdai
+A testimonial quote block with a serif pull-quote, author name, tagline, and a link to the source.
+preview: https://cdn.21st.dev/ncdai/testimonial-2/default/preview.1784432011538-dd098c63-30c7-46d8-a97c-1c0ec51e5c4d.png
+install: npx shadcn@latest add "https://21st.dev/r/ncdai/testimonial-2?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 18912 })
+
+### [component] testimonial  [id: 6268]
+by uilayout.contact
+Professional testimonial components featuring customer reviews, client feedback, social proof displays, and trust-building layouts designed to showcase credibility and increase customer confidence
+preview: https://cdn.21st.dev/user_2zAsvSHo1IeJGKtSjJ3uR1N1Cd7/testimonial/default/preview.1785944842901.png
+install: npx shadcn@latest add "https://21st.dev/r/uilayout.contact/testimonial?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 6268 })
+
+### [component] Centered Testimonial  [id: 18914]
+by efferd
+A centered testimonial section with a company logo, quote, author name, role, and avatar.
+preview: https://cdn.21st.dev/sshahaider/testimonials-1/default/preview.1784442503842-5c6a6088-796e-42f5-95a0-c739d687a5ea.png
+install: npx shadcn@latest add "https://21st.dev/r/efferd/testimonials-1?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 18914 })
+
+### [component] Testimonials Five  [id: 18931]
+by meschacirung
+A centered single-testimonial section with a quote icon, avatar, name and handle.
+preview: https://cdn.21st.dev/meschacirung/mist-testimonials-5/default/preview.1784693453476-39ae1ef8-13b7-4d3d-b6b7-6677ea2e7e67.png
+install: npx shadcn@latest add "https://21st.dev/r/meschacirung/mist-testimonials-5?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 18931 })
+
+### [component] Testimonial  [id: 7343]
+by prebuiltui
+Here is Testimonial component 
+preview: https://cdn.21st.dev/user_prebuiltui/testimonial/happy-clients-section/preview.1785940053649.png
+install: npx shadcn@latest add "https://21st.dev/r/prebuiltui/testimonial?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 7343 })
+
+### [component] Design Testimonial  [id: 9682]
+by jatin-yadav05
+A completely unique asymmetric layout testimonial. Features include a vertical left column with rotated "Testimonials" text and an animated progress bar.
+preview: https://cdn.21st.dev/jatin-yadav05/design-testimonial/default/preview.1766074338821.png
+install: npx shadcn@latest add "https://21st.dev/r/jatin-yadav05/design-testimonial?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 9682 })
+
+Metadata is free. get_component (the code) is the PAID step - on the free tier it uses your daily retrieval quota (see get_usage).

@@ -707,6 +707,189 @@ def check_hero_eyebrow(html: str, manifest: dict, review: Review, is_proposal: b
     review.check("hero_eyebrow_valid", True, f"Hero eyebrow is factual: {eyebrow_text!r}")
 
 
+def check_hero_copy_density(html: str, manifest: dict, review: Review, is_proposal: bool = False) -> None:
+    """Enforces Hero Copy Density & De-Duplication Invariant (V3.3.3):
+    1. Extracts the 5 hero layers:
+       - EYEBROW_FACTS
+       - HEADLINE_FACTS
+       - SUPPORTING_COPY_FACTS
+       - TRUST_FACTS
+       - CTA_FACTS
+    2. Zero Duplication:
+       - Location: verified city/location in eyebrow must NOT repeat in supporting copy.
+       - Rating: aggregate rating in trust metadata must NOT repeat in supporting copy.
+       - Review count: review volume in trust metadata must NOT repeat in supporting copy.
+       - Phone: phone number in CTA must NOT repeat in supporting copy.
+    """
+    if is_proposal:
+        return
+
+    hero_match = re.search(r"<section\b[^>]*data-role=['\"]hero['\"][^>]*>([\s\S]*?)</section>", html, re.IGNORECASE)
+    if not hero_match:
+        hero_match = re.search(r"<section\b[^>]*?(?:id=['\"]hero['\"]|class=['\"][^'\"]*hero[^'\"]*['\"])[^>]*>([\s\S]*?)</section>", html, re.IGNORECASE)
+    if not hero_match:
+        return
+
+    hero_html = hero_match.group(1)
+
+    # Layer 1: EYEBROW
+    eyebrow_match = re.search(
+        r"<(?:div|span|p|h[1-6])\b[^>]*?(?:class=[\"'][^\"']*(?:hero-eyebrow|animate-hero-eyebrow)\b[^\"']*[\"']|data-role=[\"']hero-eyebrow[\"'])[^>]*>([\s\S]*?)<\/(?:div|span|p|h[1-6])>",
+        hero_html,
+        re.IGNORECASE,
+    )
+    eyebrow_text = extract_visible_ui_text(eyebrow_match.group(1)).strip() if eyebrow_match else ""
+
+    # Layer 2: HEADLINE
+    headline_match = re.search(r"<h1\b[^>]*>([\s\S]*?)</h1>", hero_html, re.IGNORECASE)
+    headline_text = extract_visible_ui_text(headline_match.group(1)).strip() if headline_match else ""
+
+    # Layer 3: SUPPORTING COPY
+    desc_match = re.search(
+        r"<(?:p|div)\b[^>]*?(?:class=[\"'][^\"']*(?:hero-desc|animate-hero-desc)\b[^\"']*[\"']|data-role=[\"']hero-desc[\"'])[^>]*>([\s\S]*?)<\/(?:p|div)>",
+        hero_html,
+        re.IGNORECASE,
+    )
+    if desc_match:
+        supporting_text = extract_visible_ui_text(desc_match.group(1)).strip()
+    else:
+        p_matches = re.findall(r"<p\b[^>]*>([\s\S]*?)</p>", hero_html, re.IGNORECASE)
+        candidates = []
+        for p in p_matches:
+            txt = extract_visible_ui_text(p).strip()
+            if not txt or "disclosure" in p.lower() or "illustrative" in txt.lower():
+                continue
+            candidates.append(txt)
+        supporting_text = candidates[0] if candidates else ""
+
+    # Layer 4: CTA
+    cta_match = re.search(
+        r"<(?:a|button)\b[^>]*?(?:class=[\"'][^\"']*(?:hero-cta|hero-btn|animate-hero-cta)\b[^\"']*[\"']|data-role=[\"']hero-cta[\"']|href=[\"'](?:tel:|https?:\/\/wa\.me)[^\"']*[\"'])[^>]*>([\s\S]*?)<\/(?:a|button)>",
+        hero_html,
+        re.IGNORECASE,
+    )
+    cta_text = extract_visible_ui_text(cta_match.group(1)).strip() if cta_match else ""
+
+    # Layer 5: TRUST METADATA
+    trust_match = re.search(
+        r"<(?:div|span|p)\b[^>]*?(?:class=[\"'][^\"']*(?:hero-trust|hero-trust-line|hero-badges|trust)\b[^\"']*[\"']|data-role=[\"']hero-trust[\"'])[^>]*>([\s\S]*?)<\/(?:div|span|p)>",
+        hero_html,
+        re.IGNORECASE,
+    )
+    if trust_match:
+        trust_text = extract_visible_ui_text(trust_match.group(1)).strip()
+    else:
+        trust_search = re.search(
+            r"<(?:div|span|p)\b[^>]*>([\s\S]*?(?:★|&#9733;|\b[1-5]\.[0-9]\b)[\s\S]*?(?:Reviews?|Rating|Avalia[cç][oõ]es)[\s\S]*?)<\/(?:div|span|p)>",
+            hero_html,
+            re.IGNORECASE,
+        )
+        trust_text = extract_visible_ui_text(trust_search.group(1)).strip() if trust_search else ""
+
+    # --- 1. Location Duplication Audit ---
+    city = manifest.get("city") or manifest.get("businessCity")
+    if not city and isinstance(manifest.get("address"), dict):
+        city = manifest["address"].get("city")
+    if not city and isinstance(manifest.get("factualEvidence"), dict):
+        city = manifest["factualEvidence"].get("city")
+
+    if not city and eyebrow_text:
+        city_match = re.search(r"[•·\-|]\s*([A-Za-z\s]+?)(?:,\s*[A-Za-z\s]+)?$", eyebrow_text)
+        if city_match:
+            cand = city_match.group(1).strip()
+            if len(cand) >= 3 and cand.lower() not in {"reviews", "rating", "detailing"}:
+                city = cand
+
+    has_duplicate_location = False
+    if city and eyebrow_text and supporting_text:
+        city_clean = city.strip()
+        if re.search(r"\b" + re.escape(city_clean.lower()) + r"\b", eyebrow_text.lower()):
+            if re.search(r"\b" + re.escape(city_clean.lower()) + r"\b", supporting_text.lower()):
+                has_duplicate_location = True
+
+    review.check(
+        "hero_copy_no_duplicate_location",
+        not has_duplicate_location,
+        f"City/location '{city}' is present in eyebrow but repeated in supporting copy: {supporting_text!r}",
+    )
+
+    # --- 2. Rating Duplication Audit ---
+    rating_val = None
+    if manifest.get("rating"):
+        rating_val = str(manifest["rating"]).strip()
+    elif manifest.get("googleReviews", {}).get("aggregateRating"):
+        rating_val = str(manifest["googleReviews"]["aggregateRating"]).strip()
+    elif trust_text:
+        r_match = re.search(r"\b([1-5]\.[0-9])\b", trust_text)
+        if r_match:
+            rating_val = r_match.group(1)
+
+    has_duplicate_rating = False
+    if rating_val and trust_text and supporting_text:
+        if re.search(r"\b" + re.escape(rating_val) + r"\b", trust_text):
+            if re.search(r"\b" + re.escape(rating_val) + r"(?:\s*(?:\/|of)\s*5|\s+rating|\s+stars?)?\b", supporting_text, re.IGNORECASE):
+                has_duplicate_rating = True
+
+    review.check(
+        "hero_copy_no_duplicate_rating",
+        not has_duplicate_rating,
+        f"Rating '{rating_val}' is present in trust metadata but repeated in supporting copy: {supporting_text!r}",
+    )
+
+    # --- 3. Review Count Duplication Audit ---
+    rev_count_val = None
+    if manifest.get("reviewCount"):
+        rev_count_val = str(manifest["reviewCount"]).strip()
+    elif manifest.get("googleReviews", {}).get("ratingCount"):
+        rev_count_val = str(manifest["googleReviews"]["ratingCount"]).strip()
+    elif trust_text:
+        c_match = re.search(r"\b(\d{2,6})\b", trust_text)
+        if c_match:
+            rev_count_val = c_match.group(1)
+
+    has_duplicate_reviews = False
+    if rev_count_val and trust_text and supporting_text:
+        if re.search(r"\b" + re.escape(rev_count_val) + r"\b", trust_text):
+            if re.search(r"\b" + re.escape(rev_count_val) + r"(?:\s+(?:public\s+)?reviews?)?\b", supporting_text, re.IGNORECASE):
+                has_duplicate_reviews = True
+
+    review.check(
+        "hero_copy_no_duplicate_review_count",
+        not has_duplicate_reviews,
+        f"Review count '{rev_count_val}' is present in trust metadata but repeated in supporting copy: {supporting_text!r}",
+    )
+
+    # --- 4. Phone Number Duplication Audit ---
+    phone_digits = None
+    if manifest.get("phone"):
+        digits = normalize_digits(manifest["phone"])
+        if len(digits) >= 7:
+            phone_digits = digits[-7:]
+    elif cta_text:
+        digits = normalize_digits(cta_text)
+        if len(digits) >= 7:
+            phone_digits = digits[-7:]
+
+    has_duplicate_phone = False
+    if phone_digits and supporting_text:
+        sup_digits = normalize_digits(supporting_text)
+        if phone_digits in sup_digits:
+            has_duplicate_phone = True
+
+    review.check(
+        "hero_copy_no_duplicate_phone",
+        not has_duplicate_phone,
+        f"Phone number digits '{phone_digits}' are present in CTA but repeated in supporting copy: {supporting_text!r}",
+    )
+
+    all_ok = not (has_duplicate_location or has_duplicate_rating or has_duplicate_reviews or has_duplicate_phone)
+    review.check(
+        "hero_copy_density_pass",
+        all_ok,
+        "Hero Copy Density & De-Duplication invariant passed",
+    )
+
+
 REVIEW_SOURCE_BRANDING_PATTERNS = [
     # Vendor + Rating/Review(s) / Avaliações (e.g. Google Rating, Google Reviews, Facebook Reviews, Yelp Reviews)
     r"\b(?:google(?:\s+maps)?|facebook|yelp|tripadvisor|trustpilot)\s+(?:ratings?|reviews?|stars?|avalia[cç][oõ]es)\b",
@@ -948,6 +1131,84 @@ def check_hero_media_plane(manifest: dict, html: str, design_read: str, review: 
             review.check("hero_media_commercial_use_confirmed", True, "External hero media verified source and commercial use confirmed")
     else:
         review.check("hero_media_commercial_use_confirmed", True, "Native/first-party/generated hero media confirmed")
+
+    # 7. Hero Temporal Media Gate (V3.2.3 Final Hardening)
+    hero_media_type = str(manifest.get("heroMedia", {}).get("type") or "").strip().lower()
+    if hero_media_type == "video":
+        temporal_audit = manifest.get("heroMedia", {}).get("temporalAudit")
+        review.check(
+            "hero_temporal_media_audit_present",
+            bool(temporal_audit and isinstance(temporal_audit, dict)),
+            "Hero media declared as video requires mandatory temporalAudit in manifest.heroMedia",
+        )
+        if temporal_audit and isinstance(temporal_audit, dict):
+            verdict = str(temporal_audit.get("verdict", "")).upper().strip()
+            classification = str(temporal_audit.get("classification", "")).upper().strip()
+            audited_hash = str(temporal_audit.get("auditedAssetHash", "")).strip()
+
+            # Hash binding
+            review.check(
+                "hero_temporal_media_hash_present",
+                bool(audited_hash),
+                "heroMedia.temporalAudit requires auditedAssetHash bound to video asset",
+            )
+            local_path = manifest.get("heroMedia", {}).get("localPath")
+            if local_path and base_dir:
+                video_file = Path(base_dir) / local_path
+                if video_file.exists():
+                    current_hash = hashlib.sha256(video_file.read_bytes()).hexdigest()
+                    expected_hash = audited_hash.replace("sha256:", "")
+                    review.check(
+                        "hero_temporal_media_hash_match",
+                        current_hash == expected_hash,
+                        f"Hero video asset hash mismatch (audited: {audited_hash}, current: sha256:{current_hash}). Changing video bytes invalidates previous audit.",
+                    )
+
+            # Classification & Verdict
+            review.check(
+                "hero_temporal_media_not_fail",
+                verdict != "FAIL",
+                f"Hero video temporal audit verdict is FAIL ({classification}). Fake cinematic motion is rejected; static fallback poster required.",
+            )
+            review.check(
+                "hero_temporal_media_not_inconclusive",
+                verdict != "INCONCLUSIVE",
+                f"Hero video temporal audit verdict is INCONCLUSIVE ({classification}). Cannot auto-approve video; static fallback poster required.",
+            )
+            review.check(
+                "hero_temporal_media_pass",
+                verdict == "PASS" and classification in {"REAL_VIDEO", "GENUINE_GENERATED_TEMPORAL_VIDEO"},
+                f"Hero video temporal media gate passed ({classification})",
+            )
+
+            # Representation Safety: Temporal PASS does not authorize factual representation
+            is_generated = bool(
+                classification == "GENUINE_GENERATED_TEMPORAL_VIDEO"
+                or manifest.get("heroMedia", {}).get("generated")
+                or str(manifest.get("heroMedia", {}).get("source")).upper() == "GENERATED"
+            )
+            rep_actual_biz = bool(manifest.get("heroMedia", {}).get("representsActualBusiness") or manifest.get("heroVisual", {}).get("representsActualBusiness"))
+            rep_actual_expert = bool(manifest.get("heroMedia", {}).get("representsActualExpert") or manifest.get("heroVisual", {}).get("representsActualExpert"))
+            rep_actual_facility = bool(manifest.get("heroMedia", {}).get("representsActualFacility") or manifest.get("heroVisual", {}).get("representsActualFacility"))
+
+            if is_generated:
+                review.check(
+                    "hero_temporal_media_rep_business_safety",
+                    not rep_actual_biz,
+                    "Representation safety violation: generated temporal video cannot claim representsActualBusiness=true without separate first-party verification",
+                )
+                review.check(
+                    "hero_temporal_media_rep_expert_safety",
+                    not rep_actual_expert,
+                    "Representation safety violation: generated temporal video cannot claim representsActualExpert=true",
+                )
+                review.check(
+                    "hero_temporal_media_rep_facility_safety",
+                    not rep_actual_facility,
+                    "Representation safety violation: generated temporal video cannot claim representsActualFacility=true",
+                )
+    else:
+        review.check("hero_temporal_media_audit_present", True, "Static image hero: temporal media gate not required")
 
 
 def check_google_reviews(manifest: dict, html: str, design_read: str, review: Review) -> None:
@@ -1744,6 +2005,7 @@ def main() -> int:
     is_proposal = "proposta" in html_path.name.lower() or "proposal" in html_path.name.lower() or manifest.get("siteMode") == "proposal"
     check_public_site_visible_copy(html, review, is_proposal=is_proposal)
     check_hero_eyebrow(html, manifest, review, is_proposal=is_proposal)
+    check_hero_copy_density(html, manifest, review, is_proposal=is_proposal)
     check_review_source_branding(html, review, is_proposal=is_proposal)
     check_google_reviews(manifest, html, design_read, review)
     check_factual_traceability(manifest, design_read, html, review)

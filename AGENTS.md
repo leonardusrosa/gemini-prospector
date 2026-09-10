@@ -322,6 +322,65 @@ Evidence remains sovereign over all creative and copy choices.
      - facility workflows: `serviced on-site at our facility` unless on-site workflow is explicitly verified.
    - **Review Quote Exemption**: Real reviewer words inside review cards/quotes are exempted from penalization, but review quote facts cannot automatically become business-level service claims in headers, hero copy, or service descriptions.
 
+11. **Hero Temporal Media Gate & Representation Separation (V3.2.3 Final Hardening)**:
+   - A `<video>` element does NOT prove real video.
+   - **Concept Scope (`HERO_TEMPORAL_MEDIA_GATE`)**:
+     - Answers strictly: *"Is this genuinely temporal media?"*
+     - Does NOT answer: *"Is this real footage of this business?"*
+     - Business reality is governed separately by **`MEDIA_REPRESENTATION_PROVENANCE`**.
+   - **Sampling Rules**:
+     - Do not sample literal duration endpoint.
+     - Sample temporal frames at: `0%`, `20%`, `40%`, `60%`, `80%`, and `last_decodable_frame`.
+   - **Classifications & Verdicts**:
+     - **PASS**:
+       - `REAL_VIDEO` (authentic filmed footage with physical scene movement)
+       - `GENUINE_GENERATED_TEMPORAL_VIDEO` (temporal generative video with independent fluid/matter evolution)
+     - **FAIL**:
+       - `STATIC_IMAGE_WITH_ZOOM` (Ken Burns digital scale)
+       - `STATIC_IMAGE_WITH_SHAKE` (synthetic jitter / translation wobble)
+       - `STATIC_IMAGE_WITH_PAN` (2D lateral pan over static image)
+       - `NEAR_STATIC_SYNTHETIC_VIDEO` (residual variance < threshold or trivial noise)
+     - **INCONCLUSIVE**:
+       - Subtle physical movement, low-light footage, mostly static tripod footage, strong compression, global camera movement with uncertain residual motion.
+       - `INCONCLUSIVE` does NOT auto-approve video. Requires fallback to `STATIC_POSTER`.
+   - **Representation Safety Invariant**:
+     - Temporal PASS does NOT authorize factual representation.
+     - For any video, record separately: `representsActualBusiness`, `representsActualExpert`, `representsActualFacility`, `generated`, `source`, `rightsStatus`.
+     - Generated temporal video: may pass temporal gate, but `representsActualBusiness = false` unless separately verified with first-party evidence. Never infer real shop/staff/equipment from generated footage.
+   - **Pipeline Enforcement (`site-review` & `vercel-build`)**:
+     - If manifest declares `heroMedia.type = 'video'`:
+       - Missing `temporalAudit` => `FAIL`.
+       - Verdict `FAIL` => `FAIL`.
+       - Verdict `INCONCLUSIVE` => `FAIL` (requires static fallback poster).
+       - Asset hash mismatch => `FAIL`.
+     - Static image hero: gate not required (`PASS`).
+   - **Asset Hash Binding**:
+     - SHA-256 hash of media file is bound in `auditedAssetHash`.
+     - Predeploy verifies current file hash matches audited hash. Mismatch => `FAIL`.
+   - **Fallback Invariant**:
+     - *Static premium image is preferred over fake cinematic motion.*
+     - If candidate video fails or is inconclusive: fallback to authentic full-bleed static poster (`STATIC_POSTER`).
+
+12. **Google Maps Image Reuse Governance (`GOOGLE_MAPS_IMAGE_REUSE`)**:
+   - Evaluates whether imagery originating from or associated with a Google Maps business profile can be rehosted as a local static site asset.
+   - **PASS Conditions** (at least one must be met):
+     1. `CLIENT_OWNED`: Photo belongs to the business/client AND client authorizes website reuse.
+     2. `GOOGLE_EMBED`: Image/content is displayed through an authorized Google Maps / embeddable mechanism with required attribution.
+     3. `EXPLICIT_PERMISSION`: Original photographer/rightsholder granted reuse rights.
+   - **Otherwise**:
+     - `IDENTITY_PROVENANCE: PASS possible` (imagery may serve as business/facility research evidence).
+     - `LOCAL_REHOST_RIGHTS: UNCONFIRMED` (downloading, vendoring into local `assets/`, or serving as a local production asset is BLOCKED).
+
+13. **Hero Copy Density & De-Duplication Invariant (V3.3.3)**:
+    - Evaluates the 5 hero layers: `EYEBROW_FACTS`, `HEADLINE_FACTS`, `SUPPORTING_COPY_FACTS`, `TRUST_FACTS`, and `CTA_FACTS`.
+    - **Zero Duplication**: Repetition of the same material fact (city/location, aggregate rating, review count, phone number) across hero layers triggers deterministic `FAIL`.
+    - If city is in eyebrow, it must not repeat in supporting copy.
+    - If rating or review count is in trust metadata, it must not repeat in supporting copy.
+    - If phone number is in CTA, it must not repeat in supporting copy.
+    - **Single Compact Trust Line**: Trust metadata rendered as a single editorial line (e.g. `★ 4.9 / 268 Reviews`). No separate rating cards, stat boxes, pills, or badge clusters.
+    - **Neutral Wording**: 'Public' is not required merely for neutrality; prefer `Rating`, `Reviews`.
+    - **Natural Phrasing**: Omit awkward phrasing like 'Individual service by Wilson'. Use 'Detailing and paint correction by Wilson.' only when directly supported and non-duplicative.
+
 ## 8. Global Market Acquisition Policy
 
 - Target Markets: United States, Canada, Europe, Latin America (LATAM).
@@ -372,10 +431,10 @@ No lead may advance to `publicado` in CRM before all steps pass:
 10. GPT-Taste corrections (if required)
 11. `/impeccable` execution review
 12. Impeccable corrections (if required)
-13. `/copywriting-marketing` review
+13. `/copywriting-marketing` review (enforcing `hero-copy-density` de-duplication)
 14. Copywriting corrections (if required)
 15. Semantic + factual recheck
-16. Deterministic gates + proposal QA
+16. Deterministic gates (including `hero_copy_density_gate`) + proposal QA
 17. Vercel build + deploy
 18. Live QA
 19. Local CRM promotion to `publicado`

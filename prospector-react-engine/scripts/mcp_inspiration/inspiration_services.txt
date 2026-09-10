@@ -1,0 +1,25 @@
+6 project-aware inspiration result(s) for "editorial service index numbered service list". Component code was not retrieved.
+
+1. [component] Editorial Hero (54%)
+   Matches editorial
+   https://21st.dev/@felipemenezes098/components/hero-05
+
+2. [component] Service Changelog (54%)
+   Matches service
+   https://21st.dev/@ruixen.ui/components/service-changelog
+
+3. [component] Editorial Image Hero (53%)
+   Matches editorial
+   https://21st.dev/@felipemenezes098/components/hero-07
+
+4. [component] Editorial Collage Hero (53%)
+   Matches editorial
+   https://21st.dev/@felipemenezes098/components/hero-04
+
+5. [component] Editorial Testimonial (52%)
+   Matches editorial
+   https://21st.dev/@jatin-yadav05/components/editorial-testimonial
+
+6. [component] List (51%)
+   Matches list
+   https://21st.dev/@platejs/components/block-list

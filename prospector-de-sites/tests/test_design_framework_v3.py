@@ -1583,10 +1583,144 @@ def test_v322_review_quote_facts_exemption_passes():
     """
     rev = Review()
     check_service_claim_traceability(manifest, html, rev)
-    assert _passed(rev), f"Expected pass for review quote, got: {_errors(rev)}"
+def test_v323_video_missing_temporal_audit_fails():
+    """V3.2.3: Hero media declared as video without temporalAudit -> FAIL"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-video-no-audit",
+        "heroMedia": {"source": "GENERATED", "type": "video"}
+    }
+    html = '<section data-role="hero" data-hero-layout="full-bleed-background"><video autoplay muted playsinline poster="poster.webp"></video></section>'
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert not _passed(rev)
+    assert any("requires mandatory temporalAudit" in err for err in _errors(rev))
+
+
+def test_v323_video_temporal_verdict_fail_fails():
+    """V3.2.3: Video with verdict FAIL -> FAIL"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-video-fail",
+        "heroMedia": {
+            "source": "GENERATED",
+            "type": "video",
+            "temporalAudit": {
+                "classification": "STATIC_IMAGE_WITH_ZOOM",
+                "verdict": "FAIL",
+                "auditedAssetHash": "sha256:123456"
+            }
+        }
+    }
+    html = '<section data-role="hero" data-hero-layout="full-bleed-background"><video autoplay muted playsinline poster="poster.webp"></video></section>'
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert not _passed(rev)
+    assert any("verdict is FAIL" in err for err in _errors(rev))
+
+
+def test_v323_video_temporal_verdict_inconclusive_fails():
+    """V3.2.3: Video with verdict INCONCLUSIVE -> FAIL (requires static fallback poster)"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-video-inconclusive",
+        "heroMedia": {
+            "source": "GENERATED",
+            "type": "video",
+            "temporalAudit": {
+                "classification": "INCONCLUSIVE",
+                "verdict": "INCONCLUSIVE",
+                "auditedAssetHash": "sha256:abcdef"
+            }
+        }
+    }
+    html = '<section data-role="hero" data-hero-layout="full-bleed-background"><video autoplay muted playsinline poster="poster.webp"></video></section>'
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert not _passed(rev)
+    assert any("verdict is INCONCLUSIVE" in err for err in _errors(rev))
+
+
+def test_v323_video_temporal_verdict_pass_passes():
+    """V3.2.3: Real video or genuine generated temporal video with PASS -> PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-video-pass",
+        "heroMedia": {
+            "source": "FIRST_PARTY",
+            "type": "video",
+            "representsActualBusiness": True,
+            "temporalAudit": {
+                "classification": "REAL_VIDEO",
+                "verdict": "PASS",
+                "auditedAssetHash": "sha256:realhash123"
+            }
+        }
+    }
+    html = """
+    <style>
+      @media (prefers-reduced-motion: reduce) {
+        video { display: none; }
+        .hero-poster { display: block; }
+      }
+    </style>
+    <section data-role="hero" data-hero-layout="full-bleed-background">
+      <video autoplay muted playsinline poster="poster.webp"></video>
+    </section>
+    """
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
+
+
+def test_v323_generated_video_claiming_actual_business_fails():
+    """V3.2.3: Generated temporal video cannot claim representsActualBusiness=true -> representation FAIL"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-generated-video-fraud",
+        "heroMedia": {
+            "source": "GENERATED",
+            "type": "video",
+            "representsActualBusiness": True,
+            "temporalAudit": {
+                "classification": "GENUINE_GENERATED_TEMPORAL_VIDEO",
+                "verdict": "PASS",
+                "auditedAssetHash": "sha256:genhash123"
+            }
+        }
+    }
+    html = '<section data-role="hero" data-hero-layout="full-bleed-background"><video autoplay muted playsinline poster="poster.webp"></video></section>'
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert not _passed(rev)
+    assert any("cannot claim representsActualBusiness=true" in err for err in _errors(rev))
+
+
+def test_v323_static_poster_hero_exempt_passes():
+    """V3.2.3: Static poster hero does not require temporalAudit -> PASS"""
+    manifest = {
+        "schemaVersion": 3,
+        "heroMediaPolicyVersion": 1,
+        "slug": "test-static-poster",
+        "heroMedia": {
+            "source": "GENERATED",
+            "type": "image",
+            "localPath": "assets/hero-poster.webp"
+        }
+    }
+    html = '<section data-role="hero" data-hero-layout="full-bleed-background"><img data-role="hero-image" src="assets/hero-poster.webp" alt="Shop"></section>'
+    rev = Review()
+    check_hero_media_plane(manifest, html, "", rev)
+    assert _passed(rev), f"Expected pass, got: {_errors(rev)}"
 
 
 if __name__ == "__main__":
+
     test_funcs = [k for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn_name in test_funcs:
         globals()[fn_name]()

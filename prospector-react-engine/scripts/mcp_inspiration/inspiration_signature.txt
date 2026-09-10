@@ -1,0 +1,25 @@
+6 project-aware inspiration result(s) for "cinematic before after full bleed image comparison". Component code was not retrieved.
+
+1. [component] Before/After Image Slider (61%)
+   Matches before, after, image
+   https://21st.dev/@ziegfiroyt/components/reveal1
+
+2. [component] Side By Side Slide (60%)
+   Matches before, after, image
+   https://21st.dev/@unlumen/components/side-by-side-slide
+
+3. [component] Comparison Slider with Highlights (60%)
+   Matches before, after, image
+   https://21st.dev/@ziegfiroyt/components/reveal2
+
+4. [component] Image Comparison Slider (Horizontal) (59%)
+   Matches before, after, image
+   https://21st.dev/@ravikatiyar162/components/image-comparison-slider-horizontal
+
+5. [component] Compare Slider (59%)
+   Matches before, after, image
+   https://21st.dev/@diceui/components/compare-slider
+
+6. [component] Image Comparison Slider Vertical (57%)
+   Matches before, after, image
+   https://21st.dev/@ravikatiyar162/components/image-comparison-slider-vertical

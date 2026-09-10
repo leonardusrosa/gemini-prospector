@@ -1,0 +1,59 @@
+8 result(s) across 21st.dev (metadata only).
+
+### [component] Editorial Hero  [id: 19075]
+by felipemenezes098
+An editorial hero section with a left tagline, right-aligned headline and copy, optional CTAs, and a full-width image below.
+preview: https://cdn.21st.dev/felipemenezes098/hero-05/default/preview.1783678944308.png
+install: npx shadcn@latest add "https://21st.dev/r/felipemenezes098/hero-05?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19075 })
+
+### [component] Editorial Image Hero  [id: 19077]
+by felipemenezes098
+A hero section with a full-width landscape image above and a top-aligned tagline paired with a right-aligned serif headline, description, and call-to-action buttons below.
+preview: https://cdn.21st.dev/user_felipemenezes098/hero-07/default/preview.1787581609067.webp
+install: npx shadcn@latest add "https://21st.dev/r/felipemenezes098/hero-07?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19077 })
+
+### [component] Editorial Collage Hero  [id: 19074]
+by felipemenezes098
+A two-column hero section with a serif headline, description, call-to-action buttons, and a layered collage of two overlapping images over a soft background wash.
+preview: https://cdn.21st.dev/user_felipemenezes098/hero-04/default/preview.1786538402894.png
+install: npx shadcn@latest add "https://21st.dev/r/felipemenezes098/hero-04?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19074 })
+
+### [component] Editorial Testimonial  [id: 9637]
+by jatin-yadav05
+An editorial-style testimonial with a bold typographic.
+preview: https://cdn.21st.dev/jatin-yadav05/editorial-testimonial/default/preview.1765306115293.png
+install: npx shadcn@latest add "https://21st.dev/r/jatin-yadav05/editorial-testimonial?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 9637 })
+
+### [component] Editor  [id: 21193]
+by platejs
+A container component for building rich-text editors with Plate — it provides the editable content area, styling variants, and a static read-only view.
+preview: https://cdn.21st.dev/platejs/editor/hundreds-editors-demo/preview.1784741047903-4188c723-ad26-4a2b-9550-0d9918fd81e3.png
+install: npx shadcn@latest add "https://21st.dev/r/platejs/editor?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 21193 })
+
+### [component] Service Changelog  [id: 16247]
+by ruixen.ui
+A scroll-spy services section. A sticky tab strip at the top tracks the active entry while the reader scrolls through long-form panels with deliverables, optional preview media, and inline CTAs.
+preview: https://cdn.21st.dev/ruixen.ui/service-changelog/default/preview.1782458947184.png
+install: npx shadcn@latest add "https://21st.dev/r/ruixen.ui/service-changelog?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 16247 })
+
+### [component] Edit Tool  [id: 12385]
+by serafimcloud
+Render a file edit/write tool call as a diff card with header, +/- line stats, line-level diff body, and an optional Apply/Skip approval footer. State-driven (completed / pending / waiting). Self-contained port from 21st.dev Agent Elements.
+preview: https://cdn.21st.dev/21st.dev/edit-tool/default/preview.1777408270730.png
+install: npx shadcn@latest add "https://21st.dev/r/serafimcloud/edit-tool?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 12385 })
+
+### [component] TOC Base Kit  [id: 24442]
+by platejs
+A Plate editor plugin kit that registers a static table-of-contents element for server-side rendering of document headings.
+preview: https://cdn.21st.dev/user_registry_platejs_1783624188026/toc-base-kit/default/preview.1786707858617.webp
+install: npx shadcn@latest add "https://21st.dev/r/platejs/toc-base-kit?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 24442 })
+
+Metadata is free. get_component (the code) is the PAID step - on the free tier it uses your daily retrieval quota (see get_usage).

@@ -16,9 +16,10 @@ A arquitetura de saída continua estática: `sites/[slug]/[slug].html`, CSS inli
 
 ## Regra Fundamental: Website Core Rules & gpt-taste Obrigatórias
 
-Antes de qualquer design, construção, revisão ou QA de site, leia e obedeça `../website-core-rules/SKILL.md` e `~/.gemini/config/skills/gpt-taste/SKILL.md`.
+Antes de qualquer design, construção, revisão ou QA de site, leia e obedeça `../website-core-rules/SKILL.md`, `../hero-copy-density/SKILL.md` e `~/.gemini/config/skills/gpt-taste/SKILL.md`.
 Elas têm precedência absoluta sobre hábitos de LLM e templates pré-concebidos:
 
+- **HARD GATE hero-copy-density (Hero Fact Layers & De-Duplication):** Leia `../hero-copy-density/SKILL.md`. O hero deve conter no máximo 5 camadas fáticas limpas (Eyebrow, Headline, Supporting Copy, CTA, Trust Metadata). Proibido duplicar localização, rating, review count ou telefone entre as camadas do hero. Repetição material resulta em `FAIL`.
 - **HARD GATE gpt-taste (Creative Director / Frontend Design Owner):** Leia o arquivo atual de `gpt-taste/SKILL.md`. Não confie em memória. O QA final FALHA se `GPT_TASTE_READ != PASS` ou se `GPT_TASTE_DESIGN_DECISION` estiver ausente/bloqueado.
 - **Design Read Obrigatório:** Crie/atualize `sites/[slug]/design-read.md` registrando a leitura de `gpt-taste`, 3 conceitos estruturais, conceito escolhido, `GPT_TASTE_DESIGN_DECISION`, Design DNA (7 campos), checagem de diversidade e módulo de assinatura antes de escrever código.
 - **SEM tags, pills, chips ou badges decorativos** (proibido metadata-first capsule UI em hero, cards ou qualquer seção).
@@ -43,7 +44,7 @@ Elas têm precedência absoluta sobre hábitos de LLM e templates pré-concebido
 8. **OpenDesign = LEGACY ONLY (apenas schema v2)** — não faz parte do fluxo para schema v3+.
 9. **Arquitetura estática do Prospector** — HTML/CSS/JS puro sem build toolchain.
 10. **`/impeccable` = QA bounded de execução** — craft pixel/espaçamento/responsivo/overflow/tap targets. NÃO é art director.
-11. **`/copywriting-marketing` = revisão de mensagem e conversão** — MELHORAR APENAS A EXPRESSÃO DE PROPOSIÇÕES SUPORTADAS.
+11. **`/copywriting-marketing` = revisão de mensagem e conversão** — MELHORAR APENAS A EXPRESSÃO DE PROPOSIÇÕES SUPORTADAS. OBRIGATÓRIO ler e aplicar `../hero-copy-density/SKILL.md` garantindo zero repetição de fatos materiais (localização, nota, reviews, telefone) entre as 5 camadas do hero.
 12. **Factual Re-check & Auditoria Semântica** — 0 alegações não suportadas após edições de copy.
 
 Quando as skills estiverem instaladas, leia seus `SKILL.md` atuais. Não presuma regras antigas de memória.

@@ -1,0 +1,25 @@
+6 project-aware inspiration result(s) for "editorial testimonial spotlight pull quote". Component code was not retrieved.
+
+1. [component] Testimonial 2 (62%)
+   Matches testimonial, pull, quote
+   https://21st.dev/@ncdai/components/testimonial-2
+
+2. [component] Editorial Testimonial (58%)
+   Matches editorial, testimonial
+   https://21st.dev/@jatin-yadav05/components/editorial-testimonial
+
+3. [component] Testimonials Five (57%)
+   Matches testimonial, quote
+   https://21st.dev/@meschacirung/components/mist-testimonials-5
+
+4. [component] Centered Testimonial (56%)
+   Matches testimonial, quote
+   https://21st.dev/@efferd/components/testimonials-1
+
+5. [component] Minimal Testimonial (55%)
+   Matches testimonial, quote
+   https://21st.dev/@jatin-yadav05/components/minimal-testimonial
+
+6. [component] Unique Testimonial (54%)
+   Matches testimonial, quote
+   https://21st.dev/@jatin-yadav05/components/unique-testimonial

@@ -1,0 +1,60 @@
+8 result(s) across 21st.dev (metadata only).
+
+### [component] Editorial Hero  [id: 19075]
+by felipemenezes098
+An editorial hero section with a left tagline, right-aligned headline and copy, optional CTAs, and a full-width image below.
+preview: https://cdn.21st.dev/felipemenezes098/hero-05/default/preview.1783678944308.png
+install: npx shadcn@latest add "https://21st.dev/r/felipemenezes098/hero-05?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19075 })
+
+### [component] Contact  [id: 8969]
+by ravikatiyar162
+Contact Section
+Description: A comprehensive and visually appealing contact section component featuring an animated background, a navigation bar, a main title, a contact form with various input types, and social media integration. Designed for reusability, responsiveness, and theme-adaptability using shadcn/ui.
+preview: https://cdn.21st.dev/ravikatiyar162/contact/default/preview.1760506498496.png
+install: npx shadcn@latest add "https://21st.dev/r/ravikatiyar162/contact?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 8969 })
+
+### [component] Contact 01 - Project Inquiry Form  [id: 25224]
+by shadcnspace
+A contact section with a project inquiry form, contact details, and a trust-badge brand marquee for agencies and freelancers to capture qualified leads.
+preview: https://cdn.21st.dev/user_38qAOtph5HovpSn2yjNYXjbTOm2/contact-01/default/preview.1787265531804.webp
+install: npx shadcn@latest add "https://21st.dev/r/shadcnspace/contact-01?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 25224 })
+
+### [component] Editorial Image Hero  [id: 19077]
+by felipemenezes098
+A hero section with a full-width landscape image above and a top-aligned tagline paired with a right-aligned serif headline, description, and call-to-action buttons below.
+preview: https://cdn.21st.dev/user_felipemenezes098/hero-07/default/preview.1787581609067.webp
+install: npx shadcn@latest add "https://21st.dev/r/felipemenezes098/hero-07?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19077 })
+
+### [component] Contact Page  [id: 7139]
+by efferd
+A professional contact page with email, phone, office details, and social media links, featuring copy-to-clipboard actions and a modern UI layout. Ideal for business websites, SaaS apps, and company portfolios.
+preview: https://cdn.21st.dev/sshahaider/contact-page/default/preview.1757519188483.png
+install: npx shadcn@latest add "https://21st.dev/r/efferd/contact-page?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 7139 })
+
+### [component] Editorial Collage Hero  [id: 19074]
+by felipemenezes098
+A two-column hero section with a serif headline, description, call-to-action buttons, and a layered collage of two overlapping images over a soft background wash.
+preview: https://cdn.21st.dev/user_felipemenezes098/hero-04/default/preview.1786538402894.png
+install: npx shadcn@latest add "https://21st.dev/r/felipemenezes098/hero-04?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19074 })
+
+### [component] FAQ 3  [id: 684]
+by shadcnblockscom
+A center align FAQ section with frequently asked questions that toggle open using the accordion component
+preview: https://cdn.21st.dev/user_2rguB0QxcSITG2Y7ivePFsKsUU6/faq3/default/preview.1785846594285.png
+install: npx shadcn@latest add "https://21st.dev/r/shadcnblockscom/faq3?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 684 })
+
+### [component] Editorial Testimonial  [id: 9637]
+by jatin-yadav05
+An editorial-style testimonial with a bold typographic.
+preview: https://cdn.21st.dev/jatin-yadav05/editorial-testimonial/default/preview.1765306115293.png
+install: npx shadcn@latest add "https://21st.dev/r/jatin-yadav05/editorial-testimonial?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 9637 })
+
+Metadata is free. get_component (the code) is the PAID step - on the free tier it uses your daily retrieval quota (see get_usage).

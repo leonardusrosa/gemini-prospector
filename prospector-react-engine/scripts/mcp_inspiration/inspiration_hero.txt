@@ -1,0 +1,25 @@
+6 project-aware inspiration result(s) for "luxury automotive hero full bleed editorial typography". Component code was not retrieved.
+
+1. [component] Editorial Image Hero (59%)
+   Matches hero, full, editorial
+   https://21st.dev/@felipemenezes098/components/hero-07
+
+2. [component] Editorial Hero (58%)
+   Matches hero, full, editorial
+   https://21st.dev/@felipemenezes098/components/hero-05
+
+3. [component] Classy Hero (55%)
+   Matches hero, typography
+   https://21st.dev/@jatin-yadav05/components/classy-hero
+
+4. [component] Hero Shutter Text (55%)
+   Matches hero, full, typography
+   https://21st.dev/@daiwiikharihar/components/hero-shutter-text
+
+5. [component] Editorial Collage Hero (54%)
+   Matches hero, editorial
+   https://21st.dev/@felipemenezes098/components/hero-04
+
+6. [component] Minimalist Hero (53%)
+   Matches hero, typography
+   https://21st.dev/@ravikatiyar162/components/minimalist-hero

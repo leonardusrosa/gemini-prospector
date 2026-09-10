@@ -1,0 +1,59 @@
+8 result(s) across 21st.dev (metadata only).
+
+### [component] Editorial Hero  [id: 19075]
+by felipemenezes098
+An editorial hero section with a left tagline, right-aligned headline and copy, optional CTAs, and a full-width image below.
+preview: https://cdn.21st.dev/felipemenezes098/hero-05/default/preview.1783678944308.png
+install: npx shadcn@latest add "https://21st.dev/r/felipemenezes098/hero-05?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19075 })
+
+### [component] Editorial Image Hero  [id: 19077]
+by felipemenezes098
+A hero section with a full-width landscape image above and a top-aligned tagline paired with a right-aligned serif headline, description, and call-to-action buttons below.
+preview: https://cdn.21st.dev/user_felipemenezes098/hero-07/default/preview.1787581609067.webp
+install: npx shadcn@latest add "https://21st.dev/r/felipemenezes098/hero-07?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19077 })
+
+### [component] Editorial Collage Hero  [id: 19074]
+by felipemenezes098
+A two-column hero section with a serif headline, description, call-to-action buttons, and a layered collage of two overlapping images over a soft background wash.
+preview: https://cdn.21st.dev/user_felipemenezes098/hero-04/default/preview.1786538402894.png
+install: npx shadcn@latest add "https://21st.dev/r/felipemenezes098/hero-04?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19074 })
+
+### [component] Hero Section  [id: 5260]
+by ravikatiyar162
+Clean, split-screen hero layout with bold headline, adventure call-to-action, and animated floral imagery for an engaging first impression.
+preview: https://cdn.21st.dev/ravikatiyar162/hero-section-2/default/preview.1755165689225.png
+install: npx shadcn@latest add "https://21st.dev/r/ravikatiyar162/hero-section-2?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 5260 })
+
+### [component] Illuminated Hero  [id: 7035]
+by efferd
+A striking hero section with glowing animated text that instantly grabs attention.
+Perfect for bold headlines, product launches, or landing pages with dramatic flair.
+preview: https://cdn.21st.dev/user_2tWTE0rCrloVAVylFPYfp10xU92/illuminated-hero/default/preview.1786564114619.webp
+install: npx shadcn@latest add "https://21st.dev/r/efferd/illuminated-hero?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 7035 })
+
+### [component] Modern Hero Section  [id: 5156]
+by ravikatiyar162
+Modern hero section featuring bold headline typography, AI-focused subtext, and a collage of rounded-corner images arranged in an overlapping, floating layout to create depth and visual engagement.
+preview: https://cdn.21st.dev/ravikatiyar162/modern-hero-section/default/preview.1754956383897.png
+install: npx shadcn@latest add "https://21st.dev/r/ravikatiyar162/modern-hero-section?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 5156 })
+
+### [component] Hero Section  [id: 10630]
+by moumensoliman
+Hero section with staggered text and button reveal
+preview: https://cdn.21st.dev/larsen66/hero-section-shadcnui/demos/default/preview.1773289749167.png
+install: npx shadcn@latest add "https://21st.dev/r/moumensoliman/hero-section-shadcnui?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 10630 })
+
+### [component] Hero  [id: 9204]
+by ravikatiyar162
+preview: https://cdn.21st.dev/ravikatiyar162/hero-5/default/preview.1760864964235.png
+install: npx shadcn@latest add "https://21st.dev/r/ravikatiyar162/hero-5?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 9204 })
+
+Metadata is free. get_component (the code) is the PAID step - on the free tier it uses your daily retrieval quota (see get_usage).

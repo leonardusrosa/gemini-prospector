@@ -1,0 +1,25 @@
+6 project-aware inspiration result(s) for "architectural navbar minimal navigation hairline header". Component code was not retrieved.
+
+1. [component] Mini Navbar (63%)
+   Matches navbar, minimal, navigation
+   https://21st.dev/@aghasisahakyan1/components/mini-navbar
+
+2. [component] Header Navbar (60%)
+   Matches navbar, navigation, header
+   https://21st.dev/@karthikmudunuri/components/header-02
+
+3. [component] Core Header Navbar (57%)
+   Matches navbar, navigation, header
+   https://21st.dev/@kumail_ali_r/components/core-header-navbar
+
+4. [component] Header 3 (55%)
+   Matches navigation, header
+   https://21st.dev/@efferd/components/header-3
+
+5. [component] Header (55%)
+   Matches navigation, header
+   https://21st.dev/@tommyjepsen/components/header
+
+6. [component] Floating Header (54%)
+   Matches navigation, header
+   https://21st.dev/@efferd/components/floating-header

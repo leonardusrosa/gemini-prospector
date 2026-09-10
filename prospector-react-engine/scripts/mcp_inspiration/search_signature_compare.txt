@@ -1,0 +1,59 @@
+8 result(s) across 21st.dev (metadata only).
+
+### [component] Image Comparison  [id: 1466]
+by ibelick
+Interactively compare two images with a draggable slider to reveal differences.
+preview: https://cdn.21st.dev/user_motion_primitives/image-comparison/default/preview.png
+install: npx shadcn@latest add "https://21st.dev/r/ibelick/image-comparison?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 1466 })
+
+### [component] Feature with Image Comparison  [id: 1153]
+by tommyjepsen
+Feature block with Image Comparison
+preview: https://cdn.21st.dev/user_2nElBLvklOKlAURm6W1PTu6yYFh/feature-with-image-comparison/default/preview.png
+install: npx shadcn@latest add "https://21st.dev/r/tommyjepsen/feature-with-image-comparison?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 1153 })
+
+### [component] Before/After Image Slider  [id: 19250]
+by ziegfiroyt
+An interactive image comparison component with a draggable divider that reveals a before and after image, supporting horizontal and vertical orientations.
+preview: https://cdn.21st.dev/ziegfiroyt/reveal1/default/preview.1783715607677.png
+install: npx shadcn@latest add "https://21st.dev/r/ziegfiroyt/reveal1?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19250 })
+
+### [component] Side By Side Slide  [id: 18095]
+by unlumen
+An image comparison slider with a spring-animated divider that follows the cursor on hover to reveal before/after images.
+preview: https://cdn.21st.dev/unlumen/side-by-side-slide/default/preview.1783574970384.png
+install: npx shadcn@latest add "https://21st.dev/r/unlumen/side-by-side-slide?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 18095 })
+
+### [component] Image Comparison Slider (Horizontal)  [id: 4528]
+by ravikatiyar162
+Horizontal Image Comparison Slider – Interactive before/after viewer. Allows users to compare two images with a draggable horizontal handle. Perfect for showcasing edits, retouching, or visual transformations in photography, design, or beauty apps.
+preview: https://cdn.21st.dev/ravikatiyar162/image-comparison-slider-horizontal/default/preview.1753443933843.png
+install: npx shadcn@latest add "https://21st.dev/r/ravikatiyar162/image-comparison-slider-horizontal?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 4528 })
+
+### [component] Compare  [id: 1080]
+by manuarora700
+A comparison component between two images, slide or drag to compare
+preview: https://cdn.21st.dev/user_aceternity/compare/default/preview.png
+install: npx shadcn@latest add "https://21st.dev/r/manuarora700/compare?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 1080 })
+
+### [component] Comparison Slider with Highlights  [id: 19262]
+by ziegfiroyt
+Split-layout before/after image comparison slider with a draggable divider and a sidebar of feature highlights and icons.
+preview: https://cdn.21st.dev/ziegfiroyt/reveal2/default/preview.1783716127426.png
+install: npx shadcn@latest add "https://21st.dev/r/ziegfiroyt/reveal2?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19262 })
+
+### [component] Grainient Images Section  [id: 26179]
+by httpsdesign-layercomja
+Full-bleed black gallery: scattered gradient tiles zoom toward the center on scroll, then a headline scales in.
+preview: https://cdn.21st.dev/user_3H2Cid7KQzYs0QPutsBWWZR0FzO/grainient-images-section/default/preview.1788757727384.webp
+install: npx shadcn@latest add "https://21st.dev/r/httpsdesign-layercomja/grainient-images-section?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 26179 })
+
+Metadata is free. get_component (the code) is the PAID step - on the free tier it uses your daily retrieval quota (see get_usage).

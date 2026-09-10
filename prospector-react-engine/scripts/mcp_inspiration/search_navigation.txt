@@ -1,0 +1,58 @@
+8 result(s) across 21st.dev (metadata only).
+
+### [component] Elevate Navbar  [id: 26786]
+by hyperiux
+preview: https://cdn.21st.dev/hyperiux/elevate-navbar/default/preview.1788852004155-da85643e-4364-4422-9c4f-8607b60da151.jpg
+install: npx shadcn@latest add "https://21st.dev/r/hyperiux/elevate-navbar?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 26786 })
+
+### [component] Navbar 1   [id: 2046]
+by preetsuthar17
+Floating animated and responsive navbar component
+preview: https://cdn.21st.dev/user_2rWolCuRnJW3DRiuQ5JHrl5kj8a/navbar-1/navbar-1/preview.png?v=1
+install: npx shadcn@latest add "https://21st.dev/r/preetsuthar17/navbar-1?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 2046 })
+
+### [component] Navbars  [id: 4878]
+by arihantcodes_1f7b8c4d
+Here is Navbars component
+preview: https://cdn.21st.dev/user_2xmIUPynCyYHPXZPBwS1EDV1Aq8/navbars/default/preview.1787008245368.png
+install: npx shadcn@latest add "https://21st.dev/r/arihantcodes_1f7b8c4d/navbars?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 4878 })
+
+### [component] Adaptive Notch Navigation Bar  [id: 25735]
+by arunachalam
+An adaptive, inverted-curve notch navigation system featuring a desktop triple-island layout that seamlessly morphs into a unified responsive mobile drawer with spring animations and zero border seams.
+preview: https://cdn.21st.dev/user_2wfnj4jcSPR8JWRk7tpzrihdDV8/adaptive-notch-navigation-bar/default/preview.1787923311838.png
+install: npx shadcn@latest add "https://21st.dev/r/arunachalam/adaptive-notch-navigation-bar?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 25735 })
+
+### [component] Navbar Section 2  [id: 18120]
+by solaceui
+A dark navigation bar with an animated expanding mega-menu dropdown and a light hero section, inspired by the xAI marketing layout.
+preview: https://cdn.21st.dev/solaceui/navbar-section-2/default/preview.1783575304015.png
+install: npx shadcn@latest add "https://21st.dev/r/solaceui/navbar-section-2?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 18120 })
+
+### [component] Navbar Menu  [id: 1024]
+by manuarora700
+A navbar menu that animates its children on hover, makes a beautiful bignav
+preview: https://cdn.21st.dev/user_aceternity/navbar-menu/1024/preview.png
+install: npx shadcn@latest add "https://21st.dev/r/manuarora700/navbar-menu?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 1024 })
+
+### [component] LumaBar  [id: 5841]
+by ruixen.ui
+This is a futuristic floating navigation bar designed for modern web and mobile interfaces. It features a glassmorphism pill-shaped container, with a glowing gradient indicator behind the active icon. Icons scale up smoothly when active, and tooltips appear on hover to show their labels. The component is fully responsive, visually striking, and provides a dynamic, interactive navigation experience.
+preview: https://cdn.21st.dev/ruixen.ui/futuristic-nav/default/preview.1755844532675.png
+install: npx shadcn@latest add "https://21st.dev/r/ruixen.ui/futuristic-nav?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 5841 })
+
+### [component] Navbar 5  [id: 2307]
+by shadcnblockscom
+Shadcn Navbar with 2 column dropdown menus and mobile menu that slides in from the top with dropdowns
+preview: https://cdn.21st.dev/shadcnblockscom/navbar-5/default/preview.1747815725934.png
+install: npx shadcn@latest add "https://21st.dev/r/shadcnblockscom/navbar-5?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 2307 })
+
+Metadata is free. get_component (the code) is the PAID step - on the free tier it uses your daily retrieval quota (see get_usage).

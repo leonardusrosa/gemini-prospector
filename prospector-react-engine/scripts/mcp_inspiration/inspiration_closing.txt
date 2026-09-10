@@ -1,0 +1,25 @@
+6 project-aware inspiration result(s) for "architectural closing section editorial contact studio monolith". Component code was not retrieved.
+
+1. [component] Editorial Collage Hero (55%)
+   Matches section, editorial
+   https://21st.dev/@felipemenezes098/components/hero-04
+
+2. [component] Editorial Image Hero (54%)
+   Matches section, editorial
+   https://21st.dev/@felipemenezes098/components/hero-07
+
+3. [component] Contributors Section (53%)
+   Matches section
+   https://21st.dev/@makviesainte/components/contributors-section
+
+4. [component] Real Estate Search Hero (52%)
+   Matches closing, section
+   https://21st.dev/@felipemenezes098/components/hero-09
+
+5. [component] Editorial Testimonial (52%)
+   Matches editorial
+   https://21st.dev/@jatin-yadav05/components/editorial-testimonial
+
+6. [component] Modern Hero Section (51%)
+   Matches section
+   https://21st.dev/@ravikatiyar162/components/modern-hero-section

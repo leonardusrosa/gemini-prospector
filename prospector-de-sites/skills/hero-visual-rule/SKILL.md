@@ -147,4 +147,5 @@ O autonomous review estático e browser deve **REPROVAR / BLOQUEAR** quando:
 6. Template ou imagem ilustrativa não contiver `data-image-context="illustrative"`;
 7. Imagem crítica do hero estiver com `loading="lazy"`;
 8. Imagem do hero estiver invisível ou com geometria insignificante (<100px) em Desktop 1440x900 ou Mobile 390x844;
-9. O nicho possuir template no catálogo mas o site foi gerado como hero text-only sem imagem.
+9. O nicho possuir template no catálogo mas o site foi gerado como hero text-only sem imagem;
+10. `HERO_TEMPORAL_MEDIA_GATE`: O vídeo de hero for classificado como `STATIC_IMAGE_WITH_ZOOM`, `STATIC_IMAGE_WITH_SHAKE`, `STATIC_IMAGE_WITH_PAN`, `NEAR_STATIC_SYNTHETIC_VIDEO` ou `INCONCLUSIVE` (subtle movement, low light, static tripod, incerteza temporal). `INCONCLUSIVE` não aprova vídeo e exige fallback para `STATIC_POSTER`. O gate avalia estritamente se a mídia é genuinamente temporal; a verdade de representação factual é governada separadamente por `MEDIA_REPRESENTATION_PROVENANCE` (vídeo gerado não pode alegar `representsActualBusiness = true`). Mídia de vídeo declarada sem `temporalAudit` vinculado ao hash SHA-256 (`auditedAssetHash`) é sumariamente reprovada.

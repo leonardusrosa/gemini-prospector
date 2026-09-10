@@ -160,6 +160,20 @@ Prioridade:
 
 O `alt` deve descrever honestamente o que a imagem mostra.
 
+### Google Maps Image Reuse Policy (`GOOGLE_MAPS_IMAGE_REUSE`)
+
+A presença pública de uma foto no perfil do Google Maps NÃO concede direitos automáticos de re-hospedagem comercial.
+
+Status `GOOGLE_MAPS_IMAGE_REUSE: PASS` ocorre estritamente quando:
+
+1. `CLIENT_OWNED`: A foto pertence ao negócio/cliente E o cliente autoriza o uso no site.
+2. `GOOGLE_EMBED`: A imagem/conteúdo é exibida através de mecanismo autorizado e embeddable do Google Maps (ex.: iframe oficial de mapa/localização) com a devida atribuição da plataforma.
+3. `EXPLICIT_PERMISSION`: O fotógrafo original / detentor dos direitos concedeu permissão expressa documentada.
+
+Caso contrário:
+- `IDENTITY_PROVENANCE: PASS` é possível (a foto serve internamente como evidência de identidade, fachada ou instalações).
+- `LOCAL_REHOST_RIGHTS: UNCONFIRMED` (é proibido baixar, fazer vendor local para `assets/` e servir como asset estático de produção).
+
 ## 7. Hero com foto real de expert
 
 Quando houver foto real utilizável do profissional, ela é a fonte de identidade. Preserve rosto, expressão, identidade, pose, roupa, cabelo, textura de pele e proporções.
@@ -233,6 +247,18 @@ Use asset/crop mobile dedicado quando necessário.
 - evite cortes ruins em cabeça, pescoço, articulações e mãos
 - reserve espaço real para texto sem cobrir o rosto
 - não use simples crop automático do desktop se isso degradar a composição
+
+### 7.1 Hero Copy Density & De-Duplication (Obrigatório)
+
+Leia e obedeça `../hero-copy-density/SKILL.md`.
+Todo hero público deve estruturar sua mensagem em até 5 camadas fáticas limpas:
+1. `EYEBROW`: identificador geográfico/serviço (opcional, 1 linha)
+2. `HEADLINE`: proposta primária de valor/serviço (1 dominante)
+3. `SUPPORTING COPY`: expansão factual concisa (máximo 1 frase curta, <= 18 palavras)
+4. `CTA`: ação primária disciplinada (exatamente 1 botão/link)
+5. `TRUST METADATA`: máxima 1 linha editorial compacta (ex.: `★ 4.9 / 268 Reviews`)
+
+**HARD RULE DE-DUPLICAÇÃO:** O mesmo fato material (localização, nota média, contagem de reviews, telefone ou ação) NUNCA pode ser repetido entre as camadas do hero. Se a nota e reviews estão no trust metadata, NÃO repita no supporting copy. Se a cidade está no eyebrow, NÃO repita no supporting copy. Se o telefone está no CTA, NÃO repita no supporting copy. Proibido transformar o hero em resumo de depoimentos, catálogo de serviços ou sobre nós.
 
 ## 8. Google Reviews como prova social
 

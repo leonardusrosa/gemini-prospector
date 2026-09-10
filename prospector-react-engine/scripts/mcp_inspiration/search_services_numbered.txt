@@ -1,0 +1,60 @@
+8 result(s) across 21st.dev (metadata only).
+
+### [component] Numbered Pagination  [id: 453]
+by originui
+ 
+preview: https://cdn.21st.dev/user_originui/numbered-pagination/default/preview.1737992372368.png
+install: npx shadcn@latest add "https://21st.dev/r/originui/numbered-pagination?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 453 })
+
+### [component] Status  [id: 25394]
+by diceui
+A pill-shaped status badge with a pulsing indicator dot and color variants for signaling online, error, warning, info, and idle states.
+preview: https://cdn.21st.dev/user_diceui/status/status-list-demo/preview.1787679850625.png
+install: npx shadcn@latest add "https://21st.dev/r/diceui/status?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 25394 })
+
+### [component] Service Changelog  [id: 16247]
+by ruixen.ui
+A scroll-spy services section. A sticky tab strip at the top tracks the active entry while the reader scrolls through long-form panels with deliverables, optional preview media, and inline CTAs.
+preview: https://cdn.21st.dev/ruixen.ui/service-changelog/default/preview.1782458947184.png
+install: npx shadcn@latest add "https://21st.dev/r/ruixen.ui/service-changelog?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 16247 })
+
+### [component] Animated List  [id: 869]
+by dillionverma
+A list that animates each item in sequence with a delay. Used to showcase notifications or events on your landing page.
+preview: https://cdn.21st.dev/user_2vgPxqtXOGc4iU0CBJH2MQn2eTG/animated-list/default/preview.1786654389721.png
+install: npx shadcn@latest add "https://21st.dev/r/dillionverma/animated-list?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 869 })
+
+### [component] Service Grid  [id: 8126]
+by ravikatiyar162
+ServiceGrid
+A responsive grid component designed to showcase a list of services or features. Each item in the grid consists of an image and a title. The component features a staggered fade-in animation for the grid items and a subtle hover effect, all while being fully theme-adaptive using shadcn/ui CSS variables.
+preview: https://cdn.21st.dev/ravikatiyar162/service-grid/default/preview.1758849231647.png
+install: npx shadcn@latest add "https://21st.dev/r/ravikatiyar162/service-grid?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 8126 })
+
+### [component] Invoice Line Items Table  [id: 25157]
+by 7ovr
+An invoice table listing line items with quantity, unit, and unit price columns plus a footer summing subtotal, tax, and total due.
+preview: https://cdn.21st.dev/user_registry_7ovr_1782691739820/table-3/default/preview.1787682715229.webp
+install: npx shadcn@latest add "https://21st.dev/r/7ovr/table-3?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 25157 })
+
+### [component] Pricing Section 1  [id: 19886]
+by shadcnstore
+A responsive three-tier pricing section with feature lists, a highlighted popular plan, and call-to-action buttons.
+preview: https://cdn.21st.dev/shadcnstore/pricing-section-1/default/preview.1784356771757-64366fdc-6655-4c48-9e96-7848b43dbcd4.png
+install: npx shadcn@latest add "https://21st.dev/r/shadcnstore/pricing-section-1?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 19886 })
+
+### [component] Pagination  [id: 6295]
+by anubra266
+Here is Pagination component
+preview: https://cdn.21st.dev/user_anubra266/pagination/pagination-numbered/preview.1786539973278.png
+install: npx shadcn@latest add "https://21st.dev/r/anubra266/pagination?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 6295 })
+
+Metadata is free. get_component (the code) is the PAID step - on the free tier it uses your daily retrieval quota (see get_usage).

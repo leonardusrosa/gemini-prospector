@@ -1,0 +1,58 @@
+8 result(s) across 21st.dev (metadata only).
+
+### [component] Cinematic List  [id: 9860]
+by daiwiikharihar
+Expandable destination list where each row reveals a full-width cinematic background image and travel metadata on hover.
+preview: https://cdn.21st.dev/user_332oxzW8MyPod4IDIdKq9rbPYuk/cinematic-list/default/preview.1787569273699.png
+install: npx shadcn@latest add "https://21st.dev/r/daiwiikharihar/cinematic-list?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 9860 })
+
+### [component] Cinematic Studio Switch  [id: 9720]
+by daiwiikharihar
+A hyper-realistic toggle component featuring volumetric god rays, skeuomorphic metal textures, and spring-based physics.
+preview: https://cdn.21st.dev/user_332oxzW8MyPod4IDIdKq9rbPYuk/cinematic-studio-switch/default/preview.1785744848498.png
+install: npx shadcn@latest add "https://21st.dev/r/daiwiikharihar/cinematic-studio-switch?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 9720 })
+
+### [component] Cinematic landing Hero  [id: 11494]
+by jahed
+preview: https://cdn.21st.dev/easemize/cinematic-landing-hero/default/preview.1774169408294.png
+install: npx shadcn@latest add "https://21st.dev/r/jahed/cinematic-landing-hero?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 11494 })
+
+### [component] Cinematic Product Scroll Section  [id: 17441]
+by a.karamooz3232
+A premium e-commerce section featuring scroll-linked grayscale-to-color masks, a cinematic text hero, and an interactive horizontal slider with circular hover reveal cards.
+preview: https://cdn.21st.dev/user_3G21fiVlJXdgtsPQGb3WLyijAzu/cinematic-product-scroll-section/default/preview.1787593394877.webp
+install: npx shadcn@latest add "https://21st.dev/r/a.karamooz3232/cinematic-product-scroll-section?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 17441 })
+
+### [component] 3D Animation  [id: 6563]
+by dhileepkumargm
+A responsive and cinematic hero section component that displays text scrolling along the walls of a 3D animated hallway. It includes a reflection, parallax effects, and customizable imagery.
+preview: https://cdn.21st.dev/dhileepkumargm/3d-animation/default/preview.1756623169896.png
+install: npx shadcn@latest add "https://21st.dev/r/dhileepkumargm/3d-animation?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 6563 })
+
+### [component] Beams Background  [id: 25483]
+by jahed
+Canvas-driven animated light beams with chromatic aberration and scanline overlays designed for futuristic dark-mode hero sections.
+preview: https://cdn.21st.dev/user_2xJxXqdwWohYrdd6fiMYrS9hbmO/beams-background/default/preview.1787572399309.png
+install: npx shadcn@latest add "https://21st.dev/r/jahed/beams-background?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 25483 })
+
+### [component] Infinite Bento Pan  [id: 12052]
+by kapishdima
+A camera diagonally drifts across an oversized bento grid behind a soft vignette.
+preview: https://cdn.21st.dev/user_3EtqcattSw6vszAOpBnAaVNUkSC/infinite-bento-pan/default/preview.1787322354535.png
+install: npx shadcn@latest add "https://21st.dev/r/kapishdima/infinite-bento-pan?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 12052 })
+
+### [component] PrismaHero  [id: 12200]
+by rahil1202
+A full-screen cinematic hero section with a background video, animated word reveal, and minimal floating navbar—designed to highlight a creative brand with strong visual storytelling and smooth motion interactions.
+preview: https://cdn.21st.dev/rahil1202/prisma-hero/default/preview.1776747545948.png
+install: npx shadcn@latest add "https://21st.dev/r/rahil1202/prisma-hero?api_key=$API_KEY_21ST"
+→ get the code: get_component({ id: 12200 })
+
+Metadata is free. get_component (the code) is the PAID step - on the free tier it uses your daily retrieval quota (see get_usage).
