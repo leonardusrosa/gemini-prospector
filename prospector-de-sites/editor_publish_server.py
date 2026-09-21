@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hmac
 import json
 import os
 import pathlib
@@ -226,7 +227,15 @@ class PublishConfig:
                 raise SystemExit("Deploy path is not inside a Git work tree")
 
         self.data_dir = pathlib.Path(os.environ.get("PROSPECTOR_CMS_DATA_DIR") or self.root).expanduser().resolve()
-        self.auth_store = TenantAuthStore(self.data_dir)
+        loopback = self.host in {"127.0.0.1", "localhost", "::1"}
+        cms_secret = os.environ.get("PROSPECTOR_CMS_SECRET", "").strip()
+        if (self.mode == "git" or not loopback) and not cms_secret:
+            raise SystemExit(
+                "Protected/non-local Client CMS requires PROSPECTOR_CMS_SECRET. "
+                "Refusing to use an insecure built-in signing secret."
+            )
+
+        self.auth_store = TenantAuthStore(self.data_dir, secret_key=cms_secret or None)
         self.cms_service = ClientCmsService(
             root_dir=self.data_dir,
             deploy_repo=self.deploy_repo,
@@ -234,11 +243,16 @@ class PublishConfig:
         )
 
         self.clients = _parse_clients(os.environ.get("PROSPECTOR_EDITOR_CLIENTS", ""))
-        loopback = self.host in {"127.0.0.1", "localhost", "::1"}
-        if (self.mode == "git" or not loopback) and not self.clients and not self.auth_store:
-            raise SystemExit(
-                "Refusing protected/non-local editor publishing without authentication store or PROSPECTOR_EDITOR_CLIENTS."
-            )
+        self.operator_secret = os.environ.get("PROSPECTOR_CMS_OPERATOR_SECRET", "").strip()
+        configured_public_base = os.environ.get("PROSPECTOR_CMS_PUBLIC_BASE_URL", "").strip().rstrip("/")
+        if configured_public_base:
+            self.cms_public_base_url = configured_public_base
+        elif self.mode == "local":
+            self.cms_public_base_url = f"http://{self.host}:{self.port}"
+        elif self.domain:
+            self.cms_public_base_url = self.domain if self.domain.startswith("http") else "https://" + self.domain
+        else:
+            self.cms_public_base_url = ""
 
         # Support WhatsApp configuration
         raw_support = os.environ.get("PROSPECTOR_CMS_SUPPORT_WHATSAPP", "").strip()
@@ -275,6 +289,11 @@ class PublishConfig:
             domain = self.domain if self.domain.startswith("http") else "https://" + self.domain
             return f"{domain}/{self.base_path}/{slug}/"
         return ""
+
+    def admin_url(self, slug: str) -> str:
+        if not self.cms_public_base_url:
+            return ""
+        return f"{self.cms_public_base_url}/{self.base_path}/{slug}/admin/"
 
 
 class PublishApp(SimpleHTTPRequestHandler):
@@ -349,6 +368,29 @@ class PublishApp(SimpleHTTPRequestHandler):
             return auth[7:].strip()
         return self.headers.get("X-Prospector-Editor-Token", "").strip()
 
+    def _operator_authorized(self) -> bool:
+        expected = self.config.operator_secret
+        if not expected:
+            return False
+        supplied = self.headers.get("X-Prospector-Operator-Token", "").strip()
+        if not supplied:
+            auth = self.headers.get("Authorization", "")
+            if auth.lower().startswith("bearer "):
+                supplied = auth[7:].strip()
+        return bool(supplied) and hmac.compare_digest(supplied, expected)
+
+    def _require_operator(self) -> bool:
+        if not self.config.operator_secret:
+            self._json(503, {
+                "success": False,
+                "error": "Operator credential management is not configured.",
+            })
+            return False
+        if not self._operator_authorized():
+            self._json(401, {"success": False, "error": "Operator authorization required."})
+            return False
+        return True
+
     def _require_auth(self, slug: str) -> bool:
         if self.config.authorize(self.headers, slug):
             return True
@@ -358,13 +400,29 @@ class PublishApp(SimpleHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204)
         self.send_header("Allow", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Prospector-Editor-Token")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Prospector-Editor-Token, X-Prospector-Operator-Token")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.end_headers()
 
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
+
+        # Operator-only credential metadata. Password/hash/salt are never returned.
+        if path == "/api/operator/client-cms/credentials":
+            if not self._require_operator():
+                return
+            slug = parse_qs(parsed.query).get("slug", [""])[0].strip()
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", slug):
+                return self._json(400, {"success": False, "error": "Invalid slug."})
+            tenant = self.config.auth_store.get_tenant_summary(slug)
+            return self._json(200, {
+                "success": True,
+                "exists": tenant is not None,
+                "tenant": tenant,
+                "adminUrl": self.config.admin_url(slug),
+                "mailConfigured": self.config.auth_store.mail_service.is_configured(),
+            })
 
         # Route 1: Client Admin SPA UI (/clientes/<slug>/admin/ or /clientes/<slug>/admin/reset/)
         admin_match = re.match(r"^/(?:clientes|sites)/([A-Za-z0-9._-]+)/admin(?:/|/reset/?|/index\.html)?$", path)
@@ -528,6 +586,107 @@ class PublishApp(SimpleHTTPRequestHandler):
     def do_POST(self):
         route = urlparse(self.path).path
 
+        # Operator-only credential management.
+        if route == "/api/operator/client-cms/credentials":
+            if not self._require_operator():
+                return
+            try:
+                body = self._body()
+                slug = str(body.get("slug") or "").strip()
+                action = str(body.get("action") or "").strip().lower()
+                if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", slug):
+                    return self._json(400, {"success": False, "error": "Invalid slug."})
+
+                existing = self.config.auth_store.get_tenant_summary(slug)
+
+                if action == "provision":
+                    if existing:
+                        return self._json(409, {
+                            "success": False,
+                            "error": "CMS access already exists for this lead. Use update/reset instead.",
+                        })
+                    username = str(body.get("username") or "admin").strip() or "admin"
+                    display_name = str(body.get("displayName") or slug).strip()
+                    recovery_email = str(body.get("recoveryEmail") or "").strip()
+                    username, temporary_password = self.config.auth_store.register_tenant(
+                        slug=slug,
+                        username=username,
+                        password=None,
+                        display_name=display_name,
+                        recovery_email=recovery_email,
+                    )
+                    tenant = self.config.auth_store.get_tenant_summary(slug)
+                    return self._json(200, {
+                        "success": True,
+                        "action": action,
+                        "tenant": tenant,
+                        "adminUrl": self.config.admin_url(slug),
+                        "username": username,
+                        "temporaryPassword": temporary_password,
+                        "oneTimeSecret": True,
+                        "message": "A senha temporária é exibida somente nesta resposta.",
+                    })
+
+                if not existing:
+                    return self._json(404, {
+                        "success": False,
+                        "error": "CMS access has not been provisioned for this lead.",
+                    })
+
+                if action == "update":
+                    tenant = self.config.auth_store.update_tenant_profile(
+                        slug,
+                        username=(str(body.get("username")).strip() if "username" in body else None),
+                        display_name=(str(body.get("displayName")).strip() if "displayName" in body else None),
+                        recovery_email=(str(body.get("recoveryEmail")).strip() if "recoveryEmail" in body else None),
+                        actor="operator-dashboard",
+                    )
+                    return self._json(200, {
+                        "success": True,
+                        "action": action,
+                        "tenant": tenant,
+                        "adminUrl": self.config.admin_url(slug),
+                    })
+
+                if action == "reset_password":
+                    username, temporary_password = self.config.auth_store.force_reset_password(
+                        slug, actor="operator-dashboard"
+                    )
+                    tenant = self.config.auth_store.get_tenant_summary(slug)
+                    return self._json(200, {
+                        "success": True,
+                        "action": action,
+                        "tenant": tenant,
+                        "adminUrl": self.config.admin_url(slug),
+                        "username": username,
+                        "temporaryPassword": temporary_password,
+                        "oneTimeSecret": True,
+                        "message": "A nova senha temporária é exibida somente nesta resposta. Sessões anteriores foram invalidadas.",
+                    })
+
+                if action == "reset_link":
+                    reset_url = self.config.auth_store.create_operator_reset_link(
+                        slug,
+                        self.config.cms_public_base_url,
+                        actor="operator-dashboard",
+                    )
+                    return self._json(200, {
+                        "success": True,
+                        "action": action,
+                        "tenant": self.config.auth_store.get_tenant_summary(slug),
+                        "adminUrl": self.config.admin_url(slug),
+                        "resetUrl": reset_url,
+                        "expiresInSeconds": 1800,
+                        "oneTimeSecret": True,
+                        "message": "Link de redefinição válido por 30 minutos e uso único.",
+                    })
+
+                return self._json(400, {"success": False, "error": "Unsupported credential action."})
+            except (KeyError, ValueError) as exc:
+                return self._json(400, {"success": False, "error": str(exc)})
+            except Exception as exc:
+                return self._json(500, {"success": False, "error": str(exc)})
+
         # Route A: Client CMS Authentication Login
         if route == "/api/client-cms/auth":
             try:
@@ -551,7 +710,7 @@ class PublishApp(SimpleHTTPRequestHandler):
                 slug = str(body.get("slug") or "").strip()
                 ident = str(body.get("identifier") or "").strip()
                 client_ip = self._client_ip()
-                msg = self.config.auth_store.request_password_reset(slug, ident, client_ip=client_ip)
+                msg = self.config.auth_store.request_password_reset(slug, ident, client_ip=client_ip, base_url=self.config.cms_public_base_url)
                 return self._json(200, {"success": True, "message": msg})
             except Exception:
                 return self._json(200, {"success": True, "message": "Se os dados corresponderem a uma conta ativa, as instruções de redefinição foram enviadas."})
