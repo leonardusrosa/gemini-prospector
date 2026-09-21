@@ -23,6 +23,11 @@ from client_cms_audit import log_audit_event
 from client_cms_mail import CmsMailService
 
 
+LEGACY_PASSWORD_ITERATIONS = 100_000
+CURRENT_PASSWORD_ITERATIONS = 310_000
+DEFAULT_ADMIN_USERNAME = "admin"
+
+
 class RateLimiter:
     """In-memory rate limiter to prevent brute-force attacks."""
 
@@ -62,19 +67,33 @@ class RateLimiter:
         return max(0, int(lock_until - now))
 
 
-def hash_password(password: str, salt: Optional[str] = None) -> Tuple[str, str]:
-    """Generates a secure PBKDF2-HMAC-SHA256 password hash."""
+def generate_temporary_password() -> str:
+    """Generates a strong one-time temporary password for operator provisioning/reset."""
+    return secrets.token_urlsafe(18)
+
+
+def hash_password(
+    password: str,
+    salt: Optional[str] = None,
+    iterations: int = CURRENT_PASSWORD_ITERATIONS,
+) -> Tuple[str, str]:
+    """Generates a PBKDF2-HMAC-SHA256 password hash."""
     if not salt:
         salt = secrets.token_hex(16)
     salt_bytes = salt.encode("utf-8")
     pwd_bytes = password.encode("utf-8")
-    key = hashlib.pbkdf2_hmac("sha256", pwd_bytes, salt_bytes, 100_000)
+    key = hashlib.pbkdf2_hmac("sha256", pwd_bytes, salt_bytes, int(iterations))
     return key.hex(), salt
 
 
-def verify_password(password: str, hash_hex: str, salt_hex: str) -> bool:
+def verify_password(
+    password: str,
+    hash_hex: str,
+    salt_hex: str,
+    iterations: int = LEGACY_PASSWORD_ITERATIONS,
+) -> bool:
     """Constant-time verification of password against PBKDF2 hash."""
-    new_hash, _ = hash_password(password, salt_hex)
+    new_hash, _ = hash_password(password, salt_hex, iterations)
     return hmac.compare_digest(new_hash, hash_hex)
 
 
@@ -127,8 +146,6 @@ def verify_session_token(token_str: str, secret_key: str) -> Optional[Dict[str, 
     except Exception:
         return None
 
-DEFAULT_ADMIN_PASSWORD = os.environ.get("PROSPECTOR_DEFAULT_ADMIN_PASSWORD", "admin12345678")
-
 
 class TenantAuthStore:
     """Manages tenant credentials, session validation, and password recovery."""
@@ -139,7 +156,13 @@ class TenantAuthStore:
         self.tokens_file = root_dir / ".prospector-editor" / "reset_tokens.json"
         self.rate_limiter = RateLimiter(max_attempts=5, lockout_seconds=900)
         self.reset_limiter = RateLimiter(max_attempts=3, lockout_seconds=900)
-        self.secret_key = secret_key or os.environ.get("PROSPECTOR_CMS_SECRET") or "prospector-cms-default-secret-change-in-prod"
+
+        configured_secret = (secret_key or os.environ.get("PROSPECTOR_CMS_SECRET") or "").strip()
+        # Local development may use an ephemeral per-process secret. Protected/non-local
+        # deployments are required to supply PROSPECTOR_CMS_SECRET by PublishConfig.
+        self.secret_key = configured_secret or secrets.token_urlsafe(48)
+        self.secret_is_ephemeral = not bool(configured_secret)
+
         self.mail_service = CmsMailService()
         self._ensure_store()
 
@@ -168,38 +191,91 @@ class TenantAuthStore:
     def _save_tokens(self, data: Dict[str, list[Dict[str, Any]]]) -> None:
         self.tokens_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
+    def get_tenant_summary(self, slug: str) -> Optional[Dict[str, Any]]:
+        """Returns only operator-safe credential metadata; never hash/salt/password."""
+        users = self._load_users()
+        info = users.get(slug)
+        if not info:
+            return None
+        return {
+            "slug": slug,
+            "username": info.get("username") or DEFAULT_ADMIN_USERNAME,
+            "displayName": info.get("displayName") or slug,
+            "recoveryEmail": info.get("recoveryEmail") or "",
+            "credentialVersion": int(info.get("credentialVersion", 1)),
+            "updatedAt": int(info.get("updatedAt", 0) or 0),
+            "passwordIterations": int(info.get("passwordIterations", LEGACY_PASSWORD_ITERATIONS)),
+        }
+
     def register_tenant(
         self,
         slug: str,
-        username: str = "admin",
-        password: str = DEFAULT_ADMIN_PASSWORD,
+        username: str = DEFAULT_ADMIN_USERNAME,
+        password: Optional[str] = None,
         display_name: str = "",
         recovery_email: str = "",
-    ) -> None:
-        """Registers or updates a tenant admin user."""
+    ) -> Tuple[str, str]:
+        """Registers/rotates a tenant and returns username + one-time plaintext password."""
         users = self._load_users()
         current = users.get(slug, {})
-        hash_hex, salt_hex = hash_password(password)
+        clean_username = username.strip() or DEFAULT_ADMIN_USERNAME
+        one_time_password = password or generate_temporary_password()
+        hash_hex, salt_hex = hash_password(one_time_password, iterations=CURRENT_PASSWORD_ITERATIONS)
         users[slug] = {
-            "username": username.strip(),
+            "username": clean_username,
             "hash": hash_hex,
             "salt": salt_hex,
+            "passwordIterations": CURRENT_PASSWORD_ITERATIONS,
             "displayName": display_name.strip() or current.get("displayName", slug),
             "recoveryEmail": recovery_email.strip() or current.get("recoveryEmail", ""),
             "credentialVersion": current.get("credentialVersion", 0) + 1,
             "updatedAt": int(time.time()),
         }
         self._save_users(users)
+        log_audit_event(self.root_dir, slug, "operator", "tenant_credentials_provisioned", status="success")
+        return clean_username, one_time_password
 
-    def set_recovery_email(self, slug: str, email: str, actor: str = "operator") -> bool:
+    def update_tenant_profile(
+        self,
+        slug: str,
+        *,
+        username: Optional[str] = None,
+        display_name: Optional[str] = None,
+        recovery_email: Optional[str] = None,
+        actor: str = "operator",
+    ) -> Dict[str, Any]:
+        """Updates username/display/recovery metadata. Username changes invalidate sessions."""
         users = self._load_users()
         if slug not in users:
-            return False
-        users[slug]["recoveryEmail"] = email.strip()
-        users[slug]["updatedAt"] = int(time.time())
+            raise KeyError(f"Tenant '{slug}' não encontrado no auth store.")
+
+        info = users[slug]
+        old_username = (info.get("username") or DEFAULT_ADMIN_USERNAME).strip()
+        if username is not None:
+            clean_username = username.strip()
+            if not clean_username:
+                raise ValueError("O usuário do CMS não pode ficar vazio.")
+            info["username"] = clean_username
+        if display_name is not None:
+            info["displayName"] = display_name.strip() or slug
+        if recovery_email is not None:
+            info["recoveryEmail"] = recovery_email.strip()
+
+        if (info.get("username") or DEFAULT_ADMIN_USERNAME) != old_username:
+            info["credentialVersion"] = int(info.get("credentialVersion", 1)) + 1
+
+        info["updatedAt"] = int(time.time())
+        users[slug] = info
         self._save_users(users)
-        log_audit_event(self.root_dir, slug, actor, "recovery_email_changed", status="success")
-        return True
+        log_audit_event(self.root_dir, slug, actor, "tenant_credentials_metadata_changed", status="success")
+        return self.get_tenant_summary(slug) or {}
+
+    def set_recovery_email(self, slug: str, email: str, actor: str = "operator") -> bool:
+        try:
+            self.update_tenant_profile(slug, recovery_email=email, actor=actor)
+            return True
+        except KeyError:
+            return False
 
     def authenticate(self, slug: str, username: str, password: str, client_ip: str = "127.0.0.1") -> Tuple[bool, Optional[str], Optional[str]]:
         rate_key = f"{client_ip}:{slug}:{username}"
@@ -209,16 +285,27 @@ class TenantAuthStore:
 
         users = self._load_users()
         user_info = users.get(slug)
-        allowed_users = {user_info.get("username"), "admin"} if user_info else set()
-        if not user_info or username not in allowed_users:
+        expected_username = (user_info.get("username") or DEFAULT_ADMIN_USERNAME) if user_info else None
+        if not user_info or username != expected_username:
             self.rate_limiter.record_attempt(rate_key, False)
             return False, "Credenciais inválidas para este site.", "INVALID_CREDENTIALS"
 
         stored_hash = user_info.get("hash", "")
         stored_salt = user_info.get("salt", "")
-        if not verify_password(password, stored_hash, stored_salt):
+        iterations = int(user_info.get("passwordIterations", LEGACY_PASSWORD_ITERATIONS))
+        if not verify_password(password, stored_hash, stored_salt, iterations):
             self.rate_limiter.record_attempt(rate_key, False)
             return False, "Credenciais inválidas para este site.", "INVALID_CREDENTIALS"
+
+        # Transparently upgrade legacy 100k hashes after a successful login.
+        if iterations < CURRENT_PASSWORD_ITERATIONS:
+            upgraded_hash, upgraded_salt = hash_password(password, iterations=CURRENT_PASSWORD_ITERATIONS)
+            user_info["hash"] = upgraded_hash
+            user_info["salt"] = upgraded_salt
+            user_info["passwordIterations"] = CURRENT_PASSWORD_ITERATIONS
+            user_info["updatedAt"] = int(time.time())
+            users[slug] = user_info
+            self._save_users(users)
 
         self.rate_limiter.record_attempt(rate_key, True)
         cred_version = user_info.get("credentialVersion", 1)
@@ -242,39 +329,50 @@ class TenantAuthStore:
         current_ver = user_info.get("credentialVersion", 1)
         token_ver = payload.get("v", 1)
         if token_ver != current_ver:
-            return False, None, "Sessão invalidada após alteração de senha. Faça login novamente."
+            return False, None, "Sessão invalidada após alteração de credenciais. Faça login novamente."
 
         return True, payload, None
 
     def create_reset_token(self, slug: str) -> str:
         """Generates a cryptographic reset token and records SHA-256 hash server-side."""
+        if slug not in self._load_users():
+            raise KeyError(f"Tenant '{slug}' não encontrado no auth store.")
+
         raw_token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
         now = int(time.time())
 
         all_tokens = self._load_tokens()
         tenant_tokens = all_tokens.get(slug, [])
-        # Invalidate existing unused tokens for this slug
-        for t in tenant_tokens:
-            if not t.get("usedAt"):
-                t["usedAt"] = now
+        for token in tenant_tokens:
+            if not token.get("usedAt"):
+                token["usedAt"] = now
 
         tenant_tokens.append({
             "tokenHash": token_hash,
             "createdAt": now,
-            "expiresAt": now + 1800,  # 30 minutes
+            "expiresAt": now + 1800,
             "usedAt": None,
         })
         all_tokens[slug] = tenant_tokens
         self._save_tokens(all_tokens)
         return raw_token
 
+    def create_operator_reset_link(self, slug: str, base_url: str, actor: str = "operator") -> str:
+        """Creates a single-use 30-minute set/reset-password link for operator delivery."""
+        if not base_url.strip():
+            raise ValueError("CMS public base URL is not configured.")
+        raw_token = self.create_reset_token(slug)
+        reset_url = f"{base_url.rstrip('/')}/clientes/{slug}/admin/reset/#token={raw_token}"
+        log_audit_event(self.root_dir, slug, actor, "operator_reset_link_created", status="success")
+        return reset_url
+
     def request_password_reset(
         self,
         slug: str,
         identifier: str,
         client_ip: str = "127.0.0.1",
-        base_url: str = "https://prospector.autocora.com.br",
+        base_url: Optional[str] = None,
     ) -> str:
         """Processes forgot-password request with strict anti-enumeration."""
         rate_key = f"reset:{client_ip}:{slug}"
@@ -284,14 +382,15 @@ class TenantAuthStore:
         self.reset_limiter.record_attempt(rate_key, False)
         users = self._load_users()
         user_info = users.get(slug)
+        public_base = (base_url or os.environ.get("PROSPECTOR_CMS_PUBLIC_BASE_URL") or "").strip()
 
         clean_id = identifier.strip().lower()
         if user_info:
             u_name = (user_info.get("username") or "").lower()
             u_email = (user_info.get("recoveryEmail") or "").lower()
-            if clean_id in (u_name, u_email) and u_email:
+            if clean_id in (u_name, u_email) and u_email and public_base:
                 raw_token = self.create_reset_token(slug)
-                reset_url = f"{base_url.rstrip('/')}/clientes/{slug}/admin/reset/#token={raw_token}"
+                reset_url = f"{public_base.rstrip('/')}/clientes/{slug}/admin/reset/#token={raw_token}"
                 self.mail_service.send_reset_email(
                     to_email=user_info.get("recoveryEmail"),
                     slug=slug,
@@ -304,8 +403,8 @@ class TenantAuthStore:
 
     def confirm_password_reset(self, slug: str, raw_token: str, new_password: str) -> Tuple[bool, Optional[str]]:
         """Atomically validates reset token, updates password, and increments credentialVersion."""
-        if not new_password or len(new_password) < 8:
-            return False, "A nova senha deve conter no mínimo 8 caracteres."
+        if not new_password or len(new_password) < 10:
+            return False, "A nova senha deve conter no mínimo 10 caracteres."
 
         token_hash = hashlib.sha256(raw_token.strip().encode("utf-8")).hexdigest()
         now = int(time.time())
@@ -313,9 +412,9 @@ class TenantAuthStore:
         all_tokens = self._load_tokens()
         tenant_tokens = all_tokens.get(slug, [])
         match_record = None
-        for t in tenant_tokens:
-            if t.get("tokenHash") == token_hash:
-                match_record = t
+        for token in tenant_tokens:
+            if token.get("tokenHash") == token_hash:
+                match_record = token
                 break
 
         if not match_record:
@@ -332,9 +431,10 @@ class TenantAuthStore:
         match_record["usedAt"] = now
         self._save_tokens(all_tokens)
 
-        hash_hex, salt_hex = hash_password(new_password)
+        hash_hex, salt_hex = hash_password(new_password, iterations=CURRENT_PASSWORD_ITERATIONS)
         users[slug]["hash"] = hash_hex
         users[slug]["salt"] = salt_hex
+        users[slug]["passwordIterations"] = CURRENT_PASSWORD_ITERATIONS
         users[slug]["credentialVersion"] = users[slug].get("credentialVersion", 1) + 1
         users[slug]["updatedAt"] = now
         self._save_users(users)
@@ -343,22 +443,24 @@ class TenantAuthStore:
         return True, None
 
     def change_password(self, slug: str, current_password: str, new_password: str, actor: str) -> Tuple[bool, Optional[str]]:
-        """Authenticated password change. Verifies current password and increments credentialVersion."""
-        if not new_password or len(new_password) < 8:
-            return False, "A nova senha deve conter no mínimo 8 caracteres."
+        """Authenticated password change. Verifies current password and invalidates old sessions."""
+        if not new_password or len(new_password) < 10:
+            return False, "A nova senha deve conter no mínimo 10 caracteres."
 
         users = self._load_users()
         user_info = users.get(slug)
         if not user_info:
             return False, "Tenant não encontrado."
 
-        if not verify_password(current_password, user_info.get("hash", ""), user_info.get("salt", "")):
+        iterations = int(user_info.get("passwordIterations", LEGACY_PASSWORD_ITERATIONS))
+        if not verify_password(current_password, user_info.get("hash", ""), user_info.get("salt", ""), iterations):
             return False, "A senha atual informada está incorreta."
 
         now = int(time.time())
-        hash_hex, salt_hex = hash_password(new_password)
+        hash_hex, salt_hex = hash_password(new_password, iterations=CURRENT_PASSWORD_ITERATIONS)
         users[slug]["hash"] = hash_hex
         users[slug]["salt"] = salt_hex
+        users[slug]["passwordIterations"] = CURRENT_PASSWORD_ITERATIONS
         users[slug]["credentialVersion"] = user_info.get("credentialVersion", 1) + 1
         users[slug]["updatedAt"] = now
         self._save_users(users)
@@ -367,20 +469,24 @@ class TenantAuthStore:
         return True, None
 
     def force_reset_password(self, slug: str, new_password: Optional[str] = None, actor: str = "operator") -> Tuple[str, str]:
-        """Operator CLI reset. Generates random password if none given and updates auth store."""
+        """Operator reset. Generates a strong one-time password when none is supplied."""
         users = self._load_users()
         if slug not in users:
             raise KeyError(f"Tenant '{slug}' não encontrado no auth store.")
 
-        password = new_password or DEFAULT_ADMIN_PASSWORD
-        hash_hex, salt_hex = hash_password(password)
+        password = new_password or generate_temporary_password()
+        if len(password) < 10:
+            raise ValueError("A senha temporária deve conter no mínimo 10 caracteres.")
+
+        hash_hex, salt_hex = hash_password(password, iterations=CURRENT_PASSWORD_ITERATIONS)
         now = int(time.time())
 
         users[slug]["hash"] = hash_hex
         users[slug]["salt"] = salt_hex
+        users[slug]["passwordIterations"] = CURRENT_PASSWORD_ITERATIONS
         users[slug]["credentialVersion"] = users[slug].get("credentialVersion", 1) + 1
         users[slug]["updatedAt"] = now
         self._save_users(users)
 
         log_audit_event(self.root_dir, slug, actor, "operator_password_reset", status="success")
-        return users[slug]["username"], password
+        return users[slug].get("username") or DEFAULT_ADMIN_USERNAME, password
