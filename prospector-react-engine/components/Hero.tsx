@@ -1,5 +1,6 @@
 import React from "react";
 import { BUSINESS_INFO } from "@/lib/data";
+import { assetPath } from "@/lib/site-paths";
 
 export function Hero() {
   return (
@@ -13,7 +14,8 @@ export function Hero() {
         className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden"
       >
         <img
-          src="/assets/hero-poster.webp"
+          src={assetPath("hero-poster.webp")}
+          data-role="hero-image"
           alt="Precision automotive detailing studio environment in Addison Texas"
           fetchPriority="high"
           decoding="async"

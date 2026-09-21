@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { assetPath } from "@/lib/site-paths";
 
 export const metadata: Metadata = {
   title: "Dallas Detailing And Buffing | Auto Detailing & Paint Correction | Addison TX",
@@ -14,10 +15,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <head>
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="icon" href={assetPath("favicon.svg")} type="image/svg+xml" />
         <link
           rel="preload"
           as="image"
-          href="/assets/hero-poster.webp"
+          href={assetPath("hero-poster.webp")}
           type="image/webp"
           fetchPriority="high"
         />

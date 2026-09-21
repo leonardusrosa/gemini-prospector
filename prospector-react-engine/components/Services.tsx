@@ -1,5 +1,6 @@
 import React from "react";
 import { SERVICES_LIST } from "@/lib/data";
+import { assetPath } from "@/lib/site-paths";
 
 export function Services() {
   const tier1Services = SERVICES_LIST.slice(0, 3);
@@ -8,6 +9,7 @@ export function Services() {
   return (
     <section
       id="services"
+      data-motion="reveal"
       className="w-full py-24 md:py-32 bg-[#0f1217] text-white border-t border-white/[0.06] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
@@ -21,7 +23,7 @@ export function Services() {
             TECHNICAL DETAILING SERVICES
           </h2>
           <p className="mt-5 text-base sm:text-lg text-neutral-300 font-light leading-relaxed max-w-2xl">
-            Auto detailing, paint correction, buffing, and automotive surface care performed by Wilson in Addison, Texas.
+            Auto detailing, paint correction, buffing, and automotive surface care in Addison, Texas.
           </p>
         </div>
 
@@ -30,15 +32,15 @@ export function Services() {
           {/* Major Photographic Moment 1: Vertical Paint Detail Crop */}
           <div className="lg:col-span-5 relative w-full aspect-[4/5] sm:aspect-[3/4] overflow-hidden bg-[#0a0c10]">
             <img
-              src="/assets/service-paint-detail.webp"
-              alt="Multistage automotive paint correction reflection on deep clearcoat"
+              src={assetPath("service-paint-detail.webp")}
+              alt="Gloved hand using an orbital polisher on a black vehicle surface"
               loading="lazy"
               decoding="async"
               className="w-full h-full object-cover object-center grayscale-[20%] hover:grayscale-0 transition-all duration-700 hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0f1217] via-transparent to-black/30 pointer-events-none" />
             <div className="absolute bottom-4 left-5 right-5 flex justify-between items-end text-[10px] uppercase tracking-[0.2em] text-neutral-400 font-mono pointer-events-none">
-              <span>Macro Surface Polish</span>
+              <span>Vehicle Surface Detail</span>
             </div>
           </div>
 
@@ -112,15 +114,15 @@ export function Services() {
           {/* Major Photographic Moment 2: Wide Studio Finish Crop */}
           <div className="lg:col-span-5 relative w-full aspect-[16/10] sm:aspect-[16/10] overflow-hidden bg-[#0a0c10] order-1 lg:order-2">
             <img
-              src="/assets/service-finish-wide.webp"
-              alt="Automotive detailing precision finish with linear overhead reflection"
+              src={assetPath("service-finish-wide.webp")}
+              alt="Black Maybach sedan inside a dark garage work area under overhead lighting"
               loading="lazy"
               decoding="async"
               className="w-full h-full object-cover object-center grayscale-[15%] hover:grayscale-0 transition-all duration-700 hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0f1217] via-transparent to-black/30 pointer-events-none" />
             <div className="absolute bottom-4 left-5 right-5 flex justify-between items-end text-[10px] uppercase tracking-[0.2em] text-neutral-400 font-mono pointer-events-none">
-              <span>Studio Refinement</span>
+              <span>Vehicle Under Overhead Lighting</span>
             </div>
           </div>
         </div>

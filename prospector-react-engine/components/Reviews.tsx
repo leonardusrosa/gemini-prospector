@@ -4,6 +4,7 @@ import React from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import { PUBLIC_REVIEWS, BUSINESS_INFO } from "@/lib/data";
 import { useReviewCarousel } from "./useReviewCarousel";
+import { assetPath } from "@/lib/site-paths";
 
 export function Reviews() {
   const {
@@ -47,6 +48,8 @@ export function Reviews() {
   return (
     <section
       id="reviews"
+      data-role="reviews"
+      data-motion="reveal"
       className="w-full py-24 md:py-32 bg-[#14171f] text-white border-t border-white/[0.06] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
@@ -78,6 +81,11 @@ export function Reviews() {
         {/* Main Review Stage: Dominant Spotlight with Controlled Editorial Controls */}
         <div
           {...containerProps}
+          data-role="reviews-carousel"
+          data-review-curated-subset="true"
+          data-review-total-items={PUBLIC_REVIEWS.length}
+          data-review-curated-ids={PUBLIC_REVIEWS.map((review) => review.id).join(",")}
+          data-review-curated-native-ids={PUBLIC_REVIEWS.map((review) => review.nativeReviewId).join(",")}
           className="relative bg-[#0d1016] border border-white/10 p-6 sm:p-10 lg:p-12 rounded-sm shadow-2xl focus:outline-none focus:border-[#caa35d]/40 transition-colors"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
@@ -142,9 +150,16 @@ export function Reviews() {
               {/* Animated Editorial Quote & Attribution */}
               <div className="relative overflow-hidden min-h-[160px] sm:min-h-[140px] flex flex-col justify-between">
                 <LazyMotion features={domAnimation}>
-                  <AnimatePresence mode="wait" custom={direction}>
+                  <AnimatePresence initial={false} mode="wait" custom={direction}>
                     <m.div
                       key={currentReview.id}
+                      data-role="review-carousel-item"
+                      data-review-evidence-id={currentReview.id}
+                      data-review-native-id={currentReview.nativeReviewId}
+                      data-review-entry-fingerprint={currentReview.fingerprint}
+                      data-review-rating={currentReview.rating}
+                      data-review-translation-state={currentReview.translationState}
+                      data-review-source-locale={currentReview.sourceLocale}
                       custom={direction}
                       variants={slideVariants}
                       initial="enter"
@@ -178,8 +193,8 @@ export function Reviews() {
             {/* Contextual Visual: Optical Surface Reflection Detail */}
             <div className="lg:col-span-4 relative aspect-[4/5] overflow-hidden bg-[#080a0d] shadow-xl border border-white/10 rounded-sm">
               <img
-                src="/assets/reviews-reflection-detail.webp"
-                alt="Optical surface clarity and light reflection on automotive clearcoat"
+                src={assetPath("reviews-reflection-detail.webp")}
+                alt="Black vehicle body surface under reflected overhead lighting"
                 loading="eager"
                 decoding="async"
                 className="w-full h-full object-cover object-center grayscale-[15%] hover:grayscale-0 transition-all duration-700 hover:scale-105"

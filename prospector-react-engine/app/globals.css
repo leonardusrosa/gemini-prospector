@@ -81,6 +81,18 @@ body {
   animation: pageTurn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+[data-motion="reveal"] {
+  /* Progressive enhancement: SSR and no-JS content stays readable. */
+  opacity: 1;
+  transform: none;
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-motion="reveal"].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Reduced motion safety */
 @media (prefers-reduced-motion: reduce) {
   .hero-video-bg {
@@ -94,5 +106,9 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  [data-motion="reveal"] {
+    opacity: 1;
+    transform: none;
   }
 }

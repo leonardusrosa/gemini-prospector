@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useCompareSlider } from "./useCompareSlider";
+import { assetPath } from "@/lib/site-paths";
 
 export function CompareSlider() {
   const {
@@ -32,10 +33,10 @@ export function CompareSlider() {
             <div className="h-[1px] w-6 bg-[#caa35d]/40" />
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-display uppercase tracking-tight leading-tight">
-            BEFORE & AFTER RESTORATION
+            INTERIOR IMAGE COMPARISON
           </h2>
           <p className="text-xs text-neutral-400">
-            Interior detailing comparison. Drag or tap divider to inspect vehicle surface recovery. Individual vehicle results vary.
+            Drag or tap the divider to inspect the reference images.
           </p>
         </div>
 
@@ -49,7 +50,7 @@ export function CompareSlider() {
             onKeyDown={handleKeyDown}
             tabIndex={0}
             role="slider"
-            aria-label="Before and after interior detailing comparison slider"
+            aria-label="Reference interior comparison slider"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(sliderPos)}
@@ -57,8 +58,8 @@ export function CompareSlider() {
           >
             {/* Base Layer: After (Full image visible, object-contain, aspect preserved) */}
             <img
-              src="/assets/compare-after.webp"
-              alt="Interior detailing after condition"
+              src={assetPath("compare-after.webp")}
+              alt="Automotive interior comparison image"
               loading="lazy"
               decoding="async"
               className="absolute inset-0 w-full h-full object-contain object-center pointer-events-none"
@@ -72,8 +73,8 @@ export function CompareSlider() {
               }}
             >
               <img
-                src="/assets/compare-before.webp"
-                alt="Interior detailing before condition"
+                src={assetPath("compare-before.webp")}
+                alt="Automotive interior reference image"
                 loading="lazy"
                 decoding="async"
                 className="absolute inset-0 w-full h-full object-contain object-center"
@@ -106,7 +107,7 @@ export function CompareSlider() {
               style={{ opacity: beforeOpacity }}
             >
               <span className="px-3 py-1 text-[11px] font-mono font-bold tracking-widest uppercase bg-black/85 text-neutral-300 border border-white/20">
-                BEFORE
+                REFERENCE
               </span>
             </div>
             <div
@@ -114,7 +115,7 @@ export function CompareSlider() {
               style={{ opacity: afterOpacity }}
             >
               <span className="px-3 py-1 text-[11px] font-mono font-bold tracking-widest uppercase bg-[#caa35d] text-black font-bold border border-[#caa35d]">
-                AFTER
+                COMPARISON
               </span>
             </div>
 

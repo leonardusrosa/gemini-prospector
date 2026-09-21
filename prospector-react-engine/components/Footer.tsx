@@ -21,6 +21,11 @@ export function Footer() {
           </span>
         </div>
 
+        <div className="flex items-center gap-4 text-xs text-neutral-500">
+          <span data-social="whatsapp" aria-disabled="true">WhatsApp unavailable</span>
+          <span data-social="instagram" aria-disabled="true">Instagram unverified</span>
+        </div>
+
         <div>
           <a
             href="#"

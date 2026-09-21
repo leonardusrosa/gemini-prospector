@@ -5,6 +5,7 @@ export function LocationSection() {
   return (
     <section
       id="studio"
+      data-motion="reveal"
       className="w-full py-24 md:py-32 bg-[#0f1217] text-white border-t border-white/[0.06] overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">

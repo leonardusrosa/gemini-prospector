@@ -3,7 +3,7 @@ import { BUSINESS_INFO } from "@/lib/data";
 
 export function Navbar() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-[#08090b]/90 backdrop-blur-md border-b border-white/[0.08]">
+    <header data-role="site-header" className="fixed top-0 left-0 right-0 z-50 w-full bg-[#08090b]/90 backdrop-blur-md border-b border-white/[0.08]">
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 h-16 flex items-center justify-between">
         {/* Brand Wordmark */}
         <a

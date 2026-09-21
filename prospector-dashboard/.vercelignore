@@ -1,0 +1,9 @@
+migration-parity-report.json
+*.db
+*.sqlite
+*.sqlite3
+*.tsbuildinfo
+.vercel/
+.env
+.env.*
+node_modules/

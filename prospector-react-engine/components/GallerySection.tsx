@@ -21,6 +21,7 @@ export function GallerySection() {
   return (
     <section
       id="gallery"
+      data-motion="reveal"
       className="w-full py-24 md:py-32 bg-[#0a0c10] text-white border-t border-white/[0.06] overflow-hidden select-none"
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
@@ -28,11 +29,11 @@ export function GallerySection() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 md:mb-16">
           <div>
             <div className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.25em] font-semibold text-[#caa35d] mb-4">
-              <span>[ 04 — WORKSHOP ARCHIVE ]</span>
+              <span>[ 04 — PHOTO ARCHIVE ]</span>
               <div className="h-[1px] w-6 bg-[#caa35d]/40" />
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-display uppercase tracking-tight leading-tight">
-              STUDIO & VEHICLE ARCHIVE
+              VEHICLE PHOTO ARCHIVE
             </h2>
           </div>
 
@@ -132,7 +133,7 @@ export function GallerySection() {
                 {currentItem.category}
               </span>
               <span className="text-[10px] uppercase tracking-widest text-neutral-400 font-mono">
-                Midway Studio
+                Vehicle Archive
               </span>
             </div>
           </div>
