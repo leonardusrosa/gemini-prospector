@@ -243,6 +243,31 @@ Depois:
 
 O backend não usa `--force`.
 
+### HARD RULE — backend persistente do Client CMS
+
+O backend Python local (`editor_publish_server.py` + filesystem `.prospector-editor`) é referência/local tooling, NÃO o backend canônico de produção serverless.
+
+Produção do Client CMS deve usar estado persistente server-side. Arquitetura canônica atual:
+
+- Supabase/Postgres:
+  - `cms_tenants`
+  - `cms_sessions`
+  - `cms_reset_tokens`
+  - `cms_drafts`
+  - `cms_published_pages`
+  - `cms_page_versions`
+  - `cms_audit`
+  - `cms_auth_rate_limits`
+- Supabase Edge Function `client-cms` para autenticação e operações tenant;
+- sessão opaque bearer armazenada apenas como SHA-256 no banco;
+- rate limit persistente no banco, nunca somente em memória de processo;
+- publish/rollback transacionais via RPC;
+- painel estático pode ser servido pelo host dos sites e consumir a Edge API;
+- conteúdo publicado pelo CMS pode ser proxied pelo host dos sites para preservar Content-Type/CSP corretos;
+- dashboard do operador administra credenciais diretamente server-side via service role, nunca no browser.
+
+Não usar filesystem efêmero de Vercel/serverless para auth, drafts, sessões, reset tokens ou histórico.
+
 ### HARD RULE — credenciais do Client CMS
 
 Credenciais de cliente devem ser provisionadas/resetadas por mecanismos criptograficamente seguros:
