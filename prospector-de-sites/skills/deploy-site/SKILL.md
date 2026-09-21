@@ -243,6 +243,22 @@ Depois:
 
 O backend não usa `--force`.
 
+### HARD RULE — credenciais do Client CMS
+
+Credenciais de cliente devem ser provisionadas/resetadas por mecanismos criptograficamente seguros:
+
+- não existe senha default universal de produção;
+- se o operador não informar senha, gerar uma senha temporária forte com CSPRNG (`secrets.token_urlsafe` ou equivalente);
+- plaintext da senha pode ser retornado somente na resposta que a gerou para entrega ao cliente; nunca persistir plaintext no CRM, banco, audit log ou arquivo;
+- armazenar somente hash + salt + parâmetros do hash;
+- mudança de usuário ou senha deve incrementar `credentialVersion` e invalidar sessões anteriores;
+- links de redefinição são de uso único, armazenados somente por hash e expiram em 30 minutos;
+- `PROSPECTOR_CMS_SECRET` é obrigatório em ambiente protegido/não-local; nenhum segredo hard-coded pode funcionar como fallback;
+- API de operador requer segredo separado `PROSPECTOR_CMS_OPERATOR_SECRET`, server-to-server;
+- o dashboard do operador deve oferecer UX para criar acesso, mudar usuário/e-mail, gerar link de reset e gerar nova senha sem expor segredos de Git/Vercel.
+
+Senhas como `admin12345678` ou qualquer outro default compartilhado são proibidas em produção.
+
 ### HARD RULE — nenhuma credencial Git/Vercel no navegador
 
 Nunca inserir no HTML/editor:
@@ -341,8 +357,10 @@ Salvar rascunho = disponível (browser + backend quando alcançável)
 Publicar alterações em localhost = disponível via editor_server.py
 publish bridge Git restrito por slug = implementado como backend de referência
 Vercel auto-deploy após push = compatível com integração existente
-login/magic-link final do cliente = ainda deve ser configurado/implementado por entrega
-/editor público protegido = NÃO presumir sem infraestrutura real
+login por tenant + sessão por slug = implementado no backend de referência
+credenciais seguras + reset/link de reset = implementado
+gerenciamento de credenciais pelo dashboard = contrato implementado; depende do backend CMS estar implantado e das envs server-side
+/editor público protegido = NÃO presumir sem infraestrutura real implantada
 ```
 
 A proposta comercial deve distinguir **capacidade implementada** de **configuração de produção concluída**. Não vender `/editor` protegido/login como pronto para um cliente enquanto essa infraestrutura não estiver efetivamente configurada.
