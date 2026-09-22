@@ -404,3 +404,36 @@ For hosted Prospector client sites, the canonical production CMS backend is the 
 - public routing to CMS-published content must only be promoted after explicit human approval.
 
 The Python `editor_publish_server.py` / filesystem auth implementation remains valid for local/reference workflows, but must not be treated as the canonical hosted persistence layer.
+
+
+## Engine C implementation parity
+
+Engine C differs from Engines A/B by image-first methodology only. Before Preview or production promotion, an Engine C implementation must satisfy the same implementation-quality governance expected from A/B.
+
+Canonical shared policy lives in `prospector-sites`:
+- `docs/engine-c-implementation-parity-policy.md`
+- `scripts/engine-c-parity-gate.mjs`
+
+Required non-compensable Engine C implementation gates:
+- formal seven-field Design DNA;
+- post-implementation GPT-Taste rendered review;
+- Impeccable rendered craft review;
+- copywriting/marketing rendered review;
+- Design DNA alignment;
+- direct output parity validation;
+- production conversion/social parity;
+- existing factual/evidence/review gates;
+- desktop/mobile rendered QA.
+
+Candidate selection scores do not grandfather the implementation.
+
+Production conversion/social rules remain identical across engines:
+- verified phone CTA;
+- functional map for verified physical address;
+- verified WhatsApp active or safely disabled when unverified;
+- verified Instagram active or safely disabled when unverified;
+- assistant/floating conversion-control conflict policy;
+- source-neutral navigation;
+- never invent channels or fake disabled links.
+
+Human involvement remains final Preview approve/reject only; intermediate Engine C candidate selection and implementation QA remain automated.
