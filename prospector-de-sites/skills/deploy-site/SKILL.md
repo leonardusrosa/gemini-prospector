@@ -389,3 +389,18 @@ gerenciamento de credenciais pelo dashboard = contrato implementado; depende do 
 ```
 
 A proposta comercial deve distinguir **capacidade implementada** de **configuração de produção concluída**. Não vender `/editor` protegido/login como pronto para um cliente enquanto essa infraestrutura não estiver efetivamente configurada.
+
+
+## Hosted Client CMS canonical backend
+
+For hosted Prospector client sites, the canonical production CMS backend is the Supabase persistent implementation:
+
+- Edge Function: `client-cms`
+- Operator credential function: `cms-operator`
+- persistent tenant/session/reset/draft/publication/version/audit state in the canonical Prospector Supabase project;
+- client browser never receives GitHub, Vercel, service-role, or operator credentials;
+- operator credential actions are authorized with the existing Supabase Auth operator session and membership in `cms_operators`;
+- site publishing is versioned in `cms_published_pages` / `cms_page_versions`, with draft and rollback support;
+- public routing to CMS-published content must only be promoted after explicit human approval.
+
+The Python `editor_publish_server.py` / filesystem auth implementation remains valid for local/reference workflows, but must not be treated as the canonical hosted persistence layer.
