@@ -437,3 +437,45 @@ Production conversion/social rules remain identical across engines:
 - never invent channels or fake disabled links.
 
 Human involvement remains final Preview approve/reject only; intermediate Engine C candidate selection and implementation QA remain automated.
+
+
+## Client CMS locale and toolbar contract
+
+Client-facing CMS UI inherits the canonical lead locale. This is part of the product contract, not operator personalization.
+
+Required flow:
+
+```
+lead.locale -> CMS tenant locale -> admin shell + visual editor UI
+```
+
+Rules:
+- Persist a BCP 47 locale per CMS tenant.
+- New tenant provisioning MUST pass the canonical `lead.locale`.
+- Do not infer CMS language from operator/browser language.
+- Locale changes are metadata-only and MUST NOT rotate credentials or invalidate sessions.
+- The site content language and CMS chrome language are independent; CMS localization must not rewrite visitor-facing copy.
+- Current framework locale packs are `pt-BR` and `en-US`; do not hand off an unsupported locale without adding and QAing a translation pack.
+- Pre-auth locale discovery may expose only safe tenant metadata needed for UI rendering (slug/display name/locale), never credentials or recovery/session data.
+
+The Client CMS has exactly ONE persistent toolbar, owned by the parent admin shell.
+
+That toolbar owns:
+- View published site
+- Preview current unsaved changes
+- Save draft
+- Publish
+- Discard local changes
+- Restore version
+- Export page
+- Password
+- Sign out
+- optional verified support action
+
+The injected site editor MUST NOT render a second persistent toolbar. It may render contextual property controls only when an element is selected.
+
+`Preview changes` MUST open a clean new-tab representation of the current unsaved editor state, without CMS chrome/contenteditable/editor outlines. It is distinct from `View site`, which opens the currently published canonical site.
+
+CMS chrome must never overlap the client's fixed/sticky navigation and must be stripped from draft/published HTML.
+
+Canonical implementation details and QA live in `prospector-dashboard/docs/client-cms-framework.md`.
