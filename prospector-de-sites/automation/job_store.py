@@ -11,6 +11,7 @@ import uuid
 from pathlib import Path
 
 FINAL_STATES = frozenset({"ready_for_review", "blocked", "retry"})
+MAX_RETRY_ATTEMPTS = 3
 
 
 def _connect(path: Path) -> sqlite3.Connection:
@@ -166,12 +167,18 @@ def finish(
     try:
         db.execute("BEGIN IMMEDIATE")
         row = db.execute(
-            "SELECT attempts FROM site_automation_jobs WHERE id=? AND state='leased' AND lease_token=?",
+            "SELECT attempts, lease_until FROM site_automation_jobs WHERE id=? AND state='leased' AND lease_token=?",
             (job_id, lease_token),
         ).fetchone()
         if not row:
             raise RuntimeError("Stale or missing lease: completion refused")
-        # Operational failures are retryable. Factual/QA blockers are not retried silently.
+        if row["lease_until"] is None or row["lease_until"] <= now:
+            raise RuntimeError("Expired lease: completion refused")
+        # Operational errors receive a bounded retry budget, with manual reset.
+        if state == "retry" and row["attempts"] >= MAX_RETRY_ATTEMPTS:
+            state = "blocked"
+            reason = f"Retry budget exhausted ({MAX_RETRY_ATTEMPTS} attempts): {reason}"
+        # Factual/QA blockers never retry silently.
         delay = min(3600, 30 * (2 ** min(max(row["attempts"] - 1, 0), 7))) if state == "retry" else 0
         db.execute(
             """UPDATE site_automation_jobs
@@ -202,7 +209,7 @@ def requeue(path: Path, slug: str, *, now: int | None = None) -> bool:
         db.execute("BEGIN IMMEDIATE")
         cur = db.execute(
             """UPDATE site_automation_jobs
-               SET state='pending', next_attempt_at=0, last_error=NULL, updated_at=?
+               SET state='pending', attempts=0, next_attempt_at=0, last_error=NULL, updated_at=?
                WHERE lead_slug=? AND job_kind='preview_qa'
                  AND state IN ('blocked','retry','ready_for_review')""",
             (now, slug),
