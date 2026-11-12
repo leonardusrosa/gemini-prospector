@@ -1,5 +1,17 @@
 # Site Automation Queue Pilot (local QA only)
 
+## Deferred ideas and owner decision (2026-11-12)
+
+All additional automation ideas from the original recurring auto-deploy reference
+have been archived in
+[Future supervised automation orchestration RFC](future-supervised-automation-orchestration-rfc.md).
+
+**Status: BACKLOG_ONLY / DO_NOT_IMPLEMENT.** No recurring scheduler (including
+every two hours), no batch dispatcher, no automatic reconciliation or
+notifications, no autonomous site generation, no deployment and no outreach
+are approved until the owner validates and separately authorizes a specific
+phase. This reference is **not** a task instruction or permission to register
+background jobs. Keep the current one-job manual pilot unchanged.
 ## Scope
 
 This is a manually triggered **fail-closed** pilot for site-preview QA. It is
