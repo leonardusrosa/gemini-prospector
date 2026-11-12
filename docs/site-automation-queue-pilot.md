@@ -124,15 +124,15 @@ records. GitHub Actions tests this file with Python 3.12.
 On the operator's isolated Windows worktree, the canonical 42-column CRM
 was opened in SQLite read-only mode. The source SHA-256 was unchanged before
 and after validation (reported in PR #2), and the real prospector-sites
-\`npm run site-review\` command returned exit code 0 at
-\`cfb976f64e66bbc43d937b8f65b36ed4fec192ef\`.
+`npm run site-review` command returned exit code 0 at
+`cfb976f64e66bbc43d937b8f65b36ed4fec192ef`.
 The tested real leads correctly stopped on missing contact evidence,
 unavailable site artifacts, or incompatible pipeline stage. None reached
-\`ready_for_review\`.
+`ready_for_review`.
 
 The offline CI suite also exercises a **synthetic** canonical 42-column
 CRM and research evidence file, together with a real subprocess CLI
-\`enqueue -> run [dry-run] -> run --execute-gates -> ready_for_review\`
+`enqueue -> run [dry-run] -> run --execute-gates -> ready_for_review`
 transition. The synthetic "site-review" npm script is an exit-zero fixture
 stub, **not** the live prospector-sites gate. The synthetic fixture has no
 real business identity or verified outreach target. Its PASS demonstrates
@@ -140,14 +140,14 @@ queue/CLI state transitions and no CRM mutation only.
 
 The real production site-review PASS and synthetic end-to-end state-machine
 PASS are **independent evidence**; do not conflate them, and never treat
-\`ready_for_review\` as approval for deployment, CRM promotion, or outreach.
+`ready_for_review` as approval for deployment, CRM promotion, or outreach.
 
 ## Known limitations
 
 This is a **local-queue and gate adapter pilot**, not full autonomous site
 generation. No first-party factual research, image design, render QA or
 production deploy is automatically executed. Direct triggering of the core
-site-creation 18-step process remains a separate future integration.
+site-creation 19-step process remains a separate future integration.
 
 The CLI integration test uses a synthetic CRM fixture: passing CI is not a
 live local dry-run against actual user records. That requires access to the
