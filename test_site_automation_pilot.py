@@ -248,6 +248,106 @@ class SiteAutomationPilotTests(unittest.TestCase):
         }))
         self.assertEqual(crm_source.eligibility_issues(lead, self.sites), [])
 
+
+    def test_positive_canonical_42_column_research_evidence_through_cli(self):
+        """A synthetic canonical-schema fixture reaches review through real git/npm.
+
+        No real lead, external provider, Vercel, outreach, or CRM write occurs.
+        The npm gate is deliberately a safe fixture stub; this does not attest
+        to the full production site-review suite.
+        """
+        prod_crm = self.root / "canonical_positive.db"
+        conn = sqlite3.connect(prod_crm)
+        conn.execute("""CREATE TABLE leads (
+            slug TEXT PRIMARY KEY, nome TEXT, nicho TEXT, cidade TEXT, nota REAL,
+            avaliacoes INTEGER, email TEXT, telefone TEXT, whatsapp TEXT, siteAntigo TEXT,
+            motivo TEXT, status TEXT DEFAULT 'novo', urlNova TEXT, dataProposta TEXT,
+            valor REAL, obs TEXT, contratoStatus TEXT DEFAULT 'pendente', contratoEm TEXT,
+            manutencao REAL, pago INTEGER DEFAULT 0, docCliente TEXT, endCliente TEXT,
+            atualizado TEXT, placeId TEXT, opportunityType TEXT, opportunityScore INTEGER,
+            classificationEvidence TEXT, mainRisk TEXT, factualContent TEXT, imageryLevel TEXT,
+            socialUrls TEXT, mapsUrl TEXT, runId INTEGER, criadoEm TEXT, country TEXT,
+            locale TEXT, language TEXT, phoneCountryCode TEXT, websiteStatus TEXT,
+            siteMode TEXT, currency TEXT, marketTier TEXT
+        )""")
+        self.assertEqual(len(conn.execute("PRAGMA table_info(leads)").fetchall()), 42)
+        conn.execute("INSERT INTO leads(slug, status, whatsapp) VALUES (?, ?, ?)",
+                     (self.slug, "qualified", "0000000000000"))
+        conn.commit()
+        conn.close()
+
+        sites = self.root / "isolated-sites-positive"
+        client = sites / "clientes" / self.slug
+        research = client / "research"
+        research.mkdir(parents=True)
+        for filename in ("index.html", "proposta.html", "review-manifest.json"):
+            (client / filename).write_text("{}", encoding="utf-8")
+        (research / "business-identity-evidence.json").write_text(json.dumps({
+            "collectedAt": "2026-11-12T00:00:00Z",
+            "whatsapp": {
+                "verified": True, "number": "0000000000000",
+                "source": "synthetic_fixture_not_real_evidence",
+                "verifiedAt": "2026-11-12T00:00:00Z"
+            },
+        }), encoding="utf-8")
+        (sites / "package.json").write_text(json.dumps({
+            "private": True, "scripts": {"site-review": "node -e \"process.exit(0)\""}
+        }), encoding="utf-8")
+
+        def run_shell(*args):
+            cp = subprocess.run(args, cwd=sites, capture_output=True, text=True,
+                                check=False, timeout=30)
+            self.assertEqual(cp.returncode, 0, cp.stderr)
+            return cp.stdout.strip()
+
+        run_shell("git", "init")
+        run_shell("git", "add", ".")
+        run_shell("git", "-c", "user.name=Fixture", "-c",
+                  "user.email=fixture@invalid.local", "-c",
+                  "commit.gpgsign=false", "commit", "-m", "Synthetic fixture only")
+        original_sha = run_shell("git", "rev-parse", "HEAD")
+        self.assertEqual(len(original_sha), 40)
+        db_before = hashlib.sha256(prod_crm.read_bytes()).hexdigest()
+        queue = self.root / ".prospector" / "positive-queue.sqlite3"
+        job_store.initialize(queue)
+
+        entrypoint = Path(worker.__file__).resolve()
+        common = [sys.executable, str(entrypoint), "--crm-db", str(prod_crm),
+                  "--queue-db", str(queue)]
+
+        def cli(*args):
+            cp = subprocess.run(common + list(args), cwd=self.root,
+                                capture_output=True, text=True, check=False,
+                                timeout=60)
+            self.assertEqual(cp.returncode, 0, cp.stderr + cp.stdout)
+            return json.loads(cp.stdout)
+
+        enqueued = cli("enqueue", "--slug", self.slug, "--sites-repo", str(sites))
+        self.assertTrue(enqueued["enqueued"])
+        self.assertEqual(job_store.list_jobs(queue)[0]["state"], "pending")
+        dry = cli("run", "--sites-repo", str(sites))
+        self.assertEqual(dry["issues"], [])
+        self.assertFalse(dry["mutated"])
+        self.assertEqual(job_store.list_jobs(queue)[0]["state"], "pending")
+
+        executed = cli("run", "--sites-repo", str(sites), "--execute-gates")
+        self.assertEqual(executed["state"], "ready_for_review")
+        self.assertEqual(executed["sites_sha"], original_sha)
+        self.assertEqual(executed["local_gates"], "PASS")
+        self.assertFalse(executed["published"])
+        self.assertFalse(executed["crm_updated"])
+        self.assertFalse(executed["outreach_sent"])
+        self.assertTrue(executed["human_review_required"])
+        state = job_store.list_jobs(queue)[0]
+        self.assertEqual(state["state"], "ready_for_review")
+        self.assertEqual(state["attempts"], 1)
+        self.assertEqual(state["last_gate_exit"], 0)
+        self.assertEqual(state["last_sites_sha"], original_sha)
+        self.assertEqual(run_shell("git", "status", "--porcelain"), "")
+        self.assertEqual(hashlib.sha256(prod_crm.read_bytes()).hexdigest(), db_before)
+        self.assertIsNone(job_store.peek(queue))
+
+
     def test_canonical_crm_schema_columns_tolerated_without_synthetic_fields(self):
         prod_crm = self.root / "canonical_prod.db"
         db = sqlite3.connect(prod_crm)
