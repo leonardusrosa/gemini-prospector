@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -170,6 +171,66 @@ class SiteAutomationPilotTests(unittest.TestCase):
         self.assertTrue(crm_source.artifact_issues(self.sites, "../secret"))
         with self.assertRaises(ValueError):
             crm_source.read_lead(self.crm, "../secret")
+
+
+
+    def test_expired_lease_cannot_complete_even_without_new_claim(self):
+        job_store.enqueue(self.queue, self.slug, now=100)
+        first = job_store.claim(self.queue, "worker-a", now=110, lease_seconds=10)
+        with self.assertRaisesRegex(RuntimeError, "Expired lease"):
+            job_store.finish(self.queue, first["id"], first["lease_token"],
+                             "ready_for_review", now=120)
+        self.assertEqual(job_store.list_jobs(self.queue)[0]["state"], "leased")
+        replacement = job_store.claim(self.queue, "worker-b", now=120, lease_seconds=10)
+        self.assertNotEqual(replacement["lease_token"], first["lease_token"])
+
+    def test_bounded_retry_budget_and_manual_reset(self):
+        job_store.enqueue(self.queue, self.slug, now=100)
+        for attempt, now in enumerate((110, 150, 230), start=1):
+            job = job_store.claim(self.queue, "retry-worker", now=now)
+            self.assertEqual(job["attempts"], attempt)
+            job_store.finish(self.queue, job["id"], job["lease_token"],
+                             "retry", reason="offline", now=now + 1)
+        state = job_store.list_jobs(self.queue)[0]
+        self.assertEqual(state["state"], "blocked")
+        self.assertIn("Retry budget exhausted", state["last_error"])
+        self.assertIsNone(job_store.peek(self.queue, now=999))
+        self.assertTrue(job_store.requeue(self.queue, self.slug, now=999))
+        reset = job_store.claim(self.queue, "manual-worker", now=1000)
+        self.assertEqual(reset["attempts"], 1)
+
+    def test_sha_or_worktree_change_during_gates_blocks_completion(self):
+        job_store.enqueue(self.queue, self.slug, now=100)
+        with mock.patch.object(worker, "git_snapshot",
+                               side_effect=[("a" * 40, None), ("b" * 40, None)]):
+            with mock.patch.object(worker, "run_existing_gates", return_value=0):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    code = worker.execute_one(self.queue, self.crm, self.sites, 5)
+        self.assertEqual(code, 1)
+        self.assertEqual(job_store.list_jobs(self.queue)[0]["state"], "blocked")
+        self.assertIn("changed", json.loads(out.getvalue())["reason"])
+
+    def test_cli_fixture_dry_run_without_real_lead_or_provider(self):
+        entrypoint = Path(worker.__file__).resolve()
+        common = [sys.executable, str(entrypoint), "--crm-db", str(self.crm),
+                  "--queue-db", str(self.queue)]
+        before_crm = hashlib.sha256(self.crm.read_bytes()).digest()
+        enqueued = subprocess.run(common + ["enqueue", "--slug", self.slug],
+                                  capture_output=True, text=True, check=False)
+        self.assertEqual(enqueued.returncode, 0, enqueued.stderr)
+        self.assertTrue(json.loads(enqueued.stdout)["enqueued"])
+        before_jobs = job_store.list_jobs(self.queue)
+        planned = subprocess.run(common + ["run", "--sites-repo", str(self.sites)],
+                                 capture_output=True, text=True, check=False)
+        self.assertEqual(planned.returncode, 0, planned.stderr)
+        payload = json.loads(planned.stdout)
+        self.assertEqual(payload["mode"], "dry-run")
+        self.assertFalse(payload["mutated"])
+        self.assertFalse(payload["deploy_performed"])
+        self.assertFalse(payload["outreach_sent"])
+        self.assertEqual(job_store.list_jobs(self.queue), before_jobs)
+        self.assertEqual(hashlib.sha256(self.crm.read_bytes()).digest(), before_crm)
 
 
 def subprocess_completed_process(args, code):
