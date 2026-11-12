@@ -110,12 +110,37 @@ From repository root:
 
 python test_site_automation_pilot.py
 
-Expected coverage includes duplicate prevention, lease recovery and fencing,
+Expected coverage includes canonical 42-column schema and research-evidence
+positive transition with no live provider access, plus duplicate prevention, lease recovery and fencing,
 read-only CRM byte integrity, non-SMS verification checks, missing artifact
 blocks, explicit gate-only execution, retry backoff, and no-send/no-deploy
 completion semantics, expired lease rejection, bounded retry budget,
 exact-SHA change detection, and the real CLI entrypoint with synthetic fixture
 records. GitHub Actions tests this file with Python 3.12.
+
+
+## Pilot acceptance evidence (2026-11-12)
+
+On the operator's isolated Windows worktree, the canonical 42-column CRM
+was opened in SQLite read-only mode. The source SHA-256 was unchanged before
+and after validation (reported in PR #2), and the real prospector-sites
+\`npm run site-review\` command returned exit code 0 at
+\`cfb976f64e66bbc43d937b8f65b36ed4fec192ef\`.
+The tested real leads correctly stopped on missing contact evidence,
+unavailable site artifacts, or incompatible pipeline stage. None reached
+\`ready_for_review\`.
+
+The offline CI suite also exercises a **synthetic** canonical 42-column
+CRM and research evidence file, together with a real subprocess CLI
+\`enqueue -> run [dry-run] -> run --execute-gates -> ready_for_review\`
+transition. The synthetic "site-review" npm script is an exit-zero fixture
+stub, **not** the live prospector-sites gate. The synthetic fixture has no
+real business identity or verified outreach target. Its PASS demonstrates
+queue/CLI state transitions and no CRM mutation only.
+
+The real production site-review PASS and synthetic end-to-end state-machine
+PASS are **independent evidence**; do not conflate them, and never treat
+\`ready_for_review\` as approval for deployment, CRM promotion, or outreach.
 
 ## Known limitations
 
