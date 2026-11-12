@@ -418,6 +418,34 @@ class SiteAutomationPilotTests(unittest.TestCase):
 
 
 
+    def test_utf8_export_file_is_confined_and_atomic(self):
+        job_store.enqueue(self.queue, self.slug, now=100)
+        before_jobs = job_store.list_jobs(self.queue)
+        before_crm = hashlib.sha256(self.crm.read_bytes()).digest()
+        entrypoint = Path(worker.__file__).resolve()
+        destination = self.queue.parent / "queue-status.json"
+        cp = subprocess.run(
+            [sys.executable, str(entrypoint), "--queue-db", str(self.queue),
+             "export", "--output", str(destination)],
+            capture_output=True, text=True, check=False, timeout=15,
+        )
+        self.assertEqual(cp.returncode, 0, cp.stderr)
+        self.assertEqual(json.loads(cp.stdout)["format"], "utf-8")
+        self.assertEqual(json.loads(destination.read_text(encoding="utf-8"))["source"],
+                         "prospector-local-qa")
+        self.assertEqual(hashlib.sha256(self.crm.read_bytes()).digest(), before_crm)
+        self.assertEqual(job_store.list_jobs(self.queue), before_jobs)
+        other = self.root / "forbidden-outside.json"
+        bad = subprocess.run(
+            [sys.executable, str(entrypoint), "--queue-db", str(self.queue),
+             "export", "--output", str(other)],
+            capture_output=True, text=True, check=False, timeout=15,
+        )
+        self.assertNotEqual(bad.returncode, 0)
+        self.assertFalse(other.exists())
+
+
+
 def subprocess_completed_process(args, code):
     import subprocess
     return subprocess.CompletedProcess(args, code, "", "")
