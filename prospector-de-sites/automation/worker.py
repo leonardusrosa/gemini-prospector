@@ -60,7 +60,7 @@ def preview(job: dict | None, crm_db: Path, sites_repo: Path) -> dict:
         return {"mode": "dry-run", "queue": "empty", "mutated": False}
     slug = job["lead_slug"]
     lead = crm_source.read_lead(crm_db, slug)
-    issues = crm_source.eligibility_issues(lead) + crm_source.artifact_issues(sites_repo, slug)
+    issues = crm_source.eligibility_issues(lead, sites_repo) + crm_source.artifact_issues(sites_repo, slug)
     return {
         "mode": "dry-run",
         "lead_slug": slug,
@@ -91,7 +91,7 @@ def execute_one(queue_db: Path, crm_db: Path, sites_repo: Path, timeout: int) ->
     sha = None
     try:
         lead = crm_source.read_lead(crm_db, slug)
-        issues = crm_source.eligibility_issues(lead) + crm_source.artifact_issues(sites_repo, slug)
+        issues = crm_source.eligibility_issues(lead, sites_repo) + crm_source.artifact_issues(sites_repo, slug)
         if issues:
             job_store.finish(queue_db, job_id, token, "blocked",
                              reason="; ".join(issues))
@@ -154,6 +154,8 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("init", help="Create isolated queue database (never touch CRM)")
     p_enqueue = commands.add_parser("enqueue", help="Enqueue one verified qualified CRM lead")
     p_enqueue.add_argument("--slug", required=True)
+    p_enqueue.add_argument("--sites-repo", type=Path, default=None,
+                           help="Optional path to prospector-sites for research evidence check")
     commands.add_parser("list", help="List queue statuses")
     p_retry = commands.add_parser("requeue", help="Manually reset a blocked/reviewed job")
     p_retry.add_argument("--slug", required=True)
@@ -172,7 +174,13 @@ def main(argv: list[str] | None = None) -> int:
             emit({"queue": str(args.queue_db), "initialized": True, "crm_mutated": False})
         elif args.command == "enqueue":
             lead = crm_source.read_lead(args.crm_db, args.slug)
-            issues = crm_source.eligibility_issues(lead)
+            sites_repo = args.sites_repo
+            if sites_repo is None:
+                for candidate in (Path("../prospector-sites"), Path("prospector-sites")):
+                    if (candidate / "package.json").is_file():
+                        sites_repo = candidate
+                        break
+            issues = crm_source.eligibility_issues(lead, sites_repo)
             if issues:
                 emit({"lead_slug": args.slug, "enqueued": False, "issues": issues})
                 return 1

@@ -30,7 +30,7 @@ CRM databases, contact evidence, tokens, or customer photographs into Git.
 From the root of gemini-prospector:
 
 1. python prospector-de-sites/automation/worker.py init
-2. python prospector-de-sites/automation/worker.py enqueue --slug LEAD-SLUG
+2. python prospector-de-sites/automation/worker.py enqueue --slug LEAD-SLUG [--sites-repo ../prospector-sites]
 3. python prospector-de-sites/automation/worker.py list
 4. python prospector-de-sites/automation/worker.py run --sites-repo ../prospector-sites
 5. python prospector-de-sites/automation/worker.py run --sites-repo ../prospector-sites --execute-gates
@@ -57,9 +57,10 @@ The worker reads the canonical lead by slug and refuses new work unless:
 
 - stage is qualified or redesigned (or the corresponding Portuguese aliases);
 - there is a verified actionable non-SMS contact method with source and
-  verification timestamp, or equivalent verified email evidence;
-- the matching prospector-sites client directory has index.html,
-  proposta.html, and review-manifest.json;
+  verification timestamp (from CRM contact evidence or prospector-sites
+  research artifacts), or equivalent verified email evidence;
+- the matching prospector-sites client directory (clientes/ or sites/) has
+  index.html, proposta.html, and review-manifest.json;
 - the sites repository has a clean Git worktree and a resolvable HEAD SHA,
   both before and after the existing local QA command.
 

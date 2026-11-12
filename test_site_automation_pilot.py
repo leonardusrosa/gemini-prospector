@@ -232,6 +232,46 @@ class SiteAutomationPilotTests(unittest.TestCase):
         self.assertEqual(job_store.list_jobs(self.queue), before_jobs)
         self.assertEqual(hashlib.sha256(self.crm.read_bytes()).digest(), before_crm)
 
+    def test_research_contact_evidence_satisfies_verification(self):
+        db = sqlite3.connect(self.crm)
+        db.execute("UPDATE leads SET verified_contact_methods='[]', email=NULL WHERE slug=?",
+                   (self.slug,))
+        db.commit()
+        db.close()
+        lead = crm_source.read_lead(self.crm, self.slug)
+        self.assertTrue(crm_source.eligibility_issues(lead))
+        rdir = self.sites / "clientes" / self.slug / "research"
+        rdir.mkdir(parents=True, exist_ok=True)
+        (rdir / "whatsapp-profile-evidence.json").write_text(json.dumps({
+            "number": "5519999999999", "verified": True,
+            "collectedAt": "2026-11-11T12:00:00Z", "sourceSurface": "maps_public_listing",
+        }))
+        self.assertEqual(crm_source.eligibility_issues(lead, self.sites), [])
+
+    def test_canonical_crm_schema_columns_tolerated_without_synthetic_fields(self):
+        prod_crm = self.root / "canonical_prod.db"
+        db = sqlite3.connect(prod_crm)
+        db.execute("""CREATE TABLE leads (
+            slug TEXT PRIMARY KEY, nome TEXT, nicho TEXT, cidade TEXT, nota REAL,
+            avaliacoes INTEGER, email TEXT, telefone TEXT, whatsapp TEXT, siteAntigo TEXT,
+            motivo TEXT, status TEXT DEFAULT 'novo', urlNova TEXT, dataProposta TEXT,
+            valor REAL, obs TEXT, contratoStatus TEXT DEFAULT 'pendente', contratoEm TEXT,
+            manutencao REAL, pago INTEGER DEFAULT 0, docCliente TEXT, endCliente TEXT,
+            atualizado TEXT, placeId TEXT, opportunityType TEXT, opportunityScore INTEGER,
+            classificationEvidence TEXT, mainRisk TEXT, factualContent TEXT, imageryLevel TEXT,
+            socialUrls TEXT, mapsUrl TEXT, runId INTEGER, criadoEm TEXT, country TEXT,
+            locale TEXT, language TEXT, phoneCountryCode TEXT, websiteStatus TEXT,
+            siteMode TEXT, currency TEXT, marketTier TEXT
+        )""")
+        db.execute("INSERT INTO leads (slug, status, whatsapp, country) VALUES (?, ?, ?, ?)",
+                   (self.slug, "qualified", "5519999999999", "BR"))
+        db.commit()
+        db.close()
+        lead = crm_source.read_lead(prod_crm, self.slug)
+        self.assertEqual(lead["slug"], self.slug)
+        self.assertEqual(lead["country"], "BR")
+        self.assertNotIn("verified_contact_methods", lead)
+
 
 def subprocess_completed_process(args, code):
     import subprocess
