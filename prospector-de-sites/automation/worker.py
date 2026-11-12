@@ -146,6 +146,24 @@ def execute_one(queue_db: Path, crm_db: Path, sites_repo: Path, timeout: int) ->
 
 
 
+def save_export_json(queue_db: Path, destination: Path, document: dict) -> str:
+    """Explicit UTF-8 export confined to the local queue directory."""
+    root = queue_db.resolve().parent
+    output = destination.resolve()
+    if output.parent != root or output.suffix.lower() != ".json" or output == queue_db.resolve():
+        raise ValueError("Snapshot output must be a JSON file beside the local queue")
+    temporary = root / f".queue-export-{uuid.uuid4().hex}.tmp"
+    try:
+        with temporary.open("x", encoding="utf-8", newline="\\n") as handle:
+            json.dump(document, handle, ensure_ascii=False, sort_keys=True)
+            handle.write("\\n")
+        temporary.replace(output)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    return output.name
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--crm-db", type=Path, default=Path("prospector.db"))
@@ -158,7 +176,9 @@ def main(argv: list[str] | None = None) -> int:
     p_enqueue.add_argument("--sites-repo", type=Path, default=None,
                            help="Optional path to prospector-sites for research evidence check")
     commands.add_parser("list", help="List queue statuses")
-    commands.add_parser("export", help="Emit sanitized read-only queue JSON to stdout (manual snapshot)")
+    p_export = commands.add_parser("export", help="Create sanitized local queue status snapshot")
+    p_export.add_argument("--output", type=Path, default=None,
+                          help="Write UTF-8 JSON next to the local queue (no PowerShell redirect needed)")
     p_retry = commands.add_parser("requeue", help="Manually reset a blocked/reviewed job")
     p_retry.add_argument("--slug", required=True)
     p_run = commands.add_parser("run", help="Read-only plan by default; never deploy or send")
@@ -191,7 +211,12 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "list":
             emit(job_store.list_jobs(args.queue_db))
         elif args.command == "export":
-            emit(snapshot_export.build_snapshot(args.queue_db))
+            document = snapshot_export.build_snapshot(args.queue_db)
+            if args.output is None:
+                emit(document)
+            else:
+                name = save_export_json(args.queue_db, args.output, document)
+                emit({"exported": True, "filename": name, "format": "utf-8", "crm_mutated": False})
         elif args.command == "requeue":
             emit({"lead_slug": args.slug, "requeued": job_store.requeue(args.queue_db, args.slug)})
         elif args.command == "run":
