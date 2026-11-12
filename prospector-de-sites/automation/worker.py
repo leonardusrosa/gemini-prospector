@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 import uuid
@@ -118,7 +119,7 @@ def execute_one(queue_db: Path, crm_db: Path, sites_repo: Path, timeout: int) ->
             "outreach_sent": False, "human_review_required": True,
         })
         return 0
-    except (OSError, subprocess.TimeoutExpired, sqlite3_operational_error()) as exc:
+    except (OSError, subprocess.TimeoutExpired, sqlite3.OperationalError) as exc:
         # Retry only operational errors. Do not leak subprocess stderr/tokens.
         safe_type = type(exc).__name__
         job_store.finish(queue_db, job_id, token, "retry",
@@ -134,11 +135,6 @@ def execute_one(queue_db: Path, crm_db: Path, sites_repo: Path, timeout: int) ->
         emit({"lead_slug": slug, "state": "blocked", "reason": "unexpected_worker_error"})
         return 2
 
-
-def sqlite3_operational_error():
-    # Separate helper keeps the runtime dependency to the Python standard library.
-    import sqlite3
-    return sqlite3.OperationalError
 
 
 def main(argv: list[str] | None = None) -> int:
