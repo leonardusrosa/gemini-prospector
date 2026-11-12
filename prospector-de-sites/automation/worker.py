@@ -112,6 +112,14 @@ def execute_one(queue_db: Path, crm_db: Path, sites_repo: Path, timeout: int) ->
             emit({"lead_slug": slug, "state": "blocked", "gate_exit": gate_exit, "sites_sha": sha})
             return 1
 
+        after_sha, after_error = git_snapshot(sites_repo)
+        if after_error or after_sha != sha:
+            reason = "Source SHA/worktree changed while running local gates"
+            job_store.finish(queue_db, job_id, token, "blocked",
+                             reason=reason, sites_sha=sha, gate_exit=0)
+            emit({"lead_slug": slug, "state": "blocked", "reason": reason})
+            return 1
+
         job_store.finish(queue_db, job_id, token, "ready_for_review", sites_sha=sha, gate_exit=0)
         emit({
             "lead_slug": slug, "state": "ready_for_review", "local_gates": "PASS",
