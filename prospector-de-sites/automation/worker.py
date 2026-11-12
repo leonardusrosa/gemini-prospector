@@ -154,9 +154,9 @@ def save_export_json(queue_db: Path, destination: Path, document: dict) -> str:
         raise ValueError("Snapshot output must be a JSON file beside the local queue")
     temporary = root / f".queue-export-{uuid.uuid4().hex}.tmp"
     try:
-        with temporary.open("x", encoding="utf-8", newline="\\n") as handle:
+        with temporary.open("x", encoding="utf-8", newline="\n") as handle:
             json.dump(document, handle, ensure_ascii=False, sort_keys=True)
-            handle.write("\\n")
+            handle.write("\n")
         temporary.replace(output)
     finally:
         if temporary.exists():
