@@ -1148,55 +1148,74 @@ def test_observed_entries_count_mismatch_fails():
     assert any("observedRatingEntries" in e for e in res.errors)
 
 
+def _committed_carousel_fixture():
+    """Build portable 5-item HTML from a committed direct-Maps evidence fixture.
+
+    This is regression data only, not a fresh observation of the business.
+    The former tests read a private `sites/iost-.../` worktree not committed
+    to Git. CI must never depend on an operator's local tenant directory.
+    We keep every source-backed observed entry and its exact fingerprint.
+    """
+    from html import escape
+
+    evidence_path = ROOT / "research" / "design-pilot" / "b-opendesign" / "review-manifest.json"
+    source = json.loads(evidence_path.read_text(encoding="utf-8"))
+    gr = source["googleReviews"]
+    manifest = json.loads(json.dumps(BASE_MANIFEST))
+    manifest["googleReviews"] = gr
+    by_id = {item["id"]: item for item in gr.get("reviews", [])}
+    cards = []
+    for entry in gr["observedEntries"]:
+        fingerprint = escape(entry["fingerprint"], quote=True)
+        author = escape(str(entry.get("author") or ""), quote=False)
+        if entry["hasText"]:
+            evidence_id = entry["textEvidenceId"]
+            text = escape(by_id[evidence_id]["text"], quote=False)
+            attrs = ' data-review-evidence-id="' + escape(evidence_id, quote=True) + '"'
+            content = '<span>' + author + '</span><p>' + text + '</p>'
+        else:
+            attrs = ""
+            content = '<span>' + author + '</span><p>Avaliação com estrelas, sem comentário</p>'
+        cards.append(
+            '<article data-role="review-carousel-item" '
+            'data-review-entry-fingerprint="' + fingerprint + '" '
+            'data-review-has-text="' + str(entry["hasText"]).lower() + '"' + attrs + '>'
+            + content + '</article>'
+        )
+    count = len(cards)
+    section = (
+        '<section data-role="reviews" data-review-mode="verified-text" '
+        'data-review-rating="' + str(gr["aggregateRating"]) + '" '
+        'data-review-count="' + str(gr["ratingCount"]) + '">'
+        '<h2>Avaliações públicas sobre o atendimento</h2>'
+        '<div data-role="reviews-carousel" data-review-total-items="' + str(count) + '">'
+        + "\n".join(cards) + '</div>'
+        '<button data-role="carousel-prev" type="button">Anterior</button>'
+        '<button data-role="carousel-next" type="button">Próximo</button>'
+        '<span data-role="carousel-counter">1 / ' + str(count) + '</span>'
+        '</section>'
+    )
+    html = PASS_HTML.replace("</body>", section + "\n</body>")
+    return manifest, html, cards
+
+
 def test_reviews_carousel_slide_count_mismatch_fails():
-    with open("sites/iost-ortodontia-aline-iost-rio-claro/review-manifest.json", "r", encoding="utf-8") as f:
-        manifest = json.load(f)
-    with open("sites/iost-ortodontia-aline-iost-rio-claro/index.html", "r", encoding="utf-8") as f:
-        html = f.read()
-
-    # Tamper HTML to only have 1 slide instead of 12
-    articles = re.findall(r"<article[^>]*data-role=[\"']review-carousel-item[\"'][^>]*>.*?</article>", html, re.DOTALL)
-    html_single_slide = html
-    for art in articles[1:]:
-        html_single_slide = html_single_slide.replace(art, "")
-
-    def setup_template(p: Path):
-        tpl_dir = p / "assets" / "templates"
-        tpl_dir.mkdir(parents=True, exist_ok=True)
-        (tpl_dir / "dentistry-female.webp").write_bytes(b"RIFF....WEBPVP8 ...")
-    def iost_design(design_text, skill_path):
-        lines = [
-            design_text.strip(),
-            "- **Factual Verified Services**: Ortodontia Preventiva e Interceptativa, Aparelhos Autoligados, Alinhadores Invisíveis, Ortodontia para Adultos e Crianças",
-        ]
-        return "\n".join(lines) + "\n"
-
-    code, payload = run_case(html=html_single_slide, manifest=manifest, design_transform=iost_design, custom_setup=setup_template)
-    assert code == 1
-    assert any(c.get("key") == "carousel_items_count" and c.get("status") == "FAIL" for c in payload.get("checks", []))
+    manifest, html, cards = _committed_carousel_fixture()
+    # All but one source-backed card must NOT pass review inventory checks.
+    html_short = html.replace(cards[-1], "")
+    code, payload = run_case(html=html_short, manifest=manifest)
+    assert code == 1, payload
+    assert any(
+        check.get("key") == "carousel_items_count" and check.get("status") == "FAIL"
+        for check in payload.get("checks", [])
+    ), payload
 
 
-def test_reviews_carousel_12_items_passes():
-    with open("sites/iost-ortodontia-aline-iost-rio-claro/review-manifest.json", "r", encoding="utf-8") as f:
-        manifest = json.load(f)
-    with open("sites/iost-ortodontia-aline-iost-rio-claro/index.html", "r", encoding="utf-8") as f:
-        html = f.read()
-
-    def iost_design(design_text, skill_path):
-        lines = [
-            design_text.strip(),
-            "- **Factual Verified Services**: Avaliação ortodôntica, manutenção de aparelho fixo, clareamento dental, procedimentos clínicos gerais",
-        ]
-        return "\n".join(lines) + "\n"
-
-    def setup_template(p: Path):
-        tpl_dir = p / "assets" / "templates"
-        tpl_dir.mkdir(parents=True, exist_ok=True)
-        (tpl_dir / "dentistry-female.webp").write_bytes(b"RIFF....WEBPVP8 ...")
-        (tpl_dir / "dentistry-female-mobile.webp").write_bytes(b"RIFF....WEBPVP8 ...")
-
-    code, payload = run_case(html=html, manifest=manifest, design_transform=iost_design, custom_setup=setup_template)
-    assert code == 0, f"Expected PASS for full 12-item carousel: {payload}"
+def test_reviews_carousel_all_source_backed_entries_passes():
+    manifest, html, cards = _committed_carousel_fixture()
+    assert len(cards) == len(manifest["googleReviews"]["observedEntries"]) == 5
+    code, payload = run_case(html=html, manifest=manifest)
+    assert code == 0, f"Expected PASS for complete source-backed carousel: {payload}"
 
 
 def test_synthetic_review_author_in_manifest_fails():
