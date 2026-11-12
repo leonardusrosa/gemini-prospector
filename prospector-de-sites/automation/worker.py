@@ -18,6 +18,7 @@ from pathlib import Path
 
 import crm_source
 import job_store
+import snapshot_export
 
 
 def emit(data: dict | list) -> None:
@@ -157,6 +158,7 @@ def main(argv: list[str] | None = None) -> int:
     p_enqueue.add_argument("--sites-repo", type=Path, default=None,
                            help="Optional path to prospector-sites for research evidence check")
     commands.add_parser("list", help="List queue statuses")
+    commands.add_parser("export", help="Emit sanitized read-only queue JSON to stdout (manual snapshot)")
     p_retry = commands.add_parser("requeue", help="Manually reset a blocked/reviewed job")
     p_retry.add_argument("--slug", required=True)
     p_run = commands.add_parser("run", help="Read-only plan by default; never deploy or send")
@@ -188,6 +190,8 @@ def main(argv: list[str] | None = None) -> int:
             emit({"lead_slug": args.slug, "enqueued": added, "already_exists": not added})
         elif args.command == "list":
             emit(job_store.list_jobs(args.queue_db))
+        elif args.command == "export":
+            emit(snapshot_export.build_snapshot(args.queue_db))
         elif args.command == "requeue":
             emit({"lead_slug": args.slug, "requeued": job_store.requeue(args.queue_db, args.slug)})
         elif args.command == "run":
