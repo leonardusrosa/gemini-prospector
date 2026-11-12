@@ -1,0 +1,30 @@
+name: Site automation pilot (offline)
+
+on:
+  pull_request:
+    paths:
+      - 'prospector-de-sites/automation/**'
+      - 'test_site_automation_pilot.py'
+      - 'docs/site-automation-queue-pilot.md'
+      - '.github/workflows/site-automation-pilot.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'prospector-de-sites/automation/**'
+      - 'test_site_automation_pilot.py'
+      - '.github/workflows/site-automation-pilot.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  queue-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Queue, lease, safety and dry-run regressions
+        run: python test_site_automation_pilot.py
