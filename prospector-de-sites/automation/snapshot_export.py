@@ -28,7 +28,7 @@ def build_snapshot(queue_path: Path, *, now: int | None = None) -> dict:
     seen = set()
     for row in rows:
         slug, state = row["lead_slug"], row["state"]
-        if not SLUG_RE.fullmatch(slug) or slug in seen or state not in ALLOWED_STATES:
+        if not isinstance(slug, str) or len(slug) > 180 or not SLUG_RE.fullmatch(slug) or slug in seen or state not in ALLOWED_STATES:
             raise ValueError("Queue contains an invalid or duplicate job")
         seen.add(slug)
         sha = row["last_sites_sha"]
@@ -37,6 +37,10 @@ def build_snapshot(queue_path: Path, *, now: int | None = None) -> dict:
         attempts, updated = row["attempts"], row["updated_at"]
         if not isinstance(attempts, int) or attempts < 0 or not isinstance(updated, int) or updated < 0:
             raise ValueError("Queue contains invalid metadata")
+        if state == "leased" and (not isinstance(row["lease_until"], int) or row["lease_until"] < 0):
+            raise ValueError("Active lease has invalid expiry")
+        if state == "retry" and (not isinstance(row["next_attempt_at"], int) or row["next_attempt_at"] < 0):
+            raise ValueError("Retry has invalid due time")
         gate_exit = row["last_gate_exit"]
         if gate_exit is not None and not isinstance(gate_exit, int):
             raise ValueError("Queue contains invalid gate exit")
