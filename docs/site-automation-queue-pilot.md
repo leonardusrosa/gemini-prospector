@@ -110,7 +110,7 @@ After a local operator initializes or uses the queue, export an **advisory
 metadata-only snapshot**, from the Core checkout:
 
 ```powershell
-python prospector-de-sites/automation/worker.py export > .prospector/queue-status.json
+python prospector-de-sites/automation/worker.py export --output .prospector/queue-status.json
 ```
 
 Upload this file **manually** using the dashboard's Automation tab. Browser
