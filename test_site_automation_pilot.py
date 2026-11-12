@@ -14,6 +14,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent / "prospector-de-sites" / "automation"))
 import crm_source
 import job_store
+import snapshot_export
 import worker
 
 
@@ -371,6 +372,78 @@ class SiteAutomationPilotTests(unittest.TestCase):
         self.assertEqual(lead["slug"], self.slug)
         self.assertEqual(lead["country"], "BR")
         self.assertNotIn("verified_contact_methods", lead)
+
+
+    def test_manual_snapshot_export_is_sanitized_and_does_not_touch_queue(self):
+        job_store.enqueue(self.queue, self.slug, now=100)
+        active = job_store.claim(self.queue, "SECRET_OWNER", now=101, lease_seconds=100)
+        jobs_before = job_store.list_jobs(self.queue)
+        doc = snapshot_export.build_snapshot(self.queue, now=110)
+        self.assertEqual(doc["schemaVersion"], 1)
+        self.assertEqual(doc["source"], "prospector-local-qa")
+        self.assertEqual(doc["mode"], "manual-snapshot")
+        self.assertFalse(doc["canExecute"])
+        self.assertEqual(doc["generatedAt"], "1970-01-01T00:01:50Z")
+        self.assertEqual(doc["jobs"][0]["leadSlug"], self.slug)
+        self.assertEqual(doc["jobs"][0]["state"], "leased")
+        self.assertEqual(doc["jobs"][0]["leaseUntil"], 201)
+        self.assertEqual(job_store.list_jobs(self.queue), jobs_before)
+        exported = json.dumps(doc)
+        for forbidden in (active["lease_token"], "SECRET_OWNER", "last_error",
+                          "lease_token", "lease_owner", "crm_path",
+                          "verified_contact_methods", "email"):
+            self.assertNotIn(forbidden, exported)
+
+        entrypoint = Path(worker.__file__).resolve()
+        proc = subprocess.run(
+            [sys.executable, str(entrypoint), "--queue-db", str(self.queue), "export"],
+            capture_output=True, text=True, check=False, timeout=15
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["jobs"][0]["state"], "leased")
+
+    def test_snapshot_refuses_oversized_queue_or_invalid_sha(self):
+        job_store.enqueue(self.queue, self.slug, now=100)
+        db = sqlite3.connect(self.queue)
+        db.execute("UPDATE site_automation_jobs SET last_sites_sha=?",
+                   ("insecure/not-a-sha",))
+        db.commit()
+        db.close()
+        with self.assertRaisesRegex(ValueError, "sites SHA"):
+            snapshot_export.build_snapshot(self.queue, now=105)
+        with mock.patch.object(snapshot_export.job_store, "list_jobs",
+                               return_value=[{"lead_slug": "x"}] * 501):
+            with self.assertRaisesRegex(ValueError, "safe snapshot row limit"):
+                snapshot_export.build_snapshot(self.queue, now=105)
+
+
+
+    def test_utf8_export_file_is_confined_and_atomic(self):
+        job_store.enqueue(self.queue, self.slug, now=100)
+        before_jobs = job_store.list_jobs(self.queue)
+        before_crm = hashlib.sha256(self.crm.read_bytes()).digest()
+        entrypoint = Path(worker.__file__).resolve()
+        destination = self.queue.parent / "queue-status.json"
+        cp = subprocess.run(
+            [sys.executable, str(entrypoint), "--queue-db", str(self.queue),
+             "export", "--output", str(destination)],
+            capture_output=True, text=True, check=False, timeout=15,
+        )
+        self.assertEqual(cp.returncode, 0, cp.stderr)
+        self.assertEqual(json.loads(cp.stdout)["format"], "utf-8")
+        self.assertEqual(json.loads(destination.read_text(encoding="utf-8"))["source"],
+                         "prospector-local-qa")
+        self.assertEqual(hashlib.sha256(self.crm.read_bytes()).digest(), before_crm)
+        self.assertEqual(job_store.list_jobs(self.queue), before_jobs)
+        other = self.root / "forbidden-outside.json"
+        bad = subprocess.run(
+            [sys.executable, str(entrypoint), "--queue-db", str(self.queue),
+             "export", "--output", str(other)],
+            capture_output=True, text=True, check=False, timeout=15,
+        )
+        self.assertNotEqual(bad.returncode, 0)
+        self.assertFalse(other.exists())
+
 
 
 def subprocess_completed_process(args, code):

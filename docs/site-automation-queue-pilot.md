@@ -104,6 +104,35 @@ documents, the current repository's AGENTS.md and canonical skills win.
   be synchronized between machines via cloud drive or Git. Multi-host
   production scheduling would require a server-side transactional store.
 
+## Manual queue status handoff to the Prospector dashboard
+
+After a local operator initializes or uses the queue, export an **advisory
+metadata-only snapshot**, from the Core checkout:
+
+```powershell
+python prospector-de-sites/automation/worker.py export --output .prospector/queue-status.json
+```
+
+Upload this file **manually** using the dashboard's Automation tab. Browser
+parsing stays in memory; the dashboard does not upload, persist or sync this
+snapshot. Do not use it to infer current CRM authority, release permission,
+or a live job lock. Refresh by exporting again.
+
+The JSON contract (schemaVersion=1, source=prospector-local-qa) contains only:
+leadSlug, state, attempts, updatedAt, nextAttemptAt, leaseUntil, sitesSha and
+lastGateExit. The envelope includes generatedAt, mode=manual-snapshot and
+canExecute=false. Explicitly excluded: contacts, emails, notes, evidence
+payloads, unredacted errors, file paths, credentials, lease tokens and owners.
+
+The exporter refuses queues with more than 500 jobs, duplicate slugs,
+invalid states or invalid SHA values. Importing a snapshot is **not**
+authorization to enqueue, requeue, run gates, deploy or send outreach.
+
+For a supervised local trial, the operator performs the existing CLI steps
+directly on an authorized local worktree, checks `npm run site-review`, reviews
+the result and exports a fresh snapshot. Keep `CRM_WRITE_ENABLED=false`, and
+never automate a site publish or customer contact based on ready_for_review.
+
 ## Local regression
 
 From repository root:
