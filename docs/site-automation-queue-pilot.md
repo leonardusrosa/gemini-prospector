@@ -60,7 +60,8 @@ The worker reads the canonical lead by slug and refuses new work unless:
   verification timestamp, or equivalent verified email evidence;
 - the matching prospector-sites client directory has index.html,
   proposta.html, and review-manifest.json;
-- the sites repository has a clean Git worktree and a resolvable HEAD SHA.
+- the sites repository has a clean Git worktree and a resolvable HEAD SHA,
+  both before and after the existing local QA command.
 
 The lead-contact gate is deliberately stricter than an unverified CRM record.
 No missing source or timestamp is inferred. It is never an authorization to
@@ -90,8 +91,11 @@ documents, the current repository's AGENTS.md and canonical skills win.
   transaction across simultaneous workers sharing the same local database.
 - UNIQUE (lead_slug, job_kind) prevents duplicate queue jobs.
 - Each claim has a random lease_token and a finite lease_until.
-- Expired leases may be reclaimed; an old token cannot complete the new claim.
-- Operational errors retry with bounded exponential backoff (30s to 1h).
+- Expired leases may be reclaimed; a worker cannot complete after expiration,
+  even if no successor has claimed the lease yet. An old token also cannot
+  complete a replacement claim.
+- Operational errors retry with bounded exponential backoff (30s to 1h),
+  with a maximum of three automatic attempts. Manual requeue resets the budget.
 - Quality, eligibility, and factual blockers stop as blocked until explicit
   operator requeue. There is no silent bypass of QA.
 - Events are stored separately from job state for an audit trail.
@@ -108,7 +112,9 @@ python test_site_automation_pilot.py
 Expected coverage includes duplicate prevention, lease recovery and fencing,
 read-only CRM byte integrity, non-SMS verification checks, missing artifact
 blocks, explicit gate-only execution, retry backoff, and no-send/no-deploy
-completion semantics. GitHub Actions tests this file with Python 3.12.
+completion semantics, expired lease rejection, bounded retry budget,
+exact-SHA change detection, and the real CLI entrypoint with synthetic fixture
+records. GitHub Actions tests this file with Python 3.12.
 
 ## Known limitations
 
@@ -116,6 +122,10 @@ This is a **local-queue and gate adapter pilot**, not full autonomous site
 generation. No first-party factual research, image design, render QA or
 production deploy is automatically executed. Direct triggering of the core
 site-creation 18-step process remains a separate future integration.
+
+The CLI integration test uses a synthetic CRM fixture: passing CI is not a
+live local dry-run against actual user records. That requires access to the
+owner's authorized local workspace and must be reported separately.
 
 No performance or pricing savings have been measured. Never label a job
 ready_for_review as "published", "proposal sent", or "assistant ready".
