@@ -599,3 +599,60 @@ Além do checklist:
 Se outra skill, template ou referência sugerir fabricação factual, pills/chips/badges, emoji, travessões, múltiplos CTAs no hero, CTA repetitivo, Title Case inglês em PT-BR, quote inventada, imagem semanticamente errada, stats sem fonte, hero desktop 16:9 genérico quando deveria ser ultrawide, review fabricada ou texto de apoio do hero com contraste insuficiente, esta skill vence.
 
 Só altere estas regras se o usuário pedir explicitamente uma exceção para um site específico.
+
+## Client CMS — repeatable collections for editable sites
+
+Every website delivered to a paying client must remain compatible with the
+existing AutoCORA Client CMS, and an actual authenticated tenant must be
+provisioned. A static HTML page on its own is not the client admin panel.
+
+For NEW HTML sites with **source-verified repeated content**, annotate the
+static containers and direct children so the authenticated CMS offers
+add/duplicate, remove and reorder actions without regenerating the design:
+
+```html
+<div class="menu-grid" data-pe-collection="menu">
+  <article class="menu-card" data-pe-item>
+    <img src="assets/verified-menu-photo.webp" alt="Verified menu item">
+    <h3>Item name from the real menu</h3>
+    <p>Verified description and price only</p>
+  </article>
+</div>
+```
+
+Supported collection values:
+- `menu`: restaurant, pizzeria or cafe dishes and products;
+- `gallery`: verified photos where the use context permits;
+- `services`: restaurant offerings and clinic/dental services;
+- `team`: verified named people/roles only;
+- `pricing`: current verified prices only.
+
+Rules:
+- Every `data-pe-item` must be a **direct child** of a
+  `data-pe-collection` container. Prefer static semantic
+  HTML and CSS classes, not hydration/JS-rendered lists or ID-specific CSS.
+- The CMS duplicates the selected item's design and the client edits its
+  real text/photos/links. This is not a structured inventory database.
+- A collection needs at least one valid item and may have up to 40.
+- Do not fabricate real menu items, staff, prices, clinic procedures,
+  credentials, patient images, ratings or reviews to fill a collection.
+  Missing real data means omit that component or hold for verification.
+- Do not assign global shared `data-pe-field` sync keys to
+  unique per-card fields. Clones deliberately discard these sync keys.
+- The editor UI is injected only into authenticated CMS frames, not
+  the public site source. Preserve the collection markers through
+  clean HTML save/draft/publish/rollback.
+- Owner-only imagery with unconfirmed rights must stay in an actually
+  access-protected preview. Do not mirror it into public site assets.
+- Admin-panel provisioning and authenticated edit -> Preview -> draft ->
+  publish -> rollback tests are mandatory before final client handoff.
+  Passes from structural static checks alone are insufficient.
+
+Implementation: dashboard Client CMS PR #40
+https://github.com/leonardusrosa/prospector-dashboard/pull/40
+Contract: dashboard docs/client-cms-collections.md
+
+Before the CMS PR has merged/deployed, these annotations are safe inert HTML
+metadata but do not constitute a working collection UI. No production
+handoff can claim editable collections until the dashboard deployment
+and runtime browser E2E both pass.

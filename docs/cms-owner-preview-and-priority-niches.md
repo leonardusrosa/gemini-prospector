@@ -140,3 +140,26 @@ Manual/runtime checks still required:
 - Engine C: independent visual evaluation and live responsive screenshots.
 
 No production flags or external publishing endpoints are enabled by tests.
+
+
+## Editable collections for the chosen niches (dashboard PR #40)
+
+The product owner confirmed clients should be able to add/remove/reorder
+repeatable cards **if easily achievable**. The dashboard implements this
+as an opt-in, no-migration static HTML Client CMS extension:
+https://github.com/leonardusrosa/prospector-dashboard/pull/40
+
+For new websites based on verified sources, the generator must annotate
+`data-pe-collection` containers and direct `data-pe-item`
+children for restaurant/cafe menu highlights, gallery photos, verified
+clinic services and staff where applicable. The existing visual editor
+continues to edit individual text, image, pricing and CTA content.
+
+Do not invent empty menu products, doctors, prices or gallery images just
+to enable the controls. Avoid hydrating these static lists from React
+because it may overwrite client edits in the CMS HTML roundtrip.
+The new browser QA should test add/edit/move/remove/reopen as well as the
+existing authenticated draft, publish and rollback lifecycle.
+
+This adds no structured menu/product backend. CMS version control is still
+whole HTML-page versioning. Real client tenant provisioning is required.
