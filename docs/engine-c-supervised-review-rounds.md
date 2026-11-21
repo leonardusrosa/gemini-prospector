@@ -19,7 +19,7 @@ schedule a job, send outreach, or approve Preview by itself.
   hashes actual mock images and rejects missing generation/reviewer context
   separation in evaluations.
 - The **new protocol** (prospector-de-sites/automation/site_review_rounds.py)
-  gives each lead eight explicit gates, stale artifact and witness protection,
+  gives each lead nine explicit gates, stale artifact and witness protection,
   an independent reviewer identity requirement, two correction rounds per gate,
   an atomic, local-only state receipt, and a terminal human Preview decision.
 
@@ -39,23 +39,30 @@ independently observed; never treat a self-authored JSON PASS as authority.
    each bound to its generation identity and the source manifest SHA.
 4. INDEPENDENT_DESIGN_DIRECTION: verified Engine C selector decision,
    recomputed hard gates, all mock/image hashes and fresh evaluator context.
-5. IMPLEMENTATION_AND_RESPONSIVE: code and layout from the selected visual
+5. HERO_MOTION_MANUAL_APPROVAL: Full-viewport hero video on desktop
+   and mobile for EVERY niche. Requires Flow plan after design selection,
+   four source-hashed start/end frames, independent 16:9 + 9:16 videos
+   (5-10 seconds), credit-cost ledger (four frames + two videos + up to
+   two retries), browser/motion QA, and a signed authenticated HUMAN
+   approval receipt bound to exact media hashes. Without approval, site
+   implementation and publication remain blocked.
+6. IMPLEMENTATION_AND_RESPONSIVE: code and layout from the selected visual
    candidate, responsive design, accessibility and valid contact links.
-6. CLIENT_CMS_COMPATIBILITY: full static HTML source and SHA, verified
+7. CLIENT_CMS_COMPATIBILITY: full static HTML source and SHA, verified
    through the canonical AutoCORA CMS structural compatibility check.
    Provisioned tenant login/edit/draft/publish/rollback runtime smoke is
    a separate mandatory prerequisite for client delivery.
-7. BROWSER_VISUAL_AND_INTERACTIONS: real desktop (>=1000 px) and mobile
+8. BROWSER_VISUAL_AND_INTERACTIONS: real desktop (>=1000 px) and mobile
    (320–600 px) PNG screenshots plus independently observed interactions,
    no horizontal overflow and zero page errors. If preview-only business
    images lack reuse checks, a protected recipient-only URL plus real
    independent HTTP privacy/noindex probes are mandatory.
-8. FACTUAL_AND_CONVERSION_RECHECK: real deterministic site-review gate
+9. FACTUAL_AND_CONVERSION_RECHECK: real deterministic site-review gate
    exit/log hash and renewed source-backed factual/commercial checks.
 
 When every stage has independently observed PASS_REVIEWED, the run becomes
 AWAITING_HUMAN_PREVIEW. It **never** becomes production-authorized.
-The review protocol now uses schemaVersion=2; legacy v1 local runs cannot
+The review protocol now uses schemaVersion=3; legacy v1/v2 local runs cannot
 be silently upgraded to skip Client CMS compatibility. They must be
 restarted as new isolated runs. CMS tenant provisioning and actual authenticated
 edit/draft/publish/rollback are still required for final client handoff.
@@ -176,3 +183,35 @@ be silently copied into public site assets or deployed anonymously. The
 independent browser step must prove recipient-only/noindex access before
 any private media is exposed. A standalone static HTML file is not proof
 that the client admin tenant has been provisioned.
+
+
+## Motion approval (all niches, November 21 2026)
+
+The product owner requires two completely separate Flow videos (16:9 desktop,
+9:16 mobile) with four first/last image frames for every website. The
+creative subject may use source-verified lead assets or independent,
+brand-grounded, generated imagery, whichever makes the stronger tasteful
+design. Do not fabricate a dentist, identifiable patient, owner, menu
+product or clinic credential as if it were real.
+
+Motion is decided by the engine for each variant, either a genuinely
+seamless loop or a beautiful freeze-on-end. Reveals and physically
+believable particle/ingredient bursts are allowed without a fixed effect
+whitelist, provided they remain brand-appropriate and never impair
+readability, safety or the CTA. Each hero must fill the viewport with
+its own text-safe regions. Do not upscale/crop the desktop video to
+masquerade as a mobile composition.
+
+The standard budget is four stills, two clips, up to two total
+regenerations (not two per variant). The credit ledger must match actual
+Flow charges and both user-authenticated profiles are addressed by
+aliases only. The engine shall NOT store passwords or automate
+quota-evasion/account creation. Human approval is mandatory before
+implementation; independent model scoring is future-only and cannot
+self-approve. Every hero must degrade safely to its poster for reduced
+motion, failed autoplay, or slow network.
+
+The stage gate is in `hero_motion.py` and runs in the *ninth-step*
+v3 review protocol, between independent design and implementation. No
+back-filling v2 runs; start new isolated v3 review. See
+`docs/flow-hero-motion-contract.md` for source and output schemas.

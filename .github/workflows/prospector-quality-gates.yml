@@ -33,6 +33,9 @@ jobs:
           python test_site_review_rounds.py
           python test_cms_compatibility_and_owner_preview.py
           python test_engine_c_cms_collections.py
+          python test_menu_catalog_gate.py
+          python test_hero_motion.py
+          python test_hero_site_gate.py
 
       - name: Portable design-judge regressions
         run: python test_agent_runtime_portability.py

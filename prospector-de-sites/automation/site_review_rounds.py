@@ -24,12 +24,16 @@ import site_research
 import engine_c_bridge
 import cms_compatibility
 import cms_collections_handoff
+import hero_motion
+import hero_site_gate
+import menu_catalog_gate
 
 STAGES = (
     "FACTS_AND_IDENTITIES",
     "MEDIA_RIGHTS_AND_RELEVANCE",
     "ENGINE_C_CANDIDATES",
     "INDEPENDENT_DESIGN_DIRECTION",
+    "HERO_MOTION_MANUAL_APPROVAL",
     "IMPLEMENTATION_AND_RESPONSIVE",
     "CLIENT_CMS_COMPATIBILITY",
     "BROWSER_VISUAL_AND_INTERACTIONS",
@@ -148,7 +152,7 @@ def new_run(manifest_path: Path) -> dict:
     # source/media rights. Independent research review remains its own stage.
     site_research.audit_research_manifest(manifest)
     return {
-        "schemaVersion": 2, "leadSlug": slug,
+        "schemaVersion": 3, "leadSlug": slug,
         "sourceManifest": str(Path(manifest_path).resolve()),
         "sourceManifestSha256": file_hash(manifest_path),
         "stages": list(STAGES),
@@ -190,6 +194,21 @@ def _stage_content_checks(stage: str, artifact: dict, current: dict) -> None:
         raise ValueError("Artifact stage/schema mismatch")
     if artifact.get("sourceManifestSha256") != current["sourceManifestSha256"]:
         raise ValueError("Artifact must bind to exact initial source manifest SHA")
+    if stage == "FACTS_AND_IDENTITIES":
+        # Research must classify menu availability before generation. A real
+        # restaurant with a menu cannot quietly claim one was not found.
+        research = read_json(Path(current["sourceManifest"]))
+        niche = (research.get("assessment") or {}).get("priorityNiche")
+        if niche in menu_catalog_gate.MENU_NICHES:
+            if research.get("menuStatus") not in {"VERIFIED", "NO_MENU_FOUND"}:
+                raise ValueError("Restaurant research must explicitly classify menu presence")
+            evidence = research.get("menuResearchEvidence")
+            if not isinstance(evidence, dict):
+                raise ValueError("Restaurant menu presence/absence needs independent source evidence")
+            path = evidence.get("path")
+            if (not isinstance(path, str) or not Path(path).is_file()
+                    or file_hash(Path(path)) != evidence.get("sha256")):
+                raise ValueError("Restaurant menu research witness missing or changed")
     if stage == "ENGINE_C_CANDIDATES":
         candidates = artifact.get("candidates")
         if not isinstance(candidates, list) or len(candidates) != 3:
@@ -230,6 +249,27 @@ def _stage_content_checks(stage: str, artifact: dict, current: dict) -> None:
         if artifact.get("selectionSha256") != (
                 bridge_result["sourceHashes"]["selectionSha256"]):
             raise ValueError("Engine C selector artifact changed; stale selection hash")
+    elif stage == "IMPLEMENTATION_AND_RESPONSIVE":
+        previous=current["stageState"]["HERO_MOTION_MANUAL_APPROVAL"]
+        if previous.get("status") != "PASS_REVIEWED" or not previous.get("artifact"):
+            raise ValueError("Site implementation cannot start before manually approved hero videos")
+        hero_stage=read_json(Path(previous["artifact"]))
+        delivery=read_json(Path(hero_stage["heroDeliveryFile"]))
+        html_file=artifact.get("htmlFile")
+        if (not isinstance(html_file,str) or not Path(html_file).is_file()
+                or artifact.get("htmlSha256")!=file_hash(Path(html_file))):
+            raise ValueError("Site implementation must bind actual generated HTML SHA")
+        site_gate=hero_site_gate.audit_site(Path(html_file),delivery)
+        if site_gate["result"]!="APPROVED_HERO_EMBEDDED":
+            raise ValueError("Full-screen hero video cannot be omitted from implementation")
+    elif stage == "HERO_MOTION_MANUAL_APPROVAL":
+        # Requires four exact start/end frame files, two real probed videos
+        # (desktop 16:9, mobile 9:16), independently witnessed readability/
+        # playback/loop tests, and an HMAC-bound HUMAN approval receipt.
+        # If no videos were generated, no approval key exists, or a human
+        # has not approved, this stage cannot advance to implementation.
+        source_manifest = read_json(Path(current["sourceManifest"]))
+        hero_motion.validate_stage_artifact(artifact, source_manifest)
     elif stage == "CLIENT_CMS_COMPATIBILITY":
         html_file = artifact.get("htmlFile")
         if not isinstance(html_file, str) or not Path(html_file).is_file():
@@ -275,6 +315,20 @@ def _stage_content_checks(stage: str, artifact: dict, current: dict) -> None:
             audited = cms_collections_handoff.audit_html(cms_html, plan)
             if audited["result"] != "STRUCTURE_PASS":
                 raise ValueError("Verified menu/services/gallery cards are not CMS editable")
+        if niche in menu_catalog_gate.MENU_NICHES and research.get("menuStatus") == "VERIFIED":
+            catalog_path = artifact.get("menuCatalogFile")
+            if not isinstance(catalog_path, str) or not Path(catalog_path).is_file():
+                raise ValueError("Verified restaurant menu requires on-page source catalog")
+            if file_hash(Path(catalog_path)) != artifact.get("menuCatalogSha256"):
+                raise ValueError("Menu catalog changed after submission")
+            catalog = read_json(Path(catalog_path))
+            if catalog.get("sourceManifestSha256") != current["sourceManifestSha256"]:
+                raise ValueError("Catalog must bind exact immutable research manifest")
+            menu_result = menu_catalog_gate.validate_menu_catalog(
+                catalog, Path(html_file).read_text(encoding="utf-8"),
+                current["leadSlug"], research)
+            if menu_result["result"] != "ON_PAGE_MENU_PASS":
+                raise ValueError("Restaurant menu cannot be redirected instead of embedded")
     elif stage == "BROWSER_VISUAL_AND_INTERACTIONS":
         source_manifest = read_json(Path(current["sourceManifest"]))
         preview_media = any(
@@ -473,8 +527,8 @@ def main() -> int:
             result = new_run(args.research)
         else:
             result = read_json(args.run)
-            if result.get("schemaVersion") != 2 or result.get("stages") != list(STAGES):
-                raise ValueError("Old review protocol; start a new isolated v2 run")
+            if result.get("schemaVersion") != 3 or result.get("stages") != list(STAGES):
+                raise ValueError("Old review protocol; start a new isolated v3 run")
             verify_chain(result)
             if args.action == "submit":
                 submit_artifact(result, args.stage, args.artifact, args.author)

@@ -665,3 +665,59 @@ with an independently reviewed collection plan to mark them. The
 unannotated HTML SHA, collection plan SHA, and deterministic annotated
 HTML SHA. Full contract:
 `docs/engine-c-cms-collection-handoff.md`.
+
+
+## Full-viewport hero motion (mandatory)
+
+Every new website for **every niche** must have a fullscreen, immersive,
+muted autoplay video hero with a separately composed **desktop landscape**
+and **mobile portrait** variant. The page must still be readable and
+usable on a poster for `prefers-reduced-motion`, blocked autoplay,
+data-saver or slow network. Do not burn credits or generate a video
+until the independent design direction has been chosen.
+
+Use the owner's signed-in Google Flow browser account(s) via authorized
+Remote Desktop profiles, not scraped cookies or stored passwords.
+Four stills (desktop/mobile first/last frames), two videos (5-10s),
+two retries maximum in the standard budget. Check the currently displayed
+model, per-generation credit cost and available balance *before* every
+spend. Two account aliases may be used for normal balance management,
+not bypassing an account restriction or exceeding provider limits.
+
+A hero-motion stage after design direction and before implementation
+must independently verify both videos, negative space for title/subtitle/
+CTA, visual identity, premium motion, safe loop OR stable end-frame freeze,
+browser playback, posters, reduced-motion behavior, and full viewport.
+Dramatic reveals and ingredient explosions are allowed when tasteful;
+do not whitelist a limited set of effects. Lead photos are optional;
+use them when they genuinely improve the concept. Never invent a real
+doctor, team member, patient, menu dish or service claim.
+
+**MANUAL HUMAN APPROVAL is mandatory** for v1 and is verified separately
+from the generator's output. Automatically scored hero selection may be
+introduced later only through an explicitly authorized policy change.
+A missing approval receipt blocks production site implementation.
+Exact constraints: `docs/flow-hero-motion-contract.md`.
+
+## Restaurant menu is an ON-PAGE primary section
+
+For a restaurant, pizzeria or cafe with an authentic verified menu,
+the site must display the **source-grounded menu on its own page**,
+organized into categories (signature dishes, build-your-own, sides,
+toppings, beverages, etc. only as supported by the source).
+Preserve each available item name, description, and displayed price
+when source provides them. An unknown price should be shown as
+unavailable/ask restaurant, not invented. The official ordering/booking
+destination can remain a clearly labelled secondary action but must
+NOT replace the embedded menu with a redirect. Menus must be readable
+on mobile, with appropriately marked `data-pe-collection="menu"`
+and direct-child `data-pe-item` cards so clients can edit dishes
+after handoff. Do not copy menu from an unrelated restaurant or
+fabricate extra items. Verify the menu's source and retrieval date,
+note possible price changes, and do not imply the website concept
+is approved by the business.
+
+Use `menu_catalog_gate.py` with a screenshot-backed, hash-pinned
+menu catalog plan; block the final CMS stage if a verified
+restaurant menu is absent from the generated page or replaced
+solely by an outbound menu/ordering link.
