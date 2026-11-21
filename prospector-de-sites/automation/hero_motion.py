@@ -167,11 +167,14 @@ def validate_plan(plan: dict, research: dict | None = None) -> dict:
 
 def _video_metadata(path:Path) -> dict:
     # This is a measured media probe, not a JSON claim written by the generator.
-    proc=subprocess.run([
-        "ffprobe","-v","error","-show_entries",
-        "format=duration:stream=codec_type,codec_name,width,height,duration",
-        "-of","json",str(path)],
-        text=True,capture_output=True,timeout=25,check=False)
+    try:
+        proc=subprocess.run([
+            "ffprobe","-v","error","-show_entries",
+            "format=duration:stream=codec_type,codec_name,width,height,duration",
+            "-of","json",str(path)],
+            text=True,capture_output=True,timeout=25,check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ValueError('ffprobe unavailable or cannot verify video bytes') from exc
     if proc.returncode:
         raise ValueError("ffprobe cannot verify video bytes")
     data=json.loads(proc.stdout)
