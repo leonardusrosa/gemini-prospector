@@ -11,6 +11,9 @@ Execução:    python prospector-mcp.py            (usa a pasta atual)
 Teste local: python prospector-mcp.py --teste
 """
 import argparse, json, os, sqlite3, sys, datetime
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent / "prospector-de-sites"))
+from market_scope import scope_issue, normalize_country
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--pasta', default=os.environ.get('PROSPECTOR_DIR', '.'),
@@ -27,8 +30,10 @@ CAMPOS = ['slug','nome','nicho','cidade','nota','avaliacoes','email','telefone',
           'marketTier']
 STATUS_VALIDOS = ['novo','redesenhado','publicado','proposta','respondeu','fechado','descartado']
 
+from market_scope import EUROPE_COUNTRIES
+
 TIER_A = {'US','CA','GB','IE','NL','CH','DE','AT','DK','SE','NO'}
-TIER_B = {'ES','CL','MX','PA','CR','UY','PT'}
+TIER_B = set(EUROPE_COUNTRIES) - TIER_A
 MARKET_DEFAULTS = {
     'US': {'currency': 'USD', 'phoneCountryCode': '1'},
     'CA': {'currency': 'CAD', 'phoneCountryCode': '1'},
@@ -148,10 +153,18 @@ def f_salvar(dados):
     if dados.get('status') and dados['status'] not in STATUS_VALIDOS:
         return {'erro': 'status inválido. Use: %s' % ', '.join(STATUS_VALIDOS)}
     existente = f_obter(dados['slug'])
-    # Market Policy V3: NEW_DISCOVERY_BR = DISABLED.
-    # New Brazilian leads cannot be created. Existing Brazilian leads remain valid and can be updated.
-    if existente is None and _is_brazilian_lead(dados):
-        return {'erro': 'NEW_DISCOVERY_BR is DISABLED under Market Policy V3. New Brazilian prospects cannot be created in CRM.'}
+    # Only NEW prospect creation is scoped; historical leads remain editable.
+    # Admin contact switches and telephone authorization are independent.
+    if existente is None:
+        issue = scope_issue(dados.get('country'))
+        if issue:
+            return {'erro': issue, 'policy': 'NEW_DISCOVERY_US_CA_EUROPE_ONLY'}
+    elif dados.get('country'):
+        previous_country = normalize_country(existente.get('country'))
+        requested_country = normalize_country(dados['country'])
+        if previous_country and requested_country and previous_country != requested_country:
+            return {'erro': 'Existing lead country conflict requires manual identity review.',
+                    'policy': 'CRM_CROSS_COUNTRY_MERGE_BLOCK'}
     atual = existente or {}
     atual.update({k: v for k, v in dados.items() if k in CAMPOS and v is not None})
     atual.setdefault('status', 'novo'); atual.setdefault('contratoStatus', 'pendente'); atual.setdefault('pago', 0)
@@ -277,9 +290,10 @@ if ARGS.teste:
     assert lead_us['marketTier'] == 'TIER_A', f"US should be TIER_A, got {lead_us['marketTier']}"
     assert lead_us['currency'] == 'USD', f"US currency should be USD, got {lead_us['currency']}"
     print('9 US lead (Springfield IL):', res_us, '| tier:', lead_us['marketTier'])
-    # V3.1.1: raw phone starting 55 without + must NOT imply BR when no country
+    # A raw number does not establish country; new discovery must fail closed.
     res_raw = f_salvar({'slug':'raw-55-test','nome':'Test Raw','cidade':'Dallas, TX','whatsapp':'5512345678'})
-    assert res_raw.get('ok'), f"Raw 55 phone without + must not block: {res_raw}"
+    assert res_raw.get('policy') == 'NEW_DISCOVERY_US_CA_EUROPE_ONLY', (
+        f"Missing verified country must block new discovery: {res_raw}")
     print('10 raw 55 phone (no +, no country):', res_raw)
     print('AUTOTESTE OK')
     sys.exit(0)
