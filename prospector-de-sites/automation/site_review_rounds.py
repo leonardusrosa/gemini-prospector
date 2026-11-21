@@ -22,6 +22,7 @@ from pathlib import Path
 
 import site_research
 import engine_c_bridge
+import cms_compatibility
 
 STAGES = (
     "FACTS_AND_IDENTITIES",
@@ -29,6 +30,7 @@ STAGES = (
     "ENGINE_C_CANDIDATES",
     "INDEPENDENT_DESIGN_DIRECTION",
     "IMPLEMENTATION_AND_RESPONSIVE",
+    "CLIENT_CMS_COMPATIBILITY",
     "BROWSER_VISUAL_AND_INTERACTIONS",
     "FACTUAL_AND_CONVERSION_RECHECK",
 )
@@ -145,7 +147,7 @@ def new_run(manifest_path: Path) -> dict:
     # source/media rights. Independent research review remains its own stage.
     site_research.audit_research_manifest(manifest)
     return {
-        "schemaVersion": 1, "leadSlug": slug,
+        "schemaVersion": 2, "leadSlug": slug,
         "sourceManifest": str(Path(manifest_path).resolve()),
         "sourceManifestSha256": file_hash(manifest_path),
         "stages": list(STAGES),
@@ -227,7 +229,32 @@ def _stage_content_checks(stage: str, artifact: dict, current: dict) -> None:
         if artifact.get("selectionSha256") != (
                 bridge_result["sourceHashes"]["selectionSha256"]):
             raise ValueError("Engine C selector artifact changed; stale selection hash")
+    elif stage == "CLIENT_CMS_COMPATIBILITY":
+        html_file = artifact.get("htmlFile")
+        if not isinstance(html_file, str) or not Path(html_file).is_file():
+            raise ValueError("Client CMS requires the actual generated static HTML file")
+        if file_hash(Path(html_file)) != artifact.get("htmlSha256"):
+            raise ValueError("Client CMS source HTML file has changed since review")
+        # Structural compatibility is independent of tenant provisioning and
+        # authenticated end-to-end CMS/editor smoke tests.
+        compatibility = cms_compatibility.audit_html_file(
+            Path(html_file), current["leadSlug"]
+        )
+        if compatibility["result"] != "STRUCTURE_PASS":
+            raise ValueError("Generated HTML is not compatible with existing AutoCORA Client CMS")
     elif stage == "BROWSER_VISUAL_AND_INTERACTIONS":
+        source_manifest = read_json(Path(current["sourceManifest"]))
+        preview_media = any(
+            isinstance(item, dict) and item.get("useInProtectedOwnerPreview") is True
+            for item in source_manifest.get("assets") or []
+        )
+        if preview_media:
+            probe = artifact.get("independentPreviewAccessProbe") or {}
+            decision = site_research.audit_protected_owner_preview(
+                source_manifest, access_evidence=probe
+            )
+            if decision["result"] != "STRUCTURE_READY_FOR_PRIVATE_PREVIEW":
+                raise ValueError("Access-protected owner preview lacks independently verified privacy controls")
         screenshots = artifact.get("screenshots")
         if not isinstance(screenshots, dict):
             raise ValueError("Live browser screenshots required")
@@ -333,7 +360,13 @@ def independent_review(run: dict, report_path: Path) -> dict:
             raise ValueError("Source/media provenance has structural blockers")
         if (stage == "MEDIA_RIGHTS_AND_RELEVANCE" and
                 structural["result"] != "STRUCTURE_PASS"):
-            raise ValueError("Unresolved research/rights checks cannot pass")
+            # A private owner-facing design preview may use verifiable,
+            # brand-linked source media WITHOUT requiring reuse permission
+            # at this design stage. It never grants public deployment.
+            preview = site_research.audit_protected_owner_preview(source_manifest)
+            if (preview["result"] == "BLOCK" or
+                    preview["brandAssetsUsableInInternalPreview"] < 1):
+                raise ValueError("Media rights unresolved and no valid protected owner-preview path")
     entry.update({"report": str(Path(report_path).resolve()),
                   "reportSha256": file_hash(report_path),
                   "reviewerId": reviewer})
@@ -371,6 +404,9 @@ def status(run: dict) -> dict:
         "readyForHumanPreview": run["readyForHumanPreview"],
         "productionReleaseAuthorized": False,
         "outreachAuthorized": False, "callbackAuthorized": False,
+        "cmsTenantProvisioned": False,
+        "cmsAuthenticatedEditPublishRestoreSmokePassed": False,
+        "readyForClientHandoff": False,
         "nextAction": (
             "SUBMIT_STAGE_ARTIFACT" if entry and entry["status"] == "AWAITING_ARTIFACT"
             else "INDEPENDENT_REVIEW" if entry and entry["status"] == "AWAITING_REVIEW"
@@ -404,6 +440,8 @@ def main() -> int:
             result = new_run(args.research)
         else:
             result = read_json(args.run)
+            if result.get("schemaVersion") != 2 or result.get("stages") != list(STAGES):
+                raise ValueError("Old review protocol; start a new isolated v2 run")
             verify_chain(result)
             if args.action == "submit":
                 submit_artifact(result, args.stage, args.artifact, args.author)

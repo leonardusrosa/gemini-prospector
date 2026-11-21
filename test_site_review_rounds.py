@@ -140,7 +140,7 @@ class ReviewCycleTests(unittest.TestCase):
         self.submit()
         cycle.independent_review(self.run, self.report("PASS"))
         self.submit()
-        with self.assertRaisesRegex(ValueError, "Unresolved research"):
+        with self.assertRaisesRegex(ValueError, "Media rights unresolved"):
             cycle.independent_review(self.run, self.report("PASS"))
 
     def test_manifest_drift_fails_closed(self):
@@ -199,6 +199,94 @@ class ReviewCycleTests(unittest.TestCase):
                 with cycle.exclusive_run_lock(self.run_file):
                     pass
         self.assertFalse(Path(str(self.run_file) + ".lock").exists())
+
+    def test_client_cms_stage_uses_actual_html_and_stays_unprovisioned(self):
+        self.run["currentStageIndex"] = cycle.STAGES.index("CLIENT_CMS_COMPATIBILITY")
+        site_dir = self.folder / "pilot-detailing"
+        site_dir.mkdir()
+        html = site_dir / "index.html"
+        html.write_text(
+            '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            '<title>Pilot detailing</title></head><body><h1>Pilot detailing</h1>'
+            '<p>Verified workshop</p><p>Contact us</p>'
+            '<img src="assets/hero.webp" alt="Workshop">'
+            '<a href="tel:+14155550123">Call</a></body></html>',
+            encoding="utf-8"
+        )
+        self.submit(htmlFile=str(html), htmlSha256=cycle.file_hash(html))
+        cycle.independent_review(self.run, self.report("PASS"))
+        self.assertEqual(cycle.current_stage(self.run), "BROWSER_VISUAL_AND_INTERACTIONS")
+        state = cycle.status(self.run)
+        self.assertFalse(state["cmsTenantProvisioned"])
+        self.assertFalse(state["readyForClientHandoff"])
+
+    def test_client_cms_stage_blocks_hydration(self):
+        self.run["currentStageIndex"] = cycle.STAGES.index("CLIENT_CMS_COMPATIBILITY")
+        html = self.folder / "index.html"
+        html.write_text(
+            '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            '<title>Unsafe</title></head><body><h1>Title</h1>'
+            '<p>Intro</p><p>More</p><a href="/">Contact</a>'
+            '<script src="/_next/static/chunk.js"></script></body></html>'
+        )
+        with self.assertRaisesRegex(ValueError, "not compatible"):
+            self.submit(htmlFile=str(html), htmlSha256=cycle.file_hash(html))
+
+    def test_private_preview_media_does_not_require_rights_but_browser_must_prove_access(self):
+        manifest = json.loads(self.manifest.read_text(encoding="utf-8"))
+        manifest["researchChecks"]["mediaRightsReviewed"] = False
+        manifest["ownerPreviewPolicy"] = {
+            "previewPurpose": "BUSINESS_OWNER_REVIEW", "accessProtected": True,
+            "ownerOnlyAudience": True, "noSearchIndexing": True,
+            "noPublicRelease": True,
+        }
+        manifest["socialProfiles"] = [{
+            "platform": "instagram", "url": "https://instagram.com/pilotdetail",
+            "identityVerified": True,
+            "identityEvidence": "https://example.org/about",
+            "checkedAt": "2026-11-21T15:00:00Z",
+        }]
+        manifest["assets"] = [{
+            "id": "photo-preview", "origin": "instagram",
+            "mediaType": "image", "profileUrl": "https://instagram.com/pilotdetail",
+            "sourceUrl": "https://cdn.example.org/brand.webp",
+            "sourcePage": "https://instagram.com/pilotdetail/p/photo",
+            "identityVerified": True, "rightsStatus": "UNCONFIRMED",
+            "useInProtectedOwnerPreview": True,
+            "previewPath": ".prospector/owner-preview/assets/photo.webp",
+            "usedInSite": False,
+        }]
+        self.manifest.write_text(json.dumps(manifest), encoding="utf-8")
+        self.run = cycle.new_run(self.manifest)
+        self.run["currentStageIndex"] = cycle.STAGES.index("MEDIA_RIGHTS_AND_RELEVANCE")
+        self.submit()
+        cycle.independent_review(self.run, self.report("PASS"))
+        self.assertEqual(cycle.current_stage(self.run), "ENGINE_C_CANDIDATES")
+
+        self.run["currentStageIndex"] = cycle.STAGES.index("BROWSER_VISUAL_AND_INTERACTIONS")
+        screenshots = {}
+        for v, dims in (("desktop", (1440, 900)), ("mobile", (390, 844))):
+            file = self.folder / f"private-{v}.png"
+            make_png(file, *dims)
+            screenshots[v] = {"path": str(file), "sha256": cycle.file_hash(file)}
+        checks = {key: True for key in (
+            "pageErrorsZero", "noHorizontalOverflow",
+            "primaryCtaVisible", "navigationWorks")}
+        with self.assertRaisesRegex(ValueError, "Access-protected"):
+            self.submit(screenshots=screenshots, checks=checks)
+        self.submit(2, screenshots=screenshots, checks=checks,
+                    independentPreviewAccessProbe={
+                        "unauthenticatedAccessDenied": True,
+                        "noIndexHeadersVerified": True,
+                        "recipientRestricted": True,
+                        "reviewedBy": "independent-browser-agent",
+                        "probeAt": "2026-11-21T16:00:00Z",
+                    })
+        cycle.independent_review(self.run, self.report("PASS"))
+        self.assertEqual(cycle.current_stage(self.run), "FACTUAL_AND_CONVERSION_RECHECK")
+        self.assertFalse(cycle.status(self.run)["productionReleaseAuthorized"])
 
     def test_isolated_cli_and_no_output_in_git(self):
         command = [

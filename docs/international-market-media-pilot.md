@@ -10,10 +10,11 @@ An unknown country is BLOCKED. Never infer from a local phone number,
 the operator's location, language or an ambiguous city name.
 Historical records outside scope remain editable without cross-country merges.
 
-First pilot cohort: independent automotive detailers with a strong direct
-Maps identity, at least 4.7 stars and ideally 40–60+ real reviews,
-a verified weak/missing official website, real services and source media.
-The sector is an initial benchmark, not a permanent restriction.
+Initial preferred niches are restaurants, pizzerias/pizza shops, cafes/
+coffee shops and clinics/dentistry, with country-specific service/ad rules.
+Automotive detailing remains a validated design benchmark but is not the
+owner's current top niche. All selected leads still require a verified strong
+Maps identity, a genuine website opportunity, real services and source media.
 Priority countries for initial research are US, CA, GB, IE, NL, DE, CH,
 AT, DK, SE, NO, FR, ES and PT. Other European countries are in scope,
 but require language and jurisdiction-specific review.
@@ -56,7 +57,12 @@ Research handoff CLI (local, read-only, no scraping):
     python prospector-de-sites/automation/site_research.py audit --manifest .prospector/site-research-plan.json
 
 The planner starts as REVIEW_REQUIRED with unverified social identities and
-no asset rights. Asset audit rejects attempted publication of unlicensed media.
+no asset rights. The PUBLIC site asset audit rejects attempted publication
+of images with unverified reuse rights. A separate access-protected,
+recipient-only owner preview path can use source-verified brand photos
+without up-front license checks, provided the photos never enter public
+site assets and a real independent host access/noindex probe is verified.
+See docs/cms-owner-preview-and-priority-niches.md.
 Even STRUCTURE_PASS means metadata shape/provenance references are consistent,
 not that the browser, rights, or factual claims were independently verified;
 readyForDesign remains false until a separate evidence-review phase approves it.
