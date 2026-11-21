@@ -12,6 +12,12 @@ import sqlite3
 import unicodedata
 from typing import Any, Dict, List, Optional, Tuple
 
+# Shared Core market policy; reject new out-of-scope leads before CRM writes.
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent / "prospector-de-sites"))
+from market_scope import scope_issue, normalize_country
+
 LIFECYCLE_STATUSES = [
     'discovered', 'qualified', 'redesigned', 'published',
     'proposta_preparada', 'contactado', 'respondeu',
@@ -231,6 +237,22 @@ def registrar_run(conn: sqlite3.Connection, info_run: Dict[str, Any]) -> int:
 def upsert_lead_discovery(conn: sqlite3.Connection, lead: Dict[str, Any], run_id: Optional[int] = None) -> Dict[str, Any]:
     """Insere ou atualiza um lead descoberto com proteção de downstream status."""
     existing_slug = encontrar_lead_duplicado(conn, lead)
+    # New discoveries require an explicit verified ISO country. Legacy records
+    # remain editable, including historical markets outside the new cohort.
+    if not existing_slug:
+        issue = scope_issue(lead.get('country'))
+        if issue:
+            return {'ok': False, 'blocked': True, 'reason': issue,
+                    'policy': 'NEW_DISCOVERY_US_CA_EUROPE_ONLY'}
+    else:
+        previous = conn.execute("SELECT country FROM leads WHERE slug=?",
+                                (existing_slug,)).fetchone()
+        incoming = normalize_country(lead.get('country'))
+        previous_country = normalize_country(previous[0]) if previous else ''
+        if incoming and previous_country and incoming != previous_country:
+            return {'ok': False, 'blocked': True,
+                    'reason': 'Country conflict with an existing CRM business; review identity before merging.',
+                    'policy': 'DISCOVERY_CROSS_COUNTRY_MERGE_BLOCK'}
     slug = existing_slug or lead.get('slug') or gerar_slug(lead.get('nome', 'lead'), lead.get('cidade', ''))
     lead['slug'] = slug
     if run_id:

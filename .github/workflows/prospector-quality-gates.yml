@@ -24,6 +24,9 @@ jobs:
       - name: Agent-agnostic runtime bootstrap
         run: python prospector.py self-test
 
+      - name: International discovery and social media rights gates
+        run: python test_market_scope_and_site_research.py
+
       - name: Portable design-judge regressions
         run: python test_agent_runtime_portability.py
 

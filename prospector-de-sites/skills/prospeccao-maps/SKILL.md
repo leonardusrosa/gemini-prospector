@@ -1,9 +1,9 @@
 ---
 name: prospeccao-maps
-description: Esta skill deve ser usada ao prospectar clientes no Google Maps — buscar negócios bem avaliados com sites ruins OU sem site próprio (Brasil, Portugal e internacional), qualificar leads com score de oportunidade, classificar o status do site e montar a base de leads. Acione quando o usuário disser "prospectar", "buscar clientes", "achar leads", "clientes com site ruim", "clientes sem site", "prospecta negócios sem site" ou pedir para prospectar (skill prospeccao-maps).
+description: Use for Google Maps prospect discovery, score-based website opportunities, verified business identity, official site/social media inventory and lead qualification. New discoveries are strictly limited to the USA, Canada and Europe; existing international CRM records may be maintained. Do not infer country, rights or telephone permission.
 ---
 
-# Prospecção no Google Maps (Multimercado: Brasil, Portugal & Internacional)
+# Google Maps Prospect Discovery (USA, Canada, Europe)
 
 Encontrar negócios bem avaliados e consolidados (nota alta, muitas avaliações) que perdem clientes por:
 1. **Site Fraco (`existing_weak` → `redesign`)**: negócio com site ativo porém datado, quebrado no mobile ou sem conversão.
@@ -11,29 +11,47 @@ Encontrar negócios bem avaliados e consolidados (nota alta, muitas avaliações
 
 ---
 
-## 1. Política de Mercado Global & Metadados
+## 1. Geographic Policy — USA, Canada and Europe only
 
-> [!IMPORTANT]
-> **NOVA DESCOBERTA NO BRASIL DESATIVADA (`NEW_DISCOVERY_BR = DISABLED`)**
-> A prospecção ativa de novos leads no Brasil está desativada. Novos leads brasileiros são rejeitados pelo CRM. Leads brasileiros pré-existentes permanecem válidos no banco de dados para evolução no funil, acompanhamento e fechamento.
+**HARD GATE: New prospect discovery is restricted to the United States (US),
+Canada (CA), and Europe.** The exact ISO country allowlist lives in
+prospector-de-sites/market_scope.py. Every new lead must have an independently
+verified ISO 3166-1 alpha-2 country. Uncertain, absent or out-of-scope
+countries are blocked, not guessed from phone digits, language, or city names.
 
-### Mercados Alvo Primários
-- **Tier A**: Estados Unidos (`US`), Canadá (`CA`), Reino Unido (`GB`), Irlanda (`IE`), Países Baixos (`NL`), Suíça (`CH`), Alemanha (`DE`), Áustria (`AT`), Dinamarca (`DK`), Suécia (`SE`), Noruega (`NO`).
-- **Tier B**: Espanha (`ES`), Chile (`CL`), México (`MX`), Panamá (`PA`), Costa Rica (`CR`), Uruguai (`UY`), Portugal (`PT`).
-- Outros países são permitidos apenas sob pedido explícito do usuário.
+Historical CRM leads from outside this scope, including existing Brazilian
+leads, remain editable. A conflicting country for an existing CRM identity
+requires manual resolution before merging. No exceptions to the NEW discovery
+scope are inferred from historical lead states or a previous search session.
 
-A resolução do país do lead segue a ordem rigorosa de evidências:
-1. **País explícito na busca/pedido do usuário** (ex: `"em Miami, US"`, `"em Lisboa, Portugal"`, `"em Santiago, Chile"`).
-2. **Metadados de endereço do Google Maps / Places** (`country`, `formatted_address`).
-3. **Contexto de cidade/região inequívoco** (ex: Miami → `US`, Lisboa → `PT`, Madrid → `ES`, Santiago → `CL`).
-4. **Configuração padrão** (`market.defaultCountry` em `prospector-config.json`) apenas quando não houver pistas locais suficientes.
+Research priority:
+- **Tier A**: US, CA, GB, IE, NL, CH, DE, AT, DK, SE, NO.
+- **Tier B**: Other European ISO countries; initial exploratory markets
+  include FR, ES, PT, IT, BE, FI and PL.
+- **Out of scope for NEW discovery**: BR, MX, CL, PA, CR, UY, and any
+  non-US/CA/non-European country.
 
-Metadados canônicos persistidos por lead:
-- `country`: Código ISO 3166-1 alpha-2 (`US`, `PT`, `ES`, etc.)
-- `locale`: Derivado da evidência do país (`en-US`, `pt-PT`, `es-ES`, etc.), nunca apenas da língua.
-- `currency`: Moeda canônica (`USD`, `EUR`, etc.)
-- `phoneCountryCode`: DDI (`1`, `351`, `34`, etc.)
-- `marketTier`: `TIER_A`, `TIER_B`, ou `OTHER`
+Initial pilot niche: independent automotive-detailing businesses. This is a
+research-cohort preference, not a universal industry exclusion.
+
+Country evidence priority:
+1. Exact country explicitly specified by the operator;
+2. Direct Google Maps/Places country/address evidence;
+3. Independent official business-address source.
+
+If evidence conflicts, **HOLD** rather than overwrite the lead's country.
+Do not apply a Brazilian locale fallback to North American/European copy.
+
+Separate opportunity ranking, source/media readiness and channel verification
+from legal outreach authorization and callback permission. Neither a verified
+phone number nor an admin ON/OFF preference is permission for AI sales calls.
+
+Canonical lead metadata: country, locale/language as actually verified for
+that market, currency and calling code only when known, marketTier,
+websiteStatus, classification evidence, and media provenance.
+
+See docs/international-market-media-pilot.md for the executable research
+and asset-rights workflow.
 
 ---
 
@@ -84,35 +102,45 @@ O cálculo de oportunidade é neutro em relação ao país:
 
 ---
 
-## 5. Comandos em Linguagem Natural
+## 5. Example discovery instructions
 
-- **Brasil**: `"prospecta dentistas sem site em Rio Claro SP"` / `"procura nutricionistas em Campinas"`
-- **Portugal**: `"prospecta dentistas sem site em Lisboa, Portugal"` / `"procura restaurantes em Coimbra PT"`
-- **Misto / Específico**: `"prospecta clínicas com site fraco ou sem site no Porto"`
+- United States: research automotive detailers in Dallas TX with a missing
+  or visibly weak official business website and independently verified Maps
+  identity, services and review count.
+- Canada: find independent service providers in Toronto ON with a strong
+  verified local reputation and demonstrably weak mobile website.
+- Europe: research local businesses in Dublin IE, Amsterdam NL, or Porto PT
+  with a website opportunity and actual first-party/social asset inventory.
+
+New discovery outside the US, Canada and Europe is blocked; Brazilian legacy
+lead maintenance remains permitted.
 
 ---
 
-## 6. Apresentação de Candidatos
+## 6. Candidate presentation before site creation
 
-Antes de gerar os sites/redesigns, apresente a lista com distinção nítida de país e modo:
+Present evidence-backed leads with separate country, website opportunity,
+research-readiness and independent callback/outreach authorization status.
 
-```markdown
-1. Clínica Sorriso Lisboa
-- País: 🇵🇹 Portugal (PT) · pt-PT
-- Modo: ＋ SEM SITE / NOVO SITE
-- Google: 4.9 ★ · 142 avaliações (Lisboa)
-- Presença atual: Google Maps + Instagram oficial (sem site oficial após verificação)
-- Contacto: WhatsApp +351 912 345 678
-- Score de Oportunidade: 93/100
+Illustrative response structure (fictional examples, not verified leads):
 
-2. Advocacia Mendes & Associados
-- País: 🇧🇷 Brasil (BR) · pt-BR
-- Modo: 🌐 REDESIGN
-- Google: 4.8 ★ · 65 avaliações (São Paulo)
-- Site atual: http://mendesadv.sites.google.com (lento, quebra no mobile)
-- Contato: WhatsApp +55 11 98888-7777
-- Score de Oportunidade: 88/100
-```
+1. Example Workshop, Dallas, US
+   - Market: US / English-language review pending
+   - Opportunity: weak official mobile website, source verification pending
+   - Reputation: rating/count only if independently verified in Maps
+   - Media: inspect official site and confirmed brand socials for assets
+   - Commercial: research score, not contact authorization
+   - Callback: disabled until real recipient request and admin review
+
+2. Example Studio, Porto, PT
+   - Market: PT / Portuguese (Portugal)
+   - Opportunity: potentially no official site; independently verify
+   - Media: official social presence is research evidence, not a reuse license
+   - Commercial: scored independently from image rights
+   - Callback: disabled regardless of score
+
+Never present a fabricated real business or unverifiable review count as
+a ranked prospect. Omit out-of-scope new leads entirely.
 
 ---
 
@@ -155,3 +183,30 @@ QUALIFY
 ```
 
 Uma homepage fraca pode esconder ótimas fotos, descrições e credenciais em subpáginas. Não penalize nem redesenhe com evidência incompleta quando essas páginas forem facilmente descobríveis.
+
+## 8. Official social identity and media reuse gate
+
+The desktop-assisted research pass must inspect confirmed official websites
+and verified business-owned social accounts (Instagram, Facebook, TikTok,
+YouTube, when applicable) before final design direction. These accounts
+are legitimate **sources of observations**, not automatically licensed
+asset repositories and not outbound messaging channels.
+
+- Record official profile URL, evidence of business identity, observation
+  date and the specific original asset/source-page URL.
+- Classify each photo, logo, staff image and video by semantic purpose,
+  quality and documented commercial reuse permission.
+- A publicly accessible social photo cannot be downloaded/rehosted on a
+  customer site without documented rights for that specific use.
+- Google Maps/Places photos are reference-only unless separately authorized;
+  compliant official embeds are distinct from downloading/serving copies.
+- If the profile is unverified, do not present it as a clickable official
+  brand account. Never fabricate a logo, handle, staff identity or image.
+- The local research manifest gate blocks attempted use of media without
+  source identity and permission evidence. Do not mark independent visual
+  or factual QA PASS based on a manifest checkbox alone.
+- Full design implementation and two-round targeted visual corrections are
+  separate, evidence-bound stages. Final Preview release remains manual.
+
+Implementation: prospector-de-sites/automation/site_research.py
+Regression: test_market_scope_and_site_research.py
