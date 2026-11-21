@@ -648,11 +648,20 @@ Rules:
   publish -> rollback tests are mandatory before final client handoff.
   Passes from structural static checks alone are insufficient.
 
-Implementation: dashboard Client CMS PR #40
+Implementation: dashboard Client CMS PR #40 (merged to main, live)
 https://github.com/leonardusrosa/prospector-dashboard/pull/40
 Contract: dashboard docs/client-cms-collections.md
 
-Before the CMS PR has merged/deployed, these annotations are safe inert HTML
-metadata but do not constitute a working collection UI. No production
-handoff can claim editable collections until the dashboard deployment
-and runtime browser E2E both pass.
+The CMS editor is already deployed on the main CRM and has been
+staging-tested with real Supabase + authenticated Chromium. For each NEW
+site, a separately provisioned tenant and runtime edit/publish/rollback
+test are still mandatory.
+
+**Required Engine C handoff:** after generating static HTML with stable
+unique IDs on verified collection container/cards, run the source-hash-
+bound `prospector-de-sites/automation/cms_collections_handoff.py` tool
+with an independently reviewed collection plan to mark them. The
+`CLIENT_CMS_COMPATIBILITY` QA stage requires the immutable research SHA,
+unannotated HTML SHA, collection plan SHA, and deterministic annotated
+HTML SHA. Full contract:
+`docs/engine-c-cms-collection-handoff.md`.

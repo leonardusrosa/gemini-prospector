@@ -117,6 +117,14 @@ def research_plan(lead: dict[str, Any]) -> dict:
         "recommendedStack": "static-html-css-js-with-autocora-client-cms",
         "clientCmsRequirements": {
             "mustProvideAdmin": True,
+            "repeatableCollectionsAfterGeneration": (
+                assessment.get("priorityNiche") in
+                {"restaurant", "pizzeria", "cafe", "dentistry", "clinic"}
+            ),
+            "repeatableCollectionsNeedSourceEvidence": True,
+            "repeatableCollectionsSupported": [
+                "menu", "gallery", "services", "team", "pricing"
+            ],
             "adminPathPattern": "/clientes/{slug}/admin/",
             "publishedPagePattern": "/clientes/{slug}/site/",
             "tenantLocaleFromLead": True,
