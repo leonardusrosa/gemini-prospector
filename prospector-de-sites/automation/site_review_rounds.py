@@ -23,6 +23,7 @@ from pathlib import Path
 import site_research
 import engine_c_bridge
 import cms_compatibility
+import cms_collections_handoff
 
 STAGES = (
     "FACTS_AND_IDENTITIES",
@@ -242,6 +243,38 @@ def _stage_content_checks(stage: str, artifact: dict, current: dict) -> None:
         )
         if compatibility["result"] != "STRUCTURE_PASS":
             raise ValueError("Generated HTML is not compatible with existing AutoCORA Client CMS")
+        research = read_json(Path(current["sourceManifest"]))
+        niche = (research.get("assessment") or {}).get("priorityNiche")
+        if niche in cms_collections_handoff.PRIORITY_NICHES:
+            # The initial research manifest is immutable and cannot yet know
+            # the future generated HTML hash. A separate, later artifact binds
+            # the researched facts, original site, and annotated HTML bytes.
+            plan_file = artifact.get("cmsCollectionPlanFile")
+            base_file = artifact.get("unannotatedHtmlFile")
+            if not isinstance(plan_file, str) or not Path(plan_file).is_file():
+                raise ValueError("Priority niche requires a CMS collection plan")
+            if not isinstance(base_file, str) or not Path(base_file).is_file():
+                raise ValueError("Priority niche requires original Engine C HTML")
+            if (file_hash(Path(plan_file)) != artifact.get("cmsCollectionPlanSha256")
+                    or file_hash(Path(base_file)) != artifact.get("unannotatedHtmlSha256")):
+                raise ValueError("CMS collection plan or original source bytes changed")
+            plan = read_json(Path(plan_file))
+            if plan.get("sourceManifestSha256") != current["sourceManifestSha256"]:
+                raise ValueError("CMS plan must bind to the immutable research manifest")
+            if (plan.get("leadSlug") != current["leadSlug"]
+                    or plan.get("country") != research.get("country")
+                    or (plan.get("assessment") or {}).get("priorityNiche") != niche):
+                raise ValueError("CMS plan lead/country/niche identity mismatch")
+            if plan.get("cmsSourceHtmlSha256") != file_hash(Path(base_file)):
+                raise ValueError("CMS plan is not bound to Engine C source HTML")
+            base_html = Path(base_file).read_text(encoding="utf-8")
+            cms_html = Path(html_file).read_text(encoding="utf-8")
+            expected = cms_collections_handoff.annotate_html(base_html, plan)
+            if expected != cms_html:
+                raise ValueError("CMS markup must match deterministic source annotation")
+            audited = cms_collections_handoff.audit_html(cms_html, plan)
+            if audited["result"] != "STRUCTURE_PASS":
+                raise ValueError("Verified menu/services/gallery cards are not CMS editable")
     elif stage == "BROWSER_VISUAL_AND_INTERACTIONS":
         source_manifest = read_json(Path(current["sourceManifest"]))
         preview_media = any(

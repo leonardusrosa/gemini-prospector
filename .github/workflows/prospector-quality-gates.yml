@@ -32,6 +32,7 @@ jobs:
           python test_engine_c_bridge.py
           python test_site_review_rounds.py
           python test_cms_compatibility_and_owner_preview.py
+          python test_engine_c_cms_collections.py
 
       - name: Portable design-judge regressions
         run: python test_agent_runtime_portability.py

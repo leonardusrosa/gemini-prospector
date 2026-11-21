@@ -146,7 +146,8 @@ No production flags or external publishing endpoints are enabled by tests.
 
 The product owner confirmed clients should be able to add/remove/reorder
 repeatable cards **if easily achievable**. The dashboard implements this
-as an opt-in, no-migration static HTML Client CMS extension:
+as an opt-in, no-migration static HTML Client CMS extension, merged and
+deployed on the primary CRM (`8deeff0`):
 https://github.com/leonardusrosa/prospector-dashboard/pull/40
 
 For new websites based on verified sources, the generator must annotate
@@ -163,3 +164,19 @@ existing authenticated draft, publish and rollback lifecycle.
 
 This adds no structured menu/product backend. CMS version control is still
 whole HTML-page versioning. Real client tenant provisioning is required.
+
+
+## Engine C collection adapter
+
+The research-to-site handoff is implemented by
+`prospector-de-sites/automation/cms_collections_handoff.py`. Its
+post-generation, source-hash-bound plan adds exact
+`data-pe-collection` / `data-pe-item` attributes to real cards without
+fabricating content or overwriting the original static HTML. The
+`CLIENT_CMS_COMPATIBILITY` review stage requires the annotated output
+to be bit-for-bit equal to the deterministic transformer. Tests are
+in `test_engine_c_cms_collections.py`, and CI covers them.
+
+This is an auditable adapter; production data collection, actual
+image-generation execution, browser-based independent review, and
+per-customer CMS tenant provisioning are separate responsibilities.
