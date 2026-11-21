@@ -31,8 +31,10 @@ Research priority:
 - **Out of scope for NEW discovery**: BR, MX, CL, PA, CR, UY, and any
   non-US/CA/non-European country.
 
-Initial pilot niche: independent automotive-detailing businesses. This is a
-research-cohort preference, not a universal industry exclusion.
+Initial owner-preferred niches: restaurants, pizzerias, cafes/coffee shops,
+and clinics/dentistry. Automotive detailing remains an Engine C benchmark,
+not the active prospecting priority. Clinics require additional local
+healthcare-advertising and patient-image privacy review.
 
 Country evidence priority:
 1. Exact country explicitly specified by the operator;

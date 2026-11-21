@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 import math
+import re
+import unicodedata
 
 EUROPE_COUNTRIES = frozenset(
     """AD AL AT BA BE BG BY CH CY CZ DE DK EE ES FI FR GB GR HR HU IE IS
@@ -21,6 +23,32 @@ NEW_DISCOVERY_COUNTRIES = EUROPE_COUNTRIES | NORTH_AMERICA_COUNTRIES
 PRIORITY_COUNTRIES = frozenset(
     {"US", "CA", "GB", "IE", "NL", "DE", "CH", "AT", "DK", "SE", "NO", "FR", "ES", "PT"}
 )
+
+# Initial owner-selected niches are advisory, never exclusive.
+# Keep targeting terms language-aware for USA/Canada/Europe research.
+_NICHE_PHRASES = (
+    ("pizzeria", ("pizzeria", "pizzaria", "pizza restaurant", "pizza shop", "pizza place", "pizza takeout", "pizza")),
+    ("cafe", ("cafe", "coffee shop", "coffeehouse", "cafeteria", "salon de the", "cafetería", "cafeteria", "caffetteria")),
+    ("restaurant", ("restaurant", "restaurante", "ristorante", "gastronomia", "bistro", "brasserie", "eatery")),
+    ("dentistry", ("dentist", "dentistry", "dental", "odontologia", "odontologica", "odontologo", "ortodontia", "orthodontic", "zahnarzt", "tandarts", "dentaire", "dentiste", "dentista", "clinica dentaria", "clinica dental")),
+    ("clinic", ("clinic", "clinica", "clinique", "klinik", "kliniek", "medical practice", "medical office", "health clinic")),
+)
+
+
+def priority_niche(niche: Any) -> str | None:
+    if not isinstance(niche, str):
+        return None
+    normalized = unicodedata.normalize("NFKD", niche.lower())
+    normalized = "".join(c for c in normalized if not unicodedata.combining(c))
+    normalized = re.sub(r"[^a-z0-9]+", " ", normalized).strip()
+    if not normalized:
+        return None
+    for target, phrases in _NICHE_PHRASES:
+        if any(re.search(r"(?<![a-z])" + re.escape(phrase) + r"(?![a-z])", normalized)
+               for phrase in phrases):
+            return target
+    return None
+
 
 def normalize_country(country: Any) -> str:
     if not isinstance(country, str):
@@ -55,9 +83,12 @@ def assess_research_candidate(lead: dict[str, Any]) -> dict[str, Any]:
     """Deterministic research-ranking score, not a lead-contact permission."""
     country = normalize_country(lead.get("country"))
     issue = scope_issue(country)
+    niche = priority_niche(lead.get("nicho", lead.get("niche", "")))
     if issue:
         return {"scope": "BLOCK", "region": None, "score": 0,
                 "action": "HOLD", "reasons": [issue],
+                "priorityNiche": niche,
+                "regulatedClinicalClaimsReview": niche in {"clinic", "dentistry"},
                 "outreachAuthorized": False, "callbackAuthorized": False}
 
     rating = _number(lead.get("nota", lead.get("rating")))
@@ -122,7 +153,13 @@ def assess_research_candidate(lead: dict[str, Any]) -> dict[str, Any]:
         reasons.append("In scope, but local language and local-market research needed.")
 
     action = "RESEARCH_NEXT" if points >= 70 and identity_verified and website_verified else "HOLD_FOR_EVIDENCE"
+    if not niche:
+        reasons.append("Lower-priority niche; still geographically eligible.")
+    if niche in {"clinic", "dentistry"}:
+        reasons.append("Clinical claims, patient imagery and advertising require jurisdiction review.")
     return {"scope": "ALLOW", "country": country, "region": region(country),
             "priorityMarket": country in PRIORITY_COUNTRIES,
+            "priorityNiche": niche,
+            "regulatedClinicalClaimsReview": niche in {"clinic", "dentistry"},
             "score": points, "action": action, "reasons": reasons,
             "outreachAuthorized": False, "callbackAuthorized": False}

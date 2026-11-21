@@ -27,10 +27,11 @@ jobs:
       - name: International discovery and social media rights gates
         run: python test_market_scope_and_site_research.py
 
-      - name: Supervised Engine C selector and correction-round regressions
+      - name: Supervised Engine C, Client CMS and protected owner-preview gates
         run: |
           python test_engine_c_bridge.py
           python test_site_review_rounds.py
+          python test_cms_compatibility_and_owner_preview.py
 
       - name: Portable design-judge regressions
         run: python test_agent_runtime_portability.py

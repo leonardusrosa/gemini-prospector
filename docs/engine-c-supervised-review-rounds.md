@@ -19,7 +19,7 @@ schedule a job, send outreach, or approve Preview by itself.
   hashes actual mock images and rejects missing generation/reviewer context
   separation in evaluations.
 - The **new protocol** (prospector-de-sites/automation/site_review_rounds.py)
-  gives each lead seven explicit gates, stale artifact and witness protection,
+  gives each lead eight explicit gates, stale artifact and witness protection,
   an independent reviewer identity requirement, two correction rounds per gate,
   an atomic, local-only state receipt, and a terminal human Preview decision.
 
@@ -41,14 +41,24 @@ independently observed; never treat a self-authored JSON PASS as authority.
    recomputed hard gates, all mock/image hashes and fresh evaluator context.
 5. IMPLEMENTATION_AND_RESPONSIVE: code and layout from the selected visual
    candidate, responsive design, accessibility and valid contact links.
-6. BROWSER_VISUAL_AND_INTERACTIONS: real desktop (>=1000 px) and mobile
+6. CLIENT_CMS_COMPATIBILITY: full static HTML source and SHA, verified
+   through the canonical AutoCORA CMS structural compatibility check.
+   Provisioned tenant login/edit/draft/publish/rollback runtime smoke is
+   a separate mandatory prerequisite for client delivery.
+7. BROWSER_VISUAL_AND_INTERACTIONS: real desktop (>=1000 px) and mobile
    (320–600 px) PNG screenshots plus independently observed interactions,
-   no horizontal overflow and zero page errors.
-7. FACTUAL_AND_CONVERSION_RECHECK: real deterministic site-review gate
+   no horizontal overflow and zero page errors. If preview-only business
+   images lack reuse checks, a protected recipient-only URL plus real
+   independent HTTP privacy/noindex probes are mandatory.
+8. FACTUAL_AND_CONVERSION_RECHECK: real deterministic site-review gate
    exit/log hash and renewed source-backed factual/commercial checks.
 
 When every stage has independently observed PASS_REVIEWED, the run becomes
 AWAITING_HUMAN_PREVIEW. It **never** becomes production-authorized.
+The review protocol now uses schemaVersion=2; legacy v1 local runs cannot
+be silently upgraded to skip Client CMS compatibility. They must be
+restarted as new isolated runs. CMS tenant provisioning and actual authenticated
+edit/draft/publish/rollback are still required for final client handoff.
 Preview publication itself remains a separate capability/policy decision.
 
 ## Correction loop
@@ -153,3 +163,16 @@ executor; this repository code only defines and enforces the safe handoff.
 All tests are synthetic and offline. No fixture or local PASS establishes
 permission for international outbound voice calling, copyright reuse or
 production website publication.
+
+## New owner decisions: verticals, CMS and internal-only imagery
+
+See docs/cms-owner-preview-and-priority-niches.md. Prioritize restaurants,
+pizzerias, cafes and clinics/dentistry across US/Canada/Europe. Use static
+HTML/CSS/JS by default because the existing Client CMS edits and persists
+complete HTML. Clinical advertising/patient imagery needs extra local review.
+A verified, identity-linked brand image with unconfirmed reuse rights may be
+used for a genuinely access-protected owner-review-only preview. It may not
+be silently copied into public site assets or deployed anonymously. The
+independent browser step must prove recipient-only/noindex access before
+any private media is exposed. A standalone static HTML file is not proof
+that the client admin tenant has been provisioned.
