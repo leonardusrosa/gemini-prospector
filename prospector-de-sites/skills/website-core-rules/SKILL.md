@@ -721,3 +721,7 @@ Use `menu_catalog_gate.py` with a screenshot-backed, hash-pinned
 menu catalog plan; block the final CMS stage if a verified
 restaurant menu is absent from the generated page or replaced
 solely by an outbound menu/ordering link.
+
+### Required shot direction (owner feedback, Nov 23)
+
+Write concrete physical instructions, not aesthetic filler: no cinematic, premium, stunning, tasteful or similar generic wording in Flow prompts. Specify camera setup, independently composed endpoints, continuous timed camera and subject actions covering the entire clip, protected text areas, continuity and shot-specific exclusions. Compile the video prompt from the structured motionDirection using hero_motion_direction.py. Reserve settling for at most the final second; intentional fixed camera is allowed if subject action supplies motion. Endpoints must visibly support the intended action. No effect whitelist: effects must be deliberate, physically plausible and brand-specific. Review actual playback through the full duration and reject early stops, unplanned effects and failure to follow the directed movement, regardless of technical QA. For food, explicitly exclude flames on or touching food unless the specific cooking action requires them. Do not regenerate rejected assets without recording a new candidate and the applicable generation budget.

@@ -9,6 +9,7 @@ from pathlib import Path
 HERE=Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE/"prospector-de-sites"/"automation"))
 import hero_motion as hero
+from hero_motion_direction import compile_video_prompt
 import site_review_rounds as rounds
 
 SHA="a"*64
@@ -59,12 +60,27 @@ def plan_fixture():
             "loopMode":"engine_choice","fullViewport":True,
             "firstAndLastFrameRequired":True,
             "independentMobileComposition":name=="mobile",
-            "startFramePrompt":"Cinematic sourdough pizza on dark stone. The subject sits away from headline and CTA.",
+            "startFramePrompt":"Overhead view of sourdough pizza on dark stone. The subject sits away from headline and CTA.",
             "endFramePrompt":"Pizza and flour gently settle into a pleasing final composition with safe text space.",
-            "videoPrompt":"Tasteful reveal and flour burst, coherent food geometry, no typography, no strobing.",
+            "videoPrompt":"placeholder",
             "motionReason":"The motion must feel premium, playful and brand grounded without sacrificing readability.",
             "safeZones":zones(desktop=name=="desktop"),
         }
+        v=p["variants"][name]
+        v["motionDirection"]={
+            "version":1,"cameraSetup":"Three-quarter overhead view, fixed focal length.",
+            "startComposition":"Pizza occupies the lower or right area of the frame.",
+            "endComposition":"Pizza board is centered inside its designated subject area.",
+            "continuity":"Preserve identical crust, toppings and board throughout.",
+            "protectedTextArea":"The declared text boxes remain dark and empty.",
+            "forbiddenEffects":"No flames, sparks, melting or additional toppings.",
+            "beats":[
+                {"start":0,"end":3,"phase":"motion","camera":"Track right by five centimeters.","action":"Board slides right into the lit area."},
+                {"start":3,"end":7.5,"phase":"motion","camera":"Continue tracking at a decreasing speed.","action":"Board continues moving toward its final position."},
+                {"start":7.5,"end":8,"phase":"settle","camera":"Stop on the supplied last frame.","action":"Board stops without additional movement."},
+            ],
+        }
+        v["videoPrompt"]=compile_video_prompt(v)
     return p
 
 class HeroMotionContractTests(unittest.TestCase):
@@ -136,8 +152,41 @@ class HeroMotionContractTests(unittest.TestCase):
         self.assertEqual(hero.validate_plan(self.plan)["framesPlanned"],4)
 
     def test_no_fixed_motion_effect_whitelist(self):
-        self.plan["variants"]["desktop"]["videoPrompt"]="A refined cinematic ingredient explosion, slow dramatic flour bloom into a quiet end-frame."
+        v=self.plan["variants"]["desktop"]
+        v["motionDirection"]["beats"][0]["action"]="A measured burst of flour crosses the foreground rightward."
+        v["videoPrompt"]=compile_video_prompt(v)
         self.assertEqual(hero.validate_plan(self.plan)["result"],"PLAN_VALID")
+
+    def test_generic_prompt_rejected(self):
+        v=self.plan["variants"]["desktop"]
+        v["startFramePrompt"]="Premium cinematic pizza composition with dark stone and orange lighting."
+        with self.assertRaisesRegex(ValueError,"Generic prompt"):
+            hero.validate_plan(self.plan)
+
+    def test_early_settling_rejected(self):
+        v=self.plan["variants"]["mobile"]
+        v["motionDirection"]["beats"][1]["phase"]="settle"
+        with self.assertRaisesRegex(ValueError,"final second"):
+            compile_video_prompt(v)
+
+    def test_timing_gap_rejected(self):
+        v=self.plan["variants"]["desktop"]
+        v["motionDirection"]["beats"][1]["start"]=4
+        with self.assertRaisesRegex(ValueError,"without gaps"):
+            compile_video_prompt(v)
+
+    def test_prompt_cannot_disagree_with_direction(self):
+        v=self.plan["variants"]["mobile"]
+        v["videoPrompt"]+=" Add flames."
+        with self.assertRaisesRegex(ValueError,"compiled shot direction"):
+            hero.validate_plan(self.plan)
+
+    def test_motion_qa_rejects_unplanned_effect_and_early_stop(self):
+        for field in ("noUnplannedEffects","noPrematureMotionStop","directedMotionVerified"):
+            self.qa["variants"]["desktop"][field]=False
+            with self.assertRaisesRegex(ValueError,"QA failed"):
+                hero.validate_delivery(self.plan,self.delivery,self.qa,probe=self.probe)
+            self.qa["variants"]["desktop"][field]=True
 
     def test_mobile_may_not_be_cropped_desktop(self):
         self.plan["variants"]["mobile"]["independentMobileComposition"]=False

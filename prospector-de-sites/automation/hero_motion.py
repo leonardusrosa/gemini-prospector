@@ -8,6 +8,8 @@ spends credits. Source assets are optional; facts/identities stay verified.
 """
 from __future__ import annotations
 
+from hero_motion_direction import validate_direction
+
 import hashlib
 import hmac
 import json
@@ -31,7 +33,8 @@ QA_FIELDS = (
     "brandConsistency", "premiumTaste", "noObjectWarping",
     "textSafeThroughMotion", "noStrobe", "ctaReadable",
     "posterAvailable", "prefersReducedMotionPoster",
-    "videoPlaybackConfirmed", "mobileAndDesktopSeparatelyComposed",
+    "videoPlaybackConfirmed", "mobileAndDesktopSeparatelyComposed", "directedMotionVerified",
+    "noUnplannedEffects", "noPrematureMotionStop",
 )
 
 
@@ -139,6 +142,7 @@ def validate_plan(plan: dict, research: dict | None = None) -> dict:
         if not all(isinstance(v.get(k),str) and len(v[k].strip())>=40 for k in
                    ("startFramePrompt","endFramePrompt","videoPrompt","motionReason")):
             raise ValueError("Both frames, motion and rationale must have concrete prompts")
+        validate_direction(v)
         if v.get("firstAndLastFrameRequired") is not True or v.get("fullViewport") is not True:
             raise ValueError("Hero must use two frames and fill viewport")
         safe=v.get("safeZones")
