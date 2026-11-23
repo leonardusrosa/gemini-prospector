@@ -35,6 +35,7 @@ jobs:
           python test_engine_c_cms_collections.py
           python test_menu_catalog_gate.py
           python test_hero_motion.py
+          python test_flow_execution_ledger.py
           python test_hero_site_gate.py
 
       - name: Portable design-judge regressions
