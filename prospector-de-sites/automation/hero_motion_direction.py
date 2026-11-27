@@ -40,7 +40,7 @@ def timed_lines(beats, duration):
 
 def compile_video_prompt(variant):
     d = variant.get("motionDirection")
-    if not isinstance(d, dict) or type(d.get("version")) is not int or d["version"] not in (1,2):
+    if not isinstance(d, dict) or type(d.get("version")) is not int or d["version"] not in (1,2,3):
         raise ValueError("Structured motion direction required")
     duration = variant["targetSeconds"]
     if type(duration) not in (int,float) or not math.isfinite(duration) or not 5 <= duration <= 10:
@@ -68,6 +68,31 @@ def compile_video_prompt(variant):
     fields = {k: concrete(d.get(k), k) for k in (
         "product_lock", "physical_continuity", "camera_choreography", "end_state")}
     lines = timed_lines(d.get("temporal_sequence"), duration)
+    population = []
+    if d["version"] == 3:
+        payoff = d.get("motion_payoff")
+        if not isinstance(payoff, dict) or payoff.get("kind") not in {
+            "viewpoint_change", "physical_action", "assembly", "environment_progression",
+            "time_progression", "controlled_effect", "scale_only_fallback",
+        }:
+            raise ValueError("V3 requires a defined visual payoff")
+        concrete(payoff.get("description"), "visual payoff")
+        if payoff["kind"] == "scale_only_fallback":
+            concrete(payoff.get("fallbackReason"), "scale-only fallback rationale")
+        scene = d.get("scene_population", "human_free")
+        if scene == "human_free":
+            if d.get("human_exception"):
+                raise ValueError("Human-free direction cannot include a human exception")
+            population = ["Scene remains unoccupied: no people, hands, limbs, silhouettes or reflections of people."]
+        elif scene == "human_exception":
+            exception = d.get("human_exception")
+            if not isinstance(exception, dict):
+                raise ValueError("Human exception requires specific justification")
+            concrete(exception.get("reason"), "human exception rationale")
+            role = concrete(exception.get("role"), "specific human role and action")
+            population = ["Only this necessary human action: " + role + " No other people."]
+        else:
+            raise ValueError("Unsupported scene population")
     # Frame descriptions and camera setup remain in the internal brief. The
     # generation prompt concerns motion and invariants, not restyling the images.
     prompt = "\n".join([
@@ -79,10 +104,11 @@ def compile_video_prompt(variant):
         "End state: " + fields["end_state"],
         "Text-safe area: " + values["protectedTextArea"],
         "Exclude: " + values["forbiddenEffects"],
+        *population,
         "No generated text or logos. No cuts. No audio.",
     ])
     if len(prompt.split()) > MAX_V2_WORDS:
-        raise ValueError("V2 Flow motion prompt exceeds 180 words; condense motion instructions")
+        raise ValueError("Structured Flow motion prompt exceeds 180 words; condense motion instructions")
     return prompt
 
 def validate_direction(variant):
