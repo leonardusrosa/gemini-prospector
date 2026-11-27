@@ -241,7 +241,7 @@ def validate_delivery(plan:dict,delivery:dict,qa:dict,
         if entry.get("uiCostChecked") is not True:
             raise ValueError("Flow UI cost must be checked before generation")
     for name, variant in plan["variants"].items():
-        if variant["motionDirection"]["version"] != 4:
+        if variant["motionDirection"]["version"] not in (4,5):
             continue
         for suffix in ("start", "end", "video"):
             step = name + "_" + suffix
@@ -263,11 +263,16 @@ def validate_delivery(plan:dict,delivery:dict,qa:dict,
             raise ValueError("Hero QA requires a distinct reviewer")
         if not all(item.get(k) is True for k in QA_FIELDS):
             raise ValueError("Hero motion QA failed: "+name)
-        if plan["variants"][name]["motionDirection"]["version"] == 4:
+        if plan["variants"][name]["motionDirection"]["version"] in (4,5):
             for field in ("flowPairReferenceVerified", "standaloneFramesVerified",
                           "meaningfulMotionPayoffVerified", "scenePopulationVerified"):
                 if item.get(field) is not True:
                     raise ValueError("V4 independent QA missing: " + field)
+        if plan["variants"][name]["motionDirection"]["version"] == 5:
+            for field in ("openingHookVerified", "signatureEventVerified",
+                          "intentionalRhythmVerified", "advertisingGradeMotionVerified"):
+                if item.get(field) is not True:
+                    raise ValueError("V5 creative QA missing: " + field)
         end=videos[name]["ending"]
         if end=="seamless_loop" and item.get("loopSeamAcceptable") is not True:
             raise ValueError("Loop seam rejected for "+name)
