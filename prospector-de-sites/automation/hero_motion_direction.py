@@ -40,7 +40,7 @@ def timed_lines(beats, duration):
 
 def compile_video_prompt(variant):
     d = variant.get("motionDirection")
-    if not isinstance(d, dict) or type(d.get("version")) is not int or d["version"] not in (1,2,3):
+    if not isinstance(d, dict) or type(d.get("version")) is not int or d["version"] not in (1,2,3,4):
         raise ValueError("Structured motion direction required")
     duration = variant["targetSeconds"]
     if type(duration) not in (int,float) or not math.isfinite(duration) or not 5 <= duration <= 10:
@@ -69,7 +69,7 @@ def compile_video_prompt(variant):
         "product_lock", "physical_continuity", "camera_choreography", "end_state")}
     lines = timed_lines(d.get("temporal_sequence"), duration)
     population = []
-    if d["version"] == 3:
+    if d["version"] in (3,4):
         payoff = d.get("motion_payoff")
         if not isinstance(payoff, dict) or payoff.get("kind") not in {
             "viewpoint_change", "physical_action", "assembly", "environment_progression",
@@ -112,6 +112,12 @@ def compile_video_prompt(variant):
     return prompt
 
 def validate_direction(variant):
+    d = variant.get("motionDirection")
+    if isinstance(d, dict) and d.get("version") == 4:
+        route = variant.get("frameRouting")
+        if route != {"provider": "google-flow", "mode": "reference_linked_pair",
+                     "endUsesStartReference": True, "standaloneFramesRequired": True}:
+            raise ValueError("V4 matched frames must be generated in Flow with start reference")
     for k in ("startFramePrompt", "endFramePrompt"):
         concrete(variant.get(k), k)
     if variant.get("videoPrompt") != compile_video_prompt(variant):

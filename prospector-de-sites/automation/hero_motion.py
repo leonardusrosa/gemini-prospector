@@ -240,6 +240,17 @@ def validate_delivery(plan:dict,delivery:dict,qa:dict,
             raise ValueError("Credit charge must be individually verified")
         if entry.get("uiCostChecked") is not True:
             raise ValueError("Flow UI cost must be checked before generation")
+    for name, variant in plan["variants"].items():
+        if variant["motionDirection"]["version"] != 4:
+            continue
+        for suffix in ("start", "end", "video"):
+            step = name + "_" + suffix
+            latest = next((e for e in reversed(credits) if e.get("step") == step), None)
+            expected = videos[name] if suffix == "video" else frames[step]
+            if (not latest or latest.get("outcome") != "downloaded" or
+                not isinstance(latest.get("artifact"), dict) or
+                latest["artifact"].get("sha256") != expected["sha256"]):
+                raise ValueError("V4 delivery must bind each Flow ledger download: " + step)
     if qa.get("schemaVersion")!=1 or qa.get("planSha256")!=delivery["planSha256"]:
         raise ValueError("Hero QA must bind the approved plan hash")
     if qa.get("deliverySha256")!=delivery.get("_fileSha256"):
@@ -252,6 +263,11 @@ def validate_delivery(plan:dict,delivery:dict,qa:dict,
             raise ValueError("Hero QA requires a distinct reviewer")
         if not all(item.get(k) is True for k in QA_FIELDS):
             raise ValueError("Hero motion QA failed: "+name)
+        if plan["variants"][name]["motionDirection"]["version"] == 4:
+            for field in ("flowPairReferenceVerified", "standaloneFramesVerified",
+                          "meaningfulMotionPayoffVerified", "scenePopulationVerified"):
+                if item.get(field) is not True:
+                    raise ValueError("V4 independent QA missing: " + field)
         end=videos[name]["ending"]
         if end=="seamless_loop" and item.get("loopSeamAcceptable") is not True:
             raise ValueError("Loop seam rejected for "+name)
