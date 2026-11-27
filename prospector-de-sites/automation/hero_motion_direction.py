@@ -1,8 +1,9 @@
-"""Concrete shot direction for Flow: prompts are compiled from the shot plan."""
+"""Validate internal shot direction and compile the versioned Flow execution prompt."""
 import math
 import re
 
 FILLER = re.compile(r"\b(?:cinematic|premium|stunning|breathtaking|gorgeous|masterpiece|high[- ]end|epic|beautiful|tasteful|dramatic reveal|dynamic movement|subtle push[- ]in)\b", re.I)
+MAX_V2_WORDS = 180
 
 def concrete(text, label):
     if not isinstance(text, str) or len(text.strip()) < 16:
@@ -11,20 +12,14 @@ def concrete(text, label):
         raise ValueError("Generic prompt wording: " + label)
     return text.strip()
 
-def compile_video_prompt(variant):
-    d = variant.get("motionDirection")
-    if not isinstance(d, dict) or d.get("version") != 1:
-        raise ValueError("Structured motion direction required")
-    duration = variant["targetSeconds"]
-    keys = ("cameraSetup", "startComposition", "endComposition",
-            "continuity", "protectedTextArea", "forbiddenEffects")
-    values = {k: concrete(d.get(k), k) for k in keys}
-    beats = d.get("beats")
+def timed_lines(beats, duration):
     if not isinstance(beats, list) or len(beats) < 3:
         raise ValueError("At least three timed shot beats required")
     lines = []
     previous = 0
     for i, beat in enumerate(beats):
+        if not isinstance(beat, dict):
+            raise ValueError("Invalid shot beat")
         start, end = beat.get("start"), beat.get("end")
         if any(type(x) not in (int, float) or not math.isfinite(x) for x in (start,end)):
             raise ValueError("Invalid shot timing")
@@ -41,17 +36,54 @@ def compile_video_prompt(variant):
         previous = end
     if previous != duration:
         raise ValueError("Shot beats must cover the full duration")
-    return "\n".join([
-        f"One continuous {duration:g}-second {variant['aspectRatio']} shot. Use supplied first and last frames.",
-        "Camera setup: " + values["cameraSetup"],
-        "First frame: " + values["startComposition"],
+    return lines
+
+def compile_video_prompt(variant):
+    d = variant.get("motionDirection")
+    if not isinstance(d, dict) or type(d.get("version")) is not int or d["version"] not in (1,2):
+        raise ValueError("Structured motion direction required")
+    duration = variant["targetSeconds"]
+    if type(duration) not in (int,float) or not math.isfinite(duration) or not 5 <= duration <= 10:
+        raise ValueError("Hero clip must last 5-10 seconds")
+    keys = ("cameraSetup", "startComposition", "endComposition",
+            "protectedTextArea", "forbiddenEffects")
+    values = {k: concrete(d.get(k), k) for k in keys}
+    opening = f"One continuous {duration:g}-second {variant['aspectRatio']} shot. Use supplied first and last frames."
+    if d["version"] == 1:
+        continuity = concrete(d.get("continuity"), "continuity")
+        lines = timed_lines(d.get("beats"), duration)
+        return "\n".join([
+            opening,
+            "Camera setup: " + values["cameraSetup"],
+            "First frame: " + values["startComposition"],
+            *lines,
+            "Last frame: " + values["endComposition"],
+            "Continuity: " + continuity,
+            "Text-safe area: " + values["protectedTextArea"],
+            "Exclude: " + values["forbiddenEffects"],
+            "No generated text or logos. No cuts. No audio.",
+        ])
+    if "beats" in d or "continuity" in d:
+        raise ValueError("V2 uses temporal_sequence and physical_continuity, not legacy aliases")
+    fields = {k: concrete(d.get(k), k) for k in (
+        "product_lock", "physical_continuity", "camera_choreography", "end_state")}
+    lines = timed_lines(d.get("temporal_sequence"), duration)
+    # Frame descriptions and camera setup remain in the internal brief. The
+    # generation prompt concerns motion and invariants, not restyling the images.
+    prompt = "\n".join([
+        opening,
+        "Camera: " + fields["camera_choreography"],
+        "Product lock: " + fields["product_lock"],
+        "Physical continuity: " + fields["physical_continuity"],
         *lines,
-        "Last frame: " + values["endComposition"],
-        "Continuity: " + values["continuity"],
+        "End state: " + fields["end_state"],
         "Text-safe area: " + values["protectedTextArea"],
         "Exclude: " + values["forbiddenEffects"],
         "No generated text or logos. No cuts. No audio.",
     ])
+    if len(prompt.split()) > MAX_V2_WORDS:
+        raise ValueError("V2 Flow motion prompt exceeds 180 words; condense motion instructions")
+    return prompt
 
 def validate_direction(variant):
     for k in ("startFramePrompt", "endFramePrompt"):
