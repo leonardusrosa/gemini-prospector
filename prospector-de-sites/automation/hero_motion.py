@@ -297,6 +297,8 @@ def validate_delivery(plan:dict,delivery:dict,qa:dict,
                 not isinstance(latest.get("artifact"), dict) or
                 latest["artifact"].get("sha256") != expected["sha256"]):
                 raise ValueError("V4 delivery must bind each Flow ledger download: " + step)
+    if not storyboard and "videoDerivations" in delivery:
+        raise ValueError("Optimized derivative route requires storyboard plan")
     if qa.get("schemaVersion")!=1 or qa.get("planSha256")!=delivery["planSha256"]:
         raise ValueError("Hero QA must bind the approved plan hash")
     if qa.get("deliverySha256")!=delivery.get("_fileSha256"):
@@ -330,6 +332,9 @@ def validate_delivery(plan:dict,delivery:dict,qa:dict,
                           "noGridArtifacts","meaningfulMotionPayoffVerified","scenePopulationVerified"):
                 if item.get(field) is not True:
                     raise ValueError("V7 storyboard QA missing: " + field)
+        if storyboard and name in delivery.get("videoDerivations",{}):
+            if item.get("optimizedPlaybackVerified") is not True:
+                raise ValueError("Independent optimized video playback QA required")
         end=videos[name]["ending"]
         if end=="seamless_loop" and item.get("loopSeamAcceptable") is not True:
             raise ValueError("Loop seam rejected for "+name)

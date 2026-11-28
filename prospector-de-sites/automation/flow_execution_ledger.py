@@ -180,10 +180,17 @@ def verify_storyboard_delivery(plan, delivery):
         if actual!=entry:
             raise ValueError("Storyboard ledger evidence mismatch")
     actual=delivery_inputs(replay)
+    derivatives=delivery.get("videoDerivations",{})
+    if not isinstance(derivatives,dict) or not set(derivatives)<={"desktop","mobile"}:
+        raise ValueError("Unexpected video derivation")
     for name in ("desktop","mobile"):
-        for kind in ("storyboards","videos"):
-            if actual[kind][name]["sha256"]!=delivery[kind][name]["sha256"]:
-                raise ValueError("Delivered storyboard/video does not match ledger")
+        if actual["storyboards"][name]["sha256"]!=delivery["storyboards"][name]["sha256"]:
+            raise ValueError("Delivered storyboard/video does not match ledger")
+        if name in derivatives:
+            from hero_video_derivative import verify_web_derivative
+            verify_web_derivative(derivatives[name],actual["videos"][name],delivery["videos"][name])
+        elif actual["videos"][name]["sha256"]!=delivery["videos"][name]["sha256"]:
+            raise ValueError("Delivered storyboard/video does not match ledger")
     return actual
 
 def save_job(path, job):

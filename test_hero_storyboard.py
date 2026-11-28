@@ -115,3 +115,20 @@ class StoryboardTests(unittest.TestCase):
             validate_delivery(self.plan,d,f.qa,probe=f.probe)
         with self.assertRaisesRegex(ValueError,"exact delivered video"):
             verify_video_frames(d["videos"]["mobile"],frames["desktop_start"],frames["mobile_end"])
+
+        # The approved web video may be a proven derivative, not arbitrary bytes.
+        from hero_video_derivative import create_web_derivative
+        original=d["videos"]["mobile"]["path"]
+        derivative=create_web_derivative(original,self.root/"mobile-web.mp4")
+        d["videoDerivations"]={"mobile":derivative}
+        d["videos"]["mobile"].update(derivative["output"])
+        d["frames"].update(extract_video_frames(derivative["output"]["path"],self.root/"mobile-web","mobile"))
+        f.qa["variants"]["mobile"]["sourceProductIdentityVerified"]=True
+        with self.assertRaisesRegex(ValueError,"optimized video playback"):
+            validate_delivery(self.plan,d,f.qa,probe=f.probe)
+        f.qa["variants"]["mobile"]["optimizedPlaybackVerified"]=True
+        self.assertEqual(validate_delivery(self.plan,d,f.qa,probe=f.probe)["result"],"VIDEO_QA_READY_FOR_HUMAN_APPROVAL")
+        forged=copy.deepcopy(d)
+        forged["videoDerivations"]["mobile"]["ffmpegSha256"]="0"*64
+        with self.assertRaisesRegex(ValueError,"FFmpeg build"):
+            flow.verify_storyboard_delivery(self.plan,forged)
