@@ -357,6 +357,14 @@ def approve_with_human_receipt(plan:dict,delivery:dict,qa:dict,approval:dict,
                                key:str | None=None,
                                probe:Callable[[Path],dict]=_video_metadata) -> dict:
     validate_delivery(plan,delivery,qa,probe=probe)
+    if is_storyboard(plan):
+        from hero_owner_review import verify_receipt
+        identity=verify_receipt(plan,delivery,qa,approval)
+        return {"result":"HERO_MOTION_MANUALLY_APPROVED",
+                "desktopVideoSha256":delivery["videos"]["desktop"]["sha256"],
+                "mobileVideoSha256":delivery["videos"]["mobile"]["sha256"],
+                "approvalActor":identity,"productionReleaseAuthorized":False,
+                "readyForSiteImplementation":True}
     if approval.get("schemaVersion")!=1 or approval.get("decision")!="APPROVED":
         raise ValueError("Only explicit human approval can advance")
     if approval.get("channel")!="authenticated_admin_review":
@@ -409,5 +417,6 @@ def validate_stage_artifact(artifact:dict,source_manifest:dict,
     delivery=read_json(Path(file_references["heroDeliveryFile"]))
     delivery["_fileSha256"]=delivery_hash
     qa=read_json(Path(file_references["heroQaFile"]))
+    qa["_fileSha256"]=qa_hash
     approval=read_json(Path(file_references["heroHumanApprovalFile"]))
     return approve_with_human_receipt(plan,delivery,qa,approval)

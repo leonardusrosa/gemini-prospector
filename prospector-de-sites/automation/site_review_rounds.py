@@ -253,8 +253,14 @@ def _stage_content_checks(stage: str, artifact: dict, current: dict) -> None:
         previous=current["stageState"]["HERO_MOTION_MANUAL_APPROVAL"]
         if previous.get("status") != "PASS_REVIEWED" or not previous.get("artifact"):
             raise ValueError("Site implementation cannot start before manually approved hero videos")
-        hero_stage=read_json(Path(previous["artifact"]))
-        delivery=read_json(Path(hero_stage["heroDeliveryFile"]))
+        approved_stage=Path(previous["artifact"])
+        if file_hash(approved_stage)!=previous.get("artifactSha256"):
+            raise ValueError("Approved hero stage changed before implementation")
+        hero_stage=read_json(approved_stage)
+        approved_delivery=Path(hero_stage["heroDeliveryFile"])
+        if file_hash(approved_delivery)!=hero_stage.get("heroDeliverySha256"):
+            raise ValueError("Approved hero delivery changed before implementation")
+        delivery=read_json(approved_delivery)
         html_file=artifact.get("htmlFile")
         if (not isinstance(html_file,str) or not Path(html_file).is_file()
                 or artifact.get("htmlSha256")!=file_hash(Path(html_file))):
@@ -265,7 +271,8 @@ def _stage_content_checks(stage: str, artifact: dict, current: dict) -> None:
     elif stage == "HERO_MOTION_MANUAL_APPROVAL":
         # Requires four exact start/end frame files, two real probed videos
         # (desktop 16:9, mobile 9:16), independently witnessed readability/
-        # playback/loop tests, and an HMAC-bound HUMAN approval receipt.
+        # playback/loop tests, and a verified HUMAN approval receipt.
+        # V7 uses the separated owner Ed25519 signing boundary.
         # If no videos were generated, no approval key exists, or a human
         # has not approved, this stage cannot advance to implementation.
         source_manifest = read_json(Path(current["sourceManifest"]))

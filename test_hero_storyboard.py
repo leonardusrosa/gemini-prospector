@@ -132,3 +132,41 @@ class StoryboardTests(unittest.TestCase):
         forged["videoDerivations"]["mobile"]["ffmpegSha256"]="0"*64
         with self.assertRaisesRegex(ValueError,"FFmpeg build"):
             flow.verify_storyboard_delivery(self.plan,forged)
+
+        from hero_owner_review import prepare_review_bundle,receipt_payload
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives.serialization import Encoding,PublicFormat
+        from unittest.mock import patch
+        from datetime import datetime,timezone
+        import base64
+        source_path=self.root/"research.json"
+        source_path.write_text(json.dumps({"leadSlug":self.plan["leadSlug"],"noOutbound":True,"assets":[self.ref]}))
+        self.plan["sourceManifestSha256"]=sha_file(source_path)
+        plan_path=self.root/"plan.json";plan_path.write_text(json.dumps(self.plan))
+        d["planSha256"]=sha_file(plan_path)
+        delivery_path=self.root/"delivery.json";delivery_path.write_text(json.dumps(d))
+        f.qa["planSha256"]=sha_file(plan_path);f.qa["deliverySha256"]=sha_file(delivery_path)
+        qa_path=self.root/"qa.json";qa_path.write_text(json.dumps(f.qa))
+        review_root=self.root/"reviews";review_root.mkdir()
+        bundle=prepare_review_bundle(plan_path,delivery_path,qa_path,source_path,review_root,probe=f.probe)
+        self.assertFalse(bundle["approval"])
+        manifest=json.loads((Path(bundle["directory"])/"review.json").read_text())
+        self.assertEqual(len(manifest["media"]),9)
+        self.assertEqual(manifest["media"]["mobile_video"]["sha256"],d["videos"]["mobile"]["sha256"])
+        with self.assertRaisesRegex(ValueError,"already exists"):
+            prepare_review_bundle(plan_path,delivery_path,qa_path,source_path,review_root,probe=f.probe)
+        key=Ed25519PrivateKey.generate()
+        public=self.root/"owner-public.pem"
+        public.write_bytes(key.public_key().public_bytes(Encoding.PEM,PublicFormat.SubjectPublicKeyInfo))
+        receipt={"schemaVersion":2,"channel":"authenticated_admin_review","actorType":"human",
+                 "autoSelected":False,"decision":"APPROVED","approverId":"test-owner",
+                 "issuedAt":datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                 "reviewBundleSha256":bundle["reviewBundleSha256"],
+                 **{k:manifest[k] for k in ("leadSlug","planSha256","deliverySha256","qaSha256","sourceManifestSha256")}}
+        receipt["signature"]=base64.b64encode(key.sign(receipt_payload(receipt))).decode()
+        # In-memory review fixtures bind exact file hashes, not the original fixture hash.
+        self.plan["_fileSha256"]=sha_file(plan_path)
+        d["_fileSha256"]=sha_file(delivery_path)
+        f.qa["_fileSha256"]=sha_file(qa_path)
+        with patch.dict("os.environ",{"ENGINE_C_HERO_OWNER_ID":"test-owner","ENGINE_C_HERO_OWNER_PUBLIC_KEY_FILE":str(public)}):
+            self.assertEqual(fixtures.hero.approve_with_human_receipt(self.plan,d,f.qa,receipt,probe=f.probe)["result"],"HERO_MOTION_MANUALLY_APPROVED")
