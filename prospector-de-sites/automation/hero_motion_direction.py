@@ -40,7 +40,7 @@ def timed_lines(beats, duration):
 
 def compile_video_prompt(variant):
     d = variant.get("motionDirection")
-    if not isinstance(d, dict) or type(d.get("version")) is not int or d["version"] not in (1,2,3,4,5):
+    if not isinstance(d, dict) or type(d.get("version")) is not int or d["version"] not in (1,2,3,4,5,6):
         raise ValueError("Structured motion direction required")
     duration = variant["targetSeconds"]
     if type(duration) not in (int,float) or not math.isfinite(duration) or not 5 <= duration <= 10:
@@ -69,7 +69,7 @@ def compile_video_prompt(variant):
         "product_lock", "physical_continuity", "camera_choreography", "end_state")}
     lines = timed_lines(d.get("temporal_sequence"), duration)
     population = []
-    if d["version"] in (3,4,5):
+    if d["version"] in (3,4,5,6):
         payoff = d.get("motion_payoff")
         if not isinstance(payoff, dict) or payoff.get("kind") not in {
             "viewpoint_change", "physical_action", "assembly", "environment_progression",
@@ -94,7 +94,7 @@ def compile_video_prompt(variant):
         else:
             raise ValueError("Unsupported scene population")
     rhythm = []
-    if d["version"] == 5:
+    if d["version"] in (5,6):
         creative = d.get("attention_direction")
         if not isinstance(creative, dict):
             raise ValueError("V5 requires attention direction")
@@ -109,6 +109,19 @@ def compile_video_prompt(variant):
             raise ValueError("Routine camera motion alone is insufficient for V5")
         rhythm = ["Opening hook: " + hook, "Signature event: " + event,
                   "Rhythm: " + timing, "Stabilized camera, no handheld shake."]
+    if d["version"] == 6:
+        intensity = d.get("intensity_direction")
+        if not isinstance(intensity, dict):
+            raise ValueError("V6 requires assembly-equivalent visual intensity")
+        if intensity.get("event_kind") not in {
+            "substantial_assembly", "substantial_transformation",
+            "substantial_environmental_transition", "substantial_spatial_reveal",
+            "substantial_brand_specific_event"
+        }:
+            raise ValueError("V6 decorative motion alone is insufficient")
+        for field in ("initial_state", "intermediate_event", "final_state",
+                      "assembly_equivalent_rationale"):
+            concrete(intensity.get(field), field)
     # Frame descriptions and camera setup remain in the internal brief. The
     # generation prompt concerns motion and invariants, not restyling the images.
     prompt = "\n".join([
@@ -130,7 +143,7 @@ def compile_video_prompt(variant):
 
 def validate_direction(variant):
     d = variant.get("motionDirection")
-    if isinstance(d, dict) and d.get("version") in (4,5):
+    if isinstance(d, dict) and d.get("version") in (4,5,6):
         route = variant.get("frameRouting")
         if route != {"provider": "google-flow", "mode": "reference_linked_pair",
                      "endUsesStartReference": True, "standaloneFramesRequired": True}:
