@@ -21,6 +21,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Owner receipt verification dependency
+        run: python -m pip install cryptography==50.0.0
+
       - name: Agent-agnostic runtime bootstrap
         run: python prospector.py self-test
 
@@ -33,6 +36,11 @@ jobs:
           python test_site_review_rounds.py
           python test_cms_compatibility_and_owner_preview.py
           python test_engine_c_cms_collections.py
+          python test_menu_catalog_gate.py
+          python test_hero_motion.py
+          python test_flow_execution_ledger.py
+          python test_hero_site_gate.py
+          python -m unittest test_hero_owner_review test_hero_storyboard test_hero_video_derivative
 
       - name: Portable design-judge regressions
         run: python test_agent_runtime_portability.py
@@ -45,3 +53,20 @@ jobs:
 
       - name: Autonomous site-review regressions
         run: python run_autonomous_site_review_regressions.py
+
+  owner-review-dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: prospector-dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: prospector-dashboard/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: node --test scripts/test-hero-owner-review.mjs

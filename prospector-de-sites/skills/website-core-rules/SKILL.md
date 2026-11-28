@@ -665,3 +665,146 @@ with an independently reviewed collection plan to mark them. The
 unannotated HTML SHA, collection plan SHA, and deterministic annotated
 HTML SHA. Full contract:
 `docs/engine-c-cms-collection-handoff.md`.
+
+
+## Full-viewport hero motion (mandatory)
+
+Every new website for **every niche** must have a fullscreen, immersive,
+muted autoplay video hero with a separately composed **desktop landscape**
+and **mobile portrait** variant. The page must still be readable and
+usable on a poster for `prefers-reduced-motion`, blocked autoplay,
+data-saver or slow network. Do not burn credits or generate a video
+until the independent design direction has been chosen.
+
+Use the owner's signed-in Google Flow browser account(s) via authorized
+Remote Desktop profiles, not scraped cookies or stored passwords.
+Four stills (desktop/mobile first/last frames), two videos (5-10s),
+two retries maximum in the standard budget. Check the currently displayed
+model, per-generation credit cost and available balance *before* every
+spend. Two account aliases may be used for normal balance management,
+not bypassing an account restriction or exceeding provider limits.
+
+A hero-motion stage after design direction and before implementation
+must independently verify both videos, negative space for title/subtitle/
+CTA, visual identity, premium motion, safe loop OR stable end-frame freeze,
+browser playback, posters, reduced-motion behavior, and full viewport.
+Dramatic reveals and ingredient explosions are allowed when tasteful;
+do not whitelist a limited set of effects. Lead photos are optional;
+use them when they genuinely improve the concept. Never invent a real
+doctor, team member, patient, menu dish or service claim.
+
+**MANUAL HUMAN APPROVAL is mandatory** for v1 and is verified separately
+from the generator's output. Automatically scored hero selection may be
+introduced later only through an explicitly authorized policy change.
+A missing approval receipt blocks production site implementation.
+Exact constraints: `docs/flow-hero-motion-contract.md`.
+
+## Restaurant menu is an ON-PAGE primary section
+
+For a restaurant, pizzeria or cafe with an authentic verified menu,
+the site must display the **source-grounded menu on its own page**,
+organized into categories (signature dishes, build-your-own, sides,
+toppings, beverages, etc. only as supported by the source).
+Preserve each available item name, description, and displayed price
+when source provides them. An unknown price should be shown as
+unavailable/ask restaurant, not invented. The official ordering/booking
+destination can remain a clearly labelled secondary action but must
+NOT replace the embedded menu with a redirect. Menus must be readable
+on mobile, with appropriately marked `data-pe-collection="menu"`
+and direct-child `data-pe-item` cards so clients can edit dishes
+after handoff. Do not copy menu from an unrelated restaurant or
+fabricate extra items. Verify the menu's source and retrieval date,
+note possible price changes, and do not imply the website concept
+is approved by the business.
+
+Use `menu_catalog_gate.py` with a screenshot-backed, hash-pinned
+menu catalog plan; block the final CMS stage if a verified
+restaurant menu is absent from the generated page or replaced
+solely by an outbound menu/ordering link.
+
+### Required shot direction (owner feedback, Nov 23)
+
+Write concrete physical instructions, not aesthetic filler: no cinematic, premium, stunning, tasteful or similar generic wording in Flow prompts. Specify camera setup, independently composed endpoints, continuous timed camera and subject actions covering the entire clip, protected text areas, continuity and shot-specific exclusions. Compile the video prompt from the structured motionDirection using hero_motion_direction.py. Reserve settling for at most the final second; intentional fixed camera is allowed if subject action supplies motion. Endpoints must visibly support the intended action. No effect whitelist: effects must be deliberate, physically plausible and brand-specific. Review actual playback through the full duration and reject early stops, unplanned effects and failure to follow the directed movement, regardless of technical QA. For food, explicitly exclude flames on or touching food unless the specific cooking action requires them. Do not regenerate rejected assets without recording a new candidate and the applicable generation budget.
+
+
+### Flow execution policy (November 24, 2026)
+
+Headless Flow generation is suspended for all account aliases. Following an unusual-activity warning and an unrelated or potentially related subscription entitlement change, automated Flow submissions are also paused pending clarification. Use only a normal visible browser with human-operated generation when the provider allows access; no automated clicks, stealth changes, account rotation or retries to work around restrictions. Keep the owner's desktop undisturbed: the owner opens the dedicated browser and submits the request. The engine may prepare prompts, frame assets, local QA and ledger records offline. Do not resume automated submissions until provider restrictions are resolved and the owner authorizes a permitted workflow. The V4 request remains unreconciled; no repeat until verified. Ordinary headless website QA is unaffected.
+
+
+### Motion brief v2 and provider policy (November 27, 2026)
+
+Use motionDirection version 2 for new candidates; version 1 remains readable and validates with its original compiler for existing signed artifacts. The v2 internal brief retains cameraSetup, startComposition, endComposition, protectedTextArea and forbiddenEffects, and adds product_lock, physical_continuity, camera_choreography, temporal_sequence (the timed camera/action/phase list replacing beats) and end_state. physical_continuity replaces continuity. State exactly what remains invariant and what moves, including realistic contact, gravity and shape where relevant. The timed sequence must cover the clip, without premature settling. First and last frame descriptions and camera setup remain in the internal brief; compile only the motion, invariants, timing, exclusions, text-safe region and final state into the Flow execution prompt. The 180-word ceiling is an internal experimental guardrail, not a Google limit. Do not re-describe the reference image unnecessarily. QA remains independent; neither prompt structure nor syntactic validation proves physical plausibility or endpoint adherence.
+
+Reference inspiration: https://www.threads.com/@arnoldalvaro/post/DgP6ShKjzNp (public reply describes ordered actions, settling and realistic physical behavior; parent thread and resulting video not verified). Google image-to-video prompting guidance: https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/video/best-practice
+
+Image creation: ChatGPT Image Generation or permitted human-operated visible Google Flow. Video: human-operated visible Google Flow remains the default; local ComfyUI, Comfy Cloud and fal benchmarks are paused. No new generation, provider charge, automatic browser submission or account rotation is authorized by this compiler. V4 charge reconciliation and the November 24 restrictions remain binding. Preserve rejected assets and ledger evidence; do not overwrite prior plan or approval hashes. Ordinary headless website QA is unaffected.
+
+
+### Creative payoff and human-free scene policy (November 27, 2026)
+
+For new hero candidates, use motionDirection version 3. In addition to v2 fields, require a motion_payoff with kind and concrete description: viewpoint_change, physical_action, assembly, environment_progression, time_progression, controlled_effect, or scale_only_fallback (requires a specific fallbackReason). Prefer genuinely distinct start/end compositions with meaningful spatial, physical or temporal progression; a crop or digital zoom is a fallback, not the default. Camera trajectories must match the real endpoint geometry. Strong effects are allowed when deliberate, niche-specific and physically coherent.
+
+Default scene_population is human_free. Both still frames and the full video must exclude people, hands, limbs, silhouettes and human reflections. Reject unexpected human appearances, even briefly. A human_exception is allowed only for an exceptional concept where a specific person/action is materially necessary, such as an expert demonstration; record its reason and role and obtain explicit owner approval BEFORE generation. Do not treat a compiler field or ordinary post-generation approval as that authorization. Avoid invented real staff/client identities. The compiler adds the relevant population instruction; independent image/playback QA is still required. Legacy v1/v2 prompt hashes remain unchanged. No media generation or spend authorized by this policy.
+
+
+### Flow-only matched imagery (November 27, 2026)
+
+This supersedes the earlier still-image provider rule for matched hero frames. New candidates use motionDirection version 4 and frameRouting exactly {"provider":"google-flow","mode":"reference_linked_pair","endUsesStartReference":true,"standaloneFramesRequired":true}. GPT plans shot direction and may create independent reference imagery, but all matched first/last images and any generated storyboard must be produced in Google Flow by the human operator in a normal visible browser. Generate each native-aspect start image, then use it as an image reference for its matching end. Do not create a collage or annotated storyboard as a video endpoint. Storyboards are optional planning artifacts, not substitutes for four separate clean endpoint files; any extra generation needs a ledger entry and available budget, not a silent additional request. Preserve source/reference IDs and screenshots, output hashes and the original ledger ordering. Verify Flow's actual available image-reference feature before execution; stop if unavailable.
+
+V4 delivery binds each frame and video to its latest successful Flow ledger download hash. Independent reviewer must attest flowPairReferenceVerified, standaloneFramesVerified, meaningfulMotionPayoffVerified, and scenePopulationVerified. These are reviewer attestations, not automatic image analysis or cryptographic provider proof. V1-V3 plans remain backward compatible. No provider automation or new submission is authorized; reconcile the outstanding V4 generation from the prior pilot before further requests. The manual-only policy and no-account-rotation restriction remain binding.
+
+
+### Attention-first motion direction (November 27, 2026)
+
+New candidates use motionDirection version 5, inheriting Flow-only matched frames and human-free defaults. Every concept must have an opening hook, a signature visual event, intentional rhythm and a niche-specific rationale. Store these as attention_direction.opening_hook, signature_event, rhythm, niche_fit and technique. Design the endpoints around that event; do not merely animate an arbitrary photo. Catch attention early, deliver a visible payoff, and preserve CTA legibility. A technically smooth clip that resembles routine phone footage is not enough. Use acceleration/deceleration, stabilized speed-ramped arcs, precise macro reveals, coordinated assembly, intentional environmental progression, or a novel brand-relevant technique. No technique whitelist and no mandatory fast motion for calm niches; rhythm can be deliberate and restrained if the visual event is distinctive. Simple scaling, ordinary steady pans/orbits and handheld motion alone are rejected for new V5 candidates. Avoid generic aesthetic adjectives in execution prompts; describe the actual motion and timing. The existing 180-word guardrail applies.
+
+Independent playback QA must positively attest openingHookVerified, signatureEventVerified, intentionalRhythmVerified and advertisingGradeMotionVerified, in addition to existing identity, population, text-safety and motion checks. These are human/reviewer judgments, not an automated measure of visual appeal. If rhythm alone is weak, consider deterministic offline retiming of an already valid clip without new generation; retain the original, record edit/provenance and re-run full QA and approval against the final asset. Retiming must not conceal content/geometry defects or bypass the ledger. Legacy plans remain verifiable. No new media submissions or charges authorized by this policy.
+
+
+### Minimum creative intensity: assembly-equivalent (November 27, 2026)
+
+For new candidates, motionDirection version 6 inherits V5 and requires intensity_direction.event_kind, initial_state, intermediate_event, final_state and assembly_equivalent_rationale. The benchmark is the visual impact of a pizza being assembled from its substantial ingredients, not seasoning falling onto a finished pizza. Every niche must offer a comparably substantial visual event: meaningful assembly, product or material transformation, environmental transition, spatial reveal, or another brand-specific event of equivalent impact. The event need not be fast, loud or literally assembly. Merely moving a camera, speed ramping a static product, sprinkling decorative particles, adding steam, or sweeping light is insufficient by itself. Effects and camera rhythm support the core event; they do not replace it. Design the storyboard around recognizable initial, intermediate and resolved states. Keep factual/brand accuracy, readable text-safe space, believable physical continuity, and the human-free default. Do not present illustrative transformations as actual clinical outcomes or verified business premises.
+
+Independent visual QA must positively attest assemblyEquivalentIntensityVerified and substantiveVisualProgressionVerified in addition to V5 criteria. Schema validation and attestations are not automated measurement of visual impact; reviewers must reject weak footage even when technically flawless. Existing V1-V5 artifacts remain verifiable. This change sets the creative bar and does not implement a new storyboard-to-video ledger route or authorize any media submission or spend. Matched images and any storyboard are generated only through permitted human-operated visible Flow.
+
+### Storyboard pilot findings and motivated transitions (November 27, 2026)
+
+Experimental mobile storyboard-to-video tests showed that substantial cheese and pepperoni assembly is more engaging than seasoning alone. Generic baking crossfades produced ghosting; radiant-heat wording produced flames apparently touching food; a foreground flame wipe produced a stronger final reveal in sampled frames. Require motivated transitions through physical action, intentional foreground occlusion, spatial movement or environmental progression, not generic dissolves or opacity morphs. Foreground effects must not appear to burn the food. Preserve readable text and CTA throughout.
+
+Brand QA: existing Feral Pizza pilot copy describes thin crispy sourdough pies, while the experiment depicts thick Detroit-style pizza. These clips are creative benchmarks, not verified business imagery. Verify actual product type, geometry, ingredients and source imagery before client-facing generation. A consistent storyboard is not proof of factual accuracy. Preserve originals and provenance for optimized derivatives. Do not replace the existing preview or publish this candidate. Browser seek-based overlay QA was inconclusive; actual playback and contrast remain unverified. Storyboard ledger integration remains pending. No additional generation or spend authorized.
+
+
+### Storyboard-first execution route V7
+
+For new storyboard-first candidates, both independent viewport variants use motionDirection.version=7, frameRouting={"provider":"google-flow","mode":"storyboard_ingredient","panelCount":4,"fullScreenOutput":true}, firstAndLastFrameRequired=false, storyboardPrompt and four ordered storyboardPanels. Keep start/end composition descriptions for planning, not separate provider requests. Require motivated_transition, assembly-equivalent intensity, attention-first direction and human-free defaults. The execution prompt directs one full-screen output, not a grid. Keep the actual visible Flow model/mode/cost subject to operator verification.
+
+V7 budget: plannedFrames=0, plannedStoryboards=2, plannedVideos=2, maxRetries=2, maxGenerations=6; no extra generation outside the ledger. Use one Flow storyboard per viewport and one video from each exact storyboard. Flow steps: desktop_storyboard, mobile_storyboard, desktop_video, mobile_video. A retry consumes the same shared two-request allowance. Reject mixed V7/legacy routes. Preserve V1-V6 compatibility. Source reference files in subject.sourceReferences must have exact path/SHA-256 and be present in the immutable research asset manifest at the stage gate. Verify the actual product type and visual identity before generation.
+
+For the trusted human operator only: initialize the offline ledger with prior-request reconciliation evidence, then reserve and save each request with exact observed account, model, quote, balance and reference-selection evidence. For a storyboard, reference hashes must equal the planned source refs; for a video, the reference hash must equal its latest successful storyboard download. Same account for each storyboard/video pair. Capture actual UI evidence and reconcile before continuing. Pending/unknown requests block further submissions. The evidence file requirement is not an automated proof of reconciliation; the operator must actually verify the prior unresolved charge and restrictions. Never use account switching or automation to bypass restrictions. No new jobs have been reserved or sent by this implementation.
+
+Use delivery_inputs to export the two original storyboard sheets, two exact provider video artifacts and credit ledger. Use hero_storyboard.extract_video_frames to decode the first and last video frames into standalone PNGs without provider spend, retaining the existing poster interface. Bind all four decoded posters to the exact delivered videos, with re-extraction verification at delivery gate. The ledger replays all reservations and reconciliations against evidence hashes and dependencies. The delivery and final approval gates still require genuine independent playback/browser QA, including storyboardReferenceVerified, storyboardSequenceVerified, sourceProductIdentityVerified, motivatedTransitionVerified, noGridArtifacts, meaningfulMotionPayoffVerified, scenePopulationVerified and V5/V6 checks. These are reviewer attestations, not automated semantic or provider verification. Exact video bytes must match the provider download; a compressed derivative is not interchangeable with the original under this version. A derivative provenance route and authenticated owner approval UI remain outstanding.
+
+This is an offline execution/accounting contract, not a live Flow executor. The current Feral Detroit-style sample remains an experimental benchmark and must not be used as actual Feral product imagery. Existing private preview, site publication and unresolved earlier Flow charge are unchanged.
+
+
+### Verified web derivative route (V7)
+
+V7 may retain the original Flow download as the ledger artifact while serving an exact reproducible derivative. Use hero_video_derivative.create_web_derivative with a new MP4 destination. The only supported recipe is h264-web-crf25-v1: one video stream, H.264 CRF 25, yuv420p, no audio/subtitle/data streams, fast-start MP4, fixed single-thread encoding, no cropping, retiming, filters, or editorial changes. It records the original and final SHA-256 and FFmpeg binary fingerprint. Derivation verification checks both file hashes, geometry, decoded frame count, rate, duration and stream contract, then repeats the fixed encode and compares the exact output bytes. Different FFmpeg builds or non-reproducible results fail closed. Keep the original build available; this is a same-build reproducibility contract, not a portable claim that any encoder yields identical bytes. Use the original video if the derivative offers no useful improvement.
+
+Delivery.videos remains the actual final reviewed media. Optional delivery.videoDerivations maps a viewport to its exact derivation record. The original download remains immutable in the Flow ledger. Replay checks the source storyboard and video artifacts against the ledger, then proves the derivative from that original. Extract standalone posters again from the final delivered bytes. Require independent optimizedPlaybackVerified for each optimized variant. Existing website hash gate automatically binds the served video and poster to the approved delivery. Legacy routes do not accept this optional derivative field. No generation, account changes, or publication authorized.
+
+### Owner-approval deployment boundary
+
+Inspection of the Next dashboard shows a server-side Supabase operator session (getOperatorSession), an allow-listed operator email, and a same-origin request validator. The local worker's review files are not yet exposed through a trusted authenticated artifact handoff. Do not accept arbitrary filesystem paths or user-supplied approval hashes as substitutes for reviewed media. The existing legacy receipt uses HMAC, so a verifier with the shared key can also sign; that is insufficient for a separated owner-only production signer. Before wiring a live approval UI, implement a trusted immutable review bundle, server-side independent QA validation, an authenticated owner-only signer with a separate private key (public-key verification in the worker), a receipt bound to plan, final delivery AND QA hashes, explicit confirmation of the exact candidate, stale/replay checks, and authenticated access to the media for review. Do not store the signing secret in the worker or create production approval receipts during development. Existing legacy test receipts are not production authorization. The interface is not deployed or enabled by this change.
+
+
+### Owner review V2: separately signed exact candidate
+
+Storyboard V7 requires Ed25519 owner receipts (schemaVersion 2). Legacy HMAC receipts remain compatible only with legacy plans. The worker verifies the owner public key and configured owner identity, not a signing secret. The signature binds lead, exact plan, final delivery, QA and immutable source-manifest hashes, the owner-reviewed bundle hash, explicit decision and issuance time. Only approved receipts within seven days can advance; reusing a valid receipt for the exact same candidate is idempotent, not authorization of a new candidate. Expired reviews require renewed owner review. The stage controller rechecks approval evidence and the approved delivery hashes before site implementation. Approval never authorizes publication.
+
+Trusted administrator handoff: on a machine with access to the exact reviewed files and FFmpeg build, run hero_owner_review.py --plan PLAN --delivery DELIVERY --qa QA --source SOURCE --review-root PRIVATE_ROOT. This independently reruns the delivery/QA/provenance gates and stages exact video, storyboard, poster, QA screenshot and original source reference bytes in a new lead directory. The directory must not be worker-writable; transfer the finished bundle only through an authorized private channel to the dashboard's owner-controlled review root. No arbitrary filesystem path or upload endpoint is exposed. Review material remains private. An existing active review cannot be overwritten; archive it explicitly before preparing another candidate.
+
+Dashboard: the lead page renders the HeroOwnerReview section only when ENGINE_C_HERO_REVIEW_ENABLED=true, ENGINE_C_HERO_REVIEW_ROOT, ENGINE_C_HERO_OWNER_ID (the authorized Supabase user ID) and ENGINE_C_HERO_OWNER_PRIVATE_KEY_FILE are configured. Only the server-side authenticated owner session may retrieve hash-checked review media (including byte ranges for video) or submit an explicit same-origin JSON decision. Decision is recorded once, atomically, in decision.json; stale bundle hashes, unauthorized users, tampered media and competing decisions are rejected. Keep the Ed25519 private key exclusively in the owner dashboard runtime with strict filesystem permissions. Configure the worker with ENGINE_C_HERO_OWNER_PUBLIC_KEY_FILE and ENGINE_C_HERO_OWNER_ID, plus cryptography. Transfer the signed receipt back through the private handoff as the existing heroHumanApprovalFile. Do not share the private key with the worker, create real decisions during development, expose the review folder through static hosting, or bypass source/QA gates.
+
+Deployment preconditions: separate service identities and access controls, an administrator-controlled bundle transfer, owner-only signing-key provisioning, actual authenticated browser review (including proxy/origin and range playback), and a genuine source-grounded desktop/mobile V7 candidate. Development tests use ephemeral keys and synthetic evidence; they do not establish live authentication, actual QA or a production approval. The feature is disabled by default. No credentials, environment changes, actual review bundles, real decisions or deployment are authorized by the implementation alone.
