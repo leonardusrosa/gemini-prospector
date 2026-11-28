@@ -88,6 +88,31 @@ def _overlap(a: tuple[float, float, float, float], b: tuple[float, float, float,
     return area / min(aw*ah, bw*bh)
 
 
+def is_storyboard(plan):
+    variants=plan.get("variants")
+    if not isinstance(variants,dict):
+        return False
+    versions=[v.get("motionDirection",{}).get("version") for v in variants.values() if isinstance(v,dict)]
+    if 7 in versions and (len(versions)!=2 or any(v!=7 for v in versions)):
+        raise ValueError("Do not mix storyboard and endpoint routes in one plan")
+    return versions==[7,7]
+
+def storyboard_source_refs(plan, research=None):
+    refs=plan.get("subject",{}).get("sourceReferences")
+    if not isinstance(refs,list) or not refs:
+        raise ValueError("Storyboard requires source-grounded product or brand references")
+    hashes=set()
+    for ref in refs:
+        _file_ref(ref,{".png",".jpg",".jpeg",".webp"})
+        hashes.add(ref["sha256"])
+    if len(hashes)!=len(refs):
+        raise ValueError("Duplicate source reference")
+    if research is not None:
+        known={a.get("sha256") for a in research.get("assets",[]) if isinstance(a,dict)}
+        if not hashes <= known:
+            raise ValueError("Storyboard references must bind immutable research assets")
+    return refs
+
 def validate_plan(plan: dict, research: dict | None = None) -> dict:
     if plan.get("schemaVersion") != 1 or plan.get("provider") != "google-flow":
         raise ValueError("Unsupported hero plan schema/provider")
@@ -116,12 +141,16 @@ def validate_plan(plan: dict, research: dict | None = None) -> dict:
         raise ValueError("Motion subject must include a justified tasteful creative direction")
     if subject.get("basedOnLeadPhoto") is True and not subject.get("assetProvenanceSha256"):
         raise ValueError("Lead-photo-based hero needs first-party asset provenance")
+    storyboard=is_storyboard(plan)
+    if storyboard:
+        storyboard_source_refs(plan,research)
     budgets=plan.get("budget")
     if (not isinstance(budgets,dict) or budgets.get("tier") != "standard" or
-        budgets.get("plannedFrames") != 4 or budgets.get("plannedVideos") != 2 or
-        budgets.get("maxRetries") != MAX_RETRIES or budgets.get("maxGenerations") != MAX_TOTAL_GENERATIONS or
+        budgets.get("plannedFrames") != (0 if storyboard else 4) or budgets.get("plannedVideos") != 2 or
+        (storyboard and budgets.get("plannedStoryboards") != 2) or
+        budgets.get("maxRetries") != MAX_RETRIES or budgets.get("maxGenerations") != (6 if storyboard else MAX_TOTAL_GENERATIONS) or
         budgets.get("creditsAreUIVerified") is not False):
-        raise ValueError("Standard budget contract: 4 frames, 2 clips, 2 retries; check account balance in UI")
+        raise ValueError("Budget must match route: 2 storyboards or 4 frames, 2 clips, 2 retries")
     routing=plan.get("accountRouting")
     if (not isinstance(routing,dict) or routing.get("mode") != "authenticated_desktop_profiles" or
         sorted(routing.get("aliases",[])) != sorted(ACCOUNT_ALIASES) or
@@ -143,8 +172,8 @@ def validate_plan(plan: dict, research: dict | None = None) -> dict:
                    ("startFramePrompt","endFramePrompt","videoPrompt","motionReason")):
             raise ValueError("Both frames, motion and rationale must have concrete prompts")
         validate_direction(v)
-        if v.get("firstAndLastFrameRequired") is not True or v.get("fullViewport") is not True:
-            raise ValueError("Hero must use two frames and fill viewport")
+        if v.get("firstAndLastFrameRequired") is not (not storyboard) or v.get("fullViewport") is not True:
+            raise ValueError("Hero input route and full viewport required")
         safe=v.get("safeZones")
         if not isinstance(safe,dict) or set(safe)!={"title","subtitle","cta","subject"}:
             raise ValueError("Title, subtitle, CTA and subject safe zones required")
@@ -164,7 +193,8 @@ def validate_plan(plan: dict, research: dict | None = None) -> dict:
             hashes={asset.get("sha256") for asset in research.get("assets",[]) if isinstance(asset,dict)}
             if subject["assetProvenanceSha256"] not in hashes:
                 raise ValueError("Lead photo reference not in immutable research assets")
-    return {"result":"PLAN_VALID","variants":2,"framesPlanned":4,
+    return {"result":"PLAN_VALID","variants":2,"framesPlanned":0 if storyboard else 4,
+            **({"storyboardsPlanned":2} if storyboard else {}),
             "videosPlanned":2,"maxExtraGenerations":MAX_RETRIES,
             "manualApprovalRequired":True,"publicReleaseAuthorized":False}
 
@@ -192,6 +222,7 @@ def _video_metadata(path:Path) -> dict:
 def validate_delivery(plan:dict,delivery:dict,qa:dict,
                       probe:Callable[[Path],dict]=_video_metadata) -> dict:
     validate_plan(plan)
+    storyboard=is_storyboard(plan)
     if delivery.get("schemaVersion")!=1 or delivery.get("leadSlug")!=plan["leadSlug"]:
         raise ValueError("Hero delivery source/schema mismatch")
     if delivery.get("planSha256")!=plan.get("_fileSha256"):
@@ -225,10 +256,22 @@ def validate_delivery(plan:dict,delivery:dict,qa:dict,
             raise ValueError("Separate hero poster must be chosen")
     if len(set(video_hashes))!=2:
         raise ValueError("Desktop and mobile must not reuse identical video bytes")
+    if storyboard:
+        boards=delivery.get("storyboards")
+        if not isinstance(boards,dict) or set(boards)!=set(VARIANTS):
+            raise ValueError("Two dedicated storyboard sheets required")
+        for board in boards.values():
+            _file_ref(board,{".png",".jpg",".jpeg",".webp"})
+        if boards["desktop"]["sha256"]==boards["mobile"]["sha256"]:
+            raise ValueError("Independent storyboard compositions required")
+        # Derive exact poster frames from final clip bytes, not the composite sheet.
+        from hero_storyboard import verify_video_frames
+        for name in VARIANTS:
+            verify_video_frames(videos[name],frames[name+"_start"],frames[name+"_end"])
     credits=delivery.get("creditLedger")
-    if not isinstance(credits,list) or not 6<=len(credits)<=MAX_TOTAL_GENERATIONS:
-        raise ValueError("Six base generations and at most two retries must be accounted for")
-    if len(credits)-6>MAX_RETRIES:
+    if not isinstance(credits,list) or not (4 if storyboard else 6)<=len(credits)<=(6 if storyboard else MAX_TOTAL_GENERATIONS):
+        raise ValueError("Route-specific base generations and at most two retries required")
+    if len(credits)-(4 if storyboard else 6)>MAX_RETRIES:
         raise ValueError("Hero retry budget exceeded")
     for entry in credits:
         if not isinstance(entry,dict) or entry.get("accountAlias") not in ACCOUNT_ALIASES:
@@ -240,6 +283,9 @@ def validate_delivery(plan:dict,delivery:dict,qa:dict,
             raise ValueError("Credit charge must be individually verified")
         if entry.get("uiCostChecked") is not True:
             raise ValueError("Flow UI cost must be checked before generation")
+    if storyboard:
+        from flow_execution_ledger import verify_storyboard_delivery
+        verify_storyboard_delivery(plan,delivery)
     for name, variant in plan["variants"].items():
         if variant["motionDirection"]["version"] not in (4,5,6):
             continue
@@ -268,16 +314,22 @@ def validate_delivery(plan:dict,delivery:dict,qa:dict,
                           "meaningfulMotionPayoffVerified", "scenePopulationVerified"):
                 if item.get(field) is not True:
                     raise ValueError("V4 independent QA missing: " + field)
-        if plan["variants"][name]["motionDirection"]["version"] in (5,6):
+        if plan["variants"][name]["motionDirection"]["version"] in (5,6,7):
             for field in ("openingHookVerified", "signatureEventVerified",
                           "intentionalRhythmVerified", "advertisingGradeMotionVerified"):
                 if item.get(field) is not True:
                     raise ValueError("V5 creative QA missing: " + field)
-        if plan["variants"][name]["motionDirection"]["version"] == 6:
+        if plan["variants"][name]["motionDirection"]["version"] in (6,7):
             for field in ("assemblyEquivalentIntensityVerified",
                           "substantiveVisualProgressionVerified"):
                 if item.get(field) is not True:
                     raise ValueError("V6 intensity QA missing: " + field)
+        if storyboard:
+            for field in ("storyboardReferenceVerified","storyboardSequenceVerified",
+                          "sourceProductIdentityVerified","motivatedTransitionVerified",
+                          "noGridArtifacts","meaningfulMotionPayoffVerified","scenePopulationVerified"):
+                if item.get(field) is not True:
+                    raise ValueError("V7 storyboard QA missing: " + field)
         end=videos[name]["ending"]
         if end=="seamless_loop" and item.get("loopSeamAcceptable") is not True:
             raise ValueError("Loop seam rejected for "+name)
